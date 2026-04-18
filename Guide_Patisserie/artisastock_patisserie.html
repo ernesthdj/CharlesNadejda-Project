@@ -1,0 +1,800 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<title>ArtisaStock — Pâtisserie (brainstorm)</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Segoe UI',sans-serif;background:#1e1e2e;color:#cdd6f4;font-size:13px}
+#app{display:flex;flex-direction:column;height:100vh}
+header{background:#181825;padding:8px 16px;display:flex;align-items:center;gap:12px;border-bottom:1px solid #313244;flex-wrap:wrap}
+header h1{font-size:14px;color:#f9e2af;font-weight:600;white-space:nowrap}
+nav{display:flex;gap:2px;flex-wrap:wrap}
+nav button{background:#313244;border:none;color:#bac2de;padding:4px 9px;border-radius:4px;cursor:pointer;font-size:11px}
+nav button.active{background:#f9e2af;color:#1e1e2e;font-weight:600}
+.main{display:flex;flex:1;overflow:hidden}
+.content{flex:1;overflow-y:auto;padding:12px}
+.card{background:#181825;border:1px solid #313244;border-radius:6px;padding:10px;margin-bottom:10px}
+.card h3{color:#f9e2af;margin-bottom:8px;font-size:12px;font-weight:600}
+.fr{display:flex;gap:6px;align-items:flex-end;flex-wrap:wrap;margin-bottom:6px}
+.fg{display:flex;flex-direction:column;gap:2px}
+.fg label{font-size:10px;color:#6c7086}
+input,select,textarea{background:#313244;border:1px solid #45475a;color:#cdd6f4;padding:4px 7px;border-radius:4px;font-size:12px}
+input[readonly]{background:#11111b;color:#6c7086}
+textarea{resize:vertical;font-family:inherit;font-size:12px}
+.btn{border:none;padding:4px 10px;border-radius:4px;cursor:pointer;font-size:11px;font-weight:500}
+.bp{background:#f9e2af;color:#1e1e2e}.bp:hover{background:#fab387}
+.bs{background:#45475a;color:#cdd6f4}.bs:hover{background:#585b70}
+.bd{background:#f38ba8;color:#1e1e2e}
+table{width:100%;border-collapse:collapse;margin-top:6px;font-size:11px}
+th{background:#313244;color:#89b4fa;padding:5px 7px;text-align:left;font-size:10px}
+td{padding:4px 7px;border-bottom:1px solid #313244}
+tr:hover td{background:#1e1e2e}
+.badge{display:inline-block;padding:1px 6px;border-radius:8px;font-size:10px;font-weight:600}
+.bg{background:#a6e3a1;color:#1e1e2e}.by{background:#f9e2af;color:#1e1e2e}
+.br{background:#f38ba8;color:#1e1e2e}.bb{background:#89b4fa;color:#1e1e2e}
+.bp2{background:#cba6f7;color:#1e1e2e}
+.info{background:#0e3045;border:1px solid #89b4fa;color:#89b4fa;padding:5px 8px;border-radius:4px;margin-bottom:6px;font-size:11px}
+.warn{background:#45380e;border:1px solid #f9e2af;color:#f9e2af;padding:5px 8px;border-radius:4px;margin-bottom:6px;font-size:11px}
+.success{background:#0e4520;border:1px solid #a6e3a1;color:#a6e3a1;padding:8px;border-radius:4px;font-size:12px}
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.7);display:flex;align-items:center;justify-content:center;z-index:100}
+.modal{background:#1e1e2e;border:1px solid #45475a;border-radius:8px;padding:16px;width:460px;max-height:85vh;overflow-y:auto}
+.modal h3{color:#f9e2af;margin-bottom:12px;font-size:13px}
+.mf{display:flex;gap:8px;justify-content:flex-end;margin-top:10px}
+hr{border:none;border-top:1px solid #313244;margin:8px 0}
+.devis-box{background:#11111b;border:1px solid #45475a;border-radius:6px;padding:10px;margin-top:8px}
+.devis-line{display:flex;justify-content:space-between;padding:3px 0;font-size:12px;border-bottom:1px solid #313244}
+.devis-total{display:flex;justify-content:space-between;padding:6px 0;font-size:14px;font-weight:700;color:#f9e2af}
+.tag{display:inline-block;background:#45475a;color:#cdd6f4;padding:1px 6px;border-radius:4px;font-size:10px;margin:1px}
+</style>
+</head>
+<body>
+<div id="app">
+  <header>
+    <h1>🎂 ArtisaStock — Pâtisserie (brainstorm)</h1>
+    <nav id="nav"></nav>
+  </header>
+  <div class="main">
+    <div class="content" id="content"></div>
+  </div>
+</div>
+<div id="mc"></div>
+<script>
+// ═══ STATE ═══════════════════════════════════════════════
+let _id = 1;
+const uid = () => _id++;
+
+const db = {
+  params: { taux_horaire: 25, taux_charges: 15, marge_cible: 30, supplement_mixte: 20, tva_taux: 6 },
+  formes: [],
+  gabarits: [],
+  types_couche: [],
+  allergenes: [],
+  ingredients: [],
+  ingr_allergenes: [],
+  recettes_couche: [],
+  rc_ingr: [],
+  fiches_gateau: [],
+  fg_couches: [],
+  couches_dispo: [],
+  commandes: [],
+  etages: [],
+  etages_couches: [],
+  devis: []
+};
+
+// ═══ HELPERS ══════════════════════════════════════════════
+const byId = (t, id) => db[t].find(r => r.id === id);
+const val = id => document.getElementById(id)?.value;
+const fval = id => parseFloat(val(id)) || 0;
+const ival = id => parseInt(val(id)) || 0;
+
+// Calculs gabarit
+function calcGabarit(type, d1, d2, h) {
+  const PI = Math.PI;
+  if (type === 'circulaire') {
+    const r = d1 / 2;
+    return { vol: PI * r * r * h, surf_d: PI * r * r, surf_l: 2 * PI * r * h };
+  }
+  if (type === 'rectangulaire') {
+    return { vol: d1 * d2 * h, surf_d: d1 * d2, surf_l: 2 * (d1 + d2) * h };
+  }
+  return { vol: 0, surf_d: 0, surf_l: 0 }; // libre = manuel
+}
+
+function scalingFactor(mode, gab_ref, gab_cmd) {
+  if (!gab_ref || !gab_cmd) return 1;
+  switch (mode) {
+    case 'volume':          return gab_cmd.vol / (gab_ref.vol || 1);
+    case 'surface_dessus':  return gab_cmd.surf_d / (gab_ref.surf_d || 1);
+    case 'surface_laterale':return gab_cmd.surf_l / (gab_ref.surf_l || 1);
+    case 'fixe':            return 1;
+    default:                return 1;
+  }
+}
+
+function getAllergenesOfIngr(id) {
+  return db.ingr_allergenes
+    .filter(ia => ia.ingredient_id === id)
+    .map(ia => byId('allergenes', ia.allergene_id)?.nom || '?');
+}
+
+function getAllergenesOfRC(rcId) {
+  const ingrs = db.rc_ingr.filter(r => r.rc_id === rcId).map(r => r.ingredient_id);
+  const set = new Set();
+  ingrs.forEach(id => getAllergenesOfIngr(id).forEach(a => set.add(a)));
+  return [...set];
+}
+
+function getAllergenesOfFG(fgId) {
+  const rcIds = db.fg_couches.filter(c => c.fg_id === fgId).map(c => c.rc_id);
+  const set = new Set();
+  rcIds.forEach(id => getAllergenesOfRC(id).forEach(a => set.add(a)));
+  return [...set];
+}
+
+// ═══ RENDER ═══════════════════════════════════════════════
+function render(html) { document.getElementById('content').innerHTML = html; }
+function showModal(title, body, onOk, okLabel) {
+  document.getElementById('mc').innerHTML = `
+    <div class="modal-overlay" onclick="if(event.target===this)closeModal()">
+      <div class="modal"><h3>${title}</h3><div id="mb">${body}</div>
+        <div class="mf">
+          <button class="btn bs" onclick="closeModal()">Annuler</button>
+          <button class="btn bp" onclick="(${onOk.toString()})()">${okLabel||'Enregistrer'}</button>
+        </div>
+      </div>
+    </div>`;
+}
+function closeModal() { document.getElementById('mc').innerHTML = ''; }
+
+// ═══ NAVIGATION ═══════════════════════════════════════════
+const TABS = [
+  {id:'params',    label:'⚙️ Paramètres'},
+  {id:'refs',      label:'📐 Formes/Gabarits'},
+  {id:'types',     label:'🏷️ Types Couche'},
+  {id:'allergenes',label:'⚠️ Allergènes'},
+  {id:'ingr',      label:'🥚 Ingrédients'},
+  {id:'rc',        label:'🍰 Recettes Couche'},
+  {id:'fg',        label:'🎂 Fiches Gâteau'},
+  {id:'commande',  label:'📋 Commande/Devis'},
+];
+const pages = {};
+
+function setTab(id) {
+  document.querySelectorAll('nav button').forEach(b => b.classList.toggle('active', b.dataset.tab === id));
+  pages[id]();
+}
+
+document.getElementById('nav').innerHTML = TABS.map(t =>
+  `<button data-tab="${t.id}" onclick="setTab('${t.id}')">${t.label}</button>`
+).join('');
+
+// ═══ PARAMS ═══════════════════════════════════════════════
+pages.params = function() {
+  const p = db.params;
+  render(`<div class="card">
+    <h3>⚙️ Paramètres globaux</h3>
+    <div class="info">Ces valeurs sont utilisées dans tous les calculs de devis.</div>
+    <table>
+      <tr><th>Paramètre</th><th>Valeur</th><th></th></tr>
+      ${Object.entries({
+        taux_horaire: '€/h main d\'œuvre',
+        taux_charges: '% charges sur coût total',
+        marge_cible: '% marge bénéficiaire cible',
+        supplement_mixte: '€ supplément pièce montée mixte',
+        tva_taux: '% TVA'
+      }).map(([k,desc]) => `<tr>
+        <td>${desc} <span style="color:#6c7086">(${k})</span></td>
+        <td><input id="p_${k}" type="number" step="0.01" value="${p[k]}" style="width:80px"></td>
+        <td><button class="btn bp" onclick="db.params.${k}=parseFloat(document.getElementById('p_${k}').value)||0;alert('Sauvegardé')">✓</button></td>
+      </tr>`).join('')}
+    </table>
+  </div>`);
+};
+
+// ═══ FORMES + GABARITS ════════════════════════════════════
+pages.refs = function() {
+  const formRows = db.formes.map(f => {
+    const gabs = db.gabarits.filter(g => g.forme_id === f.id);
+    return `<tr>
+      <td><strong>${f.nom}</strong></td>
+      <td><span class="badge bb">${f.type_calcul}</span></td>
+      <td>${gabs.length} gabarit(s)</td>
+      <td><button class="btn bs" style="font-size:10px" onclick="addGabaritModal(${f.id})">+ Gabarit</button>
+          <button class="btn bd" onclick="delForme(${f.id})">✕</button></td>
+    </tr>` +
+    gabs.map(g => `<tr style="background:#11111b">
+      <td colspan="1" style="padding-left:20px;color:#cba6f7">↳ ${g.nom}</td>
+      <td style="font-size:10px;color:#6c7086">
+        d1=${g.d1}${f.type_calcul==='circulaire'?'cm⌀':f.type_calcul==='rectangulaire'?'cm L':''} ${g.d2?'d2='+g.d2+'cm':''} h=${g.h}cm
+      </td>
+      <td style="font-size:10px;color:#a6e3a1">
+        vol=${g.vol.toFixed(0)}cm³ | surf.d=${g.surf_d.toFixed(0)}cm² | surf.l=${g.surf_l.toFixed(0)}cm²
+      </td>
+      <td><button class="btn bd" style="font-size:10px" onclick="delGabarit(${g.id})">✕</button></td>
+    </tr>`).join('');
+  }).join('');
+
+  render(`<div class="card">
+    <h3>📐 Formes & Gabarits</h3>
+    <div class="info">Les volumes et surfaces sont calculés automatiquement. Utilisés par le moteur de scaling.</div>
+    <div class="fr">
+      <div class="fg"><label>Nom forme</label><input id="fnm" placeholder="Rond, Carré, Cœur…" style="width:120px"></div>
+      <div class="fg"><label>Type calcul</label>
+        <select id="ftc"><option value="circulaire">Circulaire</option><option value="rectangulaire">Rectangulaire</option><option value="libre">Libre (manuel)</option></select>
+      </div>
+      <button class="btn bp" onclick="addForme()">+ Forme</button>
+    </div>
+    <table><thead><tr><th>Forme</th><th>Type calcul</th><th>Gabarits</th><th>Actions</th></tr></thead>
+    <tbody>${formRows||'<tr><td colspan="4" style="color:#6c7086;text-align:center">Aucune forme</td></tr>'}</tbody></table>
+  </div>`);
+};
+
+function addForme() {
+  const nom = val('fnm')?.trim();
+  const tc = val('ftc');
+  if (!nom) { alert('Nom obligatoire'); return; }
+  db.formes.push({ id: uid(), nom, type_calcul: tc });
+  pages.refs();
+}
+function delForme(id) {
+  if (db.gabarits.some(g => g.forme_id === id)) { alert('Des gabarits sont liés.'); return; }
+  db.formes = db.formes.filter(f => f.id !== id); pages.refs();
+}
+function delGabarit(id) { db.gabarits = db.gabarits.filter(g => g.id !== id); pages.refs(); }
+
+function addGabaritModal(formeId) {
+  const f = byId('formes', formeId);
+  const isCir = f.type_calcul === 'circulaire';
+  const isLib = f.type_calcul === 'libre';
+  showModal(`Gabarit pour "${f.nom}"`, `
+    <div class="fr">
+      <div class="fg"><label>Nom gabarit</label><input id="gn" placeholder="${isCir?'20cm':'30×40cm'}"></div>
+      <div class="fg"><label>${isCir?'Diamètre (cm)':'Longueur (cm)'}</label><input id="gd1" type="number" step="0.1" style="width:70px"></div>
+      ${!isCir && !isLib ? '<div class="fg"><label>Largeur (cm)</label><input id="gd2" type="number" step="0.1" style="width:70px"></div>' : '<div id="gd2" style="display:none"></div>'}
+      <div class="fg"><label>Hauteur (cm)</label><input id="gh" type="number" step="0.1" style="width:70px"></div>
+    </div>
+    ${isLib ? `<div class="fr">
+      <div class="fg"><label>Volume cm³ (manuel)</label><input id="gvol" type="number" step="0.1" style="width:80px"></div>
+      <div class="fg"><label>Surf. dessus cm² (manuel)</label><input id="gsd" type="number" step="0.1" style="width:80px"></div>
+      <div class="fg"><label>Surf. latérale cm² (manuel)</label><input id="gsl" type="number" step="0.1" style="width:80px"></div>
+    </div>` : ''}`,
+    function() {
+      const nom = val('gn')?.trim();
+      const d1 = fval('gd1'), d2 = fval('gd2'), h = fval('gh');
+      if (!nom) { alert('Nom obligatoire'); return; }
+      let g;
+      if (isLib) {
+        g = { id: uid(), forme_id: formeId, nom, d1: 0, d2: 0, h: 0, vol: fval('gvol'), surf_d: fval('gsd'), surf_l: fval('gsl') };
+      } else {
+        const c = calcGabarit(f.type_calcul, d1, d2 || d1, h);
+        g = { id: uid(), forme_id: formeId, nom, d1, d2, h, ...c };
+      }
+      db.gabarits.push(g);
+      closeModal(); pages.refs();
+    });
+}
+
+// ═══ TYPES COUCHE ═════════════════════════════════════════
+pages.types = function() {
+  const modes = ['volume','surface_dessus','surface_laterale','fixe','manuel'];
+  const rows = db.types_couche.map(t => `<tr>
+    <td><strong>${t.nom}</strong></td>
+    <td><span class="badge bb">${t.mode_scaling_defaut}</span></td>
+    <td><button class="btn bd" onclick="delTypeCouche(${t.id})">✕</button></td>
+  </tr>`).join('');
+  render(`<div class="card">
+    <h3>🏷️ Types de Couche</h3>
+    <div class="info">Mode scaling défaut : peut être surchargé dans chaque recette de couche.</div>
+    <div class="fr">
+      <div class="fg"><label>Nom type</label><input id="tn" placeholder="Biscuit, Crème, Glaçage…" style="width:150px"></div>
+      <div class="fg"><label>Mode scaling défaut</label>
+        <select id="tms">${modes.map(m=>`<option>${m}</option>`).join('')}</select>
+      </div>
+      <button class="btn bp" onclick="addTypeCouche()">+ Type</button>
+    </div>
+    <table><thead><tr><th>Nom</th><th>Mode scaling défaut</th><th></th></tr></thead>
+    <tbody>${rows||'<tr><td colspan="3" style="color:#6c7086;text-align:center">Aucun type</td></tr>'}</tbody></table>
+  </div>`);
+};
+function addTypeCouche() {
+  const nom = val('tn')?.trim(); if (!nom) { alert('Nom obligatoire'); return; }
+  db.types_couche.push({ id: uid(), nom, mode_scaling_defaut: val('tms') });
+  pages.types();
+}
+function delTypeCouche(id) {
+  if (db.recettes_couche.some(r => r.type_couche_id === id)) { alert('Type lié à des recettes.'); return; }
+  db.types_couche = db.types_couche.filter(t => t.id !== id); pages.types();
+}
+
+// ═══ ALLERGÈNES ═══════════════════════════════════════════
+const EU14 = ['Gluten','Crustacés','Œufs','Poissons','Cacahuètes','Soja','Lait','Fruits à coque','Céleri','Moutarde','Graines de sésame','Anhydride sulfureux','Lupin','Mollusques'];
+
+pages.allergenes = function() {
+  const rows = db.allergenes.map(a => `<tr>
+    <td>${a.nom}</td><td>${a.code_eu||'—'}</td>
+    <td><button class="btn bd" onclick="delAllergene(${a.id})">✕</button></td>
+  </tr>`).join('');
+  render(`<div class="card">
+    <h3>⚠️ Allergènes</h3>
+    <div class="info">14 allergènes EU pré-chargés + extensible librement.</div>
+    <div class="fr">
+      <button class="btn bp" onclick="loadEU14()">Charger 14 EU</button>
+      <input id="anol" placeholder="Nom allergène libre" style="width:150px">
+      <button class="btn bs" onclick="addAllergeneLibre()">+ Ajouter</button>
+    </div>
+    <table><thead><tr><th>Nom</th><th>Code EU</th><th></th></tr></thead>
+    <tbody>${rows||'<tr><td colspan="3" style="color:#6c7086;text-align:center">Aucun allergène</td></tr>'}</tbody></table>
+  </div>`);
+};
+function loadEU14() {
+  EU14.forEach((nom, i) => {
+    if (!db.allergenes.some(a => a.nom === nom))
+      db.allergenes.push({ id: uid(), nom, code_eu: 'EU-' + String(i+1).padStart(2,'0') });
+  });
+  pages.allergenes();
+}
+function addAllergeneLibre() {
+  const nom = val('anol')?.trim(); if (!nom) return;
+  db.allergenes.push({ id: uid(), nom, code_eu: null }); pages.allergenes();
+}
+function delAllergene(id) {
+  db.allergenes = db.allergenes.filter(a => a.id !== id);
+  db.ingr_allergenes = db.ingr_allergenes.filter(ia => ia.allergene_id !== id);
+  pages.allergenes();
+}
+
+// ═══ INGRÉDIENTS ══════════════════════════════════════════
+pages.ingr = function() {
+  const rows = db.ingredients.map(i => {
+    const alls = getAllergenesOfIngr(i.id);
+    return `<tr>
+      <td><strong>${i.nom}</strong></td>
+      <td>${i.prix_achat} €/${i.unite_achat}</td>
+      <td>${i.stock_actuel} ${i.unite_stock}</td>
+      <td>${alls.map(a=>`<span class="tag">${a}</span>`).join('')||'—'}</td>
+      <td><button class="btn bd" onclick="delIngr(${i.id})">✕</button></td>
+    </tr>`;
+  }).join('');
+  render(`<div class="card">
+    <h3>🥚 Ingrédients</h3>
+    <div class="fr">
+      <div class="fg"><label>Nom</label><input id="in_nom" placeholder="Farine T55" style="width:120px"></div>
+      <div class="fg"><label>Prix achat (€)</label><input id="in_prix" type="number" step="0.001" value="0" style="width:70px"></div>
+      <div class="fg"><label>Unité achat</label><select id="in_ua"><option>kg</option><option>L</option><option>g</option><option>ml</option><option>pièce</option></select></div>
+      <div class="fg"><label>Unité stock</label><select id="in_us"><option>g</option><option>ml</option><option>kg</option><option>L</option><option>pièce</option></select></div>
+      <div class="fg"><label>Stock actuel</label><input id="in_stk" type="number" value="0" style="width:70px"></div>
+      <button class="btn bp" onclick="addIngr()">+ Ingrédient</button>
+    </div>
+    <table><thead><tr><th>Nom</th><th>Prix achat</th><th>Stock</th><th>Allergènes</th><th></th></tr></thead>
+    <tbody>${rows||'<tr><td colspan="5" style="color:#6c7086;text-align:center">Aucun ingrédient</td></tr>'}</tbody></table>
+  </div>
+  <div class="card">
+    <h3>Lier un allergène à un ingrédient</h3>
+    <div class="fr">
+      <div class="fg"><label>Ingrédient</label>
+        <select id="ia_i">${db.ingredients.map(i=>`<option value="${i.id}">${i.nom}</option>`).join('')}</select>
+      </div>
+      <div class="fg"><label>Allergène</label>
+        <select id="ia_a">${db.allergenes.map(a=>`<option value="${a.id}">${a.nom}</option>`).join('')}</select>
+      </div>
+      <button class="btn bp" onclick="lierAllergene()">Lier</button>
+    </div>
+  </div>`);
+};
+function addIngr() {
+  const nom = val('in_nom')?.trim(); if (!nom) { alert('Nom obligatoire'); return; }
+  db.ingredients.push({ id: uid(), nom, prix_achat: fval('in_prix'), unite_achat: val('in_ua'), unite_stock: val('in_us'), stock_actuel: fval('in_stk') });
+  pages.ingr();
+}
+function delIngr(id) {
+  db.ingredients = db.ingredients.filter(i => i.id !== id);
+  db.ingr_allergenes = db.ingr_allergenes.filter(ia => ia.ingredient_id !== id);
+  pages.ingr();
+}
+function lierAllergene() {
+  const iid = ival('ia_i'), aid = ival('ia_a');
+  if (!iid || !aid) return;
+  if (!db.ingr_allergenes.some(ia => ia.ingredient_id===iid && ia.allergene_id===aid))
+    db.ingr_allergenes.push({ ingredient_id: iid, allergene_id: aid });
+  pages.ingr();
+}
+
+// ═══ RECETTES COUCHE ══════════════════════════════════════
+let _rcIngrs = [];
+
+pages.rc = function() {
+  const rows = db.recettes_couche.map(r => {
+    const tc = byId('types_couche', r.type_couche_id);
+    const gab = byId('gabarits', r.gabarit_ref_id);
+    const nb = db.rc_ingr.filter(x => x.rc_id === r.id).length;
+    const alls = getAllergenesOfRC(r.id);
+    return `<tr>
+      <td><strong>${r.nom}</strong></td>
+      <td><span class="badge bb">${tc?.nom||'?'}</span></td>
+      <td>${gab?.nom||'?'}</td>
+      <td><span class="badge bb">${r.mode_scaling||tc?.mode_scaling_defaut}</span></td>
+      <td>${r.temps_prep_min} min</td>
+      <td>${nb} ingr. · ${alls.map(a=>`<span class="tag">${a}</span>`).join('')||'—'}</td>
+      <td><button class="btn bd" onclick="delRC(${r.id})">✕</button></td>
+    </tr>`;
+  }).join('');
+
+  const tcOpts = db.types_couche.map(t => `<option value="${t.id}">${t.nom}</option>`).join('');
+  const gabOpts = db.gabarits.map(g => { const f = byId('formes', g.forme_id); return `<option value="${g.id}">${f?.nom||'?'} ${g.nom}</option>`; }).join('');
+  const ingrOpts = db.ingredients.map(i => `<option value="${i.id}">${i.nom} (${i.unite_stock})</option>`).join('');
+  const modes = ['','volume','surface_dessus','surface_laterale','fixe','manuel'];
+
+  render(`
+  <div class="card">
+    <h3>🍰 Nouvelle Recette Couche</h3>
+    <div class="info">La recette est définie pour une taille de référence. Le scaling est appliqué automatiquement à la commande.</div>
+    <div class="fr">
+      <div class="fg"><label>Nom *</label><input id="rcn" placeholder="Génoise Vanille 20cm" style="width:160px"></div>
+      <div class="fg"><label>Type couche *</label><select id="rct">${tcOpts||'<option>—</option>'}</select></div>
+      <div class="fg"><label>Gabarit référence *</label><select id="rcg">${gabOpts||'<option>—</option>'}</select></div>
+      <div class="fg"><label>Mode scaling (override)</label>
+        <select id="rcms">${modes.map(m=>`<option value="${m}">${m||'(défaut du type)'}</option>`).join('')}</select>
+      </div>
+      <div class="fg"><label>Temps prép. (min)</label><input id="rct2" type="number" value="30" style="width:60px"></div>
+    </div>
+    <hr>
+    <div style="display:flex;justify-content:space-between;margin-bottom:6px">
+      <strong style="font-size:11px;color:#89b4fa">Composition (quantités pour la taille référence)</strong>
+      <button class="btn bs" style="font-size:10px" onclick="addRCIngr()">+ Ingrédient</button>
+    </div>
+    <div id="rccomp"></div>
+    <button class="btn bp" style="margin-top:6px" onclick="saveRC()">💾 Enregistrer</button>
+  </div>
+  <div class="card">
+    <h3>📋 Recettes de Couches</h3>
+    <table><thead><tr><th>Nom</th><th>Type</th><th>Gabarit réf.</th><th>Mode scaling</th><th>Temps</th><th>Composition</th><th></th></tr></thead>
+    <tbody>${rows||'<tr><td colspan="7" style="color:#6c7086;text-align:center">Aucune recette</td></tr>'}</tbody></table>
+  </div>`);
+  renderRCComp();
+};
+
+function renderRCComp() {
+  const c = document.getElementById('rccomp');
+  if (!c) return;
+  if (!_rcIngrs.length) { c.innerHTML = '<p style="color:#6c7086;font-size:10px;margin-bottom:6px">Aucun ingrédient.</p>'; return; }
+  const iOpts = db.ingredients.map(i => `<option value="${i.id}">${i.nom} (${i.unite_stock})</option>`).join('');
+  c.innerHTML = _rcIngrs.map((ri, idx) => {
+    const i = byId('ingredients', ri.ingredient_id);
+    return `<div class="fr" style="align-items:center">
+      <select style="flex:2" onchange="_rcIngrs[${idx}].ingredient_id=parseInt(this.value);renderRCComp()">
+        ${db.ingredients.map(x => `<option value="${x.id}" ${ri.ingredient_id===x.id?'selected':''}>${x.nom}</option>`).join('')}
+      </select>
+      <input type="number" min="0" step="0.001" value="${ri.qte_ref}" placeholder="Qté réf" style="width:70px"
+        onchange="_rcIngrs[${idx}].qte_ref=parseFloat(this.value)||0">
+      <input readonly value="${i?.unite_stock||'?'}" style="width:50px">
+      <button class="btn bd" onclick="_rcIngrs.splice(${idx},1);renderRCComp()">✕</button>
+    </div>`;
+  }).join('');
+}
+
+function addRCIngr() {
+  if (!db.ingredients.length) { alert('Créez des ingrédients d\'abord.'); return; }
+  _rcIngrs.push({ ingredient_id: db.ingredients[0].id, qte_ref: 0 });
+  renderRCComp();
+}
+
+function saveRC() {
+  const nom = val('rcn')?.trim(); if (!nom) { alert('Nom obligatoire'); return; }
+  if (!db.types_couche.length) { alert('Créez un type de couche.'); return; }
+  const r = {
+    id: uid(), nom,
+    type_couche_id: ival('rct'),
+    gabarit_ref_id: ival('rcg'),
+    mode_scaling: val('rcms') || null,
+    temps_prep_min: ival('rct2')
+  };
+  db.recettes_couche.push(r);
+  _rcIngrs.forEach(ri => db.rc_ingr.push({ id: uid(), rc_id: r.id, ...ri }));
+  _rcIngrs = [];
+  pages.rc();
+}
+
+function delRC(id) {
+  if (db.fg_couches.some(c => c.rc_id === id)) { alert('Recette utilisée dans une fiche gâteau.'); return; }
+  db.recettes_couche = db.recettes_couche.filter(r => r.id !== id);
+  db.rc_ingr = db.rc_ingr.filter(r => r.rc_id !== id);
+  pages.rc();
+}
+
+// ═══ FICHES GÂTEAU ════════════════════════════════════════
+let _fgCouches = [];
+
+pages.fg = function() {
+  const rows = db.fiches_gateau.map(f => {
+    const forme = byId('formes', f.forme_id);
+    const nb = db.fg_couches.filter(c => c.fg_id === f.id).length;
+    const alls = getAllergenesOfFG(f.id);
+    return `<tr>
+      <td><strong>${f.nom}</strong></td>
+      <td><span class="badge ${f.mode==='classique'?'bg':'by'}">${f.mode}</span></td>
+      <td>${forme?.nom||'?'}</td>
+      <td>${nb} couche(s)</td>
+      <td>${alls.map(a=>`<span class="tag">${a}</span>`).join('')||'—'}</td>
+      <td>
+        <button class="btn bs" style="font-size:10px" onclick="viewFG(${f.id})">👁️</button>
+        <button class="btn bd" onclick="delFG(${f.id})">✕</button>
+      </td>
+    </tr>`;
+  }).join('');
+
+  const formeOpts = db.formes.map(f => `<option value="${f.id}">${f.nom}</option>`).join('');
+  const rcOpts = db.recettes_couche.map(r => `<option value="${r.id}">${r.nom}</option>`).join('');
+
+  render(`
+  <div class="card">
+    <h3>🎂 Nouvelle Fiche Gâteau</h3>
+    <div class="fr">
+      <div class="fg"><label>Nom *</label><input id="fgn" placeholder="Fraisier, Entremet…" style="width:140px"></div>
+      <div class="fg"><label>Forme *</label><select id="fgf">${formeOpts||'<option>—</option>'}</select></div>
+      <div class="fg"><label>Mode</label>
+        <select id="fgm">
+          <option value="classique">classique (couches fixes)</option>
+          <option value="configurable">configurable (libre)</option>
+        </select>
+      </div>
+      <div class="fg"><label>Site web</label>
+        <select id="fgw"><option value="1">Oui</option><option value="0">Non</option></select>
+      </div>
+    </div>
+    <hr>
+    <div style="display:flex;justify-content:space-between;margin-bottom:6px">
+      <strong style="font-size:11px;color:#89b4fa">Couches (ordre = numéro)</strong>
+      <button class="btn bs" style="font-size:10px" onclick="addFGCouche()">+ Couche</button>
+    </div>
+    <div id="fgcomp"></div>
+    <button class="btn bp" style="margin-top:6px" onclick="saveFG()">💾 Enregistrer</button>
+  </div>
+  <div class="card">
+    <h3>📋 Fiches Gâteau</h3>
+    <table><thead><tr><th>Nom</th><th>Mode</th><th>Forme</th><th>Couches</th><th>Allergènes propagés</th><th>Actions</th></tr></thead>
+    <tbody>${rows||'<tr><td colspan="6" style="color:#6c7086;text-align:center">Aucune fiche</td></tr>'}</tbody></table>
+  </div>`);
+  renderFGComp();
+};
+
+function renderFGComp() {
+  const c = document.getElementById('fgcomp');
+  if (!c) return;
+  if (!_fgCouches.length) { c.innerHTML = '<p style="color:#6c7086;font-size:10px;margin-bottom:6px">Aucune couche.</p>'; return; }
+  c.innerHTML = _fgCouches.map((co, idx) => {
+    const r = byId('recettes_couche', co.rc_id);
+    const tc = r ? byId('types_couche', r.type_couche_id) : null;
+    return `<div class="fr" style="align-items:center">
+      <span style="color:#6c7086;font-size:11px;width:20px">${idx+1}.</span>
+      <select style="flex:2" onchange="_fgCouches[${idx}].rc_id=parseInt(this.value);renderFGComp()">
+        ${db.recettes_couche.map(x=>`<option value="${x.id}" ${co.rc_id===x.id?'selected':''}>${x.nom}</option>`).join('')}
+      </select>
+      <span class="badge bb" style="font-size:10px">${tc?.nom||'?'}</span>
+      <button class="btn bd" onclick="_fgCouches.splice(${idx},1);renderFGComp()">✕</button>
+    </div>`;
+  }).join('');
+}
+
+function addFGCouche() {
+  if (!db.recettes_couche.length) { alert('Créez des recettes de couche d\'abord.'); return; }
+  _fgCouches.push({ rc_id: db.recettes_couche[0].id });
+  renderFGComp();
+}
+
+function saveFG() {
+  const nom = val('fgn')?.trim(); if (!nom) { alert('Nom obligatoire'); return; }
+  if (!_fgCouches.length) { alert('Ajoutez au moins une couche.'); return; }
+  const f = { id: uid(), nom, forme_id: ival('fgf'), mode: val('fgm'), disponible_site: ival('fgw') };
+  db.fiches_gateau.push(f);
+  _fgCouches.forEach((co, idx) => db.fg_couches.push({ id: uid(), fg_id: f.id, rc_id: co.rc_id, ordre: idx+1 }));
+  _fgCouches = [];
+  pages.fg();
+}
+
+function viewFG(id) {
+  const f = byId('fiches_gateau', id);
+  const couches = db.fg_couches.filter(c => c.fg_id === id).sort((a,b)=>a.ordre-b.ordre);
+  const alls = getAllergenesOfFG(id);
+  showModal('🎂 ' + f.nom, `
+    <p style="margin-bottom:8px;color:#6c7086">Mode: ${f.mode}</p>
+    <h4 style="color:#89b4fa;margin-bottom:6px;font-size:11px">Couches (ordre)</h4>
+    ${couches.map(c => {
+      const r = byId('recettes_couche', c.rc_id);
+      const tc = r ? byId('types_couche', r.type_couche_id) : null;
+      return `<div style="padding:4px 0;border-bottom:1px solid #313244;font-size:11px">
+        <strong>${c.ordre}.</strong> ${r?.nom||'?'} <span class="badge bb">${tc?.nom||'?'}</span>
+      </div>`;
+    }).join('')}
+    <div style="margin-top:8px;font-size:11px">
+      <strong>Allergènes propagés:</strong><br>
+      ${alls.map(a=>`<span class="tag">${a}</span>`).join('')||'Aucun'}
+    </div>`,
+    closeModal, 'Fermer');
+}
+
+function delFG(id) {
+  db.fiches_gateau = db.fiches_gateau.filter(f => f.id !== id);
+  db.fg_couches = db.fg_couches.filter(c => c.fg_id !== id);
+  pages.fg();
+}
+
+// ═══ COMMANDE + DEVIS ═════════════════════════════════════
+// État commande en cours
+let _cmd = { etages: [] }; // { fg_id, gabarit_id, option_deco }
+
+pages.commande = function() {
+  const fgOpts = db.fiches_gateau.map(f => `<option value="${f.id}">${f.nom} (${f.mode})</option>`).join('');
+  const gabOpts = db.gabarits.map(g => { const f = byId('formes', g.forme_id); return `<option value="${g.id}">${f?.nom||'?'} — ${g.nom}</option>`; }).join('');
+
+  const etagesHTML = _cmd.etages.map((e, idx) => {
+    const f = byId('fiches_gateau', e.fg_id);
+    const g = byId('gabarits', e.gabarit_id);
+    return `<div style="background:#11111b;border:1px solid #45475a;border-radius:4px;padding:6px;margin-bottom:6px">
+      <div style="display:flex;justify-content:space-between;align-items:center">
+        <strong style="color:#f9e2af">Étage ${idx+1}</strong>
+        <button class="btn bd" onclick="_cmd.etages.splice(${idx},1);pages.commande()">✕</button>
+      </div>
+      <div class="fr" style="margin-top:4px">
+        <div class="fg"><label>Fiche gâteau</label>
+          <select onchange="_cmd.etages[${idx}].fg_id=parseInt(this.value);pages.commande()">
+            ${db.fiches_gateau.map(x=>`<option value="${x.id}" ${e.fg_id===x.id?'selected':''}>${x.nom}</option>`).join('')}
+          </select>
+        </div>
+        <div class="fg"><label>Gabarit taille</label>
+          <select onchange="_cmd.etages[${idx}].gabarit_id=parseInt(this.value);pages.commande()">
+            ${db.gabarits.map((gx)=>{const fx=byId('formes',gx.forme_id);return`<option value="${gx.id}" ${e.gabarit_id===gx.id?'selected':''}>${fx?.nom||'?'} ${gx.nom}</option>`;}).join('')}
+          </select>
+        </div>
+      </div>
+      ${f ? `<div style="font-size:10px;color:#a6e3a1;margin-top:4px">
+        Allergènes: ${getAllergenesOfFG(f.id).map(a=>`<span class="tag">${a}</span>`).join('')||'Aucun'}
+      </div>` : ''}
+    </div>`;
+  }).join('');
+
+  render(`
+  <div class="card">
+    <h3>📋 Nouvelle Commande Pâtisserie</h3>
+    <div class="info">Chaque étage = une fiche gâteau + un gabarit de taille. Le scaling est calculé automatiquement.</div>
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+      <strong style="font-size:11px;color:#89b4fa">Étages (pièce montée = plusieurs étages)</strong>
+      <button class="btn bp" onclick="addEtage()" ${!db.fiches_gateau.length||!db.gabarits.length?'disabled':''}>+ Étage</button>
+    </div>
+    ${etagesHTML || '<p style="color:#6c7086;font-size:11px;margin-bottom:8px">Aucun étage.</p>'}
+    <div class="fr" style="margin-top:8px">
+      <button class="btn bp" onclick="calculerDevis()" ${_cmd.etages.length?'':'disabled'}>🧮 Calculer le Devis</button>
+      <button class="btn bs" onclick="_cmd={etages:[]};pages.commande()">🗑️ Réinitialiser</button>
+    </div>
+  </div>
+  <div id="devis_result"></div>`);
+};
+
+function addEtage() {
+  if (!db.fiches_gateau.length || !db.gabarits.length) return;
+  _cmd.etages.push({ fg_id: db.fiches_gateau[0].id, gabarit_id: db.gabarits[0].id });
+  pages.commande();
+}
+
+function calculerDevis() {
+  const p = db.params;
+  let total_matieres = 0, total_mo = 0;
+  const details = [];
+
+  _cmd.etages.forEach((e, idx) => {
+    const fg = byId('fiches_gateau', e.fg_id);
+    const gab_cmd = byId('gabarits', e.gabarit_id);
+    const couches = db.fg_couches.filter(c => c.fg_id === e.fg_id).sort((a,b)=>a.ordre-b.ordre);
+    let etage_matieres = 0, etage_mo = 0;
+    const couche_details = [];
+
+    couches.forEach(c => {
+      const rc = byId('recettes_couche', c.rc_id);
+      const tc = byId('types_couche', rc.type_couche_id);
+      const gab_ref = byId('gabarits', rc.gabarit_ref_id);
+      const mode = rc.mode_scaling || tc?.mode_scaling_defaut || 'volume';
+      const factor = scalingFactor(mode, gab_ref, gab_cmd);
+      const ingrs = db.rc_ingr.filter(r => r.rc_id === rc.id);
+      let cout_couche = 0;
+      const ingr_details = [];
+
+      ingrs.forEach(ri => {
+        const ingr = byId('ingredients', ri.ingredient_id);
+        const qte_reelle = ri.qte_ref * factor;
+        // Normaliser: stock en g, prix au kg → diviser par 1000
+        let prix_unit = ingr.prix_achat;
+        if (ingr.unite_achat === 'kg' && ingr.unite_stock === 'g') prix_unit /= 1000;
+        if (ingr.unite_achat === 'L' && ingr.unite_stock === 'ml') prix_unit /= 1000;
+        const cout = qte_reelle * prix_unit;
+        cout_couche += cout;
+        ingr_details.push(`${ingr.nom}: ${qte_reelle.toFixed(2)} ${ingr.unite_stock} (×${factor.toFixed(3)}) = ${cout.toFixed(3)} €`);
+      });
+
+      const cout_mo_couche = (rc.temps_prep_min / 60) * p.taux_horaire * factor;
+      etage_matieres += cout_couche;
+      etage_mo += cout_mo_couche;
+      couche_details.push({ nom: rc.nom, type: tc?.nom||'?', mode, factor, cout_couche, cout_mo_couche, ingr_details });
+    });
+
+    total_matieres += etage_matieres;
+    total_mo += etage_mo;
+    details.push({ etage: idx+1, fg_nom: fg?.nom||'?', gabarit: gab_cmd?.nom||'?', couche_details, etage_matieres, etage_mo });
+  });
+
+  // Supplément mixte ?
+  const fg_ids = [...new Set(_cmd.etages.map(e => e.fg_id))];
+  const supp_mixte = _cmd.etages.length >= 2 && fg_ids.length >= 2 ? p.supplement_mixte : 0;
+
+  const sous_total = total_matieres + total_mo;
+  const charges = sous_total * (p.taux_charges / 100);
+  const total_cout = sous_total + charges + supp_mixte;
+  const prix_suggere = total_cout / (1 - p.marge_cible / 100);
+  const prix_ttc = prix_suggere * (1 + p.tva_taux / 100);
+
+  // Allergènes commande
+  const all_set = new Set();
+  _cmd.etages.forEach(e => getAllergenesOfFG(e.fg_id).forEach(a => all_set.add(a)));
+
+  const detailsHTML = details.map(d => `
+    <div style="margin-bottom:8px;padding:8px;background:#1e1e2e;border-radius:4px;border:1px solid #313244">
+      <strong style="color:#cba6f7">Étage ${d.etage} — ${d.fg_nom}</strong>
+      <span style="color:#6c7086;font-size:10px;margin-left:8px">Gabarit: ${d.gabarit}</span>
+      ${d.couche_details.map(c => `
+        <div style="padding:4px 0 4px 12px;border-left:2px solid #45475a;margin-top:4px">
+          <div style="font-size:11px"><strong>${c.nom}</strong> <span class="badge bb">${c.type}</span>
+            <span class="badge" style="background:#313244;color:#89b4fa">scaling: ${c.mode} ×${c.factor.toFixed(3)}</span>
+          </div>
+          <div style="font-size:10px;color:#6c7086;margin-top:2px">${c.ingr_details.join(' | ')}</div>
+          <div style="font-size:10px;color:#f9e2af;margin-top:2px">Matières: ${c.cout_couche.toFixed(3)} € | MO: ${c.cout_mo_couche.toFixed(3)} €</div>
+        </div>`).join('')}
+      <div style="font-size:11px;margin-top:4px;color:#a6e3a1">
+        Total étage: matières ${d.etage_matieres.toFixed(2)} € + MO ${d.etage_mo.toFixed(2)} €
+      </div>
+    </div>`).join('');
+
+  document.getElementById('devis_result').innerHTML = `
+  <div class="card">
+    <h3>🧮 Devis calculé</h3>
+    <div style="margin-bottom:8px">
+      ${detailsHTML}
+    </div>
+    <div class="devis-box">
+      <div class="devis-line"><span>Coût matières total</span><span>${total_matieres.toFixed(2)} €</span></div>
+      <div class="devis-line"><span>Coût main d'œuvre (${p.taux_horaire} €/h)</span><span>${total_mo.toFixed(2)} €</span></div>
+      <div class="devis-line"><span>Sous-total</span><span>${sous_total.toFixed(2)} €</span></div>
+      <div class="devis-line"><span>Charges (${p.taux_charges}%)</span><span>+ ${charges.toFixed(2)} €</span></div>
+      ${supp_mixte > 0 ? `<div class="devis-line" style="color:#f9e2af"><span>Supplément mixte (≥2 saveurs)</span><span>+ ${supp_mixte.toFixed(2)} €</span></div>` : ''}
+      <div class="devis-line"><span>Total coût</span><span><strong>${total_cout.toFixed(2)} €</strong></span></div>
+      <div class="devis-line"><span>Marge cible (${p.marge_cible}%)</span><span></span></div>
+      <div class="devis-total"><span>Prix suggéré HT</span><span>${prix_suggere.toFixed(2)} €</span></div>
+      <div class="devis-total"><span>Prix TVA (${p.tva_taux}%) TTC</span><span>${prix_ttc.toFixed(2)} €</span></div>
+    </div>
+    <div style="margin-top:8px">
+      <div class="fg"><label style="font-size:11px;margin-bottom:4px">Prix final (ajustable par l'artisane)</label>
+        <div class="fr">
+          <input id="prix_final" type="number" step="0.01" value="${prix_suggere.toFixed(2)}" style="width:100px">
+          <button class="btn bp" onclick="validerDevis(${prix_ttc.toFixed(2)})">✅ Valider le devis</button>
+        </div>
+      </div>
+    </div>
+    <div style="margin-top:8px;font-size:11px">
+      <strong>⚠️ Allergènes sur bon de commande:</strong>
+      ${[...all_set].map(a=>`<span class="tag">${a}</span>`).join('')||'Aucun'}
+    </div>
+  </div>`;
+}
+
+function validerDevis(prix_sugere_ttc) {
+  const pf = parseFloat(document.getElementById('prix_final')?.value) || prix_sugere_ttc;
+  db.commandes.push({ id: uid(), etages: JSON.parse(JSON.stringify(_cmd.etages)), prix_final: pf, date: new Date().toLocaleDateString('fr-BE') });
+  alert(`✅ Devis validé ! Prix final : ${pf.toFixed(2)} €`);
+  _cmd = { etages: [] };
+  pages.commande();
+}
+
+// ═══ BOOT ═════════════════════════════════════════════════
+setTab('params');
+</script>
+</body>
+</html>

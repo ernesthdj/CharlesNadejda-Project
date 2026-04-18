@@ -1,0 +1,83 @@
+# ===========================
+# Laravel
+# ===========================
+site-laravel/.env
+site-laravel/.env.backup
+site-laravel/.env.production
+site-laravel/vendor/
+site-laravel/node_modules/
+site-laravel/public/hot
+site-laravel/public/storage
+site-laravel/storage/*.key
+site-laravel/storage/app/public/
+site-laravel/storage/logs/
+site-laravel/storage/framework/cache/
+site-laravel/storage/framework/sessions/
+site-laravel/storage/framework/views/
+site-laravel/bootstrap/cache/
+site-laravel/.phpunit.result.cache
+site-laravel/Homestead.json
+site-laravel/Homestead.yaml
+site-laravel/auth.json
+site-laravel/npm-debug.log
+site-laravel/yarn-error.log
+site-laravel/.sass-cache/
+site-laravel/public/build/
+
+# ===========================
+# C# / .NET / WinForms
+# ===========================
+app-csharp/**/bin/
+app-csharp/**/obj/
+app-csharp/**/*.user
+app-csharp/**/*.suo
+app-csharp/**/*.userosscache
+app-csharp/**/*.sln.docstates
+app-csharp/**/.vs/
+app-csharp/**/packages/*
+!app-csharp/**/packages/repositories.config
+app-csharp/**/*.nupkg
+app-csharp/**/*.snupkg
+app-csharp/**/TestResults/
+app-csharp/**/*.log
+app-csharp/**/_ReSharper*/
+app-csharp/**/*.DotSettings.user
+
+# ===========================
+# Docker
+# ===========================
+docker/**/.env
+docker/**/data/
+
+# ===========================
+# Claude Code (configs locales)
+# ===========================
+.claude/
+
+# ===========================
+# Obsidian
+# ===========================
+.obsidian/workspace.json
+.obsidian/workspace-mobile.json
+.obsidian/cache
+
+# ===========================
+# Éditeurs & OS
+# ===========================
+.zed/
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# ===========================
+# Logs & temporaires
+# ===========================
+*.log
+dbml-error.log
+*.tmp
+*.bak

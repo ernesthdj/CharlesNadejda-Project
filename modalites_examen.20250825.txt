@@ -1,0 +1,26 @@
+1) Les étudiants doivent réaliser un site :
+* utilisant PHP
+* disposant d'au moins un formulaire avec gestion cohérente et conviviale des erreurs
+* utilisant les sessions
+* apte à proposer des contenus distincts selon une "identification d'utilisateurs du site"
+* fournissant une sécurisation d'accès à certaines informations et/ou fonctionnalités
+* manipulant des données extérieures à son propre code (fichier texte, fichier xml ou base MySQL)
+* utilisant éventuellement une communication Ajax
+
+2) Présentation du site lors d'un examen oral
+
+3) Les questions portent ensuite sur :
+* les bases de la programmation en PHP
+* les techniques nécessaires à une bonne gestion de formulaire
+* l'utilisation de session (utilités et modalités)
+* l'accès à des fichiers (texte ou xml) et/ou à une base de données MySQL
+* l'utilité et le principe de fonctionnement de la communication Ajax
+
+L'évaluation se fait par le biais de la grille suivante :
+* en fonction de la présentation du site : évaluation de la qualité par rapport à l'ampleur (taille et complexité du site) : une cote de la qualité réalisée sur 10, 15, 20, 25, 30 ou 35 selon l'ampleur
+* en fonction des réponses sur les questions théoriques et pratiques, et en s'appuyant si possible sur le code du site réalisé : évaluation du degré de maîtrise des éléments fondamentaux nécessaires à la réalisation d'un "back-end" d'une application web, en répartissant cette évaluation comme suit :
+- bases de PHP : une cote sur 10
+- gestion de formulaire : une cote sur 10
+- gestion de session : une cote sur 10
+- gestion de fichier/manipulation MySQL : une cote sur 10
+- utilité et principe de fonctionnement d'AJAX : une cote sur 5

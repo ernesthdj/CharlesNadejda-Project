@@ -1,0 +1,1015 @@
+Enum "bom_fiches_unite_output_enum" {
+  "mg"
+  "g"
+  "kg"
+  "ml"
+  "cl"
+  "dl"
+  "l"
+  "piece"
+}
+
+Enum "bom_fiches_lignes_type_input_enum" {
+  "ingredient"
+  "fiche"
+}
+
+Enum "bom_fiches_lignes_unite_mesure_enum" {
+  "mg"
+  "g"
+  "kg"
+  "ml"
+  "cl"
+  "dl"
+  "l"
+  "piece"
+}
+
+Enum "bom_productions_lignes_type_source_enum" {
+  "lot_ingredient"
+  "bom_stock"
+}
+
+Enum "commandes_type_reception_enum" {
+  "livraison"
+  "retrait"
+}
+
+Enum "commandes_statut_enum" {
+  "en_attente"
+  "confirmee"
+  "en_preparation"
+  "prete"
+  "livree"
+  "annulee"
+}
+
+Enum "commandes_statut_paiement_enum" {
+  "en_attente"
+  "paye"
+  "rembourse"
+  "echec"
+}
+
+Enum "commandes_methode_paiement_enum" {
+  "bancontact"
+  "carte"
+  "virement"
+  "especes"
+}
+
+Enum "fiches_compositions_type_composition_enum" {
+  "fixe"
+  "configurable"
+}
+
+Enum "fiches_compositions_mode_prix_enum" {
+  "manuel"
+  "coefficient"
+}
+
+Enum "fiches_ingredients_unite_mesure_enum" {
+  "mg"
+  "g"
+  "kg"
+  "ml"
+  "cl"
+  "dl"
+  "l"
+  "piece"
+}
+
+Enum "fiches_ingredients_type_physique_enum" {
+  "solide"
+  "liquide"
+  "poudre"
+  "piece"
+}
+
+Enum "fiches_recettes_type_rendement_enum" {
+  "par_lot"
+  "par_unite"
+}
+
+Enum "frais_generaux_config_type_enum" {
+  "electricite"
+  "eau"
+  "usure_materiel"
+  "autre"
+}
+
+Enum "mouvements_lots_ingredients_type_mouvement_enum" {
+  "entree"
+  "sortie"
+  "ajustement"
+}
+
+Enum "mouvements_stock_produits_type_mouvement_enum" {
+  "entree"
+  "sortie"
+  "ajustement"
+}
+
+Enum "pat_commandes_type_enum" {
+  "simple"
+  "piece_montee"
+}
+
+Enum "pat_commandes_statut_production_enum" {
+  "en_attente"
+  "en_preparation"
+  "pret"
+  "livre"
+}
+
+Enum "pat_fiches_gateau_mode_enum" {
+  "classique"
+  "configurable"
+}
+
+Enum "pat_formes_type_calcul_enum" {
+  "circulaire"
+  "rectangulaire"
+  "libre"
+}
+
+Enum "pat_recettes_couche_mode_scaling_enum" {
+  "volume"
+  "surface_dessus"
+  "surface_laterale"
+  "fixe"
+  "manuel"
+}
+
+Enum "pat_types_couche_mode_scaling_defaut_enum" {
+  "volume"
+  "surface_dessus"
+  "surface_laterale"
+  "fixe"
+  "manuel"
+}
+
+Enum "stock_compositions_statut_enum" {
+  "normal"
+  "alerte_dlc"
+  "critique"
+  "perime"
+  "promo"
+}
+
+Enum "stock_produits_statut_enum" {
+  "normal"
+  "alerte_dlc"
+  "critique"
+  "perime"
+  "promo"
+}
+
+Enum "utilisateurs_role_enum" {
+  "client"
+  "admin"
+}
+
+Table "activites" {
+  "id" int [pk, not null, increment]
+  "nom" varchar(100) [unique, not null]
+  "description" text
+  "actif" tinyint(1) [not null, default: 1]
+  "date_creation" datetime [not null, default: `CURRENT_TIMESTAMP`]
+}
+
+Table "activites_stocks" {
+  "id_activite" int [not null]
+  "id_stock" int [not null]
+
+  Indexes {
+    (id_activite, id_stock) [pk, name: "PRIMARY"]
+  }
+}
+
+Table "bom_contextes" {
+  "id" int [pk, not null, increment]
+  "nom" varchar(200) [not null]
+  "description" text
+  "id_activite" int [not null]
+  "actif" tinyint(1) [not null, default: 1]
+  "date_creation" datetime [default: `CURRENT_TIMESTAMP`]
+}
+
+Table "bom_fiches" {
+  "id" int [pk, not null, increment]
+  "id_niveau" int [not null]
+  "nom" varchar(200) [not null]
+  "description" text
+  "unite_output" bom_fiches_unite_output_enum [not null, default: 'piece']
+  "quantite_output" decimal(10,4) [not null, default: 1.0000]
+  "temps_preparation" int
+  "actif" tinyint(1) [not null, default: 1]
+  "date_creation" datetime [default: `CURRENT_TIMESTAMP`]
+
+  Indexes {
+    (nom, id_niveau) [unique, name: "uq_fiche_nom_niveau"]
+  }
+}
+
+Table "bom_fiches_lignes" {
+  "id" int [pk, not null, increment]
+  "id_fiche" int [not null]
+  "type_input" bom_fiches_lignes_type_input_enum [not null]
+  "id_input_ingredient" int
+  "id_input_fiche" int
+  "quantite" decimal(12,4) [not null]
+  "unite_mesure" bom_fiches_lignes_unite_mesure_enum [not null]
+}
+
+Table "bom_niveaux" {
+  "id" int [pk, not null, increment]
+  "id_contexte" int [not null]
+  "ordre" "tinyint unsigned" [not null]
+  "nom" varchar(200) [not null]
+  "description" text
+  "date_creation" datetime [default: `CURRENT_TIMESTAMP`]
+
+  Indexes {
+    (id_contexte, ordre) [unique, name: "uq_bom_niveau_ordre"]
+  }
+}
+
+Table "bom_productions" {
+  "id" int [pk, not null, increment]
+  "id_niveau" int [not null]
+  "id_fiche" int [not null]
+  "quantite_produite" decimal(10,4) [not null]
+  "cout_ingredients" decimal(10,2) [not null, default: 0.00]
+  "cout_unitaire" decimal(10,4) [not null, default: 0.0000]
+  "date_production" datetime [default: `CURRENT_TIMESTAMP`]
+  "notes" text
+}
+
+Table "bom_productions_lignes" {
+  "id" int [pk, not null, increment]
+  "id_production" int [not null]
+  "type_source" bom_productions_lignes_type_source_enum [not null]
+  "id_lot_ingredient" int
+  "id_bom_stock" int
+  "quantite_consommee" decimal(12,4) [not null]
+  "cout_unitaire_moment" decimal(10,4) [not null]
+}
+
+Table "bom_reservations" {
+  "id" int [pk, not null, increment]
+  "id_lot" int [not null]
+  "id_contexte" int [not null]
+  "quantite_reservee" decimal(12,4) [not null]
+  "date_reservation" datetime [default: `CURRENT_TIMESTAMP`]
+  "notes" text
+  "actif" tinyint(1) [not null, default: 1]
+}
+
+Table "bom_stocks" {
+  "id" int [pk, not null, increment]
+  "id_niveau" int [not null]
+  "id_contexte" int [not null]
+  "id_activite" int [not null]
+  "id_fiche" int [not null]
+  "id_production" int [not null]
+  "quantite_disponible" decimal(12,4) [not null]
+  "cout_unitaire" decimal(10,4) [not null]
+  "date_production" date [not null]
+  "date_dlc" date
+  "date_creation" datetime [default: `CURRENT_TIMESTAMP`]
+}
+
+Table "cache" {
+  "key" varchar(255) [pk, not null]
+  "value" mediumtext [not null]
+  "expiration" bigint [not null]
+
+  Indexes {
+    expiration [type: btree, name: "cache_expiration_index"]
+  }
+}
+
+Table "cache_locks" {
+  "key" varchar(255) [pk, not null]
+  "owner" varchar(255) [not null]
+  "expiration" bigint [not null]
+
+  Indexes {
+    expiration [type: btree, name: "cache_locks_expiration_index"]
+  }
+}
+
+Table "categories" {
+  "id" int [pk, not null, increment]
+  "nom" varchar(100) [unique, not null]
+  "description" text
+  "ordre_affichage" int [not null, default: 0]
+}
+
+Table "commandes" {
+  "id" int [pk, not null, increment]
+  "id_client" int [not null]
+  "date_commande" datetime [default: `CURRENT_TIMESTAMP`]
+  "date_souhaitee" date [not null]
+  "type_reception" commandes_type_reception_enum [not null, default: 'retrait']
+  "statut" commandes_statut_enum [not null, default: 'en_attente']
+  "statut_paiement" commandes_statut_paiement_enum [not null, default: 'en_attente']
+  "methode_paiement" commandes_methode_paiement_enum
+  "stripe_session_id" varchar(255)
+  "stripe_payment_intent" varchar(255)
+  "frais_livraison" decimal(10,2) [not null, default: 0.00]
+  "total_ttc" decimal(10,2) [not null]
+  "total_avec_livraison" "decimal(10,2) GENERATED ALWAYS AS ((`total_ttc` + `frais_livraison`)) STORED"
+  "adresse_livraison" varchar(255)
+  "code_postal_livraison" varchar(10)
+  "ville_livraison" varchar(100)
+  "pays_livraison" varchar(50) [default: 'Belgique']
+  "notes" text
+  "notes_internes" text
+}
+
+Table "compositions_recettes" {
+  "id_composition" int [not null]
+  "id_recette" int [not null]
+  "quantite" int [not null]
+
+  Indexes {
+    (id_composition, id_recette) [pk, name: "PRIMARY"]
+  }
+}
+
+Table "contacts" {
+  "id" int [pk, not null, increment]
+  "nom" varchar(100) [not null]
+  "email" varchar(255) [not null]
+  "sujet" varchar(200)
+  "message" text [not null]
+  "date_envoi" datetime [default: `CURRENT_TIMESTAMP`]
+  "lu" tinyint(1) [not null, default: 0]
+}
+
+Table "factures" {
+  "id" int [pk, not null, increment]
+  "id_commande" int [not null]
+  "numero_facture" varchar(30) [unique, not null]
+  "date_emission" datetime [default: `CURRENT_TIMESTAMP`]
+  "total_htva" decimal(10,2) [not null]
+  "montant_tva" decimal(10,2) [not null]
+  "total_ttc" decimal(10,2) [not null]
+  "pdf_path" varchar(255)
+}
+
+Table "failed_jobs" {
+  "id" "bigint unsigned" [pk, not null, increment]
+  "uuid" varchar(255) [unique, not null]
+  "connection" text [not null]
+  "queue" text [not null]
+  "payload" longtext [not null]
+  "exception" longtext [not null]
+  "failed_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+}
+
+Table "fiches_compositions" {
+  "id" int [pk, not null, increment]
+  "id_categorie" int [not null]
+  "nom" varchar(200) [not null]
+  "description" text
+  "type_composition" fiches_compositions_type_composition_enum [not null]
+  "poids_cible_grammes" decimal(8,2)
+  "capacite_max" int
+  "frais_emballage" decimal(10,2) [not null, default: 0.00]
+  "image_url" varchar(500)
+  "afficher_stock_web" tinyint(1) [not null, default: 0]
+  "mode_prix" fiches_compositions_mode_prix_enum [not null, default: 'manuel']
+  "coefficient_marge" decimal(5,2) [default: 1.00]
+  "prix_vente_ttc" decimal(10,2)
+  "prix_calcule" decimal(10,2)
+  "saisonnier" tinyint(1) [not null, default: 0]
+  "saison_debut" varchar(20)
+  "saison_fin" varchar(20)
+  "actif" tinyint(1) [not null, default: 1]
+  "date_creation" datetime [default: `CURRENT_TIMESTAMP`]
+}
+
+Table "fiches_ingredients" {
+  "id" int [pk, not null, increment]
+  "nom" varchar(200) [unique, not null]
+  "marque" varchar(200)
+  "description" text
+  "unite_mesure" fiches_ingredients_unite_mesure_enum [not null]
+  "type_physique" fiches_ingredients_type_physique_enum [not null, default: 'solide']
+  "densite" decimal(8,4) [note: 'g/ml â€” obligatoire si liquide ou poudre']
+  "id_stock" int [not null]
+  "conditionnement_label" varchar(100) [not null, default: '']
+  "qte_par_conditionnement" decimal(12,4) [not null, default: 1.0000]
+  "prix_achat_reference" decimal(10,4) [not null]
+  "dlc_jours_reference" int
+  "qualite_label" varchar(100)
+  "id_fournisseur_defaut" int
+  "seuil_alerte_stock" decimal(10,4)
+  "actif" tinyint(1) [not null, default: 1]
+  "date_creation" datetime [default: `CURRENT_TIMESTAMP`]
+}
+
+Table "fiches_recettes" {
+  "id" int [pk, not null, increment]
+  "nom" varchar(200) [unique, not null]
+  "description" text
+  "type_rendement" fiches_recettes_type_rendement_enum [not null, default: 'par_lot']
+  "rendement_quantite" decimal(10,4) [not null, default: 1.0000]
+  "poids_unitaire_indicatif" decimal(8,4)
+  "poids_unitaire_reel" decimal(8,4)
+  "conservation_jours" int [not null, default: 30]
+  "temps_preparation" int
+  "actif" tinyint(1) [not null, default: 1]
+}
+
+Table "fournisseurs" {
+  "id" int [pk, not null, increment]
+  "nom" varchar(200) [not null]
+  "contact" varchar(200)
+  "email" varchar(255)
+  "telephone" varchar(20)
+  "adresse" varchar(255)
+  "notes" text
+}
+
+Table "frais_generaux_config" {
+  "id" int [pk, not null, increment]
+  "type" frais_generaux_config_type_enum [not null]
+  "libelle" varchar(200) [not null]
+  "valeur_mensuelle" decimal(10,2) [not null]
+  "actif" tinyint(1) [not null, default: 1]
+}
+
+Table "frais_production_variables" {
+  "id" int [pk, not null, increment]
+  "id_production_recette" int
+  "id_production_composition" int
+  "libelle" varchar(255) [not null]
+  "montant" decimal(10,2) [not null]
+}
+
+Table "job_batches" {
+  "id" varchar(255) [pk, not null]
+  "name" varchar(255) [not null]
+  "total_jobs" int [not null]
+  "pending_jobs" int [not null]
+  "failed_jobs" int [not null]
+  "failed_job_ids" longtext [not null]
+  "options" mediumtext
+  "cancelled_at" int
+  "created_at" int [not null]
+  "finished_at" int
+}
+
+Table "jobs" {
+  "id" "bigint unsigned" [pk, not null, increment]
+  "queue" varchar(255) [not null]
+  "payload" longtext [not null]
+  "attempts" "tinyint unsigned" [not null]
+  "reserved_at" "int unsigned"
+  "available_at" "int unsigned" [not null]
+  "created_at" "int unsigned" [not null]
+
+  Indexes {
+    queue [type: btree, name: "jobs_queue_index"]
+  }
+}
+
+Table "lignes_commandes" {
+  "id" int [pk, not null, increment]
+  "id_commande" int [not null]
+  "id_produit" int [not null]
+  "quantite" int [not null, default: 1]
+  "prix_unitaire" decimal(10,2) [not null]
+}
+
+Table "lots_ingredients" {
+  "id" int [pk, not null, increment]
+  "id_fiche_ingredient" int [not null]
+  "numero_lot" varchar(100)
+  "id_fournisseur" int
+  "nb_conditionnements" decimal(10,3) [not null, default: 1.000]
+  "date_achat" date [not null]
+  "date_peremption" date
+  "quantite_initiale" decimal(10,4) [not null]
+  "quantite_disponible" decimal(10,4) [not null]
+  "prix_unitaire" decimal(10,4) [not null, default: 0.0000]
+  "prix_achat_reel" decimal(10,4) [not null]
+  "reference_facture" varchar(100)
+  "notes" text
+  "date_creation" datetime [default: `CURRENT_TIMESTAMP`]
+  "tva_pct" decimal(5,2) [not null, default: 0.00, note: 'Taux de TVA en % appliquÃ© Ã  cet achat (0 = exonÃ©rÃ©). Prix stockÃ© toujours en HTVA.']
+}
+
+Table "migrations" {
+  "id" "int unsigned" [pk, not null, increment]
+  "migration" varchar(255) [not null]
+  "batch" int [not null]
+}
+
+Table "mouvements_lots_ingredients" {
+  "id" int [pk, not null, increment]
+  "id_lot" int [not null]
+  "id_production_recette" int
+  "type_mouvement" mouvements_lots_ingredients_type_mouvement_enum [not null]
+  "quantite" decimal(10,4) [not null]
+  "prix_unitaire_moment" decimal(10,4) [not null]
+  "motif" varchar(255)
+  "reference" varchar(255)
+  "date_mouvement" datetime [default: `CURRENT_TIMESTAMP`]
+}
+
+Table "mouvements_stock_produits" {
+  "id" int [pk, not null, increment]
+  "id_stock_produit" int [not null]
+  "id_production_composition" int
+  "id_commande" int
+  "type_mouvement" mouvements_stock_produits_type_mouvement_enum [not null]
+  "quantite" decimal(10,4) [not null]
+  "motif" varchar(255)
+  "date_mouvement" datetime [default: `CURRENT_TIMESTAMP`]
+}
+
+Table "parfums" {
+  "id" int [pk, not null, increment]
+  "nom" varchar(100) [unique, not null]
+  "description" varchar(255)
+  "type_parfum" varchar(50)
+  "couleur_hex" varchar(7) [default: '#6F4E37']
+  "id_recette" int
+  "disponible" tinyint(1) [not null, default: 1]
+}
+
+Table "password_reset_tokens" {
+  "email" varchar(255) [pk, not null]
+  "token" varchar(255) [not null]
+  "created_at" timestamp
+}
+
+Table "pat_allergenes" {
+  "id" int [pk, not null, increment]
+  "nom" varchar(100) [not null]
+  "code_eu" varchar(10) [note: 'Code rÃ¨glement EU 1169/2011']
+  "actif" tinyint(1) [not null, default: 1]
+}
+
+Table "pat_commandes" {
+  "id" int [pk, not null, increment]
+  "id_commande" int [not null, note: 'FK â†’ commandes (table boutique)']
+  "type" pat_commandes_type_enum [not null, default: 'simple']
+  "supplement_mixte_applique" tinyint(1) [not null, default: 0]
+  "notes_artisan" text
+  "statut_production" pat_commandes_statut_production_enum [not null, default: 'en_attente']
+  "date_souhaitee" date
+  "created_at" datetime [default: `CURRENT_TIMESTAMP`]
+}
+
+Table "pat_couches_dispo_config" {
+  "id" int [pk, not null, increment]
+  "id_fiche_gateau" int [not null]
+  "id_type_couche" int [not null]
+  "id_recette_couche" int [not null]
+  "actif" tinyint(1) [not null, default: 1]
+}
+
+Table "pat_devis" {
+  "id" int [pk, not null, increment]
+  "id_pat_commande" int [unique, not null]
+  "cout_matieres" decimal(10,2) [not null, default: 0.00]
+  "cout_main_oeuvre" decimal(10,2) [not null, default: 0.00]
+  "cout_charges" decimal(10,2) [not null, default: 0.00]
+  "cout_options_deco" decimal(10,2) [not null, default: 0.00]
+  "supplement_mixte" decimal(10,2) [not null, default: 0.00]
+  "total_cout" decimal(10,2) [not null, default: 0.00]
+  "prix_suggere" decimal(10,2) [not null, default: 0.00]
+  "prix_final" decimal(10,2) [note: 'AjustÃ© par artisane avant validation']
+  "notes_ajustement" text
+  "date_creation" datetime [default: `CURRENT_TIMESTAMP`]
+}
+
+Table "pat_etages" {
+  "id" int [pk, not null, increment]
+  "id_pat_commande" int [not null]
+  "ordre" int [not null, default: 1]
+  "id_fiche_gateau" int [not null]
+  "id_gabarit" int [not null, note: 'Gabarit choisi par le client']
+  "id_option_deco" int [note: 'NULL = dÃ©coration basique incluse']
+  "notes" text
+}
+
+Table "pat_etages_couches" {
+  "id" int [pk, not null, increment]
+  "id_etage" int [not null]
+  "id_recette_couche" int [not null]
+  "ordre" int [not null, default: 1]
+}
+
+Table "pat_fiches_gateau" {
+  "id" int [pk, not null, increment]
+  "nom" varchar(200) [not null]
+  "description" text
+  "image_url" varchar(500)
+  "id_forme" int [not null]
+  "id_gabarit_ref" int [not null, note: 'Gabarit de rÃ©fÃ©rence pour ce gÃ¢teau']
+  "mode" pat_fiches_gateau_mode_enum [not null, default: 'classique']
+  "disponible_site" tinyint(1) [not null, default: 0]
+  "actif" tinyint(1) [not null, default: 1]
+  "created_at" datetime [default: `CURRENT_TIMESTAMP`]
+}
+
+Table "pat_fiches_gateau_couches" {
+  "id" int [pk, not null, increment]
+  "id_fiche_gateau" int [not null]
+  "id_recette_couche" int [not null]
+  "ordre" int [not null, default: 1]
+}
+
+Table "pat_formes" {
+  "id" int [pk, not null, increment]
+  "nom" varchar(100) [not null]
+  "type_calcul" pat_formes_type_calcul_enum [not null, default: 'circulaire']
+  "description" varchar(255)
+  "actif" tinyint(1) [not null, default: 1]
+  "created_at" datetime [default: `CURRENT_TIMESTAMP`]
+}
+
+Table "pat_gabarits" {
+  "id" int [pk, not null, increment]
+  "id_forme" int [not null]
+  "nom" varchar(100) [not null]
+  "dimension_1_cm" decimal(8,2) [not null, note: 'Rayon (circulaire) ou Largeur (rect)']
+  "dimension_2_cm" decimal(8,2) [note: 'NULL pour circulaire, Longueur pour rect']
+  "hauteur_cm" decimal(8,2) [not null]
+  "volume_cm3" decimal(12,4) [note: 'CalculÃ© par ArtisaStock']
+  "surface_dessus_cm2" decimal(12,4) [note: 'CalculÃ© par ArtisaStock']
+  "surface_laterale_cm2" decimal(12,4) [note: 'CalculÃ© par ArtisaStock']
+  "actif" tinyint(1) [not null, default: 1]
+  "created_at" datetime [default: `CURRENT_TIMESTAMP`]
+}
+
+Table "pat_ingredients_allergenes" {
+  "id_ingredient" int [not null]
+  "id_allergene" int [not null]
+
+  Indexes {
+    (id_ingredient, id_allergene) [pk, name: "PRIMARY"]
+  }
+}
+
+Table "pat_options_deco" {
+  "id" int [pk, not null, increment]
+  "nom" varchar(150) [not null]
+  "description" text
+  "prix" decimal(10,2) [not null, default: 0.00]
+  "image_url" varchar(500)
+  "actif" tinyint(1) [not null, default: 1]
+  "created_at" datetime [default: `CURRENT_TIMESTAMP`]
+}
+
+Table "pat_parametres" {
+  "id" int [pk, not null, increment]
+  "cle" varchar(100) [unique, not null]
+  "valeur" varchar(500)
+  "description" varchar(255)
+  "updated_at" "datetime on update CURRENT_TIMESTAMP" [default: `CURRENT_TIMESTAMP`]
+}
+
+Table "pat_recettes_couche" {
+  "id" int [pk, not null, increment]
+  "nom" varchar(200) [not null]
+  "id_type_couche" int [not null]
+  "id_gabarit_ref" int [not null, note: 'Gabarit pour lequel les quantitÃ©s sont Ã©crites']
+  "hauteur_ref_cm" decimal(8,2) [not null, note: 'Ã‰paisseur de cette couche au gabarit de rÃ©fÃ©rence']
+  "mode_scaling" pat_recettes_couche_mode_scaling_enum [note: 'NULL = utilise le dÃ©faut du type']
+  "temps_preparation_min" int [not null, default: 0]
+  "notes" text
+  "actif" tinyint(1) [not null, default: 1]
+  "created_at" datetime [default: `CURRENT_TIMESTAMP`]
+}
+
+Table "pat_recettes_couche_ingr" {
+  "id" int [pk, not null, increment]
+  "id_recette_couche" int [not null]
+  "id_ingredient" int [not null, note: 'FK â†’ fiches_ingredients (partagÃ© choco+patisserie)']
+  "quantite_ref" decimal(10,4) [not null]
+  "unite" varchar(20) [not null]
+}
+
+Table "pat_types_couche" {
+  "id" int [pk, not null, increment]
+  "nom" varchar(100) [not null]
+  "mode_scaling_defaut" pat_types_couche_mode_scaling_defaut_enum [not null, default: 'volume']
+  "description" varchar(255)
+  "actif" tinyint(1) [not null, default: 1]
+  "created_at" datetime [default: `CURRENT_TIMESTAMP`]
+}
+
+Table "productions_compositions" {
+  "id" int [pk, not null, increment]
+  "id_composition" int [not null]
+  "date_production" datetime [default: `CURRENT_TIMESTAMP`]
+  "quantite_produite" int [not null]
+  "cout_produits" decimal(10,2) [not null]
+  "cout_emballage" decimal(10,2) [not null, default: 0.00]
+  "frais_fixes_alloues" decimal(10,2) [not null, default: 0.00]
+  "cout_total" decimal(10,2) [not null]
+  "cout_unitaire" decimal(10,2) [not null]
+  "notes" text
+}
+
+Table "productions_recettes" {
+  "id" int [pk, not null, increment]
+  "id_recette" int [not null]
+  "date_production" datetime [default: `CURRENT_TIMESTAMP`]
+  "quantite_produite" decimal(10,4) [not null]
+  "poids_lot_reel" decimal(8,2)
+  "poids_unitaire_reel" decimal(8,4)
+  "cout_ingredients" decimal(10,2) [not null]
+  "frais_fixes_alloues" decimal(10,2) [not null, default: 0.00]
+  "cout_total" decimal(10,2) [not null]
+  "cout_unitaire" decimal(10,4) [not null]
+  "notes" text
+}
+
+Table "produits" {
+  "id" int [pk, not null, increment]
+  "id_categorie" int [not null]
+  "id_composition" int
+  "nom" varchar(200) [not null]
+  "description" text
+  "prix_ttc" decimal(10,2) [not null]
+  "prix_htva" "decimal(10,2) GENERATED ALWAYS AS (round((`prix_ttc` / 1.21),2)) STORED"
+  "prix_promo" decimal(10,2)
+  "stock" int [not null, default: 0]
+  "afficher_stock" tinyint(1) [not null, default: 0]
+  "image_url" varchar(500)
+  "configurable" tinyint(1) [not null, default: 0]
+  "capacite_max" int
+  "saisonnier" tinyint(1) [not null, default: 0]
+  "saison_debut" varchar(20)
+  "saison_fin" varchar(20)
+  "disponible" tinyint(1) [not null, default: 1]
+  "date_creation" datetime [default: `CURRENT_TIMESTAMP`]
+}
+
+Table "produits_parfums" {
+  "id_produit" int [not null]
+  "id_parfum" int [not null]
+
+  Indexes {
+    (id_produit, id_parfum) [pk, name: "PRIMARY"]
+  }
+}
+
+Table "recettes_ingredients" {
+  "id_recette" int [not null]
+  "id_fiche_ingredient" int [not null]
+  "quantite" decimal(10,4) [not null]
+
+  Indexes {
+    (id_recette, id_fiche_ingredient) [pk, name: "PRIMARY"]
+  }
+}
+
+Table "selections_parfums" {
+  "id" int [pk, not null, increment]
+  "id_ligne_commande" int [not null]
+  "id_parfum" int [not null]
+  "quantite" int [not null, default: 1]
+}
+
+Table "sessions" {
+  "id" varchar(255) [pk, not null]
+  "user_id" "bigint unsigned"
+  "ip_address" varchar(45)
+  "user_agent" text
+  "payload" longtext [not null]
+  "last_activity" int [not null]
+
+  Indexes {
+    last_activity [type: btree, name: "sessions_last_activity_index"]
+    user_id [type: btree, name: "sessions_user_id_index"]
+  }
+}
+
+Table "stock_compositions" {
+  "id" int [pk, not null, increment]
+  "id_composition" int [not null]
+  "id_production_composition" int [not null]
+  "quantite_disponible" int [not null]
+  "cout_unitaire" decimal(10,2) [not null]
+  "date_production" date [not null]
+  "date_dlc" date
+  "statut" stock_compositions_statut_enum [not null, default: 'normal']
+  "prix_promo" decimal(10,2)
+}
+
+Table "stock_produits" {
+  "id" int [pk, not null, increment]
+  "id_recette" int [not null]
+  "id_production_recette" int [not null]
+  "quantite_disponible" decimal(10,4) [not null]
+  "cout_unitaire" decimal(10,4) [not null]
+  "date_production" date [not null]
+  "date_dlc" date [not null]
+  "statut" stock_produits_statut_enum [not null, default: 'normal']
+  "prix_promo" decimal(10,2)
+}
+
+Table "stocks" {
+  "id" int [pk, not null, increment]
+  "nom" varchar(200) [unique, not null]
+  "description" text
+  "actif" tinyint(1) [not null, default: 1]
+  "date_creation" datetime [not null, default: `CURRENT_TIMESTAMP`]
+}
+
+Table "users" {
+  "id" "bigint unsigned" [pk, not null, increment]
+  "name" varchar(255) [not null]
+  "email" varchar(255) [unique, not null]
+  "email_verified_at" timestamp
+  "password" varchar(255) [not null]
+  "remember_token" varchar(100)
+  "created_at" timestamp
+  "updated_at" timestamp
+}
+
+Table "utilisateurs" {
+  "id" int [pk, not null, increment]
+  "nom" varchar(100) [not null]
+  "prenom" varchar(100) [not null]
+  "email" varchar(255) [unique, not null]
+  "mot_de_passe" varchar(255) [not null]
+  "role" utilisateurs_role_enum [not null, default: 'client']
+  "telephone" varchar(20)
+  "adresse" varchar(255)
+  "code_postal" varchar(10)
+  "ville" varchar(100)
+  "date_inscription" datetime [default: `CURRENT_TIMESTAMP`]
+  "actif" tinyint(1) [not null, default: 1]
+}
+
+Table "zones_livraison" {
+  "id" int [pk, not null, increment]
+  "nom" varchar(100) [not null]
+  "pays_code" varchar(5) [not null]
+  "code_postal_min" varchar(10)
+  "code_postal_max" varchar(10)
+  "frais" decimal(10,2) [not null]
+  "delai_jours" int [not null, default: 3]
+  "actif" tinyint(1) [not null, default: 1]
+}
+
+Ref "fk_as_stock":"stocks"."id" < "activites_stocks"."id_stock" [update: cascade, delete: cascade]
+
+Ref "fk_as_activite":"activites"."id" < "activites_stocks"."id_activite" [update: cascade, delete: cascade]
+
+Ref "fk_bc_activite":"activites"."id" < "bom_contextes"."id_activite" [update: cascade, delete: cascade]
+
+Ref "fk_bf_niveau":"bom_niveaux"."id" < "bom_fiches"."id_niveau" [update: cascade, delete: restrict]
+
+Ref "fk_bfl_fiche":"bom_fiches"."id" < "bom_fiches_lignes"."id_fiche" [update: cascade, delete: cascade]
+
+Ref "fk_bfl_fiche_input":"bom_fiches"."id" < "bom_fiches_lignes"."id_input_fiche" [update: cascade, delete: cascade]
+
+Ref "fk_bfl_ingredient":"fiches_ingredients"."id" < "bom_fiches_lignes"."id_input_ingredient" [update: cascade, delete: cascade]
+
+Ref "fk_bn_contexte":"bom_contextes"."id" < "bom_niveaux"."id_contexte" [update: cascade, delete: cascade]
+
+Ref "fk_bp_fiche":"bom_fiches"."id" < "bom_productions"."id_fiche" [update: cascade, delete: restrict]
+
+Ref "fk_bp_niveau":"bom_niveaux"."id" < "bom_productions"."id_niveau" [update: cascade, delete: restrict]
+
+Ref "fk_bpl_lot":"lots_ingredients"."id" < "bom_productions_lignes"."id_lot_ingredient" [update: cascade, delete: restrict]
+
+Ref "fk_bpl_production":"bom_productions"."id" < "bom_productions_lignes"."id_production" [update: cascade, delete: cascade]
+
+Ref "fk_bpl_stock":"bom_stocks"."id" < "bom_productions_lignes"."id_bom_stock" [update: cascade, delete: restrict]
+
+Ref "fk_br_contexte":"bom_contextes"."id" < "bom_reservations"."id_contexte" [update: cascade, delete: cascade]
+
+Ref "fk_br_lot":"lots_ingredients"."id" < "bom_reservations"."id_lot" [update: cascade, delete: cascade]
+
+Ref "fk_bs_niveau":"bom_niveaux"."id" < "bom_stocks"."id_niveau" [update: cascade, delete: restrict]
+
+Ref "fk_bs_production":"bom_productions"."id" < "bom_stocks"."id_production" [update: cascade, delete: restrict]
+
+Ref "fk_bs_fiche":"bom_fiches"."id" < "bom_stocks"."id_fiche" [update: cascade, delete: restrict]
+
+Ref "fk_bs_contexte":"bom_contextes"."id" < "bom_stocks"."id_contexte" [update: cascade, delete: restrict]
+
+Ref "fk_bs_activite":"activites"."id" < "bom_stocks"."id_activite" [update: cascade, delete: restrict]
+
+Ref "fk_commande_client":"utilisateurs"."id" < "commandes"."id_client" [update: cascade, delete: restrict]
+
+Ref "fk_cr_recette":"fiches_recettes"."id" < "compositions_recettes"."id_recette" [update: cascade, delete: restrict]
+
+Ref "fk_cr_composition":"fiches_compositions"."id" < "compositions_recettes"."id_composition" [update: cascade, delete: cascade]
+
+Ref "fk_facture_commande":"commandes"."id" < "factures"."id_commande" [update: cascade, delete: restrict]
+
+Ref "fk_fcomp_categorie":"categories"."id" < "fiches_compositions"."id_categorie" [update: cascade, delete: restrict]
+
+Ref "fk_fi_fournisseur":"fournisseurs"."id" < "fiches_ingredients"."id_fournisseur_defaut" [update: cascade, delete: set null]
+
+Ref "fk_fi_stock":"stocks"."id" < "fiches_ingredients"."id_stock" [update: cascade, delete: cascade]
+
+Ref "fk_fpv_prod_recette":"productions_recettes"."id" < "frais_production_variables"."id_production_recette" [update: cascade, delete: cascade]
+
+Ref "fk_fpv_prod_composition":"productions_compositions"."id" < "frais_production_variables"."id_production_composition" [update: cascade, delete: cascade]
+
+Ref "fk_ligne_produit":"produits"."id" < "lignes_commandes"."id_produit" [update: cascade, delete: restrict]
+
+Ref "fk_ligne_commande":"commandes"."id" < "lignes_commandes"."id_commande" [update: cascade, delete: cascade]
+
+Ref "fk_lot_fournisseur":"fournisseurs"."id" < "lots_ingredients"."id_fournisseur" [update: cascade, delete: set null]
+
+Ref "fk_lot_fiche":"fiches_ingredients"."id" < "lots_ingredients"."id_fiche_ingredient" [update: cascade, delete: cascade]
+
+Ref "fk_mli_production":"productions_recettes"."id" < "mouvements_lots_ingredients"."id_production_recette" [update: cascade, delete: set null]
+
+Ref "fk_mli_lot":"lots_ingredients"."id" < "mouvements_lots_ingredients"."id_lot" [update: cascade, delete: restrict]
+
+Ref "fk_msp_stock":"stock_produits"."id" < "mouvements_stock_produits"."id_stock_produit" [update: cascade, delete: restrict]
+
+Ref "fk_msp_prod_comp":"productions_compositions"."id" < "mouvements_stock_produits"."id_production_composition" [update: cascade, delete: set null]
+
+Ref "fk_msp_commande":"commandes"."id" < "mouvements_stock_produits"."id_commande" [update: cascade, delete: set null]
+
+Ref "fk_parfum_recette":"fiches_recettes"."id" < "parfums"."id_recette" [update: cascade, delete: set null]
+
+Ref "fk_pc_commande":"commandes"."id" < "pat_commandes"."id_commande" [update: cascade, delete: restrict]
+
+Ref "fk_cdc_type":"pat_types_couche"."id" < "pat_couches_dispo_config"."id_type_couche" [update: cascade, delete: restrict]
+
+Ref "fk_cdc_recette":"pat_recettes_couche"."id" < "pat_couches_dispo_config"."id_recette_couche" [update: cascade, delete: restrict]
+
+Ref "fk_cdc_fiche":"pat_fiches_gateau"."id" < "pat_couches_dispo_config"."id_fiche_gateau" [update: cascade, delete: cascade]
+
+Ref "fk_dv_commande":"pat_commandes"."id" < "pat_devis"."id_pat_commande" [update: cascade, delete: cascade]
+
+Ref "fk_et_gabarit":"pat_gabarits"."id" < "pat_etages"."id_gabarit" [update: cascade, delete: restrict]
+
+Ref "fk_et_fiche":"pat_fiches_gateau"."id" < "pat_etages"."id_fiche_gateau" [update: cascade, delete: restrict]
+
+Ref "fk_et_deco":"pat_options_deco"."id" < "pat_etages"."id_option_deco" [update: cascade, delete: set null]
+
+Ref "fk_et_commande":"pat_commandes"."id" < "pat_etages"."id_pat_commande" [update: cascade, delete: cascade]
+
+Ref "fk_ec_recette":"pat_recettes_couche"."id" < "pat_etages_couches"."id_recette_couche" [update: cascade, delete: restrict]
+
+Ref "fk_ec_etage":"pat_etages"."id" < "pat_etages_couches"."id_etage" [update: cascade, delete: cascade]
+
+Ref "fk_fg_gabarit":"pat_gabarits"."id" < "pat_fiches_gateau"."id_gabarit_ref" [update: cascade, delete: restrict]
+
+Ref "fk_fg_forme":"pat_formes"."id" < "pat_fiches_gateau"."id_forme" [update: cascade, delete: restrict]
+
+Ref "fk_fgc_fiche":"pat_fiches_gateau"."id" < "pat_fiches_gateau_couches"."id_fiche_gateau" [update: cascade, delete: cascade]
+
+Ref "fk_fgc_recette":"pat_recettes_couche"."id" < "pat_fiches_gateau_couches"."id_recette_couche" [update: cascade, delete: restrict]
+
+Ref "fk_gab_forme":"pat_formes"."id" < "pat_gabarits"."id_forme" [update: cascade, delete: restrict]
+
+Ref "fk_ia_allergene":"pat_allergenes"."id" < "pat_ingredients_allergenes"."id_allergene" [update: cascade, delete: cascade]
+
+Ref "fk_ia_ingredient":"fiches_ingredients"."id" < "pat_ingredients_allergenes"."id_ingredient" [update: cascade, delete: cascade]
+
+Ref "fk_rc_type":"pat_types_couche"."id" < "pat_recettes_couche"."id_type_couche" [update: cascade, delete: restrict]
+
+Ref "fk_rc_gabarit":"pat_gabarits"."id" < "pat_recettes_couche"."id_gabarit_ref" [update: cascade, delete: restrict]
+
+Ref "fk_rci_ingredient":"fiches_ingredients"."id" < "pat_recettes_couche_ingr"."id_ingredient" [update: cascade, delete: restrict]
+
+Ref "fk_rci_recette":"pat_recettes_couche"."id" < "pat_recettes_couche_ingr"."id_recette_couche" [update: cascade, delete: cascade]
+
+Ref "fk_pcomp_composition":"fiches_compositions"."id" < "productions_compositions"."id_composition" [update: cascade, delete: restrict]
+
+Ref "fk_prod_recette":"fiches_recettes"."id" < "productions_recettes"."id_recette" [update: cascade, delete: restrict]
+
+Ref "fk_produit_categorie":"categories"."id" < "produits"."id_categorie" [update: cascade, delete: restrict]
+
+Ref "fk_produit_composition":"fiches_compositions"."id" < "produits"."id_composition" [update: cascade, delete: set null]
+
+Ref "fk_pp_produit":"produits"."id" < "produits_parfums"."id_produit" [update: cascade, delete: cascade]
+
+Ref "fk_pp_parfum":"parfums"."id" < "produits_parfums"."id_parfum" [update: cascade, delete: cascade]
+
+Ref "fk_ri_ingredient":"fiches_ingredients"."id" < "recettes_ingredients"."id_fiche_ingredient" [update: cascade, delete: cascade]
+
+Ref "fk_ri_recette":"fiches_recettes"."id" < "recettes_ingredients"."id_recette" [update: cascade, delete: cascade]
+
+Ref "fk_selection_ligne":"lignes_commandes"."id" < "selections_parfums"."id_ligne_commande" [update: cascade, delete: cascade]
+
+Ref "fk_selection_parfum":"parfums"."id" < "selections_parfums"."id_parfum" [update: cascade, delete: restrict]
+
+Ref "fk_sc_composition":"fiches_compositions"."id" < "stock_compositions"."id_composition" [update: cascade, delete: restrict]
+
+Ref "fk_sc_production":"productions_compositions"."id" < "stock_compositions"."id_production_composition" [update: cascade, delete: restrict]
+
+Ref "fk_sp_production":"productions_recettes"."id" < "stock_produits"."id_production_recette" [update: cascade, delete: restrict]
+
+Ref "fk_sp_recette":"fiches_recettes"."id" < "stock_produits"."id_recette" [update: cascade, delete: restrict]

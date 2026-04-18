@@ -1,0 +1,1147 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<title>ArtisaStock — Chocolaterie</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Segoe UI',sans-serif;background:#1e1e2e;color:#cdd6f4;font-size:13px}
+#app{display:flex;flex-direction:column;height:100vh}
+header{background:#181825;padding:8px 16px;display:flex;align-items:center;gap:16px;border-bottom:1px solid #313244}
+header h1{font-size:15px;color:#cba6f7;font-weight:600}
+nav{display:flex;gap:2px;flex-wrap:wrap}
+nav button{background:#313244;border:none;color:#bac2de;padding:5px 10px;border-radius:4px;cursor:pointer;font-size:12px}
+nav button:hover{background:#45475a}
+nav button.active{background:#cba6f7;color:#1e1e2e;font-weight:600}
+.main{display:flex;flex:1;overflow:hidden}
+.content{flex:1;overflow-y:auto;padding:16px}
+.dbpanel{width:300px;background:#181825;border-left:1px solid #313244;overflow-y:auto;padding:10px;font-size:11px}
+.dbpanel h3{color:#f38ba8;margin-bottom:8px;font-size:12px}
+.dbtable{margin-bottom:12px}
+.dbtable h4{color:#89b4fa;margin-bottom:4px;font-size:11px}
+.dbtable pre{background:#11111b;padding:6px;border-radius:4px;color:#a6e3a1;overflow-x:auto;max-height:120px;font-size:10px}
+.card{background:#181825;border:1px solid #313244;border-radius:6px;padding:12px;margin-bottom:12px}
+.card h3{color:#cba6f7;margin-bottom:10px;font-size:13px}
+.form-row{display:flex;gap:8px;align-items:flex-end;flex-wrap:wrap;margin-bottom:8px}
+.form-group{display:flex;flex-direction:column;gap:3px}
+.form-group label{font-size:11px;color:#6c7086}
+input,select,textarea{background:#313244;border:1px solid #45475a;color:#cdd6f4;padding:5px 8px;border-radius:4px;font-size:12px}
+input:focus,select:focus,textarea:focus{outline:1px solid #cba6f7;border-color:#cba6f7}
+input[readonly]{background:#11111b;color:#6c7086;cursor:default}
+textarea{resize:vertical;min-height:50px;font-family:inherit}
+.btn{border:none;padding:5px 12px;border-radius:4px;cursor:pointer;font-size:12px;font-weight:500}
+.btn-primary{background:#cba6f7;color:#1e1e2e}
+.btn-primary:hover{background:#b4befe}
+.btn-danger{background:#f38ba8;color:#1e1e2e}
+.btn-danger:hover{background:#eba0ac}
+.btn-sm{padding:3px 8px;font-size:11px}
+.btn-secondary{background:#45475a;color:#cdd6f4}
+.btn-secondary:hover{background:#585b70}
+table{width:100%;border-collapse:collapse;margin-top:8px}
+th{background:#313244;color:#89b4fa;padding:6px 8px;text-align:left;font-size:11px;font-weight:600}
+td{padding:5px 8px;border-bottom:1px solid #313244;font-size:12px}
+tr:hover td{background:#1e1e2e}
+.badge{display:inline-block;padding:2px 6px;border-radius:10px;font-size:10px;font-weight:600}
+.badge-green{background:#a6e3a1;color:#1e1e2e}
+.badge-yellow{background:#f9e2af;color:#1e1e2e}
+.badge-red{background:#f38ba8;color:#1e1e2e}
+.badge-blue{background:#89b4fa;color:#1e1e2e}
+.badge-purple{background:#cba6f7;color:#1e1e2e}
+.alert-warn{background:#45380e;border:1px solid #f9e2af;color:#f9e2af;padding:6px 10px;border-radius:4px;margin-bottom:8px;font-size:11px}
+.alert-info{background:#0e3045;border:1px solid #89b4fa;color:#89b4fa;padding:6px 10px;border-radius:4px;margin-bottom:8px;font-size:11px}
+.kanban{display:flex;gap:12px;align-items:flex-start}
+.kanban-col{flex:1;background:#181825;border:1px solid #313244;border-radius:6px;overflow:hidden}
+.kanban-col-header{background:#313244;padding:8px 12px;font-weight:600;font-size:13px;display:flex;justify-content:space-between;align-items:center}
+.kanban-cards{padding:8px;max-height:200px;overflow-y:auto}
+.stock-card{background:#11111b;border:1px solid #45475a;border-radius:4px;padding:8px;margin-bottom:6px}
+.stock-card .name{font-weight:600;font-size:12px;color:#cdd6f4}
+.stock-card .qty{font-size:20px;font-weight:700;color:#a6e3a1;margin:4px 0}
+.stock-card .meta{font-size:10px;color:#6c7086}
+.stock-card.warn .qty{color:#f9e2af}
+.stock-card.danger .qty{color:#f38ba8}
+.kanban-mvt{padding:8px;border-top:1px solid #313244}
+.mvt-list{max-height:180px;overflow-y:auto}
+.mvt-row{display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid #313244;font-size:11px}
+.mvt-type-in{color:#a6e3a1}
+.mvt-type-out{color:#f38ba8}
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.7);display:flex;align-items:center;justify-content:center;z-index:1000}
+.modal{background:#1e1e2e;border:1px solid #45475a;border-radius:8px;padding:20px;width:500px;max-height:85vh;overflow-y:auto}
+.modal h3{color:#cba6f7;margin-bottom:14px}
+.modal-footer{display:flex;gap:8px;justify-content:flex-end;margin-top:14px}
+hr{border:none;border-top:1px solid #313244;margin:10px 0}
+</style>
+</head>
+<body>
+<div id="app">
+  <header>
+    <h1>🍫 ArtisaStock — Chocolaterie</h1>
+    <nav id="nav"></nav>
+  </header>
+  <div class="main">
+    <div class="content" id="content"></div>
+    <div class="dbpanel" id="dbpanel"><h3>📋 État DB (live)</h3><div id="dbstate"></div></div>
+  </div>
+</div>
+<div id="modal-container"></div>
+<script>
+// ═══════════════════════════════════════════════════════════
+// STATE
+// ═══════════════════════════════════════════════════════════
+let _id = 1;
+const uid = () => _id++;
+const now = () => new Date().toLocaleString('fr-BE');
+
+const db = {
+  fournisseurs: [],
+  ingredients: [],
+  mouvements_ingr: [],
+  fiches_recettes: [],
+  recette_ingredients: [],
+  stock_recettes: {},
+  productions: [],
+  types_assemblage: [],
+  fiches_assemblages: [],
+  assemblage_recettes: [],
+  stock_assemblages: {},
+  assemblages_produits: [],
+  journal: []
+};
+
+// ═══════════════════════════════════════════════════════════
+// HELPERS
+// ═══════════════════════════════════════════════════════════
+const byId = (t, id) => db[t].find(r => r.id === id);
+const log = (type, desc) => db.journal.unshift({ id: uid(), date: now(), type, desc });
+
+function stockIngr(id) {
+  return db.mouvements_ingr
+    .filter(m => m.ingredient_id === id)
+    .reduce((s, m) => s + (m.sens === 'in' ? m.qte : -m.qte), 0);
+}
+
+function render(html) {
+  document.getElementById('content').innerHTML = html;
+  refreshDB();
+}
+
+function refreshDB() {
+  const tables = ['fournisseurs','ingredients','mouvements_ingr','fiches_recettes',
+    'recette_ingredients','stock_recettes','productions','types_assemblage',
+    'fiches_assemblages','assemblage_recettes','stock_assemblages','assemblages_produits'];
+  document.getElementById('dbstate').innerHTML = tables.map(t => {
+    const data = Array.isArray(db[t])
+      ? db[t]
+      : Object.entries(db[t]).map(([k,v]) => ({ id: k, qte: v }));
+    return `<div class="dbtable"><h4>${t} (${data.length})</h4><pre>${JSON.stringify(data.slice(-5), null, 1)}</pre></div>`;
+  }).join('');
+}
+
+// ═══════════════════════════════════════════════════════════
+// NAVIGATION
+// ═══════════════════════════════════════════════════════════
+const TABS = [
+  { id: 'fournisseurs', label: '📦 Fournisseurs' },
+  { id: 'ingredients',  label: '🥚 Ingrédients' },
+  { id: 'achats',       label: '🛒 Achats' },
+  { id: 'recettes',     label: '📄 Recettes' },
+  { id: 'productions',  label: '⚙️ Productions' },
+  { id: 'types_asm',    label: '🏷️ Types Asm.' },
+  { id: 'fiches_asm',   label: '📦 Fiches Asm.' },
+  { id: 'creer_asm',    label: '🎁 Créer Asm.' },
+  { id: 'dashboard',    label: '📊 Dashboard' },
+];
+
+function setTab(id) {
+  document.querySelectorAll('nav button').forEach(b => b.classList.toggle('active', b.dataset.tab === id));
+  pages[id]();
+}
+
+document.getElementById('nav').innerHTML = TABS.map(t =>
+  `<button data-tab="${t.id}" onclick="setTab('${t.id}')">${t.label}</button>`
+).join('');
+
+// ═══════════════════════════════════════════════════════════
+// MODAL
+// ═══════════════════════════════════════════════════════════
+function showModal(title, body, onOk, okLabel) {
+  document.getElementById('modal-container').innerHTML = `
+    <div class="modal-overlay" onclick="if(event.target===this)closeModal()">
+      <div class="modal">
+        <h3>${title}</h3>
+        <div id="mbody">${body}</div>
+        <div class="modal-footer">
+          <button class="btn btn-secondary" onclick="closeModal()">Annuler</button>
+          <button class="btn btn-primary" onclick="(${onOk.toString()})()">${okLabel||'Enregistrer'}</button>
+        </div>
+      </div>
+    </div>`;
+}
+function closeModal() { document.getElementById('modal-container').innerHTML = ''; }
+
+// ═══════════════════════════════════════════════════════════
+// FOURNISSEURS
+// ═══════════════════════════════════════════════════════════
+function pageFournisseurs() {
+  const rows = db.fournisseurs.map(f => {
+    const n = db.ingredients.filter(i => i.fournisseur_id === f.id).length;
+    return `<tr>
+      <td><strong>${f.nom}</strong></td><td>${f.ville||'—'}</td><td>${f.email||'—'}</td>
+      <td>${f.telephone||'—'}</td><td>${f.tva||'—'}</td>
+      <td><span class="badge badge-blue">${n} ingr.</span></td>
+      <td>
+        <button class="btn btn-secondary btn-sm" onclick="editFourn(${f.id})">✏️</button>
+        <button class="btn btn-danger btn-sm" onclick="delFourn(${f.id})">🗑️</button>
+      </td>
+    </tr>`;
+  }).join('');
+  render(`
+    <div class="card">
+      <h3>📦 Annuaire Fournisseurs</h3>
+      <div class="alert-info">Relation 1→N : un fournisseur peut avoir plusieurs ingrédients, mais un ingrédient n'a qu'un seul fournisseur.</div>
+      <button class="btn btn-primary" onclick="newFournModal()">+ Nouveau fournisseur</button>
+      <table><thead><tr><th>Nom</th><th>Ville</th><th>Email</th><th>Tél.</th><th>TVA</th><th>Ingrédients</th><th>Actions</th></tr></thead>
+      <tbody>${rows||'<tr><td colspan="7" style="color:#6c7086;text-align:center">Aucun fournisseur</td></tr>'}</tbody></table>
+    </div>`);
+}
+
+function fournForm(f) {
+  f = f || {};
+  return `
+    <div class="form-row">
+      <div class="form-group" style="flex:2"><label>Nom *</label><input id="fn" value="${f.nom||''}" placeholder="Callebaut Belgium"></div>
+      <div class="form-group"><label>Téléphone</label><input id="ft" value="${f.telephone||''}" placeholder="+32 2 ..."></div>
+    </div>
+    <div class="form-row">
+      <div class="form-group" style="flex:3"><label>Adresse</label><input id="fa" value="${f.adresse||''}" placeholder="Rue, N°"></div>
+      <div class="form-group"><label>CP</label><input id="fcp" value="${f.cp||''}" placeholder="1000" style="width:70px"></div>
+      <div class="form-group"><label>Ville</label><input id="fv" value="${f.ville||''}" placeholder="Bruxelles"></div>
+    </div>
+    <div class="form-row">
+      <div class="form-group"><label>Pays</label><input id="fpa" value="${f.pays||'Belgique'}"></div>
+      <div class="form-group" style="flex:2"><label>Email</label><input id="fem" value="${f.email||''}" placeholder="contact@..."></div>
+      <div class="form-group"><label>N° TVA</label><input id="ftva" value="${f.tva||''}" placeholder="BE 0xxx.xxx.xxx"></div>
+    </div>
+    <div class="form-group"><label>Site web</label><input id="fsite" value="${f.site||''}" placeholder="https://..."></div>
+    <div class="form-group"><label>Notes</label><textarea id="fnotes">${f.notes||''}</textarea></div>`;
+}
+
+function readFournForm() {
+  return {
+    nom: document.getElementById('fn').value.trim(),
+    telephone: document.getElementById('ft').value.trim(),
+    adresse: document.getElementById('fa').value.trim(),
+    cp: document.getElementById('fcp').value.trim(),
+    ville: document.getElementById('fv').value.trim(),
+    pays: document.getElementById('fpa').value.trim(),
+    email: document.getElementById('fem').value.trim(),
+    tva: document.getElementById('ftva').value.trim(),
+    site: document.getElementById('fsite').value.trim(),
+    notes: document.getElementById('fnotes').value.trim()
+  };
+}
+
+function newFournModal() {
+  showModal('Nouveau fournisseur', fournForm(), function() {
+    const d = readFournForm();
+    if (!d.nom) { alert('Nom obligatoire'); return; }
+    db.fournisseurs.push({ id: uid(), ...d });
+    log('fournisseur', 'Créé: ' + d.nom);
+    closeModal(); pageFournisseurs();
+  });
+}
+
+function editFourn(id) {
+  const f = byId('fournisseurs', id);
+  showModal('Modifier fournisseur', fournForm(f), function() {
+    const d = readFournForm();
+    if (!d.nom) { alert('Nom obligatoire'); return; }
+    Object.assign(f, d);
+    closeModal(); pageFournisseurs();
+  }, 'Mettre à jour');
+}
+
+function delFourn(id) {
+  if (db.ingredients.some(i => i.fournisseur_id === id)) {
+    alert('Impossible : ingrédient(s) lié(s) à ce fournisseur.'); return;
+  }
+  if (confirm('Supprimer ce fournisseur ?')) {
+    db.fournisseurs = db.fournisseurs.filter(f => f.id !== id);
+    pageFournisseurs();
+  }
+}
+
+// Création rapide inline (utilisé dans la modale ingrédient)
+function quickFourn(selectId) {
+  const nom = prompt('Nom du nouveau fournisseur :');
+  if (!nom) return;
+  const f = { id: uid(), nom, telephone:'', adresse:'', cp:'', ville:'', pays:'Belgique', email:'', tva:'', site:'', notes:'' };
+  db.fournisseurs.push(f);
+  log('fournisseur', 'Créé rapidement: ' + nom);
+  const sel = document.getElementById(selectId);
+  if (sel) {
+    const opt = document.createElement('option');
+    opt.value = f.id; opt.textContent = f.nom; opt.selected = true;
+    sel.appendChild(opt);
+  }
+}
+
+// ═══════════════════════════════════════════════════════════
+// INGRÉDIENTS
+// ═══════════════════════════════════════════════════════════
+const UNITES = ['g', 'kg', 'ml', 'L', 'pièce'];
+
+function pageIngredients() {
+  const rows = db.ingredients.map(i => {
+    const f = byId('fournisseurs', i.fournisseur_id);
+    return `<tr>
+      <td><strong>${i.nom}</strong></td>
+      <td>${i.categorie||'—'}</td>
+      <td><span class="badge badge-blue">${i.unite}</span></td>
+      <td>${i.unite === 'pièce' && i.poids_par_piece ? i.poids_par_piece + ' g/pièce' : '—'}</td>
+      <td>${i.seuil_alerte} ${i.unite}</td>
+      <td>${f ? f.nom : '<span style="color:#f38ba8">Non lié</span>'}</td>
+      <td>${i.notes||'—'}</td>
+      <td>
+        <button class="btn btn-secondary btn-sm" onclick="editIngr(${i.id})">✏️</button>
+        <button class="btn btn-danger btn-sm" onclick="delIngr(${i.id})">🗑️</button>
+      </td>
+    </tr>`;
+  }).join('');
+  render(`
+    <div class="card">
+      <h3>🥚 Fiches Ingrédients</h3>
+      <div class="alert-info">
+        La fiche = carte d'identité de l'ingrédient : unité, seuil d'alerte, fournisseur.<br>
+        <strong>Pas de prix</strong> (enregistré à l'achat) · <strong>Pas de stock initial</strong> (alimenté par les achats) · <strong>Alertes dans le Dashboard</strong>.
+      </div>
+      <button class="btn btn-primary" onclick="newIngrModal()">+ Nouvelle fiche</button>
+      <table>
+        <thead><tr><th>Nom</th><th>Catégorie</th><th>Unité</th><th>Poids/pièce</th><th>Seuil alerte</th><th>Fournisseur</th><th>Notes</th><th>Actions</th></tr></thead>
+        <tbody>${rows||'<tr><td colspan="8" style="color:#6c7086;text-align:center">Aucune fiche</td></tr>'}</tbody>
+      </table>
+    </div>`);
+}
+
+function ingrForm(i) {
+  i = i || {};
+  const fOpts = db.fournisseurs.map(f =>
+    `<option value="${f.id}" ${i.fournisseur_id===f.id?'selected':''}>${f.nom}</option>`
+  ).join('');
+  const isPiece = i.unite === 'pièce';
+  return `
+    <div class="form-row">
+      <div class="form-group" style="flex:2"><label>Nom *</label><input id="in" value="${i.nom||''}" placeholder="Cacao Barry Extra Brute"></div>
+      <div class="form-group"><label>Catégorie</label><input id="ic" value="${i.categorie||''}" placeholder="Cacao, Produit laitier…"></div>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>Unité de mesure *</label>
+        <select id="iu" onchange="onIngrUnite()">
+          ${UNITES.map(u => `<option value="${u}" ${(i.unite||'g')===u?'selected':''}>${u}</option>`).join('')}
+        </select>
+      </div>
+      <div class="form-group" id="poids_wrap" ${isPiece?'':'style="display:none"'}>
+        <label>Poids par pièce (g) *</label>
+        <input id="ipp" type="number" min="0" step="0.1" value="${i.poids_par_piece||''}" placeholder="60 pour un œuf">
+      </div>
+      <div class="form-group">
+        <label>Seuil d'alerte *</label>
+        <div style="display:flex;align-items:center;gap:4px">
+          <input id="is" type="number" min="0" step="0.01" value="${i.seuil_alerte||0}" style="width:80px">
+          <span id="isu" style="color:#89b4fa">${i.unite||'g'}</span>
+        </div>
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group" style="flex:2">
+        <label>Fournisseur</label>
+        <div style="display:flex;gap:6px">
+          <select id="ifo" style="flex:1"><option value="">— Aucun —</option>${fOpts}</select>
+          <button type="button" class="btn btn-secondary btn-sm" onclick="quickFourn('ifo')">+ Créer</button>
+        </div>
+      </div>
+    </div>
+    <div class="form-group"><label>Notes</label><textarea id="ino">${i.notes||''}</textarea></div>`;
+}
+
+function onIngrUnite() {
+  const u = document.getElementById('iu')?.value;
+  if (!u) return;
+  const pw = document.getElementById('poids_wrap');
+  if (pw) pw.style.display = u === 'pièce' ? '' : 'none';
+  const su = document.getElementById('isu');
+  if (su) su.textContent = u;
+}
+
+function readIngrForm() {
+  const unite = document.getElementById('iu').value;
+  return {
+    nom: document.getElementById('in').value.trim(),
+    categorie: document.getElementById('ic').value.trim(),
+    unite,
+    poids_par_piece: unite === 'pièce' ? parseFloat(document.getElementById('ipp').value) || null : null,
+    seuil_alerte: parseFloat(document.getElementById('is').value) || 0,
+    fournisseur_id: parseInt(document.getElementById('ifo').value) || null,
+    notes: document.getElementById('ino').value.trim()
+  };
+}
+
+function newIngrModal() {
+  showModal('Nouvelle fiche ingrédient', ingrForm(), function() {
+    const d = readIngrForm();
+    if (!d.nom) { alert('Nom obligatoire'); return; }
+    db.ingredients.push({ id: uid(), ...d });
+    log('ingredient', 'Créé: ' + d.nom + ' (' + d.unite + ')');
+    closeModal(); pageIngredients();
+  });
+}
+
+function editIngr(id) {
+  const i = byId('ingredients', id);
+  showModal('Modifier fiche ingrédient', ingrForm(i), function() {
+    const d = readIngrForm();
+    if (!d.nom) { alert('Nom obligatoire'); return; }
+    Object.assign(i, d);
+    closeModal(); pageIngredients();
+  }, 'Mettre à jour');
+}
+
+function delIngr(id) {
+  if (db.recette_ingredients.some(r => r.ingredient_id === id)) {
+    alert('Ingrédient utilisé dans une recette.'); return;
+  }
+  if (confirm('Supprimer cette fiche ?')) {
+    db.ingredients = db.ingredients.filter(i => i.id !== id);
+    db.mouvements_ingr = db.mouvements_ingr.filter(m => m.ingredient_id !== id);
+    pageIngredients();
+  }
+}
+
+// ═══════════════════════════════════════════════════════════
+// ACHATS
+// ═══════════════════════════════════════════════════════════
+function pageAchats() {
+  const fVal = document.getElementById('af')?.value || '';
+  const fOpts = db.fournisseurs.map(f =>
+    `<option value="${f.id}" ${fVal==f.id?'selected':''}>${f.nom}</option>`).join('');
+  let ingrs = fVal ? db.ingredients.filter(i => i.fournisseur_id == fVal) : db.ingredients;
+  const iOpts = ingrs.map(i => `<option value="${i.id}">${i.nom} (${i.unite})</option>`).join('');
+
+  const rows = [...db.mouvements_ingr].filter(m => m.sens === 'in').reverse().map(m => {
+    const i = byId('ingredients', m.ingredient_id);
+    const f = i ? byId('fournisseurs', i.fournisseur_id) : null;
+    return `<tr>
+      <td>${m.date}</td>
+      <td>${i?.nom||'?'}</td>
+      <td>${f?.nom||'—'}</td>
+      <td>${m.qte} ${i?.unite||''}</td>
+      <td>${m.prix_unitaire != null ? m.prix_unitaire.toFixed(4)+' €/'+i?.unite : '—'}</td>
+      <td><strong>${m.prix_total != null ? m.prix_total.toFixed(2)+' €' : '—'}</strong></td>
+      <td>${m.notes||'—'}</td>
+    </tr>`;
+  }).join('');
+
+  render(`
+    <div class="card">
+      <h3>🛒 Enregistrer un Achat</h3>
+      <div class="alert-info">Le prix est enregistré ici — pas dans la fiche ingrédient. Cela permet de tracer l'historique des prix entre deux achats.</div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Filtrer par fournisseur</label>
+          <select id="af" onchange="pageAchats()">
+            <option value="">— Tous —</option>${fOpts}
+          </select>
+        </div>
+        <div class="form-group" style="flex:2">
+          <label>Ingrédient *</label>
+          <select id="ai" onchange="syncAchatUnite()">${iOpts||'<option value="">Aucun ingrédient</option>'}</select>
+        </div>
+        <div class="form-group"><label>Unité (auto)</label><input id="au" readonly style="width:55px"></div>
+        <div class="form-group">
+          <label>Quantité *</label>
+          <input id="aq" type="number" min="0" step="0.001" placeholder="0" style="width:80px" oninput="calcTotal()">
+        </div>
+        <div class="form-group">
+          <label>Prix unitaire (€) *</label>
+          <input id="apu" type="number" min="0" step="0.0001" placeholder="0.0000" style="width:100px" oninput="calcTotal()">
+        </div>
+        <div class="form-group"><label>Total (€)</label><input id="atot" readonly style="width:80px"></div>
+        <div class="form-group"><label>Notes</label><input id="an" placeholder="Lot, BIO…" style="width:120px"></div>
+        <button class="btn btn-primary" onclick="enregistrerAchat()">✅ Enregistrer</button>
+      </div>
+    </div>
+    <div class="card">
+      <h3>📋 Historique des Achats</h3>
+      <table>
+        <thead><tr><th>Date</th><th>Ingrédient</th><th>Fournisseur</th><th>Qté</th><th>Prix unit.</th><th>Total</th><th>Notes</th></tr></thead>
+        <tbody>${rows||'<tr><td colspan="7" style="color:#6c7086;text-align:center">Aucun achat</td></tr>'}</tbody>
+      </table>
+    </div>`);
+  setTimeout(syncAchatUnite, 50);
+}
+
+function syncAchatUnite() {
+  const sel = document.getElementById('ai');
+  const au = document.getElementById('au');
+  if (!sel || !au) return;
+  const i = byId('ingredients', parseInt(sel.value));
+  au.value = i?.unite || '—';
+}
+
+function calcTotal() {
+  const q = parseFloat(document.getElementById('aq')?.value) || 0;
+  const p = parseFloat(document.getElementById('apu')?.value) || 0;
+  const t = document.getElementById('atot');
+  if (t) t.value = (q * p).toFixed(2) + ' €';
+}
+
+function enregistrerAchat() {
+  const ingr_id = parseInt(document.getElementById('ai').value);
+  const qte = parseFloat(document.getElementById('aq').value);
+  const pu = parseFloat(document.getElementById('apu').value);
+  if (!ingr_id || !qte || !pu) { alert('Ingrédient, quantité et prix unitaire obligatoires.'); return; }
+  const i = byId('ingredients', ingr_id);
+  db.mouvements_ingr.push({
+    id: uid(), ingredient_id: ingr_id, sens: 'in',
+    qte, prix_unitaire: pu, prix_total: qte * pu,
+    date: now(), notes: document.getElementById('an').value.trim()
+  });
+  log('achat', `Achat: ${i?.nom} — ${qte} ${i?.unite} à ${pu}€ = ${(qte*pu).toFixed(2)}€`);
+  pageAchats();
+}
+
+// ═══════════════════════════════════════════════════════════
+// RECETTES
+// ═══════════════════════════════════════════════════════════
+let _rIngrs = []; // composition en cours
+
+function pageRecettes() {
+  const rows = db.fiches_recettes.map(r => {
+    const comps = db.recette_ingredients.filter(ri => ri.recette_id === r.id);
+    const stock = db.stock_recettes[r.id] || 0;
+    return `<tr>
+      <td><strong>${r.nom}</strong></td>
+      <td>${r.description||'—'}</td>
+      <td>${r.rendement} ${r.unite_rendement}</td>
+      <td>${comps.length} ingr.</td>
+      <td><span class="badge ${stock>0?'badge-green':'badge-yellow'}">${stock} ${r.unite_rendement}</span></td>
+      <td>
+        <button class="btn btn-secondary btn-sm" onclick="viewRecette(${r.id})">👁️</button>
+        <button class="btn btn-danger btn-sm" onclick="delRecette(${r.id})">🗑️</button>
+      </td>
+    </tr>`;
+  }).join('');
+  render(`
+    <div class="card">
+      <h3>📄 Nouvelle Fiche Recette</h3>
+      <div class="alert-info">Les unités sont figées depuis la fiche ingrédient — seule la quantité est modifiable ici.</div>
+      <div class="form-row">
+        <div class="form-group" style="flex:2"><label>Nom *</label><input id="rn" placeholder="Ganache Noir 70%"></div>
+        <div class="form-group" style="flex:3"><label>Description</label><input id="rd" placeholder="Ganache à base de Guanaja 70%"></div>
+        <div class="form-group"><label>Rendement *</label><input id="rr" type="number" min="0" step="0.01" placeholder="500" style="width:80px"></div>
+        <div class="form-group"><label>Unité rendement *</label>
+          <select id="ru">${UNITES.map(u=>`<option>${u}</option>`).join('')}</select>
+        </div>
+      </div>
+      <hr>
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+        <h4 style="color:#89b4fa">Composition</h4>
+        <button class="btn btn-secondary btn-sm" onclick="addRIngr()">+ Ajouter ingrédient</button>
+      </div>
+      <div id="rc"></div>
+      <button class="btn btn-primary" style="margin-top:8px" onclick="saveRecette()">💾 Enregistrer</button>
+    </div>
+    <div class="card">
+      <h3>📋 Fiches Recettes</h3>
+      <table>
+        <thead><tr><th>Nom</th><th>Description</th><th>Rendement</th><th>Composition</th><th>Stock actuel</th><th>Actions</th></tr></thead>
+        <tbody>${rows||'<tr><td colspan="6" style="color:#6c7086;text-align:center">Aucune recette</td></tr>'}</tbody>
+      </table>
+    </div>`);
+  renderRC();
+}
+
+function renderRC() {
+  const c = document.getElementById('rc');
+  if (!c) return;
+  if (_rIngrs.length === 0) {
+    c.innerHTML = '<p style="color:#6c7086;font-size:11px;margin-bottom:8px">Aucun ingrédient ajouté.</p>';
+    return;
+  }
+  c.innerHTML = _rIngrs.map((ri, idx) => {
+    const i = byId('ingredients', ri.ingredient_id);
+    return `<div class="form-row" style="align-items:center">
+      <select style="flex:2" onchange="_rIngrs[${idx}].ingredient_id=parseInt(this.value);renderRC()">
+        ${db.ingredients.map(x=>`<option value="${x.id}" ${ri.ingredient_id===x.id?'selected':''}>${x.nom}</option>`).join('')}
+      </select>
+      <input type="number" min="0" step="0.001" value="${ri.qte}" placeholder="Qté" style="width:70px"
+        onchange="_rIngrs[${idx}].qte=parseFloat(this.value)||0">
+      <input readonly value="${i?.unite||'?'}" style="width:55px;background:#11111b;color:#6c7086" title="Unité figée depuis la fiche ingrédient">
+      <button class="btn btn-danger btn-sm" onclick="_rIngrs.splice(${idx},1);renderRC()">✕</button>
+    </div>`;
+  }).join('');
+}
+
+function addRIngr() {
+  if (!db.ingredients.length) { alert('Créez d\'abord des fiches ingrédients.'); return; }
+  _rIngrs.push({ ingredient_id: db.ingredients[0].id, qte: 0 });
+  renderRC();
+}
+
+function saveRecette() {
+  const nom = document.getElementById('rn').value.trim();
+  const rend = parseFloat(document.getElementById('rr').value);
+  if (!nom || !rend) { alert('Nom et rendement obligatoires.'); return; }
+  if (!_rIngrs.length) { alert('Ajoutez au moins un ingrédient.'); return; }
+  const r = { id: uid(), nom, description: document.getElementById('rd').value.trim(), rendement: rend, unite_rendement: document.getElementById('ru').value };
+  db.fiches_recettes.push(r);
+  _rIngrs.forEach(ri => db.recette_ingredients.push({ id: uid(), recette_id: r.id, ...ri }));
+  db.stock_recettes[r.id] = 0;
+  log('recette', 'Créé: ' + nom);
+  _rIngrs = [];
+  pageRecettes();
+}
+
+function viewRecette(id) {
+  const r = byId('fiches_recettes', id);
+  const comps = db.recette_ingredients.filter(ri => ri.recette_id === id);
+  showModal('📄 ' + r.nom,
+    `<p style="color:#6c7086;margin-bottom:8px">${r.description||'—'}</p>
+    <p><strong>Rendement:</strong> ${r.rendement} ${r.unite_rendement}</p>
+    <table style="margin-top:10px"><thead><tr><th>Ingrédient</th><th>Qté</th><th>Unité</th></tr></thead>
+    <tbody>${comps.map(c=>{const i=byId('ingredients',c.ingredient_id);return`<tr><td>${i?.nom||'?'}</td><td>${c.qte}</td><td>${i?.unite||'?'}</td></tr>`;}).join('')}</tbody></table>`,
+    closeModal, 'Fermer');
+}
+
+function delRecette(id) {
+  if (!confirm('Supprimer cette recette ?')) return;
+  db.fiches_recettes = db.fiches_recettes.filter(r => r.id !== id);
+  db.recette_ingredients = db.recette_ingredients.filter(ri => ri.recette_id !== id);
+  delete db.stock_recettes[id];
+  pageRecettes();
+}
+
+// ═══════════════════════════════════════════════════════════
+// PRODUCTIONS
+// ═══════════════════════════════════════════════════════════
+function pageProductions() {
+  const opts = db.fiches_recettes.map(r =>
+    `<option value="${r.id}">${r.nom} (rend. ${r.rendement} ${r.unite_rendement})</option>`).join('');
+  const rows = [...db.productions].reverse().map(p => {
+    const r = byId('fiches_recettes', p.recette_id);
+    return `<tr><td>${p.date}</td><td>${r?.nom||'?'}</td><td>${p.batchs}×</td><td>${p.qte} ${r?.unite_rendement||''}</td><td>${p.notes||'—'}</td></tr>`;
+  }).join('');
+  render(`
+    <div class="card">
+      <h3>⚙️ Lancer une Production</h3>
+      <div class="alert-info">La production déstocke les ingrédients et alimente le stock de recette (produit).</div>
+      <div class="form-row">
+        <div class="form-group" style="flex:2">
+          <label>Recette *</label>
+          <select id="pr" onchange="prevProd()">${opts||'<option>Aucune recette</option>'}</select>
+        </div>
+        <div class="form-group">
+          <label>Nb batchs *</label>
+          <input id="pb" type="number" min="1" value="1" style="width:70px" oninput="prevProd()">
+        </div>
+        <div class="form-group"><label>Notes</label><input id="pn" placeholder="Lot spécial…"></div>
+        <button class="btn btn-primary" onclick="lancerProd()">▶️ Lancer</button>
+      </div>
+      <div id="pprev"></div>
+    </div>
+    <div class="card">
+      <h3>📋 Historique Productions</h3>
+      <table><thead><tr><th>Date</th><th>Recette</th><th>Batchs</th><th>Qté produite</th><th>Notes</th></tr></thead>
+      <tbody>${rows||'<tr><td colspan="5" style="color:#6c7086;text-align:center">Aucune production</td></tr>'}</tbody></table>
+    </div>`);
+  setTimeout(prevProd, 50);
+}
+
+function prevProd() {
+  const rId = parseInt(document.getElementById('pr')?.value);
+  const b = parseInt(document.getElementById('pb')?.value) || 1;
+  const el = document.getElementById('pprev');
+  if (!el || !rId) return;
+  const r = byId('fiches_recettes', rId);
+  const comps = db.recette_ingredients.filter(ri => ri.recette_id === rId);
+  let ok = true;
+  const lines = comps.map(ri => {
+    const i = byId('ingredients', ri.ingredient_id);
+    const need = ri.qte * b, have = stockIngr(ri.ingredient_id);
+    if (have < need) ok = false;
+    return `<tr><td>${i?.nom||'?'}</td><td>${need} ${i?.unite||''}</td>
+      <td><span class="badge ${have>=need?'badge-green':'badge-red'}">${have.toFixed(2)} ${i?.unite||''}</span></td></tr>`;
+  }).join('');
+  el.innerHTML = `
+    <div class="${ok?'alert-info':'alert-warn'}">
+      → <strong>${r.rendement * b} ${r.unite_rendement}</strong> produits (${b}×${r.rendement}) — ${ok?'✅ OK':'⚠️ Stock insuffisant'}
+    </div>
+    <table><thead><tr><th>Ingrédient</th><th>Besoin</th><th>Disponible</th></tr></thead>
+    <tbody>${lines}</tbody></table>`;
+}
+
+function lancerProd() {
+  const rId = parseInt(document.getElementById('pr').value);
+  const b = parseInt(document.getElementById('pb').value) || 1;
+  if (!rId) { alert('Sélectionnez une recette.'); return; }
+  const r = byId('fiches_recettes', rId);
+  const comps = db.recette_ingredients.filter(ri => ri.recette_id === rId);
+  for (const ri of comps) {
+    const i = byId('ingredients', ri.ingredient_id);
+    if (stockIngr(ri.ingredient_id) < ri.qte * b) {
+      alert(`Stock insuffisant: ${i?.nom} — besoin ${ri.qte*b} ${i?.unite}`); return;
+    }
+  }
+  comps.forEach(ri => db.mouvements_ingr.push({
+    id: uid(), ingredient_id: ri.ingredient_id, sens: 'out',
+    qte: ri.qte * b, prix_unitaire: null, prix_total: null,
+    date: now(), notes: `Prod: ${r.nom} ×${b}`
+  }));
+  const qte = r.rendement * b;
+  db.stock_recettes[rId] = (db.stock_recettes[rId] || 0) + qte;
+  db.productions.push({ id: uid(), recette_id: rId, batchs: b, qte, date: now(), notes: document.getElementById('pn').value.trim() });
+  log('production', `${r.nom} ×${b} = ${qte} ${r.unite_rendement}`);
+  pageProductions();
+}
+
+// ═══════════════════════════════════════════════════════════
+// TYPES ASSEMBLAGE
+// ═══════════════════════════════════════════════════════════
+function pageTypesAsm() {
+  const rows = db.types_assemblage.map(t => {
+    const n = db.fiches_assemblages.filter(a => a.type_id === t.id).length;
+    return `<tr>
+      <td><strong>${t.nom}</strong></td>
+      <td>${t.description||'—'}</td>
+      <td>${t.poids_cible_g ? t.poids_cible_g + ' g' : '—'}</td>
+      <td>${t.poids_piece_g ? t.poids_piece_g + ' g' : '—'}</td>
+      <td><span class="badge badge-purple">${n} asm.</span></td>
+      <td>
+        <button class="btn btn-secondary btn-sm" onclick="editTypeAsm(${t.id})">✏️</button>
+        <button class="btn btn-danger btn-sm" onclick="delTypeAsm(${t.id})">🗑️</button>
+      </td>
+    </tr>`;
+  }).join('');
+  render(`
+    <div class="card">
+      <h3>🏷️ Types d'Assemblage</h3>
+      <div class="alert-info">100% générique — l'artisan crée ses propres types (ballotin, coffret, tablette…). Relation 1→N : un type peut avoir plusieurs assemblages.</div>
+      <button class="btn btn-primary" onclick="newTypeAsmModal()">+ Nouveau type</button>
+      <table>
+        <thead><tr><th>Nom</th><th>Description</th><th>Poids cible</th><th>Poids/pièce</th><th>Assemblages</th><th>Actions</th></tr></thead>
+        <tbody>${rows||'<tr><td colspan="6" style="color:#6c7086;text-align:center">Aucun type créé</td></tr>'}</tbody>
+      </table>
+    </div>`);
+}
+
+function typeAsmForm(t) {
+  t = t || {};
+  return `
+    <div class="form-group"><label>Nom *</label><input id="tn" value="${t.nom||''}" placeholder="Ballotin, Coffret, Tablette…"></div>
+    <div class="form-group" style="margin-top:8px"><label>Description</label><textarea id="td">${t.description||''}</textarea></div>
+    <div class="form-row" style="margin-top:8px">
+      <div class="form-group">
+        <label>Poids cible total (g)</label>
+        <input id="tpc" type="number" min="0" step="1" value="${t.poids_cible_g||''}" placeholder="250">
+      </div>
+      <div class="form-group">
+        <label>Poids moyen/pièce (g)</label>
+        <input id="tpp" type="number" min="0" step="0.1" value="${t.poids_piece_g||''}" placeholder="12.5">
+      </div>
+    </div>
+    <div class="alert-info" style="margin-top:8px">Si les deux poids sont définis, l'app suggèrera un nombre max de pièces à l'assemblage (non bloquant).</div>`;
+}
+
+function readTypeAsmForm() {
+  return {
+    nom: document.getElementById('tn').value.trim(),
+    description: document.getElementById('td').value.trim(),
+    poids_cible_g: parseFloat(document.getElementById('tpc').value) || null,
+    poids_piece_g: parseFloat(document.getElementById('tpp').value) || null
+  };
+}
+
+function newTypeAsmModal() {
+  showModal('Nouveau type d\'assemblage', typeAsmForm(), function() {
+    const d = readTypeAsmForm();
+    if (!d.nom) { alert('Nom obligatoire'); return; }
+    db.types_assemblage.push({ id: uid(), ...d });
+    log('type_asm', 'Créé: ' + d.nom);
+    closeModal(); pageTypesAsm();
+  });
+}
+
+function editTypeAsm(id) {
+  const t = byId('types_assemblage', id);
+  showModal('Modifier type', typeAsmForm(t), function() {
+    const d = readTypeAsmForm();
+    if (!d.nom) { alert('Nom obligatoire'); return; }
+    Object.assign(t, d);
+    closeModal(); pageTypesAsm();
+  }, 'Mettre à jour');
+}
+
+function delTypeAsm(id) {
+  if (db.fiches_assemblages.some(a => a.type_id === id)) { alert('Type lié à des assemblages.'); return; }
+  if (confirm('Supprimer ce type ?')) { db.types_assemblage = db.types_assemblage.filter(t => t.id !== id); pageTypesAsm(); }
+}
+
+// ═══════════════════════════════════════════════════════════
+// FICHES ASSEMBLAGES
+// ═══════════════════════════════════════════════════════════
+let _aComps = [];
+
+function pageFichesAsm() {
+  const typeOpts = db.types_assemblage.map(t => `<option value="${t.id}">${t.nom}</option>`).join('');
+  const rows = db.fiches_assemblages.map(a => {
+    const t = byId('types_assemblage', a.type_id);
+    const n = db.assemblage_recettes.filter(ar => ar.assemblage_id === a.id).length;
+    const s = db.stock_assemblages[a.id] || 0;
+    return `<tr>
+      <td><strong>${a.nom}</strong></td>
+      <td><span class="badge badge-purple">${t?.nom||'?'}</span></td>
+      <td>${a.description||'—'}</td>
+      <td>${n} recette(s)</td>
+      <td><span class="badge ${s>0?'badge-green':'badge-yellow'}">${s}</span></td>
+      <td>
+        <button class="btn btn-secondary btn-sm" onclick="viewFicheAsm(${a.id})">👁️</button>
+        <button class="btn btn-danger btn-sm" onclick="delFicheAsm(${a.id})">🗑️</button>
+      </td>
+    </tr>`;
+  }).join('');
+  render(`
+    <div class="card">
+      <h3>📦 Nouvelle Fiche Assemblage</h3>
+      ${!db.types_assemblage.length ? '<div class="alert-warn">⚠️ Aucun type d\'assemblage — créez-en un dans l\'onglet Types Asm.</div>' : ''}
+      <div class="form-row">
+        <div class="form-group" style="flex:2"><label>Nom *</label><input id="an" placeholder="Ballotin Noir Intense 250g"></div>
+        <div class="form-group"><label>Type *</label>
+          <select id="at">${typeOpts||'<option value="">Aucun type</option>'}</select>
+        </div>
+        <div class="form-group" style="flex:3"><label>Description</label><input id="ad" placeholder="Sélection ganaches noires"></div>
+      </div>
+      <hr>
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+        <h4 style="color:#89b4fa">Composition (recettes)</h4>
+        <button class="btn btn-secondary btn-sm" onclick="addAComp()">+ Ajouter recette</button>
+      </div>
+      <div id="ac"></div>
+      <button class="btn btn-primary" style="margin-top:8px" onclick="saveFicheAsm()">💾 Enregistrer</button>
+    </div>
+    <div class="card">
+      <h3>📋 Fiches Assemblages</h3>
+      <table>
+        <thead><tr><th>Nom</th><th>Type</th><th>Description</th><th>Composition</th><th>Stock</th><th>Actions</th></tr></thead>
+        <tbody>${rows||'<tr><td colspan="6" style="color:#6c7086;text-align:center">Aucune fiche</td></tr>'}</tbody>
+      </table>
+    </div>`);
+  renderAC();
+}
+
+function renderAC() {
+  const c = document.getElementById('ac');
+  if (!c) return;
+  if (!_aComps.length) { c.innerHTML = '<p style="color:#6c7086;font-size:11px;margin-bottom:8px">Aucune recette ajoutée.</p>'; return; }
+  c.innerHTML = _aComps.map((co, idx) => {
+    const r = byId('fiches_recettes', co.recette_id);
+    return `<div class="form-row" style="align-items:center">
+      <select style="flex:2" onchange="_aComps[${idx}].recette_id=parseInt(this.value);renderAC()">
+        ${db.fiches_recettes.map(x=>`<option value="${x.id}" ${co.recette_id===x.id?'selected':''}>${x.nom}</option>`).join('')}
+      </select>
+      <input type="number" min="0" step="0.01" value="${co.qte}" placeholder="Qté" style="width:70px"
+        onchange="_aComps[${idx}].qte=parseFloat(this.value)||0">
+      <input readonly value="${r?.unite_rendement||'?'}" style="width:55px;background:#11111b;color:#6c7086">
+      <button class="btn btn-danger btn-sm" onclick="_aComps.splice(${idx},1);renderAC()">✕</button>
+    </div>`;
+  }).join('');
+}
+
+function addAComp() {
+  if (!db.fiches_recettes.length) { alert('Créez d\'abord des recettes.'); return; }
+  _aComps.push({ recette_id: db.fiches_recettes[0].id, qte: 0 });
+  renderAC();
+}
+
+function saveFicheAsm() {
+  const nom = document.getElementById('an').value.trim();
+  const type_id = parseInt(document.getElementById('at').value);
+  if (!nom || !type_id) { alert('Nom et type obligatoires.'); return; }
+  if (!_aComps.length) { alert('Ajoutez au moins une recette.'); return; }
+  const a = { id: uid(), nom, type_id, description: document.getElementById('ad').value.trim() };
+  db.fiches_assemblages.push(a);
+  _aComps.forEach(c => db.assemblage_recettes.push({ id: uid(), assemblage_id: a.id, ...c }));
+  db.stock_assemblages[a.id] = 0;
+  log('fiche_asm', 'Créé: ' + nom);
+  _aComps = [];
+  pageFichesAsm();
+}
+
+function viewFicheAsm(id) {
+  const a = byId('fiches_assemblages', id);
+  const t = byId('types_assemblage', a.type_id);
+  const comps = db.assemblage_recettes.filter(ar => ar.assemblage_id === id);
+  showModal('📦 ' + a.nom,
+    `<p><strong>Type:</strong> ${t?.nom||'?'}</p>
+    <p style="color:#6c7086;margin:6px 0">${a.description||'—'}</p>
+    <table style="margin-top:10px"><thead><tr><th>Recette</th><th>Qté</th><th>Unité</th></tr></thead>
+    <tbody>${comps.map(c=>{const r=byId('fiches_recettes',c.recette_id);return`<tr><td>${r?.nom||'?'}</td><td>${c.qte}</td><td>${r?.unite_rendement||'?'}</td></tr>`;}).join('')}</tbody></table>`,
+    closeModal, 'Fermer');
+}
+
+function delFicheAsm(id) {
+  if (!confirm('Supprimer cette fiche ?')) return;
+  db.fiches_assemblages = db.fiches_assemblages.filter(a => a.id !== id);
+  db.assemblage_recettes = db.assemblage_recettes.filter(ar => ar.assemblage_id !== id);
+  delete db.stock_assemblages[id];
+  pageFichesAsm();
+}
+
+// ═══════════════════════════════════════════════════════════
+// CRÉER ASSEMBLAGE
+// ═══════════════════════════════════════════════════════════
+function pageCreerAsm() {
+  const opts = db.fiches_assemblages.map(a => {
+    const t = byId('types_assemblage', a.type_id);
+    return `<option value="${a.id}">${a.nom} [${t?.nom||'?'}]</option>`;
+  }).join('');
+  const rows = [...db.assemblages_produits].reverse().map(p => {
+    const a = byId('fiches_assemblages', p.assemblage_id);
+    return `<tr><td>${p.date}</td><td>${a?.nom||'?'}</td><td>${p.qte} unité(s)</td><td>${p.notes||'—'}</td></tr>`;
+  }).join('');
+  render(`
+    <div class="card">
+      <h3>🎁 Créer un Assemblage</h3>
+      <div class="alert-info">Crée des unités finies en destockant les recettes selon la fiche d'assemblage.</div>
+      <div class="form-row">
+        <div class="form-group" style="flex:2">
+          <label>Fiche assemblage *</label>
+          <select id="ca" onchange="prevAsm()">${opts||'<option>Aucune fiche</option>'}</select>
+        </div>
+        <div class="form-group">
+          <label>Quantité *</label>
+          <input id="cq" type="number" min="1" value="1" style="width:70px" oninput="prevAsm()">
+        </div>
+        <div class="form-group"><label>Notes</label><input id="cn" placeholder="Commande N°…"></div>
+        <button class="btn btn-primary" onclick="creerAsm()">▶️ Créer</button>
+      </div>
+      <div id="capr"></div>
+    </div>
+    <div class="card">
+      <h3>📋 Assemblages Créés</h3>
+      <table><thead><tr><th>Date</th><th>Assemblage</th><th>Qté</th><th>Notes</th></tr></thead>
+      <tbody>${rows||'<tr><td colspan="4" style="color:#6c7086;text-align:center">Aucun assemblage créé</td></tr>'}</tbody></table>
+    </div>`);
+  setTimeout(prevAsm, 50);
+}
+
+function prevAsm() {
+  const aId = parseInt(document.getElementById('ca')?.value);
+  const q = parseInt(document.getElementById('cq')?.value) || 1;
+  const el = document.getElementById('capr');
+  if (!el || !aId) return;
+  const a = byId('fiches_assemblages', aId);
+  const t = byId('types_assemblage', a.type_id);
+  const comps = db.assemblage_recettes.filter(ar => ar.assemblage_id === aId);
+  let ok = true;
+  const lines = comps.map(c => {
+    const r = byId('fiches_recettes', c.recette_id);
+    const need = c.qte * q, have = db.stock_recettes[c.recette_id] || 0;
+    if (have < need) ok = false;
+    return `<tr><td>${r?.nom||'?'}</td><td>${need} ${r?.unite_rendement||''}</td>
+      <td><span class="badge ${have>=need?'badge-green':'badge-red'}">${have} ${r?.unite_rendement||''}</span></td></tr>`;
+  }).join('');
+  let sug = '';
+  if (t?.poids_cible_g && t?.poids_piece_g) {
+    const max = Math.floor(t.poids_cible_g / t.poids_piece_g);
+    sug = `<div class="alert-info">💡 Suggestion: pour ${t.poids_cible_g}g avec ${t.poids_piece_g}g/pièce → max <strong>${max} pièces</strong> (non bloquant).</div>`;
+  }
+  el.innerHTML = `${sug}
+    <div class="${ok?'alert-info':'alert-warn'}">
+      Création de <strong>${q} unité(s)</strong> "${a.nom}" — ${ok?'✅ Stock OK':'⚠️ Stock insuffisant'}
+    </div>
+    <table><thead><tr><th>Recette</th><th>Besoin</th><th>Disponible</th></tr></thead>
+    <tbody>${lines}</tbody></table>`;
+}
+
+function creerAsm() {
+  const aId = parseInt(document.getElementById('ca').value);
+  const q = parseInt(document.getElementById('cq').value) || 1;
+  if (!aId) { alert('Sélectionnez une fiche assemblage.'); return; }
+  const a = byId('fiches_assemblages', aId);
+  const comps = db.assemblage_recettes.filter(ar => ar.assemblage_id === aId);
+  for (const c of comps) {
+    const r = byId('fiches_recettes', c.recette_id);
+    if ((db.stock_recettes[c.recette_id] || 0) < c.qte * q) {
+      alert(`Stock insuffisant: ${r?.nom} — besoin ${c.qte*q}`); return;
+    }
+  }
+  comps.forEach(c => { db.stock_recettes[c.recette_id] = (db.stock_recettes[c.recette_id]||0) - c.qte * q; });
+  db.stock_assemblages[aId] = (db.stock_assemblages[aId] || 0) + q;
+  db.assemblages_produits.push({ id: uid(), assemblage_id: aId, qte: q, date: now(), notes: document.getElementById('cn').value.trim() });
+  log('assemblage', `${a.nom} ×${q}`);
+  pageCreerAsm();
+}
+
+// ═══════════════════════════════════════════════════════════
+// DASHBOARD KANBAN
+// ═══════════════════════════════════════════════════════════
+function pageDashboard() {
+  const ingrCards = db.ingredients.length
+    ? db.ingredients.map(i => {
+        const s = stockIngr(i.id);
+        const ratio = i.seuil_alerte > 0 ? s / i.seuil_alerte : 1;
+        const cls = s <= 0 ? 'danger' : ratio < 1 ? 'warn' : '';
+        const f = byId('fournisseurs', i.fournisseur_id);
+        const badge = cls === 'danger' ? '<span class="badge badge-red">🚨 RUPTURE</span>' : cls === 'warn' ? '<span class="badge badge-yellow">⚠️ BAS</span>' : '<span class="badge badge-green">OK</span>';
+        return `<div class="stock-card ${cls}">
+          <div class="name">${i.nom}</div>
+          <div class="qty">${s.toFixed(2)} <span style="font-size:11px;color:#6c7086">${i.unite}</span></div>
+          <div class="meta">Seuil: ${i.seuil_alerte} ${i.unite} · ${f?.nom||'—'} &nbsp; ${badge}</div>
+        </div>`;
+      }).join('')
+    : '<p style="color:#6c7086;font-size:11px;padding:8px">Aucun ingrédient</p>';
+
+  const prodCards = db.fiches_recettes.length
+    ? db.fiches_recettes.map(r => {
+        const s = db.stock_recettes[r.id] || 0;
+        return `<div class="stock-card ${s<=0?'warn':''}">
+          <div class="name">${r.nom}</div>
+          <div class="qty">${s} <span style="font-size:11px;color:#6c7086">${r.unite_rendement}</span></div>
+          <div class="meta">Rendement: ${r.rendement} ${r.unite_rendement}/batch</div>
+        </div>`;
+      }).join('')
+    : '<p style="color:#6c7086;font-size:11px;padding:8px">Aucun produit</p>';
+
+  const asmCards = db.fiches_assemblages.length
+    ? db.fiches_assemblages.map(a => {
+        const t = byId('types_assemblage', a.type_id);
+        const s = db.stock_assemblages[a.id] || 0;
+        return `<div class="stock-card ${s<=0?'warn':''}">
+          <div class="name">${a.nom}</div>
+          <div class="qty">${s} <span style="font-size:11px;color:#6c7086">unité(s)</span></div>
+          <div class="meta">Type: ${t?.nom||'?'}</div>
+        </div>`;
+      }).join('')
+    : '<p style="color:#6c7086;font-size:11px;padding:8px">Aucun assemblage</p>';
+
+  render(`
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+      <h2 style="color:#cba6f7;font-size:15px">📊 Dashboard Stock</h2>
+      <div style="display:flex;gap:8px">
+        <input id="mf" placeholder="🔍 Filtrer mouvements…" style="width:200px" oninput="filterMvts()">
+        <button class="btn btn-secondary btn-sm" onclick="pageDashboard()">🔄 Rafraîchir</button>
+      </div>
+    </div>
+    <div class="kanban">
+      <div class="kanban-col">
+        <div class="kanban-col-header">
+          <span>🥚 Ingrédients</span>
+          <span class="badge badge-blue">${db.ingredients.length}</span>
+        </div>
+        <div class="kanban-cards">${ingrCards}</div>
+        <div class="kanban-mvt">
+          <div style="font-size:10px;color:#6c7086;font-weight:600;margin-bottom:4px">MOUVEMENTS</div>
+          <div class="mvt-list" id="mvi">${mvtIngrHTML('')}</div>
+        </div>
+      </div>
+      <div class="kanban-col">
+        <div class="kanban-col-header">
+          <span>🍫 Produits</span>
+          <span class="badge badge-green">${db.fiches_recettes.length}</span>
+        </div>
+        <div class="kanban-cards">${prodCards}</div>
+        <div class="kanban-mvt">
+          <div style="font-size:10px;color:#6c7086;font-weight:600;margin-bottom:4px">MOUVEMENTS</div>
+          <div class="mvt-list" id="mvp">${mvtProdHTML('')}</div>
+        </div>
+      </div>
+      <div class="kanban-col">
+        <div class="kanban-col-header">
+          <span>🎁 Assemblages</span>
+          <span class="badge badge-purple">${db.fiches_assemblages.length}</span>
+        </div>
+        <div class="kanban-cards">${asmCards}</div>
+        <div class="kanban-mvt">
+          <div style="font-size:10px;color:#6c7086;font-weight:600;margin-bottom:4px">MOUVEMENTS</div>
+          <div class="mvt-list" id="mva">${mvtAsmHTML('')}</div>
+        </div>
+      </div>
+    </div>`);
+}
+
+function mvtIngrHTML(f) {
+  const fl = f.toLowerCase();
+  const list = [...db.mouvements_ingr].reverse().filter(m => {
+    const i = byId('ingredients', m.ingredient_id);
+    return !fl || (i?.nom||'').toLowerCase().includes(fl) || (m.notes||'').toLowerCase().includes(fl);
+  });
+  if (!list.length) return '<div style="color:#6c7086;font-size:11px;padding:4px">Aucun mouvement</div>';
+  return list.map(m => {
+    const i = byId('ingredients', m.ingredient_id);
+    const prix = m.prix_total != null ? ` · ${m.prix_total.toFixed(2)}€` : '';
+    return `<div class="mvt-row">
+      <span class="${m.sens==='in'?'mvt-type-in':'mvt-type-out'}">${m.sens==='in'?'+':'-'}${m.qte} ${i?.unite||''} ${i?.nom||'?'}</span>
+      <span style="color:#6c7086">${m.date.split(',')[0]}${prix}</span>
+    </div>`;
+  }).join('');
+}
+
+function mvtProdHTML(f) {
+  const fl = f.toLowerCase();
+  const list = [...db.productions].reverse().filter(p => {
+    const r = byId('fiches_recettes', p.recette_id);
+    return !fl || (r?.nom||'').toLowerCase().includes(fl);
+  });
+  if (!list.length) return '<div style="color:#6c7086;font-size:11px;padding:4px">Aucune production</div>';
+  return list.map(p => {
+    const r = byId('fiches_recettes', p.recette_id);
+    return `<div class="mvt-row">
+      <span class="mvt-type-in">+${p.qte} ${r?.unite_rendement||''} ${r?.nom||'?'}</span>
+      <span style="color:#6c7086">${p.date.split(',')[0]}</span>
+    </div>`;
+  }).join('');
+}
+
+function mvtAsmHTML(f) {
+  const fl = f.toLowerCase();
+  const list = [...db.assemblages_produits].reverse().filter(p => {
+    const a = byId('fiches_assemblages', p.assemblage_id);
+    return !fl || (a?.nom||'').toLowerCase().includes(fl);
+  });
+  if (!list.length) return '<div style="color:#6c7086;font-size:11px;padding:4px">Aucun assemblage créé</div>';
+  return list.map(p => {
+    const a = byId('fiches_assemblages', p.assemblage_id);
+    return `<div class="mvt-row">
+      <span class="mvt-type-in">+${p.qte} unité(s) ${a?.nom||'?'}</span>
+      <span style="color:#6c7086">${p.date.split(',')[0]}</span>
+    </div>`;
+  }).join('');
+}
+
+function filterMvts() {
+  const f = document.getElementById('mf')?.value || '';
+  const mi = document.getElementById('mvi'), mp = document.getElementById('mvp'), ma = document.getElementById('mva');
+  if (mi) mi.innerHTML = mvtIngrHTML(f);
+  if (mp) mp.innerHTML = mvtProdHTML(f);
+  if (ma) ma.innerHTML = mvtAsmHTML(f);
+}
+
+// ═══════════════════════════════════════════════════════════
+// ROUTING
+// ═══════════════════════════════════════════════════════════
+const pages = {
+  fournisseurs: pageFournisseurs,
+  ingredients:  pageIngredients,
+  achats:       pageAchats,
+  recettes:     pageRecettes,
+  productions:  pageProductions,
+  types_asm:    pageTypesAsm,
+  fiches_asm:   pageFichesAsm,
+  creer_asm:    pageCreerAsm,
+  dashboard:    pageDashboard,
+};
+
+setTab('fournisseurs');
+</script>
+</body>
+</html>

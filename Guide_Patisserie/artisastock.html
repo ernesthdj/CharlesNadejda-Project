@@ -1,0 +1,1120 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<title>ArtisaStock — Charles & Nadejda</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;font-family:'Segoe UI',Tahoma,sans-serif;font-size:13px;}
+body{display:flex;height:100vh;overflow:hidden;background:#ECE9D8;}
+
+/* LOGIN */
+#login-screen{position:fixed;inset:0;background:linear-gradient(135deg,#3D2817,#6F4E37);display:flex;align-items:center;justify-content:center;z-index:9999;}
+.login-box{background:#ECE9D8;border:2px solid #3D2817;width:360px;}
+.login-header{background:linear-gradient(to right,#3D2817,#6F4E37);color:white;padding:14px 16px;text-align:center;font-size:16px;font-weight:bold;}
+.login-logo{font-size:28px;margin-bottom:4px;}
+.login-body{padding:24px;}
+.login-row{margin-bottom:14px;}
+.login-row label{display:block;font-weight:bold;margin-bottom:4px;color:#3D2817;}
+.login-row input{width:100%;border:1px solid #7F9DB9;padding:6px 8px;background:white;}
+.login-row input:focus{outline:2px solid #316AC5;}
+.login-btn{width:100%;padding:8px;background:linear-gradient(to bottom,#5CB85C,#449D44);color:white;border:1px solid #398439;cursor:pointer;font-size:14px;font-weight:bold;margin-top:8px;}
+.login-btn:hover{background:linear-gradient(to bottom,#6DC86D,#5CB85C);}
+.login-hint{font-size:11px;color:#888;text-align:center;margin-top:12px;}
+
+/* APP */
+#app{display:none;flex:1;flex-direction:column;}
+.title-bar{background:linear-gradient(to right,#3D2817,#6F4E37);color:white;padding:6px 12px;display:flex;align-items:center;gap:10px;font-size:14px;font-weight:bold;flex-shrink:0;}
+.title-bar-user{margin-left:auto;font-size:12px;font-weight:normal;color:#D4C4B4;}
+.main-area{display:flex;flex:1;overflow:hidden;}
+
+/* SIDEBAR */
+.sidebar{width:215px;background:#2C1810;color:white;display:flex;flex-direction:column;overflow-y:auto;flex-shrink:0;}
+.sidebar-brand{padding:12px;text-align:center;border-bottom:1px solid #4A2E1A;background:#1E0F08;}
+.sidebar-brand-name{font-size:15px;font-weight:bold;color:#D4AF37;}
+.sidebar-brand-sub{font-size:10px;color:#9E7B5C;margin-top:2px;}
+.nav-section{padding:8px 12px 4px;font-size:10px;text-transform:uppercase;color:#9E7B5C;letter-spacing:1px;margin-top:6px;}
+.nav-item{padding:8px 14px;cursor:pointer;color:#D4C4B4;display:flex;align-items:center;gap:8px;transition:background 0.15s;}
+.nav-item:hover{background:rgba(255,255,255,0.08);color:white;}
+.nav-item.active{background:#D4AF37;color:#3D2817;font-weight:bold;}
+.nav-sub{padding:6px 14px 6px 32px;cursor:pointer;color:#9E8070;font-size:12px;transition:background 0.15s;}
+.nav-sub:hover{background:rgba(255,255,255,0.06);color:#D4C4B4;}
+.nav-sub.active{color:#D4AF37;font-weight:bold;background:rgba(212,175,55,0.1);}
+.nav-badge{margin-left:auto;background:#C72C48;color:white;font-size:10px;padding:1px 6px;border-radius:8px;}
+
+/* CONTENT */
+.content{flex:1;overflow-y:auto;background:#ECE9D8;padding:10px;}
+.screen{display:none;}
+.screen.active{display:block;}
+.page-title{background:linear-gradient(to right,#6F4E37,#9E7B5C);color:white;padding:7px 14px;margin-bottom:10px;font-size:13px;font-weight:bold;display:flex;align-items:center;gap:8px;}
+
+/* GROUPBOX */
+.gb{border:1px solid #ACA899;background:white;margin-bottom:10px;}
+.gb-title{background:#D4D0C8;padding:4px 8px;font-weight:bold;border-bottom:1px solid #ACA899;font-size:12px;color:#3D2817;}
+.gb-body{padding:10px;}
+
+/* TOOLBAR */
+.toolbar{display:flex;gap:5px;margin-bottom:8px;padding:5px 6px;background:#D4D0C8;border:1px solid #ACA899;align-items:center;flex-wrap:wrap;}
+.toolbar-sep{width:1px;height:20px;background:#ACA899;margin:0 3px;}
+
+/* BUTTONS */
+.btn{padding:3px 12px;border:1px solid #7F9DB9;background:linear-gradient(to bottom,#F4F3EE,#D6D0C4);cursor:pointer;font-size:12px;}
+.btn:hover{background:linear-gradient(to bottom,#ECF4FF,#B8CCE4);}
+.btn:active{background:#C8C0B0;}
+.btn-primary{background:linear-gradient(to bottom,#3D7FC1,#2962A7);color:white;border-color:#1F5496;}
+.btn-primary:hover{background:linear-gradient(to bottom,#5B9BD5,#3D7FC1);}
+.btn-danger{background:linear-gradient(to bottom,#D9534F,#C9302C);color:white;border-color:#AC2925;}
+.btn-danger:hover{background:linear-gradient(to bottom,#E05C58,#D9534F);}
+.btn-success{background:linear-gradient(to bottom,#5CB85C,#449D44);color:white;border-color:#398439;}
+.btn-success:hover{background:linear-gradient(to bottom,#6DC86D,#5CB85C);}
+.btn-warning{background:linear-gradient(to bottom,#F0AD4E,#EC971F);color:white;border-color:#D58512;}
+
+/* TABLE / DGV */
+table.dgv{width:100%;border-collapse:collapse;background:white;}
+table.dgv th{background:linear-gradient(to bottom,#E8E4D8,#D4D0C8);border:1px solid #ACA899;padding:4px 8px;text-align:left;font-weight:bold;white-space:nowrap;}
+table.dgv td{border:1px solid #D4D0C8;padding:4px 8px;vertical-align:middle;}
+table.dgv tr:hover td{background:#EEF5FF;}
+table.dgv tr.selected td{background:#316AC5;color:white;}
+table.dgv tr.alert td{background:#FFE8E8;}
+table.dgv tr.alert:hover td{background:#FFCECE;}
+
+/* STATS */
+.stats-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:10px;}
+.stat-card{background:white;border:1px solid #D4D0C8;padding:12px;text-align:center;border-top:3px solid #6F4E37;}
+.stat-number{font-size:26px;font-weight:bold;color:#3D2817;}
+.stat-label{font-size:11px;color:#666;margin-top:3px;}
+.stat-card.danger{border-top-color:#C72C48;}.stat-card.danger .stat-number{color:#C72C48;}
+.stat-card.success{border-top-color:#27AE60;}.stat-card.success .stat-number{color:#27AE60;}
+.stat-card.warning{border-top-color:#D35400;}.stat-card.warning .stat-number{color:#D35400;}
+
+/* BADGES */
+.badge{display:inline-block;padding:1px 7px;border-radius:9px;font-size:11px;font-weight:bold;}
+.b-red{background:#FFE4E4;color:#C0392B;border:1px solid #E74C3C;}
+.b-green{background:#E4FFE4;color:#1E8449;border:1px solid #27AE60;}
+.b-orange{background:#FFF3E4;color:#D35400;border:1px solid #E67E22;}
+.b-blue{background:#E4F0FF;color:#2471A3;border:1px solid #3498DB;}
+.b-gold{background:#FFF9E4;color:#7D6608;border:1px solid #D4AF37;}
+.b-gray{background:#F0F0F0;color:#555;border:1px solid #CCC;}
+
+/* FORM */
+.form-row{display:flex;align-items:center;margin-bottom:8px;gap:8px;}
+.form-label{width:145px;text-align:right;font-weight:bold;color:#3D2817;flex-shrink:0;}
+.form-row input[type=text],.form-row input[type=number],.form-row select,.form-row textarea{border:1px solid #7F9DB9;padding:3px 6px;background:white;flex:1;}
+.form-row input:focus,.form-row select:focus{outline:2px solid #316AC5;}
+.form-row textarea{height:60px;resize:vertical;}
+
+/* MODAL */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.55);display:none;align-items:center;justify-content:center;z-index:500;}
+.modal-overlay.open{display:flex;}
+.modal{background:#ECE9D8;border:2px solid #3D2817;min-width:420px;max-width:640px;max-height:90vh;display:flex;flex-direction:column;}
+.modal-header{background:linear-gradient(to right,#3D2817,#6F4E37);color:white;padding:6px 12px;display:flex;justify-content:space-between;align-items:center;font-weight:bold;flex-shrink:0;}
+.modal-close{cursor:pointer;font-size:16px;color:white;background:none;border:none;padding:0 4px;}
+.modal-close:hover{color:#FFD700;}
+.modal-body{padding:16px;overflow-y:auto;}
+.modal-footer{padding:8px 16px;border-top:1px solid #ACA899;display:flex;gap:6px;justify-content:flex-end;flex-shrink:0;}
+
+/* ALLERGENS */
+.allergen{display:inline-block;background:#FFF3CD;border:1px solid #FFC107;color:#856404;padding:1px 5px;border-radius:3px;font-size:10px;margin:1px;}
+
+/* COLOR DOT */
+.cdot{width:14px;height:14px;border-radius:50%;display:inline-block;border:1px solid #999;vertical-align:middle;margin-right:4px;}
+
+/* STOCK BAR */
+.sbar{height:7px;background:#E0E0E0;border-radius:4px;overflow:hidden;width:80px;display:inline-block;vertical-align:middle;}
+.sbar-fill{height:100%;border-radius:4px;}
+
+/* TABS */
+.tabs{display:flex;border-bottom:2px solid #6F4E37;margin-bottom:10px;}
+.tab{padding:5px 14px;cursor:pointer;border:1px solid transparent;border-bottom:none;margin-bottom:-2px;}
+.tab.active{background:white;border-color:#ACA899;border-bottom-color:white;font-weight:bold;color:#3D2817;}
+.tab:hover:not(.active){background:#D4D0C8;}
+
+/* DEVIS CALC */
+.devis-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+.devis-result{background:#F0F8E8;border:2px solid #5CB85C;padding:12px;}
+.devis-total{font-size:22px;font-weight:bold;color:#1E8449;}
+.price-row{display:flex;justify-content:space-between;padding:3px 0;border-bottom:1px dashed #DDD;}
+.price-row.bold{font-weight:bold;font-size:13px;}
+.price-row.total-row{font-weight:bold;font-size:15px;border-top:2px solid #333;border-bottom:none;padding-top:6px;margin-top:4px;}
+.couche-item{background:#F5F0E8;border:1px solid #D4C4B0;padding:6px 10px;margin-bottom:4px;display:flex;justify-content:space-between;align-items:center;}
+.couche-qty{font-size:11px;color:#666;margin-top:2px;}
+
+/* NOTIF */
+#notif{position:fixed;top:16px;right:16px;background:#5CB85C;color:white;padding:10px 18px;z-index:9999;display:none;font-weight:bold;box-shadow:0 3px 10px rgba(0,0,0,0.3);border-radius:3px;}
+#notif.err{background:#C72C48;}
+
+/* DASHBOARD ALERTS */
+.alert-list{list-style:none;}
+.alert-list li{padding:5px 8px;border-bottom:1px solid #F0E0E0;display:flex;align-items:center;gap:6px;background:white;}
+.alert-list li:hover{background:#FFF8F8;}
+
+/* 2-col layout */
+.two-col{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+.three-col{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;}
+</style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div id="login-screen">
+  <div class="login-box">
+    <div class="login-header">
+      <div class="login-logo">🍫</div>
+      ArtisaStock<br><span style="font-size:11px;font-weight:normal;color:#D4C4B4;">Charles & Nadejda — Gestion Artisanale</span>
+    </div>
+    <div class="login-body">
+      <div class="login-row">
+        <label>Adresse e-mail</label>
+        <input type="text" id="login-email" value="charles@charlesnadejda.be">
+      </div>
+      <div class="login-row">
+        <label>Mot de passe</label>
+        <input type="password" id="login-pwd" value="password">
+      </div>
+      <button class="login-btn" onclick="doLogin()">🔐 Se connecter</button>
+      <div id="login-err" style="color:#C72C48;margin-top:8px;text-align:center;display:none;">Email ou mot de passe incorrect.</div>
+      <div class="login-hint">charles@charlesnadejda.be / password</div>
+    </div>
+  </div>
+</div>
+
+<!-- MAIN APP -->
+<div id="app" style="display:none;flex:1;flex-direction:column;">
+  <div class="title-bar">
+    🍫 ArtisaStock — Charles & Nadejda
+    <span class="title-bar-user" id="title-user"></span>
+  </div>
+  <div class="main-area">
+
+    <!-- SIDEBAR -->
+    <div class="sidebar">
+      <div class="sidebar-brand">
+        <div class="sidebar-brand-name">ArtisaStock</div>
+        <div class="sidebar-brand-sub">Pâtisserie Chocolaterie</div>
+      </div>
+
+      <div class="nav-section">Général</div>
+      <div class="nav-item active" onclick="nav('dashboard')" id="nav-dashboard">📊 Tableau de bord</div>
+
+      <div class="nav-section">Chocolaterie</div>
+      <div class="nav-sub" onclick="nav('choco-ingr')" id="nav-choco-ingr">🧪 Ingrédients</div>
+      <div class="nav-sub" onclick="nav('choco-cat')" id="nav-choco-cat">📁 Catégories</div>
+      <div class="nav-sub" onclick="nav('choco-parfums')" id="nav-choco-parfums">🎨 Parfums</div>
+      <div class="nav-sub" onclick="nav('choco-produits')" id="nav-choco-produits">🍬 Produits</div>
+
+      <div class="nav-section">Pâtisserie</div>
+      <div class="nav-sub" onclick="nav('patiss-ingr')" id="nav-patiss-ingr">🧪 Ingrédients <span class="nav-badge" id="badge-alerte">2</span></div>
+      <div class="nav-sub" onclick="nav('patiss-types')" id="nav-patiss-types">🗂️ Types de couches</div>
+      <div class="nav-sub" onclick="nav('patiss-recettes')" id="nav-patiss-recettes">📋 Recettes de couches</div>
+      <div class="nav-sub" onclick="nav('patiss-gateaux')" id="nav-patiss-gateaux">🎂 Fiches gâteau</div>
+      <div class="nav-sub" onclick="nav('patiss-devis')" id="nav-patiss-devis">🧮 Calculateur devis</div>
+
+      <div class="nav-section">Commandes</div>
+      <div class="nav-item" onclick="nav('commandes')" id="nav-commandes">📦 Commandes web</div>
+
+      <div class="nav-section">Système</div>
+      <div class="nav-item" onclick="nav('parametres')" id="nav-parametres">⚙️ Paramètres</div>
+    </div>
+
+    <!-- CONTENT -->
+    <div class="content">
+
+      <!-- DASHBOARD -->
+      <div class="screen active" id="screen-dashboard">
+        <div class="page-title">📊 Tableau de bord</div>
+        <div class="stats-grid">
+          <div class="stat-card"><div class="stat-number">7</div><div class="stat-label">Produits chocolaterie</div></div>
+          <div class="stat-card"><div class="stat-number">3</div><div class="stat-label">Fiches gâteau</div></div>
+          <div class="stat-card warning"><div class="stat-number">2</div><div class="stat-label">Alertes stock</div></div>
+          <div class="stat-card success"><div class="stat-number">5</div><div class="stat-label">Commandes en attente</div></div>
+        </div>
+        <div class="two-col">
+          <div class="gb">
+            <div class="gb-title">⚠️ Alertes stock faible</div>
+            <div class="gb-body">
+              <ul class="alert-list">
+                <li>🔴 <b>Colorants alimentaires</b> — stock 50g / seuil 100g <span class="badge b-red" style="margin-left:auto;">CRITIQUE</span></li>
+                <li>🟠 <b>Framboises fraîches</b> — stock 300g / seuil 200g <span class="badge b-orange" style="margin-left:auto;">FAIBLE</span></li>
+              </ul>
+              <div style="margin-top:8px;text-align:right;"><button class="btn btn-primary" onclick="nav('patiss-ingr')">Voir les ingrédients →</button></div>
+            </div>
+          </div>
+          <div class="gb">
+            <div class="gb-title">📦 Commandes récentes</div>
+            <div class="gb-body">
+              <table class="dgv">
+                <thead><tr><th>#</th><th>Client</th><th>Produit</th><th>Statut</th></tr></thead>
+                <tbody>
+                  <tr><td>CMD-042</td><td>Marie D.</td><td>Fraisier 20cm</td><td><span class="badge b-orange">En attente</span></td></tr>
+                  <tr><td>CMD-041</td><td>Pierre L.</td><td>Ballotin 500g</td><td><span class="badge b-blue">Confirmée</span></td></tr>
+                  <tr><td>CMD-040</td><td>Sophie M.</td><td>Entremet 22cm</td><td><span class="badge b-gold">En prépa</span></td></tr>
+                </tbody>
+              </table>
+              <div style="margin-top:8px;text-align:right;"><button class="btn btn-primary" onclick="nav('commandes')">Voir toutes →</button></div>
+            </div>
+          </div>
+        </div>
+        <div class="gb">
+          <div class="gb-title">📈 Activité récente</div>
+          <div class="gb-body">
+            <table class="dgv">
+              <thead><tr><th>Date</th><th>Action</th><th>Détail</th><th>Utilisateur</th></tr></thead>
+              <tbody>
+                <tr><td>26/03/2026 09:42</td><td><span class="badge b-green">Ajout</span></td><td>Nouveau produit : Ballotin 750g</td><td>Charles</td></tr>
+                <tr><td>26/03/2026 09:10</td><td><span class="badge b-blue">Modif</span></td><td>Stock Chocolat noir 70% ajusté (+500g)</td><td>Nadejda</td></tr>
+                <tr><td>25/03/2026 16:30</td><td><span class="badge b-gold">Production</span></td><td>Fraisier 20cm × 2 — commande CMD-040</td><td>Nadejda</td></tr>
+                <tr><td>25/03/2026 11:00</td><td><span class="badge b-green">Ajout</span></td><td>Recette couche : Mousse Framboise</td><td>Nadejda</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- CHOCO INGRÉDIENTS -->
+      <div class="screen" id="screen-choco-ingr">
+        <div class="page-title">🧪 Ingrédients — Chocolaterie</div>
+        <div class="toolbar">
+          <button class="btn btn-success" onclick="openModal('modal-choco-ingr-edit','Nouvel ingrédient')">➕ Ajouter</button>
+          <button class="btn" onclick="openModal('modal-choco-ingr-edit','Modifier ingrédient')">✏️ Modifier</button>
+          <button class="btn btn-danger" onclick="showNotif('Ingrédient supprimé.','err')">🗑️ Supprimer</button>
+          <div class="toolbar-sep"></div>
+          <button class="btn" onclick="showNotif('Mouvement de stock enregistré.')">📥 Entrée stock</button>
+          <button class="btn" onclick="showNotif('Mouvement de stock enregistré.')">📤 Sortie stock</button>
+        </div>
+        <div class="gb">
+          <div class="gb-body" style="padding:0;">
+            <table class="dgv">
+              <thead><tr><th>Nom</th><th>Stock actuel</th><th>Seuil alerte</th><th>Niveau</th><th>Prix achat</th><th>Fournisseur</th><th>Statut</th></tr></thead>
+              <tbody>
+                <tr><td>Chocolat noir 70%</td><td>2 500 g</td><td>500 g</td><td><div class="sbar"><div class="sbar-fill" style="width:80%;background:#27AE60;"></div></div></td><td>18,00 €/kg</td><td>Callebaut</td><td><span class="badge b-green">OK</span></td></tr>
+                <tr><td>Chocolat au lait</td><td>1 800 g</td><td>500 g</td><td><div class="sbar"><div class="sbar-fill" style="width:72%;background:#27AE60;"></div></div></td><td>16,00 €/kg</td><td>Callebaut</td><td><span class="badge b-green">OK</span></td></tr>
+                <tr><td>Chocolat blanc</td><td>900 g</td><td>500 g</td><td><div class="sbar"><div class="sbar-fill" style="width:40%;background:#F39C12;"></div></div></td><td>17,00 €/kg</td><td>Callebaut</td><td><span class="badge b-orange">Faible</span></td></tr>
+                <tr><td>Praliné noisette</td><td>1 200 g</td><td>300 g</td><td><div class="sbar"><div class="sbar-fill" style="width:80%;background:#27AE60;"></div></div></td><td>22,00 €/kg</td><td>Valrhona</td><td><span class="badge b-green">OK</span></td></tr>
+                <tr><td>Beurre de cacao</td><td>800 g</td><td>200 g</td><td><div class="sbar"><div class="sbar-fill" style="width:80%;background:#27AE60;"></div></div></td><td>28,00 €/kg</td><td>Valrhona</td><td><span class="badge b-green">OK</span></td></tr>
+                <tr class="alert"><td>Colorants alimentaires</td><td>50 g</td><td>100 g</td><td><div class="sbar"><div class="sbar-fill" style="width:25%;background:#E74C3C;"></div></div></td><td>25,00 €/kg</td><td>Décorations BE</td><td><span class="badge b-red">⚠️ Alerte</span></td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- CHOCO CATÉGORIES -->
+      <div class="screen" id="screen-choco-cat">
+        <div class="page-title">📁 Catégories — Chocolaterie</div>
+        <div class="toolbar">
+          <button class="btn btn-success" onclick="openModal('modal-cat-edit','Nouvelle catégorie')">➕ Ajouter</button>
+          <button class="btn" onclick="openModal('modal-cat-edit','Modifier catégorie')">✏️ Modifier</button>
+          <button class="btn btn-danger" onclick="showNotif('Catégorie supprimée.','err')">🗑️ Supprimer</button>
+        </div>
+        <div class="gb"><div class="gb-body" style="padding:0;">
+          <table class="dgv">
+            <thead><tr><th>Nom</th><th>Description</th><th>Nb produits</th><th>Actif</th></tr></thead>
+            <tbody>
+              <tr><td>Ballotins</td><td>Boîtes de chocolats configurables par le client</td><td>2</td><td><span class="badge b-green">✓ Oui</span></td></tr>
+              <tr><td>Boules de Noël</td><td>Chocolats saisonniers en forme de boule</td><td>2</td><td><span class="badge b-green">✓ Oui</span></td></tr>
+              <tr><td>Créations Originales</td><td>Pièces artisanales uniques sans configuration</td><td>3</td><td><span class="badge b-green">✓ Oui</span></td></tr>
+              <tr><td>Pâtisseries</td><td>Gâteaux et entremets</td><td>0</td><td><span class="badge b-gray">– Non</span></td></tr>
+            </tbody>
+          </table>
+        </div></div>
+      </div>
+
+      <!-- CHOCO PARFUMS -->
+      <div class="screen" id="screen-choco-parfums">
+        <div class="page-title">🎨 Parfums — Chocolaterie</div>
+        <div class="toolbar">
+          <button class="btn btn-success" onclick="openModal('modal-parfum-edit','Nouveau parfum')">➕ Ajouter</button>
+          <button class="btn" onclick="openModal('modal-parfum-edit','Modifier parfum')">✏️ Modifier</button>
+          <button class="btn btn-danger" onclick="showNotif('Parfum supprimé.','err')">🗑️ Supprimer</button>
+        </div>
+        <div class="gb"><div class="gb-body" style="padding:0;">
+          <table class="dgv">
+            <thead><tr><th>Couleur</th><th>Nom</th><th>Type</th><th>Actif</th></tr></thead>
+            <tbody id="parfums-table"></tbody>
+          </table>
+        </div></div>
+      </div>
+
+      <!-- CHOCO PRODUITS -->
+      <div class="screen" id="screen-choco-produits">
+        <div class="page-title">🍬 Produits — Chocolaterie</div>
+        <div class="toolbar">
+          <button class="btn btn-success" onclick="openModal('modal-produit-edit','Nouveau produit')">➕ Ajouter</button>
+          <button class="btn" onclick="openModal('modal-produit-edit','Modifier produit')">✏️ Modifier</button>
+          <button class="btn btn-danger" onclick="showNotif('Produit supprimé.','err')">🗑️ Supprimer</button>
+          <div class="toolbar-sep"></div>
+          <button class="btn btn-warning" onclick="showNotif('Image uploadée sur Cloudinary ✓')">☁️ Upload image</button>
+        </div>
+        <div class="gb"><div class="gb-body" style="padding:0;">
+          <table class="dgv">
+            <thead><tr><th>Nom</th><th>Catégorie</th><th>Prix TTC</th><th>Capacité</th><th>Configurable</th><th>Stock</th><th>Dispo</th></tr></thead>
+            <tbody>
+              <tr><td>Ballotin 250g</td><td>Ballotins</td><td>13,00 €</td><td>19 chocs</td><td><span class="badge b-blue">✓ Oui</span></td><td>—</td><td><span class="badge b-green">✓</span></td></tr>
+              <tr><td>Ballotin 500g</td><td>Ballotins</td><td>23,00 €</td><td>39 chocs</td><td><span class="badge b-blue">✓ Oui</span></td><td>—</td><td><span class="badge b-green">✓</span></td></tr>
+              <tr><td>Boule de Noël 220g</td><td>Boules de Noël</td><td>15,00 €</td><td>8 chocs</td><td><span class="badge b-blue">✓ Oui</span></td><td>—</td><td><span class="badge b-green">✓</span></td></tr>
+              <tr><td>Boule de Noël 500g</td><td>Boules de Noël</td><td>29,00 €</td><td>19 chocs</td><td><span class="badge b-blue">✓ Oui</span></td><td>—</td><td><span class="badge b-green">✓</span></td></tr>
+              <tr><td>Chaussure en chocolat</td><td>Créations Originales</td><td>15,00 €</td><td>—</td><td><span class="badge b-gray">Non</span></td><td>4</td><td><span class="badge b-green">✓</span></td></tr>
+              <tr><td>Bouteille champagne choc.</td><td>Créations Originales</td><td>15,00 €</td><td>—</td><td><span class="badge b-gray">Non</span></td><td>2</td><td><span class="badge b-green">✓</span></td></tr>
+              <tr><td>Pâte à tartiner</td><td>Créations Originales</td><td>10,00 €</td><td>—</td><td><span class="badge b-gray">Non</span></td><td>8</td><td><span class="badge b-green">✓</span></td></tr>
+            </tbody>
+          </table>
+        </div></div>
+      </div>
+
+      <!-- PATISS INGRÉDIENTS -->
+      <div class="screen" id="screen-patiss-ingr">
+        <div class="page-title">🧪 Ingrédients — Pâtisserie</div>
+        <div class="toolbar">
+          <button class="btn btn-success" onclick="openModal('modal-pingr-edit','Nouvel ingrédient')">➕ Ajouter</button>
+          <button class="btn" onclick="openModal('modal-pingr-edit','Modifier ingrédient')">✏️ Modifier</button>
+          <button class="btn btn-danger" onclick="showNotif('Ingrédient supprimé.','err')">🗑️ Supprimer</button>
+          <div class="toolbar-sep"></div>
+          <button class="btn" onclick="showNotif('Mouvement de stock enregistré.')">📥 Entrée stock</button>
+          <div class="toolbar-sep"></div>
+          <label style="font-size:12px;">Filtre : <select style="border:1px solid #7F9DB9;padding:2px;"><option>Tous</option><option>⚠️ Alertes seulement</option></select></label>
+        </div>
+        <div class="gb"><div class="gb-body" style="padding:0;">
+          <table class="dgv">
+            <thead><tr><th>Nom</th><th>Stock</th><th>Seuil</th><th>Niveau</th><th>Prix achat</th><th>Allergènes</th><th>Statut</th></tr></thead>
+            <tbody>
+              <tr><td>Farine T45</td><td>5 000 g</td><td>1 000 g</td><td><div class="sbar"><div class="sbar-fill" style="width:80%;background:#27AE60;"></div></div></td><td>1,20 €/kg</td><td><span class="allergen">Gluten</span></td><td><span class="badge b-green">OK</span></td></tr>
+              <tr><td>Sucre fin</td><td>3 000 g</td><td>500 g</td><td><div class="sbar"><div class="sbar-fill" style="width:85%;background:#27AE60;"></div></div></td><td>0,90 €/kg</td><td>—</td><td><span class="badge b-green">OK</span></td></tr>
+              <tr><td>Beurre 82% MG</td><td>1 500 g</td><td>500 g</td><td><div class="sbar"><div class="sbar-fill" style="width:60%;background:#27AE60;"></div></div></td><td>8,00 €/kg</td><td><span class="allergen">Lait</span></td><td><span class="badge b-green">OK</span></td></tr>
+              <tr><td>Oeufs frais</td><td>24 pcs</td><td>6 pcs</td><td><div class="sbar"><div class="sbar-fill" style="width:80%;background:#27AE60;"></div></div></td><td>0,35 €/pcs</td><td><span class="allergen">Oeufs</span></td><td><span class="badge b-green">OK</span></td></tr>
+              <tr><td>Crème liquide 35%</td><td>2 000 ml</td><td>500 ml</td><td><div class="sbar"><div class="sbar-fill" style="width:80%;background:#27AE60;"></div></div></td><td>3,50 €/L</td><td><span class="allergen">Lait</span></td><td><span class="badge b-green">OK</span></td></tr>
+              <tr><td>Fraises fraîches</td><td>800 g</td><td>200 g</td><td><div class="sbar"><div class="sbar-fill" style="width:70%;background:#27AE60;"></div></div></td><td>12,00 €/kg</td><td>—</td><td><span class="badge b-green">OK</span></td></tr>
+              <tr class="alert"><td>Framboises fraîches</td><td>300 g</td><td>200 g</td><td><div class="sbar"><div class="sbar-fill" style="width:30%;background:#F39C12;"></div></div></td><td>14,00 €/kg</td><td>—</td><td><span class="badge b-orange">⚠️ Faible</span></td></tr>
+              <tr><td>Mascarpone</td><td>500 g</td><td>250 g</td><td><div class="sbar"><div class="sbar-fill" style="width:50%;background:#F39C12;"></div></div></td><td>9,00 €/kg</td><td><span class="allergen">Lait</span></td><td><span class="badge b-orange">Faible</span></td></tr>
+              <tr><td>Gélatine en feuilles</td><td>80 g</td><td>20 g</td><td><div class="sbar"><div class="sbar-fill" style="width:80%;background:#27AE60;"></div></div></td><td>18,00 €/kg</td><td>—</td><td><span class="badge b-green">OK</span></td></tr>
+              <tr class="alert"><td>Colorants gel</td><td>15 g</td><td>10 g</td><td><div class="sbar"><div class="sbar-fill" style="width:20%;background:#E74C3C;"></div></div></td><td>45,00 €/kg</td><td>—</td><td><span class="badge b-red">⚠️ Critique</span></td></tr>
+            </tbody>
+          </table>
+        </div></div>
+      </div>
+
+      <!-- PATISS TYPES COUCHES -->
+      <div class="screen" id="screen-patiss-types">
+        <div class="page-title">🗂️ Types de couches — configurables</div>
+        <p style="background:#FFF9E4;border:1px solid #D4AF37;padding:8px 12px;margin-bottom:10px;font-size:12px;">
+          💡 Les types de couches définissent la nature de chaque couche dans une recette. Vous pouvez ajouter vos propres types selon votre pratique artisanale.
+        </p>
+        <div class="toolbar">
+          <button class="btn btn-success" onclick="openModal('modal-type-edit','Nouveau type de couche')">➕ Ajouter type</button>
+          <button class="btn" onclick="openModal('modal-type-edit','Modifier type')">✏️ Modifier</button>
+          <button class="btn btn-danger" onclick="showNotif('Type supprimé.','err')">🗑️ Supprimer</button>
+        </div>
+        <div class="gb"><div class="gb-body" style="padding:0;">
+          <table class="dgv">
+            <thead><tr><th>Icône</th><th>Nom</th><th>Description</th><th>Mode scaling défaut</th><th>Nb recettes liées</th><th>Actif</th></tr></thead>
+            <tbody>
+              <tr><td style="font-size:18px;text-align:center;">🫓</td><td><b>Biscuit / Base</b></td><td>Génoises, dacquoises, streusel, brownie...</td><td><span class="badge b-blue">volume</span></td><td>3</td><td><span class="badge b-green">✓</span></td></tr>
+              <tr><td style="font-size:18px;text-align:center;">💧</td><td><b>Sirop d'imbibage</b></td><td>Sirop pour humidifier le biscuit</td><td><span class="badge b-orange">surface_dessus</span></td><td>2</td><td><span class="badge b-green">✓</span></td></tr>
+              <tr><td style="font-size:18px;text-align:center;">🍦</td><td><b>Crème / Mousse</b></td><td>Crème mousseline, mousse chocolat, bavaroise...</td><td><span class="badge b-blue">volume</span></td><td>4</td><td><span class="badge b-green">✓</span></td></tr>
+              <tr><td style="font-size:18px;text-align:center;">🍓</td><td><b>Garniture</b></td><td>Fruits frais, confit, insert...</td><td><span class="badge b-orange">surface_dessus</span></td><td>2</td><td><span class="badge b-green">✓</span></td></tr>
+              <tr><td style="font-size:18px;text-align:center;">✨</td><td><b>Glaçage</b></td><td>Glaçage miroir, nappage, fondant...</td><td><span class="badge b-orange">surface_dessus</span></td><td>2</td><td><span class="badge b-green">✓</span></td></tr>
+              <tr><td style="font-size:18px;text-align:center;">🎀</td><td><b>Décoration</b></td><td>Décors, finitions visuelles</td><td><span class="badge b-gray">fixe</span></td><td>1</td><td><span class="badge b-green">✓</span></td></tr>
+            </tbody>
+          </table>
+        </div></div>
+      </div>
+
+      <!-- PATISS RECETTES -->
+      <div class="screen" id="screen-patiss-recettes">
+        <div class="page-title">📋 Recettes de couches</div>
+        <div class="toolbar">
+          <button class="btn btn-success" onclick="openModal('modal-recette-edit','Nouvelle recette de couche')">➕ Ajouter recette</button>
+          <button class="btn" onclick="openModal('modal-recette-edit','Modifier recette')">✏️ Modifier</button>
+          <button class="btn btn-danger" onclick="showNotif('Recette supprimée.','err')">🗑️ Supprimer</button>
+          <div class="toolbar-sep"></div>
+          <label style="font-size:12px;">Filtre type : <select style="border:1px solid #7F9DB9;padding:2px;" onchange=""><option>Tous</option><option>Biscuit</option><option>Sirop</option><option>Crème/Mousse</option><option>Garniture</option><option>Glaçage</option></select></label>
+        </div>
+        <div class="two-col">
+          <div class="gb">
+            <div class="gb-title">Liste des recettes</div>
+            <div class="gb-body" style="padding:0;">
+              <table class="dgv">
+                <thead><tr><th>Nom</th><th>Type</th><th>Réf.</th><th>Scaling</th><th>Tps prépa</th></tr></thead>
+                <tbody>
+                  <tr class="selected" onclick="showRecetteDetail(0)"><td>Génoise Vanille</td><td>🫓 Biscuit</td><td>Ø20cm</td><td><span class="badge b-blue">volume</span></td><td>45 min</td></tr>
+                  <tr onclick="showRecetteDetail(1)"><td>Sirop Kirsch</td><td>💧 Sirop</td><td>Ø20cm</td><td><span class="badge b-orange">surface</span></td><td>10 min</td></tr>
+                  <tr onclick="showRecetteDetail(2)"><td>Crème Mousseline</td><td>🍦 Crème</td><td>Ø20cm</td><td><span class="badge b-blue">volume</span></td><td>30 min</td></tr>
+                  <tr onclick="showRecetteDetail(3)"><td>Garniture Fraises</td><td>🍓 Garniture</td><td>Ø20cm</td><td><span class="badge b-orange">surface</span></td><td>15 min</td></tr>
+                  <tr onclick="showRecetteDetail(4)"><td>Glaçage Miroir Choc.</td><td>✨ Glaçage</td><td>Ø20cm</td><td><span class="badge b-orange">surface</span></td><td>20 min</td></tr>
+                  <tr onclick="showRecetteDetail(5)"><td>Mousse Framboise</td><td>🍦 Crème</td><td>Ø20cm</td><td><span class="badge b-blue">volume</span></td><td>40 min</td></tr>
+                  <tr onclick="showRecetteDetail(6)"><td>Dacquoise Noisette</td><td>🫓 Biscuit</td><td>Ø20cm</td><td><span class="badge b-blue">volume</span></td><td>35 min</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+          <div class="gb" id="recette-detail-panel">
+            <div class="gb-title">📋 Détail : <span id="recette-detail-nom">Génoise Vanille</span></div>
+            <div class="gb-body">
+              <div id="recette-detail-content"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- PATISS FICHES GÂTEAU -->
+      <div class="screen" id="screen-patiss-gateaux">
+        <div class="page-title">🎂 Fiches gâteau</div>
+        <div class="toolbar">
+          <button class="btn btn-success" onclick="openModal('modal-gateau-edit','Nouvelle fiche gâteau')">➕ Nouveau gâteau</button>
+          <button class="btn" onclick="openModal('modal-gateau-edit','Modifier fiche gâteau')">✏️ Modifier</button>
+          <button class="btn btn-danger" onclick="showNotif('Fiche supprimée.','err')">🗑️ Supprimer</button>
+          <div class="toolbar-sep"></div>
+          <label style="font-size:12px;">Mode : <select style="border:1px solid #7F9DB9;padding:2px;"><option>Tous</option><option>Classique</option><option>Configurable</option></select></label>
+        </div>
+        <div class="two-col">
+          <div>
+            <div class="gb">
+              <div class="gb-title">Liste des fiches gâteau</div>
+              <div class="gb-body" style="padding:0;">
+                <table class="dgv">
+                  <thead><tr><th>Nom</th><th>Mode</th><th>Forme réf.</th><th>Taille réf.</th><th>Site</th></tr></thead>
+                  <tbody>
+                    <tr class="selected" onclick="showGateauDetail(0)"><td>🍓 Fraisier Classique</td><td><span class="badge b-gold">Classique</span></td><td>Rond</td><td>Ø20cm</td><td><span class="badge b-green">✓ Visible</span></td></tr>
+                    <tr onclick="showGateauDetail(1)"><td>🍫 Entremet Chocolat</td><td><span class="badge b-gold">Classique</span></td><td>Rond</td><td>Ø20cm</td><td><span class="badge b-green">✓ Visible</span></td></tr>
+                    <tr onclick="showGateauDetail(2)"><td>⚙️ Gâteau Personnalisé</td><td><span class="badge b-blue">Configurable</span></td><td>Rond</td><td>Ø20cm</td><td><span class="badge b-green">✓ Visible</span></td></tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+            <div class="gb">
+              <div class="gb-title">🔢 Tailles disponibles — Rond</div>
+              <div class="gb-body">
+                <p style="font-size:11px;color:#666;margin-bottom:6px;">Configurable depuis Paramètres → Formes & Tailles</p>
+                <div style="display:flex;flex-wrap:wrap;gap:6px;">
+                  <span class="badge b-gray">Ø16cm</span>
+                  <span class="badge b-gray">Ø18cm</span>
+                  <span class="badge b-gold">Ø20cm ← réf</span>
+                  <span class="badge b-gray">Ø22cm</span>
+                  <span class="badge b-gray">Ø24cm</span>
+                  <span class="badge b-gray">Ø26cm</span>
+                  <span class="badge b-gray">Ø28cm</span>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="gb" id="gateau-detail-panel">
+            <div class="gb-title">🎂 Détail : <span id="gateau-detail-nom">Fraisier Classique</span></div>
+            <div class="gb-body" id="gateau-detail-content"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- PATISS DEVIS -->
+      <div class="screen" id="screen-patiss-devis">
+        <div class="page-title">🧮 Calculateur de devis — Pâtisserie</div>
+        <div class="devis-grid">
+          <div>
+            <div class="gb">
+              <div class="gb-title">1. Sélection du gâteau</div>
+              <div class="gb-body">
+                <div class="form-row"><span class="form-label">Type de gâteau :</span>
+                  <select id="devis-type" onchange="devisCalc()" style="border:1px solid #7F9DB9;padding:3px;flex:1;">
+                    <option value="fraisier">🍓 Fraisier Classique</option>
+                    <option value="entremet">🍫 Entremet Chocolat</option>
+                  </select>
+                </div>
+                <div class="form-row"><span class="form-label">Taille :</span>
+                  <select id="devis-taille" onchange="devisCalc()" style="border:1px solid #7F9DB9;padding:3px;flex:1;">
+                    <option value="16">Ø16cm</option>
+                    <option value="18">Ø18cm</option>
+                    <option value="20" selected>Ø20cm (référence)</option>
+                    <option value="22">Ø22cm</option>
+                    <option value="24">Ø24cm</option>
+                    <option value="26">Ø26cm</option>
+                    <option value="28">Ø28cm</option>
+                  </select>
+                </div>
+                <div class="form-row"><span class="form-label">Nb étages :</span>
+                  <select id="devis-etages" onchange="devisCalc()" style="border:1px solid #7F9DB9;padding:3px;flex:1;">
+                    <option value="1">1 étage</option>
+                    <option value="2">2 étages (pièce montée)</option>
+                    <option value="3">3 étages (pièce montée)</option>
+                  </select>
+                </div>
+                <div class="form-row"><span class="form-label">Saveurs mixtes :</span>
+                  <input type="checkbox" id="devis-mixte" onchange="devisCalc()" style="width:auto;flex:none;">
+                  <span style="font-size:11px;color:#666;margin-left:4px;">Supplément étages saveurs différentes</span>
+                </div>
+                <div class="form-row"><span class="form-label">Décoration :</span>
+                  <select id="devis-deco" onchange="devisCalc()" style="border:1px solid #7F9DB9;padding:3px;flex:1;">
+                    <option value="0">Basique (incluse)</option>
+                    <option value="25">🎂 Anniversaire enfant (+25€)</option>
+                    <option value="40">💍 Mariage (+40€)</option>
+                    <option value="30">🕊️ Communion (+30€)</option>
+                    <option value="20">🎄 Thème Noël (+20€)</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+            <div class="gb">
+              <div class="gb-title">2. Couches calculées</div>
+              <div class="gb-body" id="devis-couches"></div>
+            </div>
+          </div>
+          <div>
+            <div class="devis-result">
+              <div style="font-weight:bold;margin-bottom:10px;font-size:14px;color:#1E5631;">📊 Résultat du devis</div>
+              <div id="devis-breakdown"></div>
+              <div style="margin-top:12px;background:white;border:1px solid #ACA899;padding:8px;">
+                <div class="form-row" style="margin:0;"><span style="font-weight:bold;">Prix de vente final :</span>
+                  <input type="number" id="devis-prix-final" style="border:1px solid #27AE60;padding:4px;width:90px;font-size:16px;font-weight:bold;text-align:right;flex:none;margin-left:auto;">
+                  <span style="margin-left:4px;font-weight:bold;">€</span>
+                </div>
+              </div>
+              <div style="margin-top:10px;display:flex;gap:6px;">
+                <button class="btn btn-success" onclick="showNotif('Devis enregistré — Commande CMD-043 créée.')">💾 Enregistrer devis</button>
+                <button class="btn" onclick="showNotif('Devis imprimé.')">🖨️ Imprimer</button>
+              </div>
+            </div>
+            <div class="gb" style="margin-top:10px;">
+              <div class="gb-title">⚙️ Paramètres de calcul actuels</div>
+              <div class="gb-body">
+                <div class="price-row"><span>Taux horaire MO :</span><span id="p-horaire">25,00 €/h</span></div>
+                <div class="price-row"><span>Taux charges :</span><span id="p-charges">15 %</span></div>
+                <div class="price-row"><span>Marge cible :</span><span id="p-marge">40 %</span></div>
+                <div class="price-row"><span>Supplément mixte :</span><span id="p-mixte">20,00 €</span></div>
+                <div style="margin-top:8px;"><button class="btn" onclick="nav('parametres')">⚙️ Modifier les paramètres</button></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- COMMANDES -->
+      <div class="screen" id="screen-commandes">
+        <div class="page-title">📦 Commandes reçues via le site web</div>
+        <div class="toolbar">
+          <label style="font-size:12px;">Statut : <select style="border:1px solid #7F9DB9;padding:2px;"><option>Tous</option><option>En attente</option><option>Confirmée</option><option>En préparation</option><option>Prête</option><option>Livrée</option></select></label>
+          <div class="toolbar-sep"></div>
+          <button class="btn" onclick="openModal('modal-cmd-detail','Détail commande CMD-042')">👁️ Voir détail</button>
+          <button class="btn btn-primary" onclick="showNotif('Statut mis à jour → En préparation')">🔄 Changer statut</button>
+          <button class="btn btn-warning" onclick="showNotif('Bon de commande imprimé.')">🖨️ Bon commande</button>
+        </div>
+        <div class="gb"><div class="gb-body" style="padding:0;">
+          <table class="dgv">
+            <thead><tr><th>#</th><th>Date commande</th><th>Client</th><th>Produit / Gâteau</th><th>Date souhaitée</th><th>Livraison</th><th>Total</th><th>Statut</th></tr></thead>
+            <tbody>
+              <tr><td>CMD-042</td><td>25/03/2026</td><td>Marie Dupont</td><td>Fraisier 22cm — Anniversaire</td><td>05/04/2026</td><td>Retrait</td><td>78,00 €</td><td><span class="badge b-orange">En attente</span></td></tr>
+              <tr><td>CMD-041</td><td>24/03/2026</td><td>Pierre Laurent</td><td>Ballotin 500g (39 chocs)</td><td>02/04/2026</td><td>Livraison BEL</td><td>29,95 €</td><td><span class="badge b-blue">Confirmée</span></td></tr>
+              <tr><td>CMD-040</td><td>24/03/2026</td><td>Sophie Martin</td><td>Entremet Chocolat 24cm</td><td>01/04/2026</td><td>Retrait</td><td>65,00 €</td><td><span class="badge b-gold">En prépa</span></td></tr>
+              <tr><td>CMD-039</td><td>23/03/2026</td><td>Jean Renard</td><td>Gâteau Personnalisé 20cm</td><td>29/03/2026</td><td>Retrait</td><td>52,00 €</td><td><span class="badge b-gold">En prépa</span></td></tr>
+              <tr><td>CMD-038</td><td>22/03/2026</td><td>Claire Petit</td><td>Boule Noël 500g</td><td>28/03/2026</td><td>Livraison BEL</td><td>35,95 €</td><td><span class="badge b-green">Prête</span></td></tr>
+            </tbody>
+          </table>
+        </div></div>
+      </div>
+
+      <!-- PARAMÈTRES -->
+      <div class="screen" id="screen-parametres">
+        <div class="page-title">⚙️ Paramètres — Configuration globale</div>
+        <div class="tabs">
+          <div class="tab active" onclick="switchTab(this,'tab-calc')">🧮 Calcul & Devis</div>
+          <div class="tab" onclick="switchTab(this,'tab-formes')">📐 Formes & Tailles</div>
+          <div class="tab" onclick="switchTab(this,'tab-decos')">🎀 Décorations à thème</div>
+          <div class="tab" onclick="switchTab(this,'tab-allergenes')">⚠️ Allergènes</div>
+        </div>
+        <div id="tab-calc">
+          <div class="gb">
+            <div class="gb-title">Paramètres de calcul de devis</div>
+            <div class="gb-body">
+              <p style="background:#E8F4E8;border:1px solid #27AE60;padding:6px 10px;margin-bottom:12px;font-size:12px;">Tous ces paramètres sont pris en compte automatiquement dans le calculateur de devis.</p>
+              <div class="form-row"><span class="form-label">Taux horaire MO :</span><input type="number" value="25.00" style="width:100px;flex:none;border:1px solid #7F9DB9;padding:3px;"> €/h</div>
+              <div class="form-row"><span class="form-label">Taux charges :</span><input type="number" value="15" style="width:80px;flex:none;border:1px solid #7F9DB9;padding:3px;"> %</div>
+              <div class="form-row"><span class="form-label">Marge cible :</span><input type="number" value="40" style="width:80px;flex:none;border:1px solid #7F9DB9;padding:3px;"> %</div>
+              <div class="form-row"><span class="form-label">Supplément mixte :</span><input type="number" value="20.00" style="width:100px;flex:none;border:1px solid #7F9DB9;padding:3px;"> €</div>
+              <div class="form-row"><span class="form-label">Frais livraison BEL :</span><input type="number" value="6.95" style="width:100px;flex:none;border:1px solid #7F9DB9;padding:3px;"> €</div>
+              <div class="form-row"><span class="form-label">Frais livraison Nord FR :</span><input type="number" value="9.95" style="width:100px;flex:none;border:1px solid #7F9DB9;padding:3px;"> €</div>
+              <div style="margin-top:10px;"><button class="btn btn-success" onclick="showNotif('Paramètres enregistrés ✓')">💾 Enregistrer</button></div>
+            </div>
+          </div>
+        </div>
+        <div id="tab-formes" style="display:none;">
+          <div class="gb">
+            <div class="gb-title">Formes de gâteau disponibles</div>
+            <div class="gb-body">
+              <div class="toolbar" style="margin-bottom:8px;"><button class="btn btn-success" onclick="showNotif('Forme ajoutée.')">➕ Ajouter forme</button></div>
+              <table class="dgv">
+                <thead><tr><th>Forme</th><th>Formule scaling</th><th>Tailles disponibles</th><th>Actif</th></tr></thead>
+                <tbody>
+                  <tr><td>⭕ Rond</td><td>π × r²</td><td>16 / 18 / 20 / 22 / 24 / 26 / 28 cm</td><td><span class="badge b-green">✓</span></td></tr>
+                  <tr><td>⬜ Carré</td><td>côté²</td><td>20×20 / 24×24 / 30×30 cm</td><td><span class="badge b-green">✓</span></td></tr>
+                  <tr><td>❤️ Cœur</td><td>≈ π × r²</td><td>20 / 24 cm</td><td><span class="badge b-green">✓</span></td></tr>
+                  <tr><td>📏 Rectangle</td><td>L × l</td><td>20×30 / 25×35 cm</td><td><span class="badge b-gray">– Non</span></td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+        <div id="tab-decos" style="display:none;">
+          <div class="gb">
+            <div class="gb-title">Catalogue décorations à thème</div>
+            <div class="gb-body">
+              <div class="toolbar" style="margin-bottom:8px;"><button class="btn btn-success" onclick="openModal('modal-deco-edit','Nouvelle décoration à thème')">➕ Ajouter décoration</button><button class="btn" onclick="openModal('modal-deco-edit','Modifier décoration')">✏️ Modifier</button></div>
+              <table class="dgv">
+                <thead><tr><th>Nom</th><th>Description</th><th>Supplément</th><th>Actif</th></tr></thead>
+                <tbody>
+                  <tr><td>🎂 Anniversaire enfant</td><td>Déco colorée, figurines personnages</td><td>+25,00 €</td><td><span class="badge b-green">✓</span></td></tr>
+                  <tr><td>💍 Mariage</td><td>Fleurs en sucre, topper personnalisé</td><td>+40,00 €</td><td><span class="badge b-green">✓</span></td></tr>
+                  <tr><td>🕊️ Communion / Baptême</td><td>Décor religieux délicat</td><td>+30,00 €</td><td><span class="badge b-green">✓</span></td></tr>
+                  <tr><td>🎄 Thème Noël</td><td>Décor hivernal, sapins, étoiles</td><td>+20,00 €</td><td><span class="badge b-green">✓</span></td></tr>
+                  <tr><td>🎃 Halloween</td><td>Décor effrayant, citrouilles</td><td>+20,00 €</td><td><span class="badge b-gray">– Archivé</span></td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+        <div id="tab-allergenes" style="display:none;">
+          <div class="gb">
+            <div class="gb-title">Allergènes référencés (14 allergènes EU + personnalisés)</div>
+            <div class="gb-body">
+              <p style="font-size:11px;color:#666;margin-bottom:8px;">Ces allergènes sont associés aux ingrédients et remontent automatiquement aux recettes et fiches gâteau.</p>
+              <div style="display:flex;flex-wrap:wrap;gap:6px;">
+                <span class="allergen" style="padding:4px 8px;font-size:12px;">🌾 Gluten</span><span class="allergen" style="padding:4px 8px;font-size:12px;">🦐 Crustacés</span>
+                <span class="allergen" style="padding:4px 8px;font-size:12px;">🥚 Oeufs</span><span class="allergen" style="padding:4px 8px;font-size:12px;">🐟 Poissons</span>
+                <span class="allergen" style="padding:4px 8px;font-size:12px;">🥜 Arachides</span><span class="allergen" style="padding:4px 8px;font-size:12px;">🫘 Soja</span>
+                <span class="allergen" style="padding:4px 8px;font-size:12px;">🥛 Lait</span><span class="allergen" style="padding:4px 8px;font-size:12px;">🌰 Fruits à coque</span>
+                <span class="allergen" style="padding:4px 8px;font-size:12px;">🌿 Céleri</span><span class="allergen" style="padding:4px 8px;font-size:12px;">🟡 Moutarde</span>
+                <span class="allergen" style="padding:4px 8px;font-size:12px;">🌱 Sésame</span><span class="allergen" style="padding:4px 8px;font-size:12px;">SO2 Sulfites</span>
+                <span class="allergen" style="padding:4px 8px;font-size:12px;">🐌 Lupin</span><span class="allergen" style="padding:4px 8px;font-size:12px;">🦪 Mollusques</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- /content -->
+  </div><!-- /main-area -->
+</div><!-- /app -->
+
+<!-- NOTIFICATION -->
+<div id="notif"></div>
+
+<!-- MODALS -->
+<div class="modal-overlay" id="modal-choco-ingr-edit">
+  <div class="modal">
+    <div class="modal-header"><span id="modal-choco-ingr-edit-title">Ingrédient</span><button class="modal-close" onclick="closeModal('modal-choco-ingr-edit')">✕</button></div>
+    <div class="modal-body">
+      <div class="form-row"><span class="form-label">Nom :</span><input type="text" value="Chocolat noir 70%"></div>
+      <div class="form-row"><span class="form-label">Fournisseur :</span><select style="border:1px solid #7F9DB9;padding:3px;flex:1;"><option>Callebaut</option><option>Valrhona</option><option>Autre</option></select></div>
+      <div class="form-row"><span class="form-label">Stock actuel :</span><input type="number" value="2500"> <select style="border:1px solid #7F9DB9;padding:3px;"><option>g</option><option>kg</option><option>ml</option><option>L</option><option>pcs</option></select></div>
+      <div class="form-row"><span class="form-label">Seuil alerte :</span><input type="number" value="500"> g</div>
+      <div class="form-row"><span class="form-label">Prix achat :</span><input type="number" value="18.00"> €/<select style="border:1px solid #7F9DB9;padding:3px;"><option>kg</option><option>L</option><option>pcs</option></select></div>
+    </div>
+    <div class="modal-footer"><button class="btn btn-success" onclick="closeModal('modal-choco-ingr-edit');showNotif('Ingrédient enregistré ✓')">💾 Enregistrer</button><button class="btn" onclick="closeModal('modal-choco-ingr-edit')">Annuler</button></div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="modal-cat-edit">
+  <div class="modal">
+    <div class="modal-header"><span id="modal-cat-edit-title">Catégorie</span><button class="modal-close" onclick="closeModal('modal-cat-edit')">✕</button></div>
+    <div class="modal-body">
+      <div class="form-row"><span class="form-label">Nom :</span><input type="text" value="Ballotins"></div>
+      <div class="form-row"><span class="form-label">Description :</span><textarea>Boîtes de chocolats configurables par le client</textarea></div>
+      <div class="form-row"><span class="form-label">Actif :</span><input type="checkbox" checked style="width:auto;flex:none;"></div>
+    </div>
+    <div class="modal-footer"><button class="btn btn-success" onclick="closeModal('modal-cat-edit');showNotif('Catégorie enregistrée ✓')">💾 Enregistrer</button><button class="btn" onclick="closeModal('modal-cat-edit')">Annuler</button></div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="modal-parfum-edit">
+  <div class="modal">
+    <div class="modal-header"><span>Parfum</span><button class="modal-close" onclick="closeModal('modal-parfum-edit')">✕</button></div>
+    <div class="modal-body">
+      <div class="form-row"><span class="form-label">Nom :</span><input type="text" value="Praliné"></div>
+      <div class="form-row"><span class="form-label">Type :</span><select style="border:1px solid #7F9DB9;padding:3px;flex:1;"><option>Chocolat noir</option><option>Chocolat lait</option><option>Chocolat blanc</option><option>Praliné</option><option>Fruité</option></select></div>
+      <div class="form-row"><span class="form-label">Couleur hex :</span><input type="text" value="#C8A96E" style="width:100px;flex:none;"> <input type="color" value="#C8A96E" style="width:40px;flex:none;border:1px solid #999;padding:1px;"></div>
+      <div class="form-row"><span class="form-label">Actif :</span><input type="checkbox" checked style="width:auto;flex:none;"></div>
+    </div>
+    <div class="modal-footer"><button class="btn btn-success" onclick="closeModal('modal-parfum-edit');showNotif('Parfum enregistré ✓')">💾 Enregistrer</button><button class="btn" onclick="closeModal('modal-parfum-edit')">Annuler</button></div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="modal-produit-edit">
+  <div class="modal" style="min-width:520px;">
+    <div class="modal-header"><span>Produit</span><button class="modal-close" onclick="closeModal('modal-produit-edit')">✕</button></div>
+    <div class="modal-body">
+      <div class="form-row"><span class="form-label">Nom :</span><input type="text" value="Ballotin 250g"></div>
+      <div class="form-row"><span class="form-label">Catégorie :</span><select style="border:1px solid #7F9DB9;padding:3px;flex:1;"><option>Ballotins</option><option>Boules de Noël</option><option>Créations Originales</option></select></div>
+      <div class="form-row"><span class="form-label">Prix TTC :</span><input type="number" value="13.00" style="width:90px;flex:none;"> €</div>
+      <div class="form-row"><span class="form-label">Configurable :</span><input type="checkbox" checked id="chk-config" style="width:auto;flex:none;" onchange="document.getElementById('row-cap').style.display=this.checked?'flex':'none'"></div>
+      <div class="form-row" id="row-cap"><span class="form-label">Capacité max :</span><input type="number" value="19" style="width:80px;flex:none;"> chocolats</div>
+      <div class="form-row"><span class="form-label">Image Cloudinary :</span><button class="btn btn-warning" onclick="showNotif('Image uploadée sur Cloudinary ✓')">☁️ Upload image</button></div>
+      <div class="form-row"><span class="form-label">Disponible :</span><input type="checkbox" checked style="width:auto;flex:none;"></div>
+    </div>
+    <div class="modal-footer"><button class="btn btn-success" onclick="closeModal('modal-produit-edit');showNotif('Produit enregistré ✓')">💾 Enregistrer</button><button class="btn" onclick="closeModal('modal-produit-edit')">Annuler</button></div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="modal-pingr-edit">
+  <div class="modal" style="min-width:500px;">
+    <div class="modal-header"><span>Ingrédient Pâtisserie</span><button class="modal-close" onclick="closeModal('modal-pingr-edit')">✕</button></div>
+    <div class="modal-body">
+      <div class="form-row"><span class="form-label">Nom :</span><input type="text" value="Farine T45"></div>
+      <div class="form-row"><span class="form-label">Fournisseur :</span><input type="text" value="Metro"></div>
+      <div class="form-row"><span class="form-label">Stock actuel :</span><input type="number" value="5000"> <select style="border:1px solid #7F9DB9;padding:3px;"><option>g</option><option>kg</option><option>ml</option><option>L</option><option>pcs</option></select></div>
+      <div class="form-row"><span class="form-label">Seuil alerte :</span><input type="number" value="1000"> g</div>
+      <div class="form-row"><span class="form-label">Prix achat :</span><input type="number" value="1.20"> €/<select style="border:1px solid #7F9DB9;padding:3px;"><option>kg</option><option>L</option><option>pcs</option></select></div>
+      <div class="form-row" style="align-items:flex-start;"><span class="form-label" style="padding-top:4px;">Allergènes :</span>
+        <div style="flex:1;">
+          <label><input type="checkbox" checked> Gluten</label>&nbsp;
+          <label><input type="checkbox"> Lait</label>&nbsp;
+          <label><input type="checkbox"> Oeufs</label>&nbsp;
+          <label><input type="checkbox"> Arachides</label>&nbsp;
+          <label><input type="checkbox"> Soja</label>&nbsp;
+          <label><input type="checkbox"> Fruits à coque</label>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer"><button class="btn btn-success" onclick="closeModal('modal-pingr-edit');showNotif('Ingrédient enregistré ✓')">💾 Enregistrer</button><button class="btn" onclick="closeModal('modal-pingr-edit')">Annuler</button></div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="modal-type-edit">
+  <div class="modal">
+    <div class="modal-header"><span>Type de couche</span><button class="modal-close" onclick="closeModal('modal-type-edit')">✕</button></div>
+    <div class="modal-body">
+      <div class="form-row"><span class="form-label">Nom :</span><input type="text" value="Biscuit / Base"></div>
+      <div class="form-row"><span class="form-label">Icône :</span><input type="text" value="🫓" style="width:60px;flex:none;font-size:18px;"> <span style="font-size:11px;color:#666;">Un emoji suffit</span></div>
+      <div class="form-row"><span class="form-label">Description :</span><textarea>Génoises, dacquoises, streusel...</textarea></div>
+      <div class="form-row"><span class="form-label">Scaling défaut :</span>
+        <select style="border:1px solid #7F9DB9;padding:3px;flex:1;">
+          <option>volume (π × r² × h)</option>
+          <option>surface_dessus (π × r²)</option>
+          <option>surface_laterale (2 × π × r × h)</option>
+          <option>fixe (quantité constante)</option>
+          <option>manuel (override artisan)</option>
+        </select>
+      </div>
+      <div class="form-row"><span class="form-label">Actif :</span><input type="checkbox" checked style="width:auto;flex:none;"></div>
+    </div>
+    <div class="modal-footer"><button class="btn btn-success" onclick="closeModal('modal-type-edit');showNotif('Type de couche enregistré ✓')">💾 Enregistrer</button><button class="btn" onclick="closeModal('modal-type-edit')">Annuler</button></div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="modal-recette-edit">
+  <div class="modal" style="min-width:560px;">
+    <div class="modal-header"><span>Recette de couche</span><button class="modal-close" onclick="closeModal('modal-recette-edit')">✕</button></div>
+    <div class="modal-body">
+      <div class="form-row"><span class="form-label">Nom recette :</span><input type="text" value="Génoise Vanille"></div>
+      <div class="form-row"><span class="form-label">Type de couche :</span><select style="border:1px solid #7F9DB9;padding:3px;flex:1;"><option>🫓 Biscuit / Base</option><option>💧 Sirop</option><option>🍦 Crème / Mousse</option><option>🍓 Garniture</option><option>✨ Glaçage</option><option>🎀 Décoration</option></select></div>
+      <div class="form-row"><span class="form-label">Taille référence :</span><input type="number" value="20" style="width:70px;flex:none;"> cm</div>
+      <div class="form-row"><span class="form-label">Mode scaling :</span><select style="border:1px solid #7F9DB9;padding:3px;flex:1;"><option selected>volume (π × r²)</option><option>surface_dessus</option><option>surface_laterale</option><option>fixe</option><option>manuel</option></select></div>
+      <div class="form-row"><span class="form-label">Temps préparation :</span><input type="number" value="45" style="width:70px;flex:none;"> min</div>
+      <div class="gb" style="margin-top:8px;"><div class="gb-title">Ingrédients (à taille référence)</div><div class="gb-body" style="padding:6px;">
+        <table class="dgv" style="margin-bottom:6px;">
+          <thead><tr><th>Ingrédient</th><th>Quantité réf.</th><th>Unité</th><th></th></tr></thead>
+          <tbody>
+            <tr><td><select style="border:1px solid #7F9DB9;padding:2px;width:100%;"><option>Farine T45</option><option>Sucre fin</option><option>Beurre 82%</option><option>Oeufs frais</option></select></td><td><input type="number" value="80" style="width:70px;border:1px solid #7F9DB9;padding:2px;"></td><td><select style="border:1px solid #7F9DB9;padding:2px;"><option>g</option><option>ml</option><option>pcs</option></select></td><td><button class="btn btn-danger" style="padding:2px 6px;">✕</button></td></tr>
+            <tr><td><select style="border:1px solid #7F9DB9;padding:2px;width:100%;"><option>Sucre fin</option></select></td><td><input type="number" value="80" style="width:70px;border:1px solid #7F9DB9;padding:2px;"></td><td><select style="border:1px solid #7F9DB9;padding:2px;"><option>g</option></select></td><td><button class="btn btn-danger" style="padding:2px 6px;">✕</button></td></tr>
+            <tr><td><select style="border:1px solid #7F9DB9;padding:2px;width:100%;"><option>Oeufs frais</option></select></td><td><input type="number" value="3" style="width:70px;border:1px solid #7F9DB9;padding:2px;"></td><td><select style="border:1px solid #7F9DB9;padding:2px;"><option>pcs</option></select></td><td><button class="btn btn-danger" style="padding:2px 6px;">✕</button></td></tr>
+          </tbody>
+        </table>
+        <button class="btn btn-success" style="font-size:11px;padding:2px 8px;">➕ Ajouter ingrédient</button>
+      </div></div>
+    </div>
+    <div class="modal-footer"><button class="btn btn-success" onclick="closeModal('modal-recette-edit');showNotif('Recette enregistrée ✓')">💾 Enregistrer</button><button class="btn" onclick="closeModal('modal-recette-edit')">Annuler</button></div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="modal-gateau-edit">
+  <div class="modal" style="min-width:560px;">
+    <div class="modal-header"><span>Fiche gâteau</span><button class="modal-close" onclick="closeModal('modal-gateau-edit')">✕</button></div>
+    <div class="modal-body">
+      <div class="form-row"><span class="form-label">Nom :</span><input type="text" value="Fraisier Classique"></div>
+      <div class="form-row"><span class="form-label">Mode :</span><select style="border:1px solid #7F9DB9;padding:3px;flex:1;"><option>Classique (verrouillé)</option><option>Configurable (client choisit)</option></select></div>
+      <div class="form-row"><span class="form-label">Forme :</span><select style="border:1px solid #7F9DB9;padding:3px;flex:1;"><option>Rond</option><option>Carré</option><option>Cœur</option></select></div>
+      <div class="form-row"><span class="form-label">Taille référence :</span><select style="border:1px solid #7F9DB9;padding:3px;flex:1;"><option>Ø16cm</option><option>Ø18cm</option><option selected>Ø20cm</option><option>Ø22cm</option></select></div>
+      <div class="form-row"><span class="form-label">Visible sur site :</span><input type="checkbox" checked style="width:auto;flex:none;"></div>
+      <div class="gb" style="margin-top:8px;"><div class="gb-title">Couches (ordre d'assemblage)</div><div class="gb-body" style="padding:6px;">
+        <div style="display:flex;flex-direction:column;gap:4px;" id="couches-edit-list">
+          <div style="display:flex;align-items:center;gap:6px;background:#F5F0E8;border:1px solid #D4C4B0;padding:4px 8px;"><span style="color:#999;cursor:move;">⣿</span><span>1.</span><select style="border:1px solid #7F9DB9;padding:2px;flex:1;"><option>🫓 Génoise Vanille</option></select><button class="btn btn-danger" style="padding:1px 5px;font-size:11px;">✕</button></div>
+          <div style="display:flex;align-items:center;gap:6px;background:#F5F0E8;border:1px solid #D4C4B0;padding:4px 8px;"><span style="color:#999;cursor:move;">⣿</span><span>2.</span><select style="border:1px solid #7F9DB9;padding:2px;flex:1;"><option>💧 Sirop Kirsch</option></select><button class="btn btn-danger" style="padding:1px 5px;font-size:11px;">✕</button></div>
+          <div style="display:flex;align-items:center;gap:6px;background:#F5F0E8;border:1px solid #D4C4B0;padding:4px 8px;"><span style="color:#999;cursor:move;">⣿</span><span>3.</span><select style="border:1px solid #7F9DB9;padding:2px;flex:1;"><option>🍦 Crème Mousseline</option></select><button class="btn btn-danger" style="padding:1px 5px;font-size:11px;">✕</button></div>
+          <div style="display:flex;align-items:center;gap:6px;background:#F5F0E8;border:1px solid #D4C4B0;padding:4px 8px;"><span style="color:#999;cursor:move;">⣿</span><span>4.</span><select style="border:1px solid #7F9DB9;padding:2px;flex:1;"><option>🍓 Garniture Fraises</option></select><button class="btn btn-danger" style="padding:1px 5px;font-size:11px;">✕</button></div>
+        </div>
+        <button class="btn btn-success" style="margin-top:6px;font-size:11px;padding:2px 8px;">➕ Ajouter couche</button>
+      </div></div>
+    </div>
+    <div class="modal-footer"><button class="btn btn-success" onclick="closeModal('modal-gateau-edit');showNotif('Fiche gâteau enregistrée ✓')">💾 Enregistrer</button><button class="btn" onclick="closeModal('modal-gateau-edit')">Annuler</button></div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="modal-deco-edit">
+  <div class="modal">
+    <div class="modal-header"><span>Décoration à thème</span><button class="modal-close" onclick="closeModal('modal-deco-edit')">✕</button></div>
+    <div class="modal-body">
+      <div class="form-row"><span class="form-label">Nom :</span><input type="text" value="Anniversaire enfant"></div>
+      <div class="form-row"><span class="form-label">Description :</span><textarea>Déco colorée, figurines personnages</textarea></div>
+      <div class="form-row"><span class="form-label">Supplément :</span><input type="number" value="25.00"> €</div>
+      <div class="form-row"><span class="form-label">Actif :</span><input type="checkbox" checked style="width:auto;flex:none;"></div>
+    </div>
+    <div class="modal-footer"><button class="btn btn-success" onclick="closeModal('modal-deco-edit');showNotif('Décoration enregistrée ✓')">💾 Enregistrer</button><button class="btn" onclick="closeModal('modal-deco-edit')">Annuler</button></div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="modal-cmd-detail">
+  <div class="modal" style="min-width:560px;">
+    <div class="modal-header"><span>CMD-042 — Marie Dupont</span><button class="modal-close" onclick="closeModal('modal-cmd-detail')">✕</button></div>
+    <div class="modal-body">
+      <div class="two-col" style="margin-bottom:10px;">
+        <div><b>Date commande :</b> 25/03/2026<br><b>Date souhaitée :</b> 05/04/2026<br><b>Mode livraison :</b> Retrait magasin</div>
+        <div><b>Statut :</b> <span class="badge b-orange">En attente</span><br><b>Paiement :</b> <span class="badge b-green">Payé (Stripe)</span><br><b>Facture :</b> FAC-2026-0042</div>
+      </div>
+      <div class="gb"><div class="gb-title">Détail commande</div><div class="gb-body" style="padding:4px 0;">
+        <table class="dgv">
+          <thead><tr><th>Produit</th><th>Taille</th><th>Déco</th><th>Qté</th><th>Prix</th></tr></thead>
+          <tbody>
+            <tr><td>Fraisier Classique</td><td>Ø22cm</td><td>🎂 Anniversaire enfant</td><td>1</td><td>78,00 €</td></tr>
+          </tbody>
+        </table>
+      </div></div>
+      <div class="form-row" style="margin-top:8px;"><span class="form-label">Notes internes :</span><textarea style="border:1px solid #7F9DB9;padding:4px;flex:1;height:50px;">Client veut inscription "Joyeux anniversaire Théo"</textarea></div>
+      <div style="margin-top:8px;"><b>Allergènes détectés :</b> <span class="allergen">Gluten</span><span class="allergen">Lait</span><span class="allergen">Oeufs</span></div>
+    </div>
+    <div class="modal-footer">
+      <select style="border:1px solid #7F9DB9;padding:3px;"><option>En attente</option><option>Confirmée</option><option>En préparation</option><option>Prête</option><option>Livrée</option><option>Annulée</option></select>
+      <button class="btn btn-primary" onclick="closeModal('modal-cmd-detail');showNotif('Statut mis à jour ✓')">🔄 Mettre à jour</button>
+      <button class="btn btn-warning" onclick="showNotif('Bon de commande imprimé.')">🖨️ Bon commande</button>
+      <button class="btn" onclick="closeModal('modal-cmd-detail')">Fermer</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// DATA
+const parfums = [
+  {nom:'Praliné',type:'Praliné',color:'#C8A96E'},
+  {nom:'Caramel',type:'Caramel',color:'#C97B2A'},
+  {nom:'Noir 70%',type:'Chocolat noir',color:'#3D1F0D'},
+  {nom:'Lait',type:'Chocolat lait',color:'#8B5E3C'},
+  {nom:'Blanc',type:'Chocolat blanc',color:'#F5E6C8'},
+  {nom:'Café',type:'Aromatisé',color:'#6B3B2A'},
+  {nom:'Noisette',type:'Praliné',color:'#A0522D'},
+  {nom:'Orange',type:'Fruité',color:'#FF7F00'},
+  {nom:'Framboise',type:'Fruité',color:'#C72C48'},
+  {nom:'Citron',type:'Fruité',color:'#F4D03F'},
+  {nom:'Passion',type:'Fruité',color:'#FF8C00'},
+  {nom:'Rhum Raisin',type:'Aromatisé',color:'#722F37'},
+  {nom:'Champagne',type:'Aromatisé',color:'#F7E7CE'},
+  {nom:'Grand Marnier',type:'Aromatisé',color:'#D2691E'},
+  {nom:'Fleur de sel',type:'Chocolat noir',color:'#2C3E50'},
+];
+
+const recettes = [
+  {nom:'Génoise Vanille',type:'🫓 Biscuit',ref:'Ø20cm',scaling:'volume',tps:45,
+   ingr:[{n:'Farine T45',q:80,u:'g',prix:0.10},{n:'Sucre fin',q:80,u:'g',prix:0.07},{n:'Oeufs frais',q:3,u:'pcs',prix:1.05},{n:'Beurre 82%',q:20,u:'g',prix:0.16}],
+   allergenes:['Gluten','Lait','Oeufs']},
+  {nom:'Sirop Kirsch',type:'💧 Sirop',ref:'Ø20cm',scaling:'surface',tps:10,
+   ingr:[{n:'Sucre fin',q:50,u:'g',prix:0.05},{n:'Kirsch',q:30,u:'ml',prix:0.12}],allergenes:[]},
+  {nom:'Crème Mousseline',type:'🍦 Crème',ref:'Ø20cm',scaling:'volume',tps:30,
+   ingr:[{n:'Beurre 82%',q:200,u:'g',prix:1.60},{n:'Crème liquide 35%',q:100,u:'ml',prix:0.35},{n:'Sucre fin',q:60,u:'g',prix:0.05}],
+   allergenes:['Lait']},
+  {nom:'Garniture Fraises',type:'🍓 Garniture',ref:'Ø20cm',scaling:'surface',tps:15,
+   ingr:[{n:'Fraises fraîches',q:300,u:'g',prix:3.60}],allergenes:[]},
+  {nom:'Glaçage Miroir Choc.',type:'✨ Glaçage',ref:'Ø20cm',scaling:'surface',tps:20,
+   ingr:[{n:'Chocolat noir 70%',q:150,u:'g',prix:2.70},{n:'Crème liquide 35%',q:100,u:'ml',prix:0.35},{n:'Gélatine',q:8,u:'g',prix:0.14}],
+   allergenes:['Lait']},
+  {nom:'Mousse Framboise',type:'🍦 Crème',ref:'Ø20cm',scaling:'volume',tps:40,
+   ingr:[{n:'Framboises',q:200,u:'g',prix:2.80},{n:'Crème liquide 35%',q:150,u:'ml',prix:0.53},{n:'Gélatine',q:6,u:'g',prix:0.11},{n:'Sucre fin',q:60,u:'g',prix:0.05}],
+   allergenes:['Lait']},
+  {nom:'Dacquoise Noisette',type:'🫓 Biscuit',ref:'Ø20cm',scaling:'volume',tps:35,
+   ingr:[{n:'Farine T45',q:40,u:'g',prix:0.05},{n:'Sucre fin',q:120,u:'g',prix:0.11},{n:'Praliné noisette',q:60,u:'g',prix:1.32}],
+   allergenes:['Gluten','Fruits à coque']},
+];
+
+const gateaux = [
+  {nom:'Fraisier Classique',mode:'Classique',couches:['🫓 Génoise Vanille','💧 Sirop Kirsch','🍦 Crème Mousseline','🍓 Garniture Fraises','🫓 Génoise (2ème)','🍦 Crème Mousseline'],allergenes:['Gluten','Lait','Oeufs'],
+   devis:{fraisier:true}},
+  {nom:'Entremet Chocolat',mode:'Classique',couches:['🫓 Génoise Vanille','💧 Sirop Kirsch','🍦 Mousse Framboise','🍫 Insert Chocolat','🫓 Génoise (2ème)','✨ Glaçage Miroir Choc.'],allergenes:['Gluten','Lait','Oeufs']},
+  {nom:'Gâteau Personnalisé',mode:'Configurable',couches:['(Client choisit ses couches parmi le catalogue)'],allergenes:['Selon choix client']},
+];
+
+// DEVIS DATA
+const devisData = {
+  fraisier:{
+    couches:[
+      {nom:'Génoise Vanille',scaling:'volume',tps:45,cout_ref:1.38},
+      {nom:'Sirop Kirsch',scaling:'surface',tps:10,cout_ref:0.17},
+      {nom:'Crème Mousseline',scaling:'volume',tps:30,cout_ref:2.00},
+      {nom:'Garniture Fraises',scaling:'surface',tps:15,cout_ref:3.60},
+      {nom:'Crème Mousseline (2)',scaling:'volume',tps:15,cout_ref:2.00},
+      {nom:'Génoise (2ème)',scaling:'volume',tps:20,cout_ref:1.38},
+    ]
+  },
+  entremet:{
+    couches:[
+      {nom:'Génoise Vanille',scaling:'volume',tps:45,cout_ref:1.38},
+      {nom:'Sirop Kirsch',scaling:'surface',tps:10,cout_ref:0.17},
+      {nom:'Mousse Framboise',scaling:'volume',tps:40,cout_ref:3.49},
+      {nom:'Glaçage Miroir Choc.',scaling:'surface',tps:20,cout_ref:3.19},
+    ]
+  }
+};
+
+const TAUX_HORAIRE = 25;
+const TAUX_CHARGES = 0.15;
+const MARGE = 0.40;
+const SUPPL_MIXTE = 20;
+
+// INIT
+window.onload = function(){
+  // Parfums table
+  const tb = document.getElementById('parfums-table');
+  parfums.forEach(p=>{
+    tb.innerHTML += `<tr><td><span class="cdot" style="background:${p.color};"></span></td><td>${p.nom}</td><td>${p.type}</td><td><span class="badge b-green">✓</span></td></tr>`;
+  });
+  showRecetteDetail(0);
+  showGateauDetail(0);
+  devisCalc();
+};
+
+// LOGIN
+function doLogin(){
+  const e=document.getElementById('login-email').value;
+  const p=document.getElementById('login-pwd').value;
+  if(e==='charles@charlesnadejda.be'&&p==='password'){
+    document.getElementById('login-screen').style.display='none';
+    const app=document.getElementById('app');
+    app.style.display='flex';
+    document.getElementById('title-user').textContent='👤 Charles Artisan | '+new Date().toLocaleDateString('fr-BE');
+  } else {
+    document.getElementById('login-err').style.display='block';
+  }
+}
+
+// NAV
+function nav(id){
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  document.querySelectorAll('.nav-item,.nav-sub').forEach(n=>n.classList.remove('active'));
+  const screen = document.getElementById('screen-'+id);
+  if(screen) screen.classList.add('active');
+  const navEl = document.getElementById('nav-'+id);
+  if(navEl) navEl.classList.add('active');
+  if(id==='patiss-devis') devisCalc();
+}
+
+// TABS
+function switchTab(el,tabId){
+  el.parentElement.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  el.classList.add('active');
+  ['tab-calc','tab-formes','tab-decos','tab-allergenes'].forEach(t=>{
+    const el2=document.getElementById(t);
+    if(el2) el2.style.display=(t===tabId?'block':'none');
+  });
+}
+
+// MODAL
+function openModal(id,title){
+  const m=document.getElementById(id);
+  if(!m) return;
+  m.classList.add('open');
+  const t=m.querySelector('.modal-header span');
+  if(t&&title) t.textContent=title;
+}
+function closeModal(id){ document.getElementById(id).classList.remove('open'); }
+
+// NOTIF
+let notifTimer;
+function showNotif(msg,type){
+  const n=document.getElementById('notif');
+  n.textContent=msg;
+  n.className=type==='err'?'err':'';
+  n.style.display='block';
+  clearTimeout(notifTimer);
+  notifTimer=setTimeout(()=>n.style.display='none',2800);
+}
+
+// RECETTE DETAIL
+function showRecetteDetail(i){
+  document.querySelectorAll('#screen-patiss-recettes .dgv tr').forEach((r,idx)=>r.classList.toggle('selected',idx===i));
+  const r=recettes[i];
+  document.getElementById('recette-detail-nom').textContent=r.nom;
+  let html=`<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px;">
+    <div><b>Type :</b> ${r.type}<br><b>Référence :</b> ${r.ref}<br><b>Scaling :</b> <span class="badge b-blue">${r.scaling}</span></div>
+    <div><b>Temps :</b> ${r.tps} min<br><b>Allergènes :</b><br>${r.allergenes.map(a=>`<span class="allergen">${a}</span>`).join('')||'—'}</div>
+  </div>
+  <b style="font-size:12px;">Ingrédients (taille référence ${r.ref}) :</b>
+  <table class="dgv" style="margin-top:6px;">
+    <thead><tr><th>Ingrédient</th><th>Qté réf.</th><th>Coût est.</th></tr></thead><tbody>`;
+  let total=0;
+  r.ingr.forEach(ing=>{
+    total+=ing.prix;
+    html+=`<tr><td>${ing.n}</td><td>${ing.q} ${ing.u}</td><td>${ing.prix.toFixed(2)} €</td></tr>`;
+  });
+  html+=`<tr style="font-weight:bold;"><td colspan="2">Total matières</td><td>${total.toFixed(2)} €</td></tr>`;
+  html+=`</tbody></table>`;
+  const mo=(r.tps/60*TAUX_HORAIRE);
+  html+=`<div style="margin-top:8px;font-size:11px;color:#555;">Main d'œuvre estimée : ${r.tps} min × ${TAUX_HORAIRE}€/h = <b>${mo.toFixed(2)} €</b></div>`;
+  document.getElementById('recette-detail-content').innerHTML=html;
+}
+
+// GATEAU DETAIL
+function showGateauDetail(i){
+  document.querySelectorAll('#screen-patiss-gateaux .dgv tr').forEach((r,idx)=>r.classList.toggle('selected',idx===i));
+  const g=gateaux[i];
+  document.getElementById('gateau-detail-nom').textContent=g.nom;
+  let html=`<div style="margin-bottom:8px;"><span class="badge ${g.mode==='Classique'?'b-gold':'b-blue'}">${g.mode}</span></div>`;
+  html+=`<b>Couches (ordre d'assemblage) :</b><div style="margin-top:6px;">`;
+  g.couches.forEach((c,idx)=>{
+    html+=`<div class="couche-item"><span><b>${idx+1}.</b> ${c}</span></div>`;
+  });
+  html+=`</div><div style="margin-top:10px;"><b>Allergènes détectés :</b><br>`;
+  g.allergenes.forEach(a=>html+=`<span class="allergen">${a}</span>`);
+  html+=`</div>`;
+  html+=`<div style="margin-top:10px;display:flex;gap:6px;">
+    <button class="btn btn-primary" onclick="nav('patiss-devis')">🧮 Calculer devis →</button>
+    <button class="btn" onclick="openModal('modal-gateau-edit','Modifier fiche gâteau')">✏️ Modifier</button>
+  </div>`;
+  document.getElementById('gateau-detail-content').innerHTML=html;
+}
+
+// DEVIS CALCULATOR
+function devisCalc(){
+  const type=document.getElementById('devis-type').value;
+  const taille=parseInt(document.getElementById('devis-taille').value);
+  const etages=parseInt(document.getElementById('devis-etages').value);
+  const mixte=document.getElementById('devis-mixte').checked;
+  const deco=parseFloat(document.getElementById('devis-deco').value)||0;
+
+  const data=devisData[type];
+  const factor=Math.pow(taille/20,2); // (r_cmd/r_ref)²
+
+  let totalMatières=0, totalMO=0;
+  let couchesHtml='';
+
+  data.couches.forEach(c=>{
+    const f = c.scaling==='fixe'?1:factor;
+    const cout_reel = c.cout_ref * f * etages;
+    const mo_reel = (c.tps/60*TAUX_HORAIRE) * f * etages;
+    totalMatières += cout_reel;
+    totalMO += mo_reel;
+    couchesHtml += `<div class="couche-item">
+      <div><b>${c.nom}</b><div class="couche-qty">Scaling: ×${f.toFixed(2)} ${etages>1?`× ${etages} étages`:''} | Matières: ${cout_reel.toFixed(2)} € | MO: ${mo_reel.toFixed(2)} €</div></div>
+    </div>`;
+  });
+
+  document.getElementById('devis-couches').innerHTML=couchesHtml;
+
+  const charges = (totalMatières + totalMO) * TAUX_CHARGES;
+  const supplMixte = (mixte && etages>=2) ? SUPPL_MIXTE : 0;
+  const sousTotal = totalMatières + totalMO + charges + deco + supplMixte;
+  const prixVente = sousTotal / (1 - MARGE);
+
+  const breakdown=`
+    <div class="price-row"><span>Matières premières :</span><span>${totalMatières.toFixed(2)} €</span></div>
+    <div class="price-row"><span>Main d'œuvre :</span><span>${totalMO.toFixed(2)} €</span></div>
+    <div class="price-row"><span>Charges (${(TAUX_CHARGES*100).toFixed(0)}%) :</span><span>${charges.toFixed(2)} €</span></div>
+    ${deco>0?`<div class="price-row"><span>Décoration à thème :</span><span>+${deco.toFixed(2)} €</span></div>`:''}
+    ${supplMixte>0?`<div class="price-row"><span>Supplément mixte :</span><span>+${supplMixte.toFixed(2)} €</span></div>`:''}
+    <div class="price-row bold"><span>Coût total :</span><span>${sousTotal.toFixed(2)} €</span></div>
+    <div class="price-row total-row"><span>💰 Prix suggéré (marge ${(MARGE*100).toFixed(0)}%) :</span><span class="devis-total">${prixVente.toFixed(2)} €</span></div>
+  `;
+  document.getElementById('devis-breakdown').innerHTML=breakdown;
+  document.getElementById('devis-prix-final').value=prixVente.toFixed(2);
+}
+</script>
+</body>
+</html>

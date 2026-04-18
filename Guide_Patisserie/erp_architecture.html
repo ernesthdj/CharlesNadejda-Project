@@ -1,0 +1,1315 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<title>ArtisaStock — Pâtisserie Pro</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Segoe UI',sans-serif;background:#1a1a2e;color:#e2e8f0;font-size:13px}
+#app{display:flex;flex-direction:column;min-height:100vh}
+
+/* ── TOPBAR ─────────────────────────────────────────────── */
+.topbar{background:#0f0f1a;padding:0 16px;display:flex;align-items:center;gap:0;border-bottom:1px solid #2d2d4e;height:48px}
+.topbar-brand{color:#fbbf24;font-size:15px;font-weight:700;margin-right:24px;white-space:nowrap}
+.tabs{display:flex;gap:0;overflow-x:auto;flex:1}
+.tab{display:flex;flex-direction:column;align-items:center;padding:8px 14px;cursor:pointer;border-bottom:3px solid transparent;color:#94a3b8;font-size:11px;white-space:nowrap;gap:2px;min-width:60px;transition:.15s}
+.tab:hover{color:#e2e8f0;background:#1e1e3a}
+.tab.active{color:#fbbf24;border-bottom-color:#fbbf24}
+.tab .ico{font-size:18px}
+.tab .lbl{font-size:10px}
+
+/* ── CONTENT ─────────────────────────────────────────────── */
+.page{padding:16px;max-width:1200px}
+.page-header{margin-bottom:14px}
+.page-header h2{font-size:18px;font-weight:700;color:#fbbf24;margin-bottom:4px}
+.page-header p{font-size:12px;color:#64748b}
+
+/* ── WORKFLOW GUIDE ──────────────────────────────────────── */
+.wf-guide{background:#0f0f1a;border:1px solid #2d2d4e;border-radius:8px;padding:10px 14px;margin-bottom:14px;display:flex;align-items:center;gap:6px;flex-wrap:wrap;font-size:11px;color:#94a3b8}
+.wf-step{display:flex;align-items:center;gap:4px}
+.wf-step .num{background:#2d2d4e;color:#fbbf24;border-radius:50%;width:18px;height:18px;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;flex-shrink:0}
+.wf-step.done .num{background:#059669;color:#fff}
+.wf-sep{color:#2d2d4e;font-size:16px}
+
+/* ── CARDS ───────────────────────────────────────────────── */
+.card{background:#0f0f1a;border:1px solid #2d2d4e;border-radius:10px;padding:14px;margin-bottom:12px}
+.card-title{font-size:13px;font-weight:700;color:#e2e8f0;margin-bottom:10px;display:flex;align-items:center;gap:8px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px}
+
+/* ── FORM ────────────────────────────────────────────────── */
+.form-section{background:#161628;border-radius:8px;padding:12px;margin-bottom:10px}
+.form-section-title{font-size:11px;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px}
+.fr{display:flex;gap:8px;align-items:flex-end;flex-wrap:wrap;margin-bottom:8px}
+.fg{display:flex;flex-direction:column;gap:3px}
+.fg label{font-size:11px;color:#64748b;font-weight:500}
+.fg .hint{font-size:10px;color:#475569;margin-top:1px}
+input,select,textarea{background:#1e1e38;border:1px solid #2d2d4e;color:#e2e8f0;padding:6px 10px;border-radius:6px;font-size:12px;transition:.15s}
+input:focus,select:focus{outline:none;border-color:#fbbf24;background:#252540}
+input[readonly]{background:#0a0a15;color:#6b8baf;cursor:default}
+textarea{resize:vertical;min-height:48px;font-family:inherit}
+.input-with-unit{display:flex;align-items:center;gap:0}
+.input-with-unit input{border-radius:6px 0 0 6px;flex:1}
+.input-with-unit .unit{background:#2d2d4e;border:1px solid #2d2d4e;border-left:none;padding:6px 8px;border-radius:0 6px 6px 0;color:#94a3b8;font-size:11px;white-space:nowrap}
+
+/* ── BUTTONS ─────────────────────────────────────────────── */
+.btn{border:none;padding:7px 14px;border-radius:6px;cursor:pointer;font-size:12px;font-weight:600;display:inline-flex;align-items:center;gap:5px;transition:.15s}
+.btn-primary{background:#fbbf24;color:#0f0f1a}.btn-primary:hover{background:#f59e0b}
+.btn-success{background:#059669;color:#fff}.btn-success:hover{background:#047857}
+.btn-ghost{background:transparent;border:1px solid #2d2d4e;color:#94a3b8}.btn-ghost:hover{border-color:#94a3b8;color:#e2e8f0}
+.btn-danger{background:#dc2626;color:#fff}.btn-danger:hover{background:#b91c1c}
+.btn-sm{padding:4px 9px;font-size:11px}
+.btn-xs{padding:2px 7px;font-size:10px}
+.btn-block{width:100%;justify-content:center}
+
+/* ── TABLE ───────────────────────────────────────────────── */
+.tbl{width:100%;border-collapse:collapse;font-size:12px}
+.tbl th{background:#161628;color:#64748b;padding:8px 10px;text-align:left;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.4px}
+.tbl td{padding:8px 10px;border-bottom:1px solid #1e1e38}
+.tbl tr:hover td{background:#161628}
+.tbl .actions{display:flex;gap:4px}
+
+/* ── BADGES ──────────────────────────────────────────────── */
+.badge{display:inline-flex;align-items:center;padding:2px 8px;border-radius:20px;font-size:10px;font-weight:700;gap:3px}
+.badge-blue{background:#1e3a5f;color:#60a5fa}
+.badge-green{background:#064e3b;color:#34d399}
+.badge-yellow{background:#451a03;color:#fbbf24}
+.badge-purple{background:#2e1065;color:#a78bfa}
+.badge-orange{background:#431407;color:#fb923c}
+.badge-red{background:#450a0a;color:#f87171}
+.badge-gray{background:#1e1e38;color:#94a3b8}
+
+/* ── ALERTS ──────────────────────────────────────────────── */
+.alert{border-radius:8px;padding:8px 12px;font-size:11px;margin-bottom:10px;display:flex;gap:8px;align-items:flex-start}
+.alert-info{background:#0c1a2e;border:1px solid #1e3a5f;color:#60a5fa}
+.alert-success{background:#052e16;border:1px solid #064e3b;color:#34d399}
+.alert-warn{background:#1c0a00;border:1px solid #451a03;color:#fbbf24}
+
+/* ── STATS BAR ───────────────────────────────────────────── */
+.stats-bar{display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap}
+.stat-pill{background:#161628;border:1px solid #2d2d4e;border-radius:8px;padding:8px 14px;display:flex;flex-direction:column;gap:2px;min-width:100px}
+.stat-pill .num{font-size:20px;font-weight:700;color:#fbbf24}
+.stat-pill .lbl{font-size:10px;color:#64748b}
+
+/* ── RECIPE BUILDER ──────────────────────────────────────── */
+.layer-item{background:#161628;border:1px solid #2d2d4e;border-radius:6px;padding:8px 10px;margin-bottom:6px;display:flex;gap:8px;align-items:center}
+.layer-handle{color:#2d2d4e;cursor:grab;font-size:16px}
+.layer-color{width:4px;border-radius:2px;align-self:stretch;flex-shrink:0}
+
+/* ── SHAPE GRID ──────────────────────────────────────────── */
+.shape-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-bottom:10px}
+.shape-card{background:#161628;border:1px solid #2d2d4e;border-radius:8px;padding:10px 6px;cursor:pointer;text-align:center;transition:.15s}
+.shape-card:hover,.shape-card.sel{border-color:#fbbf24;background:#252520}
+.shape-card .ico{font-size:24px}
+.shape-card .nm{font-size:10px;color:#94a3b8;margin-top:4px;line-height:1.3}
+
+/* ── MODAL ───────────────────────────────────────────────── */
+.overlay{position:fixed;inset:0;background:rgba(0,0,0,.8);display:flex;align-items:center;justify-content:center;z-index:200;padding:16px}
+.modal{background:#0f0f1a;border:1px solid #2d2d4e;border-radius:12px;padding:20px;width:100%;max-width:500px;max-height:90vh;overflow-y:auto}
+.modal-title{font-size:15px;font-weight:700;color:#fbbf24;margin-bottom:14px}
+.modal-footer{display:flex;gap:8px;justify-content:flex-end;margin-top:14px;padding-top:10px;border-top:1px solid #2d2d4e}
+
+/* ── FORMULA ─────────────────────────────────────────────── */
+.formula{background:#161628;border-left:3px solid #a78bfa;padding:6px 10px;border-radius:0 6px 6px 0;font-family:monospace;font-size:12px;color:#a78bfa;margin:6px 0}
+
+/* ── RESULT ──────────────────────────────────────────────── */
+.result-card{background:#0a1628;border:1px solid #1e3a5f;border-radius:8px;padding:12px;margin-top:8px}
+.result-row{display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid #1e1e38;font-size:12px}
+.result-total{display:flex;justify-content:space-between;padding:8px 0;font-size:15px;font-weight:700;color:#fbbf24}
+
+/* ── ER SCHEMA ───────────────────────────────────────────── */
+.er-wrap{display:flex;gap:10px;flex-wrap:wrap}
+.er-tbl{background:#161628;border:1px solid #2d2d4e;border-radius:8px;min-width:170px}
+.er-head{background:#1e1e38;padding:6px 10px;font-weight:700;font-size:11px;border-radius:8px 8px 0 0}
+.er-body{padding:6px 10px}
+.er-f{font-size:10px;padding:2px 0;display:flex;gap:5px}
+.er-rel{font-size:10px;color:#475569;padding:4px 10px;border-top:1px solid #2d2d4e}
+.pk{color:#fbbf24}.fk{color:#60a5fa}.nn{color:#34d399}
+
+hr{border:none;border-top:1px solid #2d2d4e;margin:10px 0}
+</style>
+</head>
+<body>
+<div id="app">
+  <div class="topbar">
+    <div class="topbar-brand">🧁 ArtisaStock Pro</div>
+    <div class="tabs" id="nav"></div>
+  </div>
+  <div id="content" style="overflow-y:auto;flex:1"></div>
+</div>
+<div id="mc"></div>
+
+<script>
+// ════════════════════════════════════════════════════════════
+// STATE & HELPERS
+// ════════════════════════════════════════════════════════════
+let _seq = 1;
+const uid  = () => _seq++;
+const byId = (t, id) => db[t].find(r => r.id === id);
+const $val = id => document.getElementById(id)?.value ?? '';
+const $f   = id => parseFloat($val(id)) || 0;
+const $i   = id => parseInt($val(id)) || 0;
+const render = html => { document.getElementById('content').innerHTML = `<div class="page">${html}</div>`; };
+
+const db = {
+  fiches_ingr:   [],   // carte d'identité ingrédient (sans prix, sans fourn.)
+  fournisseurs:  [],
+  achats:        [],   // fiche_id + fournisseur_id + prix + qte → stock
+  types_module:  [],   // générique, créé par l'artisan
+  modules:       [],
+  mod_lignes:    [],   // ingredient_fiche_id | sub_module_id, qte_ref
+  assemblages:   [],
+  asm_couches:   [],
+};
+
+// Prix le plus récent d'un ingrédient (depuis les achats)
+function dernierPrix(ficheId) {
+  const achats = db.achats.filter(a => a.fiche_id === ficheId);
+  if (!achats.length) return null;
+  achats.sort((a,b) => new Date(b.date) - new Date(a.date));
+  return achats[0].prix_par_unite; // €/unité de mesure de la fiche
+}
+
+// Stock actuel d'un ingrédient
+function stockIngr(ficheId) {
+  return db.achats.filter(a => a.fiche_id === ficheId).reduce((s,a) => s + a.quantite, 0);
+}
+
+// Coût €/g d'un module (récursif)
+function coutModuleParG(moduleId, visited) {
+  visited = visited || new Set();
+  if (visited.has(moduleId)) return 0;
+  visited.add(moduleId);
+  const m = byId('modules', moduleId);
+  if (!m) return 0;
+  let total = 0;
+  db.mod_lignes.filter(l => l.module_id === moduleId).forEach(l => {
+    if (l.sub_module_id) {
+      total += coutModuleParG(l.sub_module_id, new Set(visited)) * l.qte_ref;
+    } else {
+      const px = dernierPrix(l.fiche_id);
+      if (px != null) {
+        const fiche = byId('fiches_ingr', l.fiche_id);
+        // px est en €/unité de la fiche. On normalise en €/g selon l'unité.
+        const px_g = fiche?.unite === 'kg' ? px/1000 : fiche?.unite === 'L' ? px/1000 : px/1000;
+        total += px_g * l.qte_ref;
+      }
+    }
+  });
+  return (total / m.rendement) / m.taille_ref_g;
+}
+
+// Ingrédients à plat (récursif) pour un module
+function ingrPlatModule(moduleId, facteur, depth) {
+  if ((depth||0) > 6) return [];
+  const lignes = db.mod_lignes.filter(l => l.module_id === moduleId);
+  const acc = {};
+  lignes.forEach(l => {
+    if (l.sub_module_id) {
+      const sm = byId('modules', l.sub_module_id);
+      const f2 = facteur * (l.qte_ref / (sm?.taille_ref_g || 1));
+      ingrPlatModule(l.sub_module_id, f2, (depth||0)+1).forEach(r => {
+        acc[r.nom] = (acc[r.nom]||0) + r.qte;
+      });
+    } else {
+      const fi = byId('fiches_ingr', l.fiche_id);
+      if (fi) acc[fi.nom] = (acc[fi.nom]||0) + l.qte_ref * facteur;
+    }
+  });
+  return Object.entries(acc).map(([nom, qte]) => ({ nom, qte }));
+}
+
+// ════════════════════════════════════════════════════════════
+// MODAL
+// ════════════════════════════════════════════════════════════
+function modal(title, body, onOk, okLabel) {
+  document.getElementById('mc').innerHTML = `
+    <div class="overlay" onclick="if(event.target===this)closeModal()">
+      <div class="modal">
+        <div class="modal-title">${title}</div>
+        <div id="mb">${body}</div>
+        <div class="modal-footer">
+          <button class="btn btn-ghost" onclick="closeModal()">Annuler</button>
+          ${onOk ? `<button class="btn btn-primary" onclick="(${onOk.toString()})()">${okLabel||'Enregistrer'}</button>` : ''}
+        </div>
+      </div>
+    </div>`;
+}
+function closeModal() { document.getElementById('mc').innerHTML = ''; }
+
+// ════════════════════════════════════════════════════════════
+// SEED DATA
+// ════════════════════════════════════════════════════════════
+function seedData() {
+  // Fiches ingrédients
+  [
+    {nom:'Farine T55',        cat:'Céréales',       unite:'kg', densite:0.60, pct_sec:87, pct_gras:1,  seuil:5},
+    {nom:'Sucre semoule',     cat:'Sucres',          unite:'kg', densite:0.85, pct_sec:99, pct_gras:0,  seuil:5},
+    {nom:'Œufs entiers',      cat:'Produits frais',  unite:'kg', densite:1.03, pct_sec:26, pct_gras:10, seuil:2},
+    {nom:'Beurre 84%',        cat:'Produits laitiers',unite:'kg',densite:0.91, pct_sec:18, pct_gras:84, seuil:3},
+    {nom:'Chocolat noir 64%', cat:'Chocolat',        unite:'kg', densite:1.30, pct_sec:97, pct_gras:38, seuil:2},
+    {nom:'Crème 35%',         cat:'Produits laitiers',unite:'kg',densite:1.01, pct_sec:22, pct_gras:35, seuil:3},
+    {nom:'Glucose',           cat:'Sucres',          unite:'kg', densite:1.40, pct_sec:80, pct_gras:0,  seuil:1},
+    {nom:'Gélatine 200b',     cat:'Additifs',        unite:'kg', densite:0.70, pct_sec:85, pct_gras:0,  seuil:0.2},
+    {nom:'Lait entier',       cat:'Produits laitiers',unite:'kg',densite:1.03, pct_sec:13, pct_gras:3.5,seuil:2},
+    {nom:'Praliné 50%',       cat:'Noix & Praliné',  unite:'kg', densite:1.10, pct_sec:98, pct_gras:50, seuil:1},
+  ].forEach(f => db.fiches_ingr.push({id:uid(), ...f, notes:''}));
+
+  // Fournisseurs
+  [{nom:'Callebaut Belgium',ville:'Bruxelles',email:'pro@callebaut.be',tva:'BE0404054',tel:'+32 2 456 78 90'},
+   {nom:'Metro Cash & Carry',ville:'Liège',email:'pro@metro.be',tva:'BE0404055',tel:'+32 4 222 33 44'},
+  ].forEach(f => db.fournisseurs.push({id:uid(), ...f, adresse:'', notes:''}));
+
+  // Achats (prix injectés ici, pas dans la fiche)
+  const today = new Date().toISOString().split('T')[0];
+  [
+    [0,0,1.20,10,today],[1,0,0.90,8,today],[2,0,3.50,6,today],[3,0,9.00,5,today],
+    [4,0,14.00,4,today],[5,0,4.50,6,today],[6,1,3.20,3,today],[7,1,28.00,0.5,today],
+    [8,1,1.20,5,today],[9,1,18.00,2,today],
+  ].forEach(([fi,fo,px,q,d]) => db.achats.push({
+    id:uid(), fiche_id:db.fiches_ingr[fi].id,
+    fournisseur_id:db.fournisseurs[fo].id,
+    prix_par_unite:px, quantite:q, date:d, notes:''
+  }));
+
+  // Types modules (génériques — créés par l'artisan)
+  ['Biscuit / Fond','Mousse','Crémeux / Insert','Ganache','Glaçage','Sirop','Décoration']
+    .forEach(n => db.types_module.push({id:uid(), nom:n, description:'', couleur:randomColor()}));
+
+  // Modules
+  const tm = db.types_module;
+  const fi = db.fiches_ingr;
+  const gen = {id:uid(),nom:'Génoise Vanille',type_id:tm[0].id,densite_g_cm3:0.35,rendement:0.95,taille_ref_g:500,notes:'Battez les œufs à chaud.'};
+  db.modules.push(gen);
+  [[fi[0],200],[fi[1],200],[fi[2],150],[fi[3],50]].forEach(([f,q])=>db.mod_lignes.push({id:uid(),module_id:gen.id,fiche_id:f.id,sub_module_id:null,qte_ref:q}));
+
+  const gan={id:uid(),nom:'Ganache Chocolat Noir',type_id:tm[3].id,densite_g_cm3:1.10,rendement:0.98,taille_ref_g:400,notes:'Émulsion 3 temps.'};
+  db.modules.push(gan);
+  [[fi[4],200],[fi[5],180],[fi[6],20]].forEach(([f,q])=>db.mod_lignes.push({id:uid(),module_id:gan.id,fiche_id:f.id,sub_module_id:null,qte_ref:q}));
+
+  const mousse={id:uid(),nom:'Mousse Chocolat',type_id:tm[1].id,densite_g_cm3:0.55,rendement:0.92,taille_ref_g:800,notes:'Légère, foisonnée. Contient Ganache.'};
+  db.modules.push(mousse);
+  db.mod_lignes.push({id:uid(),module_id:mousse.id,fiche_id:null,sub_module_id:gan.id,qte_ref:350});
+  [[fi[5],420],[fi[7],8]].forEach(([f,q])=>db.mod_lignes.push({id:uid(),module_id:mousse.id,fiche_id:f.id,sub_module_id:null,qte_ref:q}));
+
+  const cremeux={id:uid(),nom:'Crémeux Praliné',type_id:tm[2].id,densite_g_cm3:0.90,rendement:0.97,taille_ref_g:500,notes:''};
+  db.modules.push(cremeux);
+  [[fi[9],250],[fi[5],150],[fi[8],80],[fi[7],6],[fi[3],14]].forEach(([f,q])=>db.mod_lignes.push({id:uid(),module_id:cremeux.id,fiche_id:f.id,sub_module_id:null,qte_ref:q}));
+
+  // Assemblage
+  const asm={id:uid(),nom:'Entremet Choco-Praliné',description:'Insert praliné, mousse chocolat, génoise',notes:''};
+  db.assemblages.push(asm);
+  [{m:gen.id,o:1,h:1.5},{m:cremeux.id,o:2,h:1.0},{m:mousse.id,o:3,h:4.5}]
+    .forEach(l=>db.asm_couches.push({id:uid(),assemblage_id:asm.id,module_id:l.m,ordre:l.o,hauteur_cm:l.h}));
+}
+
+function randomColor(){
+  const c=['#fbbf24','#34d399','#60a5fa','#a78bfa','#fb923c','#f87171','#38bdf8'];
+  return c[Math.floor(Math.random()*c.length)];
+}
+
+// ════════════════════════════════════════════════════════════
+// WORKFLOW GUIDE BAR
+// ════════════════════════════════════════════════════════════
+function wfBar(steps, current) {
+  return `<div class="wf-guide">
+    <span style="font-size:11px;color:#64748b;margin-right:4px">Parcours :</span>
+    ${steps.map((s,i) => `
+      <div class="wf-step ${i<current?'done':''}">
+        <div class="num">${i<current?'✓':i+1}</div>
+        <span>${s}</span>
+      </div>
+      ${i<steps.length-1?'<span class="wf-sep">›</span>':''}
+    `).join('')}
+  </div>`;
+}
+
+// ════════════════════════════════════════════════════════════
+// P0 — ACCUEIL
+// ════════════════════════════════════════════════════════════
+function pageHome() {
+  const steps = [
+    {ico:'📋', tab:'fiches',    lbl:'Fiches Ingrédients', desc:'Créez la carte d\'identité de chaque ingrédient (sans prix).'},
+    {ico:'🏭', tab:'fournisseurs',lbl:'Fournisseurs',      desc:'Enregistrez vos fournisseurs une seule fois.'},
+    {ico:'🛒', tab:'achats',    lbl:'Achats',              desc:'Achetez un ingrédient : choisissez fournisseur + prix.'},
+    {ico:'🏷️', tab:'types',    lbl:'Types de Modules',   desc:'Définissez vos catégories (Biscuit, Mousse, Glaçage…).'},
+    {ico:'🍰', tab:'modules',   lbl:'Modules / Recettes', desc:'Assemblez vos recettes à partir des ingrédients.'},
+    {ico:'📐', tab:'volume',    lbl:'Volumétrie',          desc:'Calculez les quantités pour n\'importe quel moule.'},
+    {ico:'🎂', tab:'assemblage',lbl:'Produit Fini',        desc:'Empilez les modules pour créer vos gâteaux.'},
+  ];
+
+  const counts = [db.fiches_ingr,db.fournisseurs,db.achats,db.types_module,db.modules,[], db.assemblages].map(t=>t?.length??'—');
+
+  render(`
+    <div class="page-header">
+      <h2>🧁 Bienvenue dans ArtisaStock Pro</h2>
+      <p>Votre atelier numérique — suivez les étapes ci-dessous pour démarrer.</p>
+    </div>
+    <div class="stats-bar">
+      ${[['Fiches ingr.',counts[0]],['Fournisseurs',counts[1]],['Achats',counts[2]],['Types modules',counts[3]],['Modules',counts[4]],['Assemblages',counts[6]]].map(([l,n])=>`
+        <div class="stat-pill"><div class="num">${n}</div><div class="lbl">${l}</div></div>`).join('')}
+    </div>
+    <div class="grid2">
+      ${steps.map((s,i) => `
+        <div class="card" style="cursor:pointer;border-left:3px solid ${i%2===0?'#fbbf24':'#60a5fa'}" onclick="setTab('${s.tab}')">
+          <div style="display:flex;align-items:center;gap:10px">
+            <div style="font-size:28px">${s.ico}</div>
+            <div>
+              <div style="display:flex;align-items:center;gap:6px;margin-bottom:3px">
+                <span style="background:#1e1e38;color:#fbbf24;border-radius:50%;width:20px;height:20px;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700">${i+1}</span>
+                <strong style="color:#e2e8f0;font-size:13px">${s.lbl}</strong>
+              </div>
+              <p style="font-size:11px;color:#64748b">${s.desc}</p>
+            </div>
+          </div>
+        </div>`).join('')}
+    </div>`);
+}
+
+// ════════════════════════════════════════════════════════════
+// P1 — FICHES INGRÉDIENTS
+// ════════════════════════════════════════════════════════════
+function pageFiches() {
+  const cats = [...new Set(db.fiches_ingr.map(f=>f.cat).filter(Boolean))];
+  const rows = db.fiches_ingr.map(f => {
+    const stk = stockIngr(f.id);
+    const px  = dernierPrix(f.id);
+    const stkOk = stk >= f.seuil;
+    return `<tr>
+      <td><strong>${f.nom}</strong><br><span style="font-size:10px;color:#64748b">${f.cat||'—'}</span></td>
+      <td><span class="badge badge-blue">${f.unite}</span></td>
+      <td>${f.densite} g/cm³</td>
+      <td>${f.pct_sec}% sec · ${f.pct_gras}% gras</td>
+      <td>${f.seuil} ${f.unite}</td>
+      <td><span class="badge ${stk>0?'badge-green':'badge-gray'}">${stk.toFixed(2)} ${f.unite}</span></td>
+      <td>${px != null ? `<span class="badge badge-yellow">${px.toFixed(2)} €/${f.unite}</span>` : '<span style="color:#475569;font-size:11px">Jamais acheté</span>'}</td>
+      <td class="actions">
+        <button class="btn btn-ghost btn-xs" onclick="editFiche(${f.id})">✏️</button>
+        <button class="btn btn-danger btn-xs" onclick="delFiche(${f.id})">✕</button>
+      </td>
+    </tr>`;
+  }).join('');
+
+  render(`
+    ${wfBar(['Fiches','Fournisseurs','Achats','Types','Modules','Assemblage'],0)}
+    <div class="page-header">
+      <h2>📋 Fiches Ingrédients</h2>
+      <p>La carte d'identité de chaque ingrédient. Pas de prix ici — le prix sera renseigné à l'achat.</p>
+    </div>
+    <div class="alert alert-info">
+      💡 <span>Une fiche = les propriétés fixes d'un ingrédient (densité, % matière…). Le prix varie selon le fournisseur et la date d'achat — il est saisi à l'étape <strong>Achats</strong>.</span>
+    </div>
+    <div class="grid2">
+      <div class="card">
+        <div class="card-title">➕ Nouvelle fiche ingrédient</div>
+        <div class="form-section">
+          <div class="form-section-title">Identification</div>
+          <div class="fr">
+            <div class="fg" style="flex:2"><label>Nom *</label><input id="fn" placeholder="ex: Chocolat noir 64%"></div>
+            <div class="fg"><label>Catégorie</label><input id="fcat" placeholder="ex: Chocolat" list="catlist">
+              <datalist id="catlist">${cats.map(c=>`<option>${c}</option>`).join('')}</datalist>
+            </div>
+          </div>
+        </div>
+        <div class="form-section">
+          <div class="form-section-title">Unité & Propriétés physiques</div>
+          <div class="fr">
+            <div class="fg"><label>Unité de mesure *</label>
+              <select id="fu"><option value="kg">kg</option><option value="L">L</option><option value="g">g</option><option value="ml">ml</option><option value="pièce">pièce</option></select>
+            </div>
+            <div class="fg"><label>Densité <small style="color:#475569">(g/cm³)</small></label>
+              <input id="fd" type="number" step="0.01" value="1.0" style="width:80px">
+              <span class="hint">Eau=1.0 · Beurre≈0.91 · Mousse≈0.5</span>
+            </div>
+            <div class="fg"><label>% Mat. sèche</label><input id="fms" type="number" step="1" value="98" style="width:70px"></div>
+            <div class="fg"><label>% Mat. grasse</label><input id="fmg" type="number" step="1" value="0" style="width:70px"></div>
+          </div>
+        </div>
+        <div class="form-section">
+          <div class="form-section-title">Alertes stock</div>
+          <div class="fr">
+            <div class="fg"><label>Seuil d'alerte (en unité)</label>
+              <input id="fseuil" type="number" step="0.1" value="1" style="width:100px">
+            </div>
+          </div>
+        </div>
+        <div class="fg" style="margin-bottom:10px"><label>Notes libres</label><textarea id="fnotes" rows="2" placeholder="Conseils, substitutions…"></textarea></div>
+        <button class="btn btn-primary btn-block" onclick="addFiche()">✅ Créer la fiche</button>
+      </div>
+      <div class="card">
+        <div class="card-title">📦 Toutes les fiches (${db.fiches_ingr.length})</div>
+        <div style="overflow-x:auto">
+          <table class="tbl">
+            <thead><tr><th>Ingrédient</th><th>Unité</th><th>Densité</th><th>Matières</th><th>Seuil</th><th>Stock actuel</th><th>Dernier prix</th><th></th></tr></thead>
+            <tbody>${rows||'<tr><td colspan="8" style="text-align:center;color:#475569;padding:16px">Aucune fiche — créez votre premier ingrédient !</td></tr>'}</tbody>
+          </table>
+        </div>
+      </div>
+    </div>`);
+}
+
+function addFiche() {
+  const nom = $val('fn').trim(); if (!nom) { alert('Le nom est obligatoire.'); return; }
+  db.fiches_ingr.push({
+    id:uid(), nom, cat:$val('fcat').trim(), unite:$val('fu'),
+    densite:$f('fd')||1, pct_sec:$f('fms'), pct_gras:$f('fmg'),
+    seuil:$f('fseuil'), notes:$val('fnotes').trim()
+  });
+  pageFiches();
+}
+
+function editFiche(id) {
+  const f = byId('fiches_ingr', id);
+  modal('✏️ Modifier la fiche — '+f.nom, `
+    <div class="fr">
+      <div class="fg" style="flex:2"><label>Nom *</label><input id="efn" value="${f.nom}"></div>
+      <div class="fg"><label>Catégorie</label><input id="efcat" value="${f.cat||''}"></div>
+    </div>
+    <div class="fr">
+      <div class="fg"><label>Unité</label>
+        <select id="efu">${['kg','L','g','ml','pièce'].map(u=>`<option ${f.unite===u?'selected':''}>${u}</option>`).join('')}</select>
+      </div>
+      <div class="fg"><label>Densité</label><input id="efd" type="number" step="0.01" value="${f.densite}" style="width:80px"></div>
+      <div class="fg"><label>% Sec</label><input id="efms" type="number" value="${f.pct_sec}" style="width:70px"></div>
+      <div class="fg"><label>% Gras</label><input id="efmg" type="number" value="${f.pct_gras}" style="width:70px"></div>
+      <div class="fg"><label>Seuil alerte</label><input id="efseuil" type="number" value="${f.seuil}" style="width:80px"></div>
+    </div>
+    <div class="fg"><label>Notes</label><textarea id="efnotes" rows="2">${f.notes||''}</textarea></div>`,
+    function() {
+      Object.assign(f, {nom:$val('efn').trim(),cat:$val('efcat').trim(),unite:$val('efu'),densite:$f('efd'),pct_sec:$f('efms'),pct_gras:$f('efmg'),seuil:$f('efseuil'),notes:$val('efnotes').trim()});
+      closeModal(); pageFiches();
+    }, 'Mettre à jour');
+}
+
+function delFiche(id) {
+  if (db.mod_lignes.some(l=>l.fiche_id===id)) { alert('Ingrédient utilisé dans un module.'); return; }
+  if (db.achats.some(a=>a.fiche_id===id)) { alert('Ingrédient lié à des achats.'); return; }
+  if (confirm('Supprimer cette fiche ?')) { db.fiches_ingr = db.fiches_ingr.filter(f=>f.id!==id); pageFiches(); }
+}
+
+// ════════════════════════════════════════════════════════════
+// P2 — FOURNISSEURS
+// ════════════════════════════════════════════════════════════
+function pageFournisseurs() {
+  const rows = db.fournisseurs.map(f => {
+    const n = db.achats.filter(a=>a.fournisseur_id===f.id).length;
+    return `<tr>
+      <td><strong>${f.nom}</strong></td><td>${f.ville||'—'}</td><td>${f.tel||'—'}</td>
+      <td>${f.email||'—'}</td><td>${f.tva||'—'}</td>
+      <td><span class="badge badge-blue">${n} achat(s)</span></td>
+      <td class="actions">
+        <button class="btn btn-ghost btn-xs" onclick="editFourn(${f.id})">✏️</button>
+        <button class="btn btn-danger btn-xs" onclick="delFourn(${f.id})">✕</button>
+      </td>
+    </tr>`;
+  }).join('');
+  render(`
+    ${wfBar(['Fiches','Fournisseurs','Achats','Types','Modules','Assemblage'],1)}
+    <div class="page-header">
+      <h2>🏭 Fournisseurs</h2>
+      <p>Annuaire de vos fournisseurs. Enregistrez une fois, réutilisez à chaque achat.</p>
+    </div>
+    <div class="grid2">
+      <div class="card">
+        <div class="card-title">➕ Nouveau fournisseur</div>
+        <div class="fr">
+          <div class="fg" style="flex:2"><label>Nom *</label><input id="fnom" placeholder="ex: Callebaut Belgium"></div>
+          <div class="fg"><label>Tél.</label><input id="ftel" placeholder="+32 2 …" style="width:130px"></div>
+        </div>
+        <div class="fr">
+          <div class="fg" style="flex:2"><label>Adresse</label><input id="fadr" placeholder="Rue, N°"></div>
+          <div class="fg"><label>CP</label><input id="fcp" placeholder="1000" style="width:70px"></div>
+          <div class="fg"><label>Ville</label><input id="fvil" placeholder="Bruxelles"></div>
+        </div>
+        <div class="fr">
+          <div class="fg" style="flex:2"><label>Email</label><input id="femail" placeholder="contact@…"></div>
+          <div class="fg"><label>N° TVA</label><input id="ftva" placeholder="BE 0xxx.xxx.xxx"></div>
+        </div>
+        <div class="fg" style="margin-bottom:10px"><label>Notes</label><textarea id="fnotes2" rows="2" placeholder="Délais, conditions…"></textarea></div>
+        <button class="btn btn-primary btn-block" onclick="addFourn()">✅ Ajouter le fournisseur</button>
+      </div>
+      <div class="card">
+        <div class="card-title">📋 Annuaire (${db.fournisseurs.length})</div>
+        <table class="tbl">
+          <thead><tr><th>Nom</th><th>Ville</th><th>Tél.</th><th>Email</th><th>TVA</th><th>Achats</th><th></th></tr></thead>
+          <tbody>${rows||'<tr><td colspan="7" style="text-align:center;color:#475569;padding:16px">Aucun fournisseur</td></tr>'}</tbody>
+        </table>
+      </div>
+    </div>`);
+}
+
+function addFourn() {
+  const nom = $val('fnom').trim(); if (!nom) { alert('Nom obligatoire.'); return; }
+  db.fournisseurs.push({id:uid(),nom,tel:$val('ftel'),adresse:$val('fadr'),cp:$val('fcp'),ville:$val('fvil'),email:$val('femail'),tva:$val('ftva'),notes:$val('fnotes2')});
+  pageFournisseurs();
+}
+function editFourn(id) {
+  const f = byId('fournisseurs',id);
+  modal('✏️ Modifier — '+f.nom,`
+    <div class="fr">
+      <div class="fg" style="flex:2"><label>Nom</label><input id="efnom" value="${f.nom}"></div>
+      <div class="fg"><label>Tél.</label><input id="eftel" value="${f.tel||''}"></div>
+    </div>
+    <div class="fr">
+      <div class="fg" style="flex:3"><label>Adresse</label><input id="efadr" value="${f.adresse||''}"></div>
+      <div class="fg"><label>CP</label><input id="efcp" value="${f.cp||''}" style="width:70px"></div>
+      <div class="fg"><label>Ville</label><input id="efvil" value="${f.ville||''}"></div>
+    </div>
+    <div class="fr">
+      <div class="fg" style="flex:2"><label>Email</label><input id="efemail" value="${f.email||''}"></div>
+      <div class="fg"><label>TVA</label><input id="eftva" value="${f.tva||''}"></div>
+    </div>`,
+    function(){Object.assign(f,{nom:$val('efnom'),tel:$val('eftel'),adresse:$val('efadr'),cp:$val('efcp'),ville:$val('efvil'),email:$val('efemail'),tva:$val('eftva')});closeModal();pageFournisseurs();},'Mettre à jour');
+}
+function delFourn(id) {
+  if (db.achats.some(a=>a.fournisseur_id===id)){alert('Ce fournisseur a des achats liés.');return;}
+  if(confirm('Supprimer ?')){db.fournisseurs=db.fournisseurs.filter(f=>f.id!==id);pageFournisseurs();}
+}
+
+// ════════════════════════════════════════════════════════════
+// P3 — ACHATS
+// ════════════════════════════════════════════════════════════
+function pageAchats() {
+  const facheOpts = db.fiches_ingr.map(f=>`<option value="${f.id}">${f.nom} (${f.unite})</option>`).join('');
+  const fournOpts = db.fournisseurs.map(f=>`<option value="${f.id}">${f.nom}</option>`).join('');
+
+  const rows = [...db.achats].reverse().map(a => {
+    const fi = byId('fiches_ingr',a.fiche_id);
+    const fo = byId('fournisseurs',a.fournisseur_id);
+    return `<tr>
+      <td>${a.date}</td>
+      <td><strong>${fi?.nom||'?'}</strong></td>
+      <td>${fo?.nom||'?'}</td>
+      <td>${a.quantite} ${fi?.unite||''}</td>
+      <td><span class="badge badge-yellow">${a.prix_par_unite.toFixed(2)} €/${fi?.unite||''}</span></td>
+      <td><strong>${(a.prix_par_unite*a.quantite).toFixed(2)} €</strong></td>
+      <td>${a.notes||'—'}</td>
+    </tr>`;
+  }).join('');
+
+  // Prix historique par ingrédient
+  const histo = db.fiches_ingr.filter(f=>db.achats.some(a=>a.fiche_id===f.id)).map(f=>{
+    const relevant = [...db.achats.filter(a=>a.fiche_id===f.id)].sort((a,b)=>new Date(a.date)-new Date(b.date));
+    if(relevant.length<2) return null;
+    const evolution = relevant.map(a=>`${a.prix_par_unite.toFixed(2)}€`).join(' → ');
+    return `<div style="padding:4px 0;border-bottom:1px solid #1e1e38;font-size:11px;display:flex;justify-content:space-between">
+      <strong>${f.nom}</strong> <span style="color:#64748b">${evolution} <span class="badge badge-blue">(${byId('fournisseurs',relevant[relevant.length-1].fournisseur_id)?.nom||'?'})</span></span>
+    </div>`;
+  }).filter(Boolean).join('');
+
+  render(`
+    ${wfBar(['Fiches','Fournisseurs','Achats','Types','Modules','Assemblage'],2)}
+    <div class="page-header">
+      <h2>🛒 Achats — Stock entrant</h2>
+      <p>Choisissez l'ingrédient, le fournisseur, et renseignez le prix réel payé ce jour. L'historique de prix se construit automatiquement.</p>
+    </div>
+    <div class="alert alert-success">
+      💡 <span>Le même chocolat peut être acheté à des prix différents selon le fournisseur ou la date. L'ERP garde tout l'historique pour votre analyse de coûts.</span>
+    </div>
+    <div class="grid2">
+      <div class="card">
+        <div class="card-title">➕ Enregistrer un achat</div>
+        <div class="form-section">
+          <div class="form-section-title">Que vous a-t-on livré ?</div>
+          <div class="fr">
+            <div class="fg" style="flex:2">
+              <label>Ingrédient *</label>
+              <select id="a_fi" onchange="syncUnite()">${facheOpts||'<option>— Créez d\'abord des fiches —</option>'}</select>
+            </div>
+            <div class="fg"><label>Unité (auto)</label><input id="a_unite" readonly style="width:60px"></div>
+          </div>
+        </div>
+        <div class="form-section">
+          <div class="form-section-title">De qui vient-il ?</div>
+          <div class="fr">
+            <div class="fg" style="flex:2">
+              <label>Fournisseur *</label>
+              <div style="display:flex;gap:6px">
+                <select id="a_fo" style="flex:1">${fournOpts||'<option>— Aucun fournisseur —</option>'}</select>
+                <button class="btn btn-ghost btn-sm" onclick="quickFourn()">+ Nouveau</button>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="form-section">
+          <div class="form-section-title">Combien et à quel prix ?</div>
+          <div class="fr">
+            <div class="fg">
+              <label>Quantité *</label>
+              <div class="input-with-unit">
+                <input id="a_qte" type="number" min="0" step="0.001" placeholder="5" style="width:90px">
+                <div class="unit" id="a_unite2">kg</div>
+              </div>
+            </div>
+            <div class="fg">
+              <label>Prix payé *</label>
+              <div class="input-with-unit">
+                <input id="a_px" type="number" min="0" step="0.01" placeholder="14.00" style="width:90px" oninput="calcTotal()">
+                <div class="unit">€/<span id="a_unite3">kg</span></div>
+              </div>
+            </div>
+            <div class="fg"><label>Total (€)</label><input id="a_tot" readonly style="width:90px"></div>
+          </div>
+          <div class="fr">
+            <div class="fg"><label>Date</label><input id="a_date" type="date" value="${new Date().toISOString().split('T')[0]}"></div>
+            <div class="fg" style="flex:2"><label>Notes (lot, bio, promo…)</label><input id="a_notes" placeholder="ex: Lot BIO, promotion printemps"></div>
+          </div>
+        </div>
+        <button class="btn btn-primary btn-block" onclick="addAchat()">✅ Enregistrer l'achat</button>
+      </div>
+      <div>
+        <div class="card">
+          <div class="card-title">📈 Évolution des prix</div>
+          ${histo || '<p style="color:#475569;font-size:11px">Les variations de prix apparaîtront ici dès le 2ème achat du même ingrédient.</p>'}
+        </div>
+        <div class="card">
+          <div class="card-title">🗂️ Historique des achats</div>
+          <div style="overflow-x:auto;max-height:300px;overflow-y:auto">
+            <table class="tbl">
+              <thead><tr><th>Date</th><th>Ingrédient</th><th>Fournisseur</th><th>Qté</th><th>Prix/unité</th><th>Total</th><th>Notes</th></tr></thead>
+              <tbody>${rows||'<tr><td colspan="7" style="text-align:center;color:#475569;padding:12px">Aucun achat</td></tr>'}</tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>`);
+  setTimeout(syncUnite,50);
+}
+
+function syncUnite(){
+  const fid=$i('a_fi');
+  const f=byId('fiches_ingr',fid);
+  const u=f?.unite||'kg';
+  ['a_unite','a_unite2'].forEach(id=>{const el=document.getElementById(id);if(el)el.value=u;if(el&&el.className==='unit')el.textContent=u;});
+  const u3=document.getElementById('a_unite3');if(u3)u3.textContent=u;
+  // Fix unit display in input-with-unit
+  const u2=document.getElementById('a_unite2');if(u2)u2.textContent=u;
+}
+function calcTotal(){
+  const q=$f('a_qte'),p=$f('a_px'),t=document.getElementById('a_tot');
+  if(t)t.value=(q*p).toFixed(2)+' €';
+}
+function addAchat(){
+  const fid=$i('a_fi'),foid=$i('a_fo'),q=$f('a_qte'),p=$f('a_px');
+  if(!fid||!foid||!q||!p){alert('Tous les champs marqués * sont obligatoires.');return;}
+  db.achats.push({id:uid(),fiche_id:fid,fournisseur_id:foid,prix_par_unite:p,quantite:q,date:$val('a_date'),notes:$val('a_notes').trim()});
+  pageAchats();
+}
+function quickFourn(){
+  const nom=prompt('Nom du nouveau fournisseur :');
+  if(!nom)return;
+  const f={id:uid(),nom,tel:'',adresse:'',cp:'',ville:'',email:'',tva:'',notes:''};
+  db.fournisseurs.push(f);
+  const sel=document.getElementById('a_fo');
+  if(sel){const opt=document.createElement('option');opt.value=f.id;opt.textContent=f.nom;opt.selected=true;sel.appendChild(opt);}
+}
+
+// ════════════════════════════════════════════════════════════
+// P4 — TYPES DE MODULES
+// ════════════════════════════════════════════════════════════
+function pageTypes() {
+  const rows = db.types_module.map(t => {
+    const n = db.modules.filter(m=>m.type_id===t.id).length;
+    return `<tr>
+      <td><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:${t.couleur};margin-right:6px"></span><strong>${t.nom}</strong></td>
+      <td>${t.description||'—'}</td>
+      <td><span class="badge badge-blue">${n} module(s)</span></td>
+      <td class="actions">
+        <button class="btn btn-danger btn-xs" onclick="delType(${t.id})">✕</button>
+      </td>
+    </tr>`;
+  }).join('');
+  render(`
+    ${wfBar(['Fiches','Fournisseurs','Achats','Types','Modules','Assemblage'],3)}
+    <div class="page-header">
+      <h2>🏷️ Types de Modules</h2>
+      <p>Créez vos propres catégories de recettes — rien n'est imposé. Exemples : Biscuit, Mousse, Glaçage, Insert, Crème…</p>
+    </div>
+    <div class="grid2">
+      <div class="card">
+        <div class="card-title">➕ Nouveau type</div>
+        <div class="fr">
+          <div class="fg" style="flex:2"><label>Nom du type *</label><input id="tn" placeholder="ex: Mousse, Biscuit, Glaçage…"></div>
+          <div class="fg"><label>Couleur</label><input id="tcol" type="color" value="#60a5fa" style="width:50px;height:36px;padding:2px"></div>
+        </div>
+        <div class="fg" style="margin-bottom:10px"><label>Description (optionnel)</label>
+          <textarea id="tdesc" rows="2" placeholder="ex: Préparations aérées à base de crème foisonnée"></textarea>
+        </div>
+        <button class="btn btn-primary btn-block" onclick="addType()">✅ Créer le type</button>
+        <div class="alert alert-info" style="margin-top:10px">
+          💡 <span>Ces types servent uniquement à organiser et filtrer vos modules. Ajoutez en autant que nécessaire.</span>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-title">📋 Vos types (${db.types_module.length})</div>
+        <table class="tbl">
+          <thead><tr><th>Nom</th><th>Description</th><th>Modules liés</th><th></th></tr></thead>
+          <tbody>${rows||'<tr><td colspan="4" style="text-align:center;color:#475569;padding:16px">Aucun type créé</td></tr>'}</tbody>
+        </table>
+      </div>
+    </div>`);
+}
+function addType(){
+  const nom=$val('tn').trim();if(!nom){alert('Nom obligatoire.');return;}
+  db.types_module.push({id:uid(),nom,description:$val('tdesc').trim(),couleur:$val('tcol')||randomColor()});
+  pageTypes();
+}
+function delType(id){
+  if(db.modules.some(m=>m.type_id===id)){alert('Type utilisé dans des modules.');return;}
+  if(confirm('Supprimer ce type ?')){db.types_module=db.types_module.filter(t=>t.id!==id);pageTypes();}
+}
+
+// ════════════════════════════════════════════════════════════
+// P5 — MODULES (RECETTES)
+// ════════════════════════════════════════════════════════════
+let _ml = []; // lignes de composition en cours
+
+function pageModules() {
+  const typeOpts = db.types_module.map(t=>`<option value="${t.id}">${t.nom}</option>`).join('');
+  const rows = db.modules.map(m => {
+    const t  = byId('types_module',m.type_id);
+    const nb = db.mod_lignes.filter(l=>l.module_id===m.id).length;
+    const cout = coutModuleParG(m.id)*1000;
+    const hasSub = db.mod_lignes.some(l=>l.module_id===m.id&&l.sub_module_id);
+    return `<tr>
+      <td>
+        <div style="display:flex;align-items:center;gap:8px">
+          <span style="width:8px;height:8px;border-radius:50%;background:${t?.couleur||'#475569'};flex-shrink:0"></span>
+          <strong>${m.nom}</strong>
+        </div>
+      </td>
+      <td>${t?`<span class="badge" style="background:${t.couleur}22;color:${t.couleur}">${t.nom}</span>`:'—'}</td>
+      <td>${m.taille_ref_g}g</td>
+      <td>${m.densite_g_cm3} g/cm³</td>
+      <td>${((1-m.rendement)*100).toFixed(0)}%</td>
+      <td>${nb} élém. ${hasSub?'<span class="badge badge-purple">↳ récursif</span>':''}</td>
+      <td><span class="badge badge-yellow">${cout>0?cout.toFixed(2)+'€/kg':'—'}</span></td>
+      <td class="actions">
+        <button class="btn btn-ghost btn-xs" onclick="viewModule(${m.id})">📊</button>
+        <button class="btn btn-danger btn-xs" onclick="delModule(${m.id})">✕</button>
+      </td>
+    </tr>`;
+  }).join('');
+
+  render(`
+    ${wfBar(['Fiches','Fournisseurs','Achats','Types','Modules','Assemblage'],4)}
+    <div class="page-header">
+      <h2>🍰 Modules — Vos Recettes</h2>
+      <p>Chaque module est une recette réutilisable. Un module peut contenir d'autres modules (ex: une mousse contient une ganache).</p>
+    </div>
+    ${!db.types_module.length?'<div class="alert alert-warn">⚠️ Aucun type de module. <button class="btn btn-ghost btn-sm" onclick="setTab(\'types\')">Créer des types →</button></div>':''}
+    <div class="grid2">
+      <div class="card">
+        <div class="card-title">➕ Nouveau module</div>
+        <div class="form-section">
+          <div class="form-section-title">Identité du module</div>
+          <div class="fr">
+            <div class="fg" style="flex:2"><label>Nom *</label><input id="mn" placeholder="ex: Génoise Vanille"></div>
+            <div class="fg"><label>Type *</label>
+              <select id="mtype">${typeOpts||'<option value="">— Créez des types —</option>'}</select>
+            </div>
+          </div>
+        </div>
+        <div class="form-section">
+          <div class="form-section-title">Propriétés physiques <small style="color:#475569">(pour le calcul volumétrique)</small></div>
+          <div class="fr">
+            <div class="fg">
+              <label>Densité finale <small style="color:#475569">(g/cm³)</small></label>
+              <input id="mden" type="number" step="0.01" value="0.9" style="width:90px">
+              <span class="hint">Mousse≈0.5 · Crème≈1.0 · Ganache≈1.1</span>
+            </div>
+            <div class="fg">
+              <label>Quantité de référence</label>
+              <div class="input-with-unit">
+                <input id="mref" type="number" value="500" style="width:90px">
+                <div class="unit">g</div>
+              </div>
+              <span class="hint">Poids de base pour les % de la recette</span>
+            </div>
+            <div class="fg">
+              <label>Rendement <small style="color:#475569">(0.95 = 5% perte)</small></label>
+              <input id="mrend" type="number" step="0.01" min="0.01" max="1" value="0.95" style="width:90px">
+            </div>
+          </div>
+        </div>
+        <div class="form-section">
+          <div class="form-section-title">
+            Composition
+            <div style="float:right;display:flex;gap:4px">
+              <button class="btn btn-ghost btn-xs" onclick="addML('ingr')">+ Ingrédient</button>
+              <button class="btn btn-ghost btn-xs" style="border-color:#a78bfa;color:#a78bfa" onclick="addML('sub')">+ Sous-module ↳</button>
+            </div>
+          </div>
+          <div id="mcomp" style="min-height:40px"></div>
+        </div>
+        <div class="fg" style="margin-bottom:10px"><label>Notes pour la recette</label><textarea id="mnotes" rows="2" placeholder="Technique, conseils…"></textarea></div>
+        <button class="btn btn-primary btn-block" onclick="saveModule()">✅ Enregistrer le module</button>
+      </div>
+      <div class="card">
+        <div class="card-title">📋 Vos modules (${db.modules.length})</div>
+        <div style="overflow-x:auto">
+          <table class="tbl">
+            <thead><tr><th>Nom</th><th>Type</th><th>Réf.</th><th>Densité</th><th>Perte</th><th>Compo.</th><th>Prix/kg</th><th></th></tr></thead>
+            <tbody>${rows||'<tr><td colspan="8" style="text-align:center;color:#475569;padding:16px">Aucun module — créez votre première recette !</td></tr>'}</tbody>
+          </table>
+        </div>
+      </div>
+    </div>`);
+  renderML();
+}
+
+function renderML() {
+  const c=document.getElementById('mcomp');if(!c)return;
+  if(!_ml.length){c.innerHTML='<p style="color:#475569;font-size:11px;padding:8px 0">Ajoutez des ingrédients ou des sous-modules ci-dessus.</p>';return;}
+  const ref=$f('mref')||500;
+  c.innerHTML=_ml.map((l,i)=>{
+    const isIngr=l.type==='ingr';
+    const col=isIngr?'#60a5fa':'#a78bfa';
+    return `<div class="layer-item">
+      <div class="layer-color" style="background:${col}"></div>
+      <span class="badge" style="background:${col}22;color:${col};flex-shrink:0">${isIngr?'Ingr.':'↳ Module'}</span>
+      <select style="flex:2" onchange="_ml[${i}].ref_id=parseInt(this.value)">
+        ${isIngr
+          ? db.fiches_ingr.map(x=>`<option value="${x.id}" ${l.ref_id===x.id?'selected':''}>${x.nom} (${x.unite})</option>`).join('')
+          : db.modules.map(x=>`<option value="${x.id}" ${l.ref_id===x.id?'selected':''}>${x.nom}</option>`).join('')
+        }
+      </select>
+      <div class="fg">
+        <label style="font-size:10px">Qté pour ${ref}g (g)</label>
+        <input type="number" min="0" step="0.1" value="${l.qte}" style="width:80px" onchange="_ml[${i}].qte=parseFloat(this.value)||0">
+      </div>
+      ${isIngr?`<span style="font-size:10px;color:#64748b">${(l.qte/ref*100).toFixed(0)}%</span>`:''}
+      <button class="btn btn-danger btn-xs" onclick="_ml.splice(${i},1);renderML()">✕</button>
+    </div>`;
+  }).join('');
+}
+
+function addML(type){
+  if(type==='ingr'&&!db.fiches_ingr.length){alert('Créez d\'abord des fiches ingrédients.');return;}
+  if(type==='sub'&&!db.modules.length){alert('Aucun autre module disponible.');return;}
+  const ref_id=type==='ingr'?db.fiches_ingr[0].id:db.modules[0].id;
+  _ml.push({type,ref_id,qte:0});
+  renderML();
+}
+
+function saveModule(){
+  const nom=$val('mn').trim();if(!nom){alert('Nom obligatoire.');return;}
+  if(!db.types_module.length){alert('Créez d\'abord un type de module.');return;}
+  if(!_ml.length){alert('Ajoutez au moins un ingrédient.');return;}
+  const m={id:uid(),nom,type_id:$i('mtype'),densite_g_cm3:$f('mden')||0.9,rendement:$f('mrend')||0.95,taille_ref_g:$f('mref')||500,notes:$val('mnotes').trim()};
+  db.modules.push(m);
+  _ml.forEach(l=>db.mod_lignes.push({id:uid(),module_id:m.id,fiche_id:l.type==='ingr'?l.ref_id:null,sub_module_id:l.type==='sub'?l.ref_id:null,qte_ref:l.qte}));
+  _ml=[];
+  pageModules();
+}
+
+function viewModule(id){
+  const m=byId('modules',id);
+  const t=byId('types_module',m.type_id);
+  const cout=coutModuleParG(id)*1000;
+  const lignes=db.mod_lignes.filter(l=>l.module_id===id);
+  const flat=ingrPlatModule(id,1,0);
+  const flatTotal=flat.reduce((s,r)=>s+r.qte,0);
+
+  modal('📊 '+m.nom,`
+    <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px">
+      ${t?`<span class="badge" style="background:${t.couleur}22;color:${t.couleur}">${t.nom}</span>`:''}
+      <span class="badge badge-gray">Réf: ${m.taille_ref_g}g</span>
+      <span class="badge badge-blue">ρ: ${m.densite_g_cm3} g/cm³</span>
+      <span class="badge badge-red">Perte: ${((1-m.rendement)*100).toFixed(0)}%</span>
+      <span class="badge badge-yellow">Prix: ${cout>0?cout.toFixed(2)+'€/kg':'— (achats manquants)'}</span>
+    </div>
+    <div style="font-size:12px;font-weight:600;color:#94a3b8;margin-bottom:6px">COMPOSITION DIRECTE</div>
+    <table class="tbl"><thead><tr><th>Élément</th><th>Qté</th><th>%</th><th>Coût</th></tr></thead><tbody>
+    ${lignes.map(l=>{
+      if(l.sub_module_id){
+        const sm=byId('modules',l.sub_module_id);
+        const c=(coutModuleParG(l.sub_module_id)*l.qte_ref).toFixed(3);
+        return `<tr style="background:#1e1e3a"><td><span style="color:#a78bfa">↳</span> <strong>${sm?.nom||'?'}</strong> <span class="badge badge-purple">sous-module</span></td><td>${l.qte_ref}g</td><td>${(l.qte_ref/m.taille_ref_g*100).toFixed(1)}%</td><td>${c} €</td></tr>`;
+      }
+      const fi=byId('fiches_ingr',l.fiche_id);
+      const px=dernierPrix(l.fiche_id);
+      const c=px!=null?(px/1000*l.qte_ref).toFixed(3):'—';
+      return `<tr><td>${fi?.nom||'?'}</td><td>${l.qte_ref}g</td><td>${(l.qte_ref/m.taille_ref_g*100).toFixed(1)}%</td><td>${c} €</td></tr>`;
+    }).join('')}
+    </tbody></table>
+    ${flat.length?`<div style="font-size:12px;font-weight:600;color:#94a3b8;margin:10px 0 6px">INGRÉDIENTS BRUTS À PLAT (récursif)</div>
+    <table class="tbl"><thead><tr><th>Ingrédient</th><th>Qté</th><th>%</th></tr></thead><tbody>
+    ${flat.map(r=>`<tr><td>${r.nom}</td><td>${r.qte.toFixed(1)}g</td><td>${(r.qte/flatTotal*100).toFixed(1)}%</td></tr>`).join('')}
+    </tbody></table>`:''}
+  `);
+}
+
+function delModule(id){
+  if(db.mod_lignes.some(l=>l.sub_module_id===id)){alert('Module utilisé comme sous-module.');return;}
+  if(db.asm_couches.some(l=>l.module_id===id)){alert('Module utilisé dans un assemblage.');return;}
+  if(confirm('Supprimer ce module ?')){
+    db.modules=db.modules.filter(m=>m.id!==id);
+    db.mod_lignes=db.mod_lignes.filter(l=>l.module_id!==id);
+    pageModules();
+  }
+}
+
+// ════════════════════════════════════════════════════════════
+// P6 — VOLUMÉTRIE
+// ════════════════════════════════════════════════════════════
+const SHAPES=[
+  {id:'cylindre',  ico:'⭕',nm:'Rond / Cylindre',  fields:['rayon_cm','hauteur_cm'],   formula:'V = π·r²·h', fn:(a,_,h)=>Math.PI*a*a*h, srf:(a)=>Math.PI*a*a},
+  {id:'rectangle', ico:'▭', nm:'Rectangle / Cadre',fields:['longueur_cm','largeur_cm','hauteur_cm'],formula:'V = L·l·h', fn:(a,b,h)=>a*b*h, srf:(a,b)=>a*b},
+  {id:'carre',     ico:'⬜',nm:'Carré',             fields:['cote_cm','hauteur_cm'],    formula:'V = a²·h',   fn:(a,_,h)=>a*a*h, srf:(a)=>a*a},
+  {id:'demi_sph',  ico:'🔵',nm:'Demi-sphère',       fields:['rayon_cm'],               formula:'V = ⅔·π·r³', fn:(a)=>(2/3)*Math.PI*a*a*a, srf:(a)=>Math.PI*a*a},
+  {id:'ovale',     ico:'🥚',nm:'Ovale / Ellipse',   fields:['axe_a_cm','axe_b_cm','hauteur_cm'],formula:'V = π·a·b·h',fn:(a,b,h)=>Math.PI*a*b*h,srf:(a,b)=>Math.PI*a*b},
+  {id:'buche',     ico:'🪵',nm:'Bûche / Demi-cyl.',fields:['longueur_cm','rayon_cm'],  formula:'V = ½·π·r²·L', fn:(l,r)=>0.5*Math.PI*r*r*l, srf:(l,r)=>l*2*r},
+  {id:'triangle',  ico:'🔺',nm:'Triangle / Prisme', fields:['base_cm','hauteur_tri_cm','longueur_cm'],formula:'V = ½·b·h·L', fn:(b,ht,l)=>0.5*b*ht*l, srf:(b,ht)=>0.5*b*ht},
+  {id:'hexagone',  ico:'⬡', nm:'Hexagone',          fields:['cote_cm','hauteur_cm'],   formula:'V = 3√3/2·a²·h',fn:(a,_,h)=>(3*Math.sqrt(3)/2)*a*a*h,srf:(a)=>(3*Math.sqrt(3)/2)*a*a},
+];
+let _selS='cylindre';
+
+function pageVolume(){
+  const sh=SHAPES.find(s=>s.id===_selS);
+  const flbls={rayon_cm:'Rayon (cm)',hauteur_cm:'Hauteur (cm)',longueur_cm:'Longueur (cm)',largeur_cm:'Largeur (cm)',cote_cm:'Côté (cm)',axe_a_cm:'Axe a (cm)',axe_b_cm:'Axe b (cm)',rayon_ext_cm:'R ext. (cm)',rayon_tube_cm:'r tube (cm)',base_cm:'Base (cm)',hauteur_tri_cm:'Hauteur △ (cm)'};
+  const fields=sh.fields.map(f=>`<div class="fg"><label>${flbls[f]||f}</label><input id="vf_${f}" type="number" min="0" step="0.1" oninput="calcVol()"></div>`).join('');
+  const mOpts=db.modules.map(m=>`<option value="${m.id}">${m.nom} (ρ=${m.densite_g_cm3})</option>`).join('');
+
+  render(`
+    <div class="page-header"><h2>📐 Volumétrie des Moules</h2>
+    <p>Sélectionnez la forme de votre moule, renseignez les dimensions, et l'ERP calcule exactement la quantité de chaque module nécessaire.</p></div>
+    <div class="grid2">
+      <div>
+        <div class="card">
+          <div class="card-title">1. Choisir la forme</div>
+          <div class="shape-grid">${SHAPES.map(s=>`
+            <div class="shape-card ${s.id===_selS?'sel':''}" onclick="_selS='${s.id}';pageVolume()">
+              <div class="ico">${s.ico}</div><div class="nm">${s.nm}</div>
+            </div>`).join('')}
+          </div>
+          <div class="formula">${sh.formula}</div>
+        </div>
+        <div class="card">
+          <div class="card-title">2. Dimensions du moule</div>
+          <div class="fr">${fields}</div>
+          <div id="vres"></div>
+        </div>
+        <div class="card">
+          <div class="card-title">3. Calculer pour un module</div>
+          <div class="alert alert-info">💡 <span>La densité du module convertit le volume en masse exacte. 1 litre de mousse ≠ 1 kg !</span></div>
+          <div class="fr">
+            <div class="fg" style="flex:2"><label>Module</label>
+              <select id="vm_mod">${mOpts||'<option>Créez des modules d\'abord</option>'}</select>
+            </div>
+            <div class="fg"><label>% du moule occupé</label><input id="vm_pct" type="number" value="100" min="1" max="100" style="width:70px"></div>
+            <button class="btn btn-primary" onclick="calcModInMold()">Calculer</button>
+          </div>
+          <div id="mres"></div>
+        </div>
+      </div>
+      <div>
+        <div class="card">
+          <div class="card-title">🔄 Comparateur de moules</div>
+          <p style="font-size:11px;color:#64748b;margin-bottom:8px">Passez d'un moule rond à un cadre rectangulaire en un clic.</p>
+          <div class="fr">
+            <div class="fg"><label>Moule A — Rayon (cm)</label><input id="ma_r" type="number" value="9" step="0.5" style="width:80px"></div>
+            <div class="fg"><label>Hauteur A (cm)</label><input id="ma_h" type="number" value="6" step="0.5" style="width:70px"></div>
+            <span style="color:#475569;font-size:20px;margin-bottom:8px">→</span>
+            <div class="fg"><label>Moule B — Long. (cm)</label><input id="mb_l" type="number" value="30" step="0.5" style="width:80px"></div>
+            <div class="fg"><label>Larg. (cm)</label><input id="mb_w" type="number" value="20" step="0.5" style="width:70px"></div>
+            <div class="fg"><label>Haut. B (cm)</label><input id="mb_h" type="number" value="6" step="0.5" style="width:70px"></div>
+            <button class="btn btn-primary" onclick="compareModels()">Comparer</button>
+          </div>
+          <div id="cres"></div>
+        </div>
+        <div class="card">
+          <div class="card-title">📏 Densités de référence</div>
+          <table class="tbl">
+            <thead><tr><th>Type de préparation</th><th>Densité typique</th></tr></thead>
+            <tbody>
+              ${[['Mousse (foisonnée)','0.45 – 0.65 g/cm³'],['Biscuit / Génoise','0.30 – 0.45 g/cm³'],['Crémeux / Insert','0.85 – 1.00 g/cm³'],['Ganache','1.05 – 1.15 g/cm³'],['Glaçage miroir','1.30 – 1.40 g/cm³'],['Caramel / Toffee','1.20 – 1.35 g/cm³'],['Sirop','1.15 – 1.25 g/cm³']].map(([n,d])=>`<tr><td>${n}</td><td><span class="badge badge-blue">${d}</span></td></tr>`).join('')}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>`);
+}
+
+function getVol(){
+  const sh=SHAPES.find(s=>s.id===_selS);
+  const vs=sh.fields.map(f=>parseFloat(document.getElementById('vf_'+f)?.value)||0);
+  if(vs.some(v=>!v))return null;
+  return {v:sh.fn(...vs),s:sh.srf?sh.srf(...vs):null};
+}
+function calcVol(){
+  const r=getVol();const el=document.getElementById('vres');if(!el)return;
+  if(!r){el.innerHTML='';return;}
+  el.innerHTML=`<div class="result-card">
+    <div class="result-row"><span>Volume</span><span><strong>${r.v.toFixed(1)} cm³</strong></span></div>
+    <div class="result-row"><span>= (eau, ρ=1.0)</span><span>${r.v.toFixed(1)} g</span></div>
+    ${r.s?`<div class="result-row"><span>Surface du fond</span><span>${r.s.toFixed(1)} cm²</span></div>`:''}
+  </div>`;
+}
+function calcModInMold(){
+  const r=getVol();if(!r){alert('Remplissez d\'abord les dimensions.');return;}
+  const m=byId('modules',$i('vm_mod'));if(!m)return;
+  const pct=$f('vm_pct')/100;
+  const vutil=r.v*pct;
+  const mb=vutil*m.densite_g_cm3;
+  const mp=mb/m.rendement;
+  const cout=coutModuleParG(m.id)*mp;
+  document.getElementById('mres').innerHTML=`<div class="result-card">
+    <div class="result-row"><span>Volume utile (${($f('vm_pct')).toFixed(0)}%)</span><span>${vutil.toFixed(1)} cm³</span></div>
+    <div class="result-row"><span>Densité du module</span><span>${m.densite_g_cm3} g/cm³</span></div>
+    <div class="result-row"><span>Masse produit fini</span><span>${mb.toFixed(0)} g</span></div>
+    <div class="result-row"><span>⚠️ À préparer (÷ rendement ${m.rendement})</span><span><strong>${mp.toFixed(0)} g</strong></span></div>
+    <div class="result-row"><span>Facteur vs réf. (${m.taille_ref_g}g)</span><span>× ${(mp/m.taille_ref_g).toFixed(3)}</span></div>
+    <div class="result-total"><span>Coût matières</span><span>${cout>0?cout.toFixed(2)+' €':'—'}</span></div>
+  </div>`;
+}
+function compareModels(){
+  const r=$f('ma_r'),ha=$f('ma_h'),l=$f('mb_l'),w=$f('mb_w'),hb=$f('mb_h');
+  const vA=Math.PI*r*r*ha,vB=l*w*hb,factor=vB/vA;
+  document.getElementById('cres').innerHTML=`<div class="result-card">
+    <div class="result-row"><span>Volume rond ⌀${r*2}cm × h${ha}</span><span>${vA.toFixed(0)} cm³</span></div>
+    <div class="result-row"><span>Volume cadre ${l}×${w}×${hb}cm</span><span>${vB.toFixed(0)} cm³</span></div>
+    <div class="result-total"><span>Facteur cadre / rond</span><span>×${factor.toFixed(3)}</span></div>
+    <p style="font-size:11px;color:#64748b;margin-top:8px">Si une recette demande 300g pour le moule rond → <strong style="color:#34d399">${(300*factor).toFixed(0)}g</strong> pour le cadre.</p>
+  </div>`;
+}
+
+// ════════════════════════════════════════════════════════════
+// P7 — ASSEMBLAGE
+// ════════════════════════════════════════════════════════════
+let _couches=[];
+let _simAsmId=null, _simShape2='cylindre';
+
+function pageAssemblage(){
+  const asmRows=db.assemblages.map(a=>{
+    const c=db.asm_couches.filter(x=>x.assemblage_id===a.id).sort((x,y)=>x.ordre-y.ordre);
+    const h=c.reduce((s,x)=>s+x.hauteur_cm,0);
+    return `<tr>
+      <td><strong>${a.nom}</strong><br><span style="font-size:10px;color:#64748b">${a.description||''}</span></td>
+      <td>${c.length} couche(s)</td><td>${h.toFixed(1)} cm</td>
+      <td class="actions">
+        <button class="btn btn-success btn-xs" onclick="startSim(${a.id})">🧮 Simuler</button>
+        <button class="btn btn-danger btn-xs" onclick="delAsm(${a.id})">✕</button>
+      </td>
+    </tr>`;
+  }).join('');
+  const cols=['#f87171','#fb923c','#fbbf24','#34d399','#38bdf8','#60a5fa','#a78bfa'];
+
+  render(`
+    ${wfBar(['Fiches','Fournisseurs','Achats','Types','Modules','Assemblage'],5)}
+    <div class="page-header"><h2>🎂 Assemblages — Produits Finis</h2>
+    <p>Empilez vos modules couche par couche pour créer vos gâteaux. Simulez ensuite avec n'importe quel moule.</p></div>
+    <div class="grid2">
+      <div class="card">
+        <div class="card-title">➕ Nouvel assemblage</div>
+        <div class="fr">
+          <div class="fg" style="flex:2"><label>Nom *</label><input id="asn" placeholder="ex: Entremet Choco-Praliné"></div>
+          <div class="fg" style="flex:2"><label>Description</label><input id="asd" placeholder="ex: Insert praliné, mousse, génoise"></div>
+        </div>
+        <hr>
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+          <div class="card-title" style="margin:0">Couches (bas → haut)</div>
+          <button class="btn btn-ghost btn-sm" onclick="addCouche()">+ Couche</button>
+        </div>
+        <div id="laycomp"></div>
+        ${_couches.length?`<div style="font-size:11px;color:#64748b;margin-bottom:8px">Hauteur totale : <strong style="color:#fbbf24">${_couches.reduce((s,c)=>s+c.h,0).toFixed(1)} cm</strong></div>`:''}
+        <button class="btn btn-primary btn-block" onclick="saveAsm()">✅ Enregistrer l'assemblage</button>
+      </div>
+      <div class="card">
+        <div class="card-title">📋 Vos assemblages</div>
+        <table class="tbl">
+          <thead><tr><th>Nom</th><th>Couches</th><th>Hauteur</th><th>Actions</th></tr></thead>
+          <tbody>${asmRows||'<tr><td colspan="4" style="text-align:center;color:#475569;padding:16px">Aucun assemblage</td></tr>'}</tbody>
+        </table>
+      </div>
+    </div>
+    <div id="sim_block" style="display:none;margin-top:12px"></div>`);
+  renderCouches(cols);
+}
+
+function renderCouches(cols){
+  cols=cols||['#f87171','#fb923c','#fbbf24','#34d399','#38bdf8','#60a5fa','#a78bfa'];
+  const c=document.getElementById('laycomp');if(!c)return;
+  if(!_couches.length){c.innerHTML='<p style="color:#475569;font-size:11px;padding:8px 0">Cliquez "+ Couche" pour commencer.</p>';return;}
+  c.innerHTML=_couches.map((l,i)=>{
+    const m=byId('modules',l.mid);
+    const t=m?byId('types_module',m.type_id):null;
+    return `<div class="layer-item">
+      <div class="layer-color" style="background:${cols[i%cols.length]}"></div>
+      <span style="color:#64748b;font-size:12px;width:22px">${i+1}</span>
+      <select style="flex:2" onchange="_couches[${i}].mid=parseInt(this.value);renderCouches()">
+        ${db.modules.map(x=>`<option value="${x.id}" ${l.mid===x.id?'selected':''}>${x.nom}</option>`).join('')}
+      </select>
+      ${t?`<span class="badge" style="background:${t.couleur}22;color:${t.couleur};flex-shrink:0">${t.nom}</span>`:''}
+      <div class="fg" style="flex-shrink:0">
+        <label style="font-size:10px">Hauteur</label>
+        <div class="input-with-unit">
+          <input type="number" min="0.1" step="0.1" value="${l.h}" style="width:60px" onchange="_couches[${i}].h=parseFloat(this.value)||0;renderCouches()">
+          <div class="unit">cm</div>
+        </div>
+      </div>
+      <span style="font-size:10px;color:#64748b">ρ=${m?.densite_g_cm3||'?'}</span>
+      <button class="btn btn-danger btn-xs" onclick="_couches.splice(${i},1);renderCouches()">✕</button>
+    </div>`;
+  }).join('');
+}
+
+function addCouche(){if(!db.modules.length){alert('Créez des modules d\'abord.');return;}_couches.push({mid:db.modules[0].id,h:2});renderCouches();}
+function saveAsm(){
+  const nom=$val('asn').trim();if(!nom){alert('Nom obligatoire.');return;}
+  if(!_couches.length){alert('Ajoutez au moins une couche.');return;}
+  const a={id:uid(),nom,description:$val('asd').trim(),notes:''};
+  db.assemblages.push(a);
+  _couches.forEach((l,i)=>db.asm_couches.push({id:uid(),assemblage_id:a.id,module_id:l.mid,ordre:i+1,hauteur_cm:l.h}));
+  _couches=[];
+  pageAssemblage();
+}
+function delAsm(id){
+  if(confirm('Supprimer cet assemblage ?')){
+    db.assemblages=db.assemblages.filter(a=>a.id!==id);
+    db.asm_couches=db.asm_couches.filter(l=>l.assemblage_id!==id);
+    pageAssemblage();
+  }
+}
+function startSim(id){_simAsmId=id;renderSimBlock();}
+
+function renderSimBlock(){
+  const el=document.getElementById('sim_block');if(!el)return;
+  const sh=SHAPES.find(s=>s.id===_simShape2);
+  const a=byId('assemblages',_simAsmId);
+  const flbls={rayon_cm:'Rayon',hauteur_cm:'Hauteur',longueur_cm:'Longueur',largeur_cm:'Largeur',cote_cm:'Côté',axe_a_cm:'Axe a',axe_b_cm:'Axe b',base_cm:'Base',hauteur_tri_cm:'H △',rayon_ext_cm:'R ext.',rayon_tube_cm:'r tube'};
+  el.style.display='';
+  el.innerHTML=`<div class="card">
+    <div class="card-title">🧮 Simulation — <span style="color:#fbbf24">${a?.nom||''}</span></div>
+    <div class="grid2">
+      <div>
+        <div style="font-size:11px;color:#64748b;margin-bottom:8px">Forme du moule :</div>
+        <div class="shape-grid">${SHAPES.map(s=>`<div class="shape-card ${s.id===_simShape2?'sel':''}" onclick="_simShape2='${s.id}';renderSimBlock()">
+          <div class="ico">${s.ico}</div><div class="nm">${s.nm}</div>
+        </div>`).join('')}</div>
+        <div class="formula">${sh.formula}</div>
+        <div class="fr">${sh.fields.map(f=>`<div class="fg"><label>${flbls[f]||f} (cm)</label><input id="sf_${f}" type="number" step="0.1" min="0" style="width:80px"></div>`).join('')}</div>
+        <button class="btn btn-primary" style="margin-top:8px" onclick="runSim()">▶️ Calculer les quantités</button>
+      </div>
+      <div id="sim_result"></div>
+    </div>
+  </div>`;
+  el.scrollIntoView({behavior:'smooth'});
+}
+
+function runSim(){
+  const sh=SHAPES.find(s=>s.id===_simShape2);
+  const vs=sh.fields.map(f=>parseFloat(document.getElementById('sf_'+f)?.value)||0);
+  if(vs.some(v=>!v)){alert('Remplissez toutes les dimensions.');return;}
+  const Vtot=sh.fn(...vs);
+  const surf=sh.srf?sh.srf(...vs):Vtot/vs[vs.length-1];
+  const couches=db.asm_couches.filter(l=>l.assemblage_id===_simAsmId).sort((a,b)=>a.ordre-b.ordre);
+  const cols=['#f87171','#fb923c','#fbbf24','#34d399','#38bdf8','#60a5fa','#a78bfa'];
+  let total_cout=0;
+  const res=couches.map((l,i)=>{
+    const m=byId('modules',l.module_id);
+    const Vc=surf*l.hauteur_cm;
+    const mb=Vc*m.densite_g_cm3;
+    const mp=mb/m.rendement;
+    const c=coutModuleParG(l.module_id)*mp;
+    total_cout+=c;
+    return {m,Vc,mb,mp,c,h:l.hauteur_cm,ordre:l.ordre,col:cols[i%cols.length]};
+  });
+  const Htot=couches.reduce((s,l)=>s+l.hauteur_cm,0);
+
+  const stack=[...res].reverse().map(r=>`
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:5px 10px;
+      background:${r.col}18;border-top:2px solid ${r.col};min-height:${Math.max(r.h/Htot*120,30)}px">
+      <span style="color:${r.col};font-weight:600;font-size:11px">${r.ordre}. ${r.m.nom}</span>
+      <span style="font-size:11px;color:#94a3b8"><strong>${r.mp.toFixed(0)}g</strong></span>
+    </div>`).join('');
+
+  document.getElementById('sim_result').innerHTML=`
+    <div style="font-size:11px;color:#64748b;margin-bottom:6px">
+      Vol. total : <strong>${Vtot.toFixed(0)} cm³</strong> · Surface : <strong>${surf.toFixed(1)} cm²</strong>
+    </div>
+    <div style="border:1px solid #2d2d4e;border-radius:6px;overflow:hidden;margin-bottom:10px">${stack}</div>
+    <table class="tbl"><thead><tr><th>Couche</th><th>V couche</th><th>Masse finie</th><th>À préparer ⚠️</th><th>Coût</th></tr></thead>
+    <tbody>${res.map(r=>`<tr>
+      <td><span style="color:${r.col}">●</span> ${r.m.nom}</td>
+      <td>${r.Vc.toFixed(0)} cm³</td>
+      <td>${r.mb.toFixed(0)} g</td>
+      <td><strong style="color:#34d399">${r.mp.toFixed(0)} g</strong></td>
+      <td>${r.c>0?r.c.toFixed(2)+' €':'—'}</td>
+    </tr>`).join('')}</tbody></table>
+    <div style="display:flex;justify-content:space-between;padding:8px 10px;font-size:15px;font-weight:700;color:#fbbf24;border-top:1px solid #2d2d4e;margin-top:4px">
+      <span>Coût matières total</span><span>${total_cout>0?total_cout.toFixed(2)+' €':'—'}</span>
+    </div>`;
+}
+
+// ════════════════════════════════════════════════════════════
+// P8 — SCHÉMA DB
+// ════════════════════════════════════════════════════════════
+function pageSchema(){
+  render(`
+    <div class="page-header"><h2>🗃️ Schéma de Base de Données</h2>
+    <p>Architecture générique et modulaire — rien n'est codé en dur. Tout est configurable par l'artisan.</p></div>
+    <div class="er-wrap">
+      ${[
+        {nom:'fiches_ingr',col:'#fbbf24',fields:[['PK','id'],['NN','nom'],['','cat'],['NN','unite'],['','densite_g_cm3'],['','pct_matiere_seche'],['','pct_matiere_grasse'],['','seuil_alerte'],['','notes']],rel:'← PAS de prix, PAS de fournisseur ici'},
+        {nom:'fournisseurs',col:'#60a5fa',fields:[['PK','id'],['NN','nom'],['','telephone'],['','adresse'],['','cp'],['','ville'],['','email'],['','tva'],['','notes']],rel:'→ achats (1:N)'},
+        {nom:'achats ⭐',col:'#f87171',fields:[['PK','id'],['FK','fiche_id → fiches_ingr'],['FK','fournisseur_id → fournisseurs'],['NN','prix_par_unite'],['NN','quantite'],['','date'],['','notes']],rel:'Prix stocké ICI uniquement\nMême ingr. = N achats différents'},
+        {nom:'types_module ⭐',col:'#a78bfa',fields:[['PK','id'],['NN','nom'],['','description'],['','couleur']],rel:'Générique — créé par l\'artisan\n→ modules (1:N)'},
+        {nom:'modules',col:'#34d399',fields:[['PK','id'],['FK','type_id → types_module'],['NN','nom'],['','densite_g_cm3'],['','rendement'],['','taille_ref_g'],['','notes']],rel:'Auto-référentiel via mod_lignes'},
+        {nom:'mod_lignes ⭐',col:'#fb923c',fields:[['PK','id'],['FK','module_id → modules'],['FK?','fiche_id → fiches_ingr'],['FK?','sub_module_id → modules'],['NN','qte_ref'],['','unite']],rel:'CHECK: fiche_id XOR sub_module_id\nC\'est la RÉCURSIVITÉ !'},
+        {nom:'assemblages',col:'#38bdf8',fields:[['PK','id'],['NN','nom'],['','description'],['','notes']],rel:'→ asm_couches (1:N)'},
+        {nom:'asm_couches',col:'#38bdf8',fields:[['PK','id'],['FK','assemblage_id'],['FK','module_id → modules'],['NN','ordre'],['NN','hauteur_cm']],rel:'ordre = position de la couche'},
+      ].map(t=>`<div class="er-tbl" style="border-color:${t.col}55">
+        <div class="er-head" style="color:${t.col}">${t.nom}</div>
+        <div class="er-body">${t.fields.map(([cls,f])=>`<div class="er-f"><span class="${cls==='PK'?'pk':cls==='FK'?'fk':cls==='NN'?'nn':''}">${cls}</span>${f}</div>`).join('')}</div>
+        ${t.rel?`<div class="er-rel">${t.rel}</div>`:''}
+      </div>`).join('')}
+    </div>
+    <div class="card" style="margin-top:12px">
+      <div class="card-title">📌 Principes clés de l'architecture</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+        ${[
+          ['🔒 Fiche ≠ Prix','Le prix n\'est jamais dans la fiche ingrédient. Il est dans l\'achat. Changement de fournisseur, promotion, inflation → tout se trace sans modifier la fiche.'],
+          ['🔁 Récursivité','<code>mod_lignes.sub_module_id → modules.id</code> — une ganache peut être un composant d\'une mousse, elle-même composant d\'un entremet. Profondeur illimitée.'],
+          ['🏷️ Types génériques','Aucun type codé en dur dans le code. L\'artisan crée "Biscuit", "Mousse", "Surprise maison" — l\'ERP s\'adapte.'],
+          ['📐 Densité souveraine','masse = volume × densité_module. 1L de mousse ≈ 550g, 1L de ganache ≈ 1100g. Sans ce champ, tous les calculs volumétriques sont faux.'],
+          ['💶 Prix dynamique','Le coût d\'un module est recalculé à chaque consultation depuis les derniers prix d\'achat. Aucune valeur dénormalisée. Un changement de prix se propage partout instantanément.'],
+          ['🧮 Scaling automatique','facteur = masse_cible / taille_ref_g / rendement. Applicable à tout module, quelle que soit la complexité de sa composition récursive.'],
+        ].map(([t,d])=>`<div style="background:#161628;border-radius:6px;padding:10px">
+          <div style="font-weight:700;color:#fbbf24;margin-bottom:4px">${t}</div>
+          <div style="font-size:11px;color:#94a3b8">${d}</div>
+        </div>`).join('')}
+      </div>
+    </div>`);
+}
+
+// ════════════════════════════════════════════════════════════
+// NAVIGATION
+// ════════════════════════════════════════════════════════════
+const TABS=[
+  {id:'home',         ico:'🏠',lbl:'Accueil',      fn:pageHome},
+  {id:'fiches',       ico:'📋',lbl:'Fiches Ingr.',  fn:pageFiches},
+  {id:'fournisseurs', ico:'🏭',lbl:'Fournisseurs',  fn:pageFournisseurs},
+  {id:'achats',       ico:'🛒',lbl:'Achats',         fn:pageAchats},
+  {id:'types',        ico:'🏷️',lbl:'Types',         fn:pageTypes},
+  {id:'modules',      ico:'🍰',lbl:'Modules',        fn:pageModules},
+  {id:'volume',       ico:'📐',lbl:'Volumétrie',     fn:pageVolume},
+  {id:'assemblage',   ico:'🎂',lbl:'Assemblage',     fn:pageAssemblage},
+  {id:'schema',       ico:'🗃️',lbl:'Schéma DB',     fn:pageSchema},
+];
+const pages={};
+TABS.forEach(t=>pages[t.id]=t.fn);
+
+function setTab(id){
+  document.querySelectorAll('.tab').forEach(b=>b.classList.toggle('active',b.dataset.tab===id));
+  pages[id]();
+}
+document.getElementById('nav').innerHTML=TABS.map(t=>
+  `<div class="tab" data-tab="${t.id}" onclick="setTab('${t.id}')"><div class="ico">${t.ico}</div><div class="lbl">${t.lbl}</div></div>`
+).join('');
+
+seedData();
+setTab('home');
+</script>
+</body>
+</html>

@@ -1,0 +1,16 @@
+{
+	"nodes":[
+		{"id":"aa6aec55dac0a1ae","x":103,"y":59,"width":297,"height":301,"color":"5","type":"group","label":"STOCK INGREDIENTS "},
+		{"id":"35863d689a97df70","x":600,"y":59,"width":260,"height":301,"color":"2","type":"group","label":"STOCK PRODUITS "},
+		{"id":"6f254fbc299286d9","x":120,"y":180,"width":142,"height":89,"type":"text","text":"INGREDIENT "},
+		{"id":"e708eaa8258a884e","x":94,"y":-420,"width":195,"height":99,"color":"2","type":"text","text":"FICHE INGREDIENT "},
+		{"id":"13e53b51c0c85074","x":617,"y":180,"width":117,"height":89,"type":"text","text":"PRODUIT"},
+		{"id":"53dee81b32c21df9","x":599,"y":-420,"width":154,"height":99,"color":"2","type":"text","text":"FICHE RECETTE"}
+	],
+	"edges":[
+		{"id":"927dca35f39ff60a","fromNode":"e708eaa8258a884e","fromSide":"bottom","toNode":"6f254fbc299286d9","toSide":"top","label":"Achat Magasin "},
+		{"id":"679d095f0a1925bb","fromNode":"53dee81b32c21df9","fromSide":"bottom","toNode":"13e53b51c0c85074","toSide":"top","label":"PRODUCTION"},
+		{"id":"63ab8fd19a783964","fromNode":"e708eaa8258a884e","fromSide":"right","toNode":"53dee81b32c21df9","toSide":"left","label":"Référencement"},
+		{"id":"b64ae3687a802aad","fromNode":"6f254fbc299286d9","fromSide":"right","toNode":"53dee81b32c21df9","toSide":"left","label":"Consomme"}
+	]
+}
