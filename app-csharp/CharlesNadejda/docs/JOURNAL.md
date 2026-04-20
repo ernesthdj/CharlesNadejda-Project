@@ -15,6 +15,9 @@
 | 9 | La propriété d'alignement d'un `Label` WinForms est `TextAlign` (type `ContentAlignment`) et NON `ContentAlignment` — cette propriété n'existe pas sur Label | `FrmPrincipal.cs` | 2026-04-20 |
 | 10 | `AutoSizeColumnsMode.Fill` empêche le scroll horizontal (les colonnes s'étirent toujours). Pour scroll H + auto-fit au contenu : `None` + `AutoResizeColumns(AllCells)` après binding + `ScrollBars = Both` | `FrmPrincipal.cs` | 2026-04-20 |
 | 11 | Forcer l'ordre des colonnes DGV avec `DisplayIndex` incrémenté (compteur `int di = 0`) dans les appels `ShowCol()` séquentiels — le `FillWeight` est ignoré en mode `None` | `FrmPrincipal.cs` | 2026-04-20 |
+| 12 | `IngredientDAL.GetAll(idActivite: X)` filtre via `activites_stocks` — réutiliser pour afficher les ingrédients de l'activité sans requête custom | `FrmPrincipal.cs` | 2026-04-21 |
+| 13 | Décalage vertical entre deux panneaux d'un `SplitContainer` : toujours vérifier qu'aucun header intermédiaire n'est ajouté dans un seul des deux Panel — sinon les DGV ne démarrent pas à la même ordonnée | `FrmPrincipal.cs` | 2026-04-21 |
+| 14 | `SplitContainer.IsSplitterFixed = true` + handler `Resize` → `SplitterDistance = (Width - SplitterWidth) / 2` pour un split 50/50 fixe et adaptatif | `FrmPrincipal.cs` | 2026-04-21 |
 
 ---
 
@@ -349,5 +352,30 @@ US-09 UI — Bouton "🖨 Rapport du jour" ajouté dans `pnlHdr` (visible si `pr
 - `AutoSizeColumnsMode.None` compatible avec `AutoResizeColumns` (✅ Certain)
 - `SplitterDistance` exception avant layout : pattern documenté dans Règle #8 (✅ Certain — reproduit et corrigé)
 - Build 0 erreur / 0 warning après chaque correction (✅ Certain — `dotnet build` exécuté)
+
+---
+
+### [2026-04-21] FEAT — Vue contexte N1 : fiches ingrédients + UX volet aligné
+
+**Fichiers :**
+- `CharlesNadejda/Forms/FrmPrincipal.cs` — bifurcation complète N1/N2+ dans `ChargerFiches` et `ChargerStockNiveau`
+- `CharlesNadejda/DAL/BomStockDAL.cs` — suppression `GetIngredientsByNiveau` (remplacé par `IngredientDAL.GetAll`)
+
+**Résumé :** Finalisation du volet niveau pour N1 (Ingrédients). Volet gauche (`_dgvFiches`) : affiche les fiches ingrédients de l'activité via `IngredientDAL.GetAll(idActivite:)` avec colonnes Ingrédient · Conditionnement · Unité base · Type physique · Fournisseur. Header mis à jour : "Fiches Ingrédients — [Activité]". Boutons Nouvelle/Modifier/Supprimer/Dupliquer désactivés pour N1 (lecture seule). Volet droit (`_dgvStock`) : stock des lots par ingrédient déjà en place depuis la session précédente, remplacé par `IngredientDAL.GetAll` avec colonnes Ingrédient · Conditionnement · Unité · Stock (lieu) · Dispo · €/cond. — miroir exact de l'écran Ressources.
+
+Pour N2+ : comportement BOM fiche inchangé, boutons réactivés.
+
+**Fix UX — alignement hauteur et splitter fixe :**
+- Suppression de `pnlStockSide` + `pnlStockHdr` (32px) qui décalait `_dgvStock` vers le bas — `_dgvStock` dock directement en `Fill` dans `Panel2`
+- `IsSplitterFixed = true` — splitter non déplaçable
+- Handler `Resize` → `SplitterDistance = (Width - SplitterWidth) / 2` — split 50/50 fixe et adaptatif au redimensionnement
+
+**Boutons promus en champs de classe :** `_btnNouvFiche`, `_btnModFiche`, `_btnSupFiche`, `_btnDupFiche` — nécessaires pour activation/désactivation contextuelle depuis `ChargerFiches`.
+
+**Selfdoubt appliqué :**
+- `IngredientDAL.GetAll(idActivite:)` filtre via `activites_stocks` JOIN — vérifié dans le SQL (✅ Certain)
+- `BomContexte.ActiviteNom` existe (✅ Certain — vérifié dans le modèle)
+- Décalage hauteur causé par `pnlStockHdr` dans Panel2 seulement (✅ Certain — analyse layout)
+- Build : uniquement erreurs MSB (file lock Visual Studio) — 0 erreur CS (✅ Certain)
 
 ---

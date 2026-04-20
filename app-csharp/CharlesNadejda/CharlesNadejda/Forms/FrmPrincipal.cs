@@ -57,6 +57,10 @@ namespace CharlesNadejda.Forms
         private DataGridView           _dgvStock;
         private Label                  _lblFichesHeader;
         private Button                 _btnNouveauNiveau;
+        private Button                 _btnNouvFiche;
+        private Button                 _btnModFiche;
+        private Button                 _btnSupFiche;
+        private Button                 _btnDupFiche;
 
         // ════════════════════════════════════════════════════════════════
         //  Constructeur / Load
@@ -746,6 +750,10 @@ namespace CharlesNadejda.Forms
             _dgvStock         = null;
             _lblFichesHeader  = null;
             _btnNouveauNiveau = null;
+            _btnNouvFiche     = null;
+            _btnModFiche      = null;
+            _btnSupFiche      = null;
+            _btnDupFiche      = null;
 
             _pnlDroit.SuspendLayout();
             _pnlDroit.Controls.Clear();
@@ -839,12 +847,16 @@ namespace CharlesNadejda.Forms
             };
             pnlFichesTop.Controls.Add(_lblFichesHeader);
 
-            var btnNouvFiche = MakeActionButton("＋  Nouvelle fiche", CHOCO_BRAND, Color.White);
-            var btnModFiche  = MakeActionButton("✎  Modifier",        CHOCO_MED,   Color.White);
-            var btnSupFiche  = MakeActionButton("✕  Supprimer",       RED_CRIT,    Color.White);
+            _btnNouvFiche = MakeActionButton("＋  Nouvelle fiche", CHOCO_BRAND, Color.White);
+            _btnModFiche  = MakeActionButton("✎  Modifier",        CHOCO_MED,   Color.White);
+            _btnSupFiche  = MakeActionButton("✕  Supprimer",       RED_CRIT,    Color.White);
             // US-07 : bouton Dupliquer — désactivé par défaut, activé sur sélection
-            var btnDupFiche  = MakeActionButton("📋 Dupliquer",        CHOCO_MED,   Color.White);
-            btnDupFiche.Enabled = false;
+            _btnDupFiche  = MakeActionButton("📋 Dupliquer",        CHOCO_MED,   Color.White);
+            _btnDupFiche.Enabled = false;
+            var btnNouvFiche = _btnNouvFiche;
+            var btnModFiche  = _btnModFiche;
+            var btnSupFiche  = _btnSupFiche;
+            var btnDupFiche  = _btnDupFiche;
 
             btnNouvFiche.Click += (s, ev) => OuvrirFiche(null);
             btnModFiche.Click  += (s, ev) => OuvrirFiche(_dgvFiches?.CurrentRow?.DataBoundItem as BomFiche);
@@ -890,29 +902,7 @@ namespace CharlesNadejda.Forms
             _dgvFiches.SelectionChanged += (s, ev) =>
                 btnDupFiche.Enabled = _dgvFiches.CurrentRow?.DataBoundItem is BomFiche;
 
-            // ── Volet stock de production (panneau droit) ──────────────────
-            var pnlStockSide = new Panel { Dock = DockStyle.Fill, BackColor = CREME_WARM };
-
-            var pnlStockHdr = new Panel
-            {
-                Dock = DockStyle.Top, Height = 32,
-                BackColor = CREME, Padding = new Padding(12, 0, 0, 0)
-            };
-            pnlStockHdr.Paint += (s, ev) =>
-            {
-                using (var pen = new Pen(BORDER_CLR, 1))
-                    ev.Graphics.DrawLine(pen, 0, 0, ((Control)s).Width, 0);
-            };
-            var lblStockHdr = new Label
-            {
-                Text = "Stock produit par ce niveau",
-                Dock = DockStyle.Fill,
-                TextAlign = ContentAlignment.MiddleLeft,
-                ForeColor = CHOCO_MED,
-                Font = new Font("Segoe UI", 8.5F, FontStyle.Bold)
-            };
-            pnlStockHdr.Controls.Add(lblStockHdr);
-
+            // ── Volet stock de production (panneau droit — sans header propre) ──
             _dgvStock = new DataGridView
             {
                 Dock = DockStyle.Fill, Font = new Font("Segoe UI", 9F),
@@ -933,18 +923,23 @@ namespace CharlesNadejda.Forms
             _dgvStock.DefaultCellStyle.SelectionForeColor        = Color.White;
             _dgvStock.AlternatingRowsDefaultCellStyle.BackColor  = Color.FromArgb(250, 246, 238);
 
-            pnlStockSide.Controls.Add(_dgvStock);
-            pnlStockSide.Controls.Add(pnlStockHdr);
-
-            // ── SplitContainer fiches | stock ──────────────────────────────
+            // ── SplitContainer fiches | stock — splitter fixe à 50% ───────
             var splitFichesStock = new SplitContainer
             {
                 Dock = DockStyle.Fill, Orientation = Orientation.Vertical,
-                SplitterWidth = 4,
-                BackColor = BORDER_CLR
+                SplitterWidth = 4, BackColor = BORDER_CLR,
+                IsSplitterFixed = true
             };
             splitFichesStock.Panel1.Controls.Add(_dgvFiches);
-            splitFichesStock.Panel2.Controls.Add(pnlStockSide);
+            splitFichesStock.Panel2.Controls.Add(_dgvStock);
+
+            // Maintenir le splitter exactement à 50% lors de chaque redimensionnement
+            splitFichesStock.Resize += (s, ev) =>
+            {
+                var sc = (SplitContainer)s;
+                if (sc.Width > sc.SplitterWidth)
+                    sc.SplitterDistance = (sc.Width - sc.SplitterWidth) / 2;
+            };
 
             pnlFiches.Controls.Add(splitFichesStock);
             pnlFiches.Controls.Add(pnlFichesTop);
@@ -1004,27 +999,78 @@ namespace CharlesNadejda.Forms
             try
             {
                 _dgvFiches.DataSource = null;
-                _dgvFiches.DataSource = BomFicheDAL.GetByNiveau(niv.Id);
-                if (_dgvFiches.Columns.Count > 0)
+                _dgvFiches.Columns.Clear();
+
+                if (niv.Ordre == 1)
                 {
-                    foreach (DataGridViewColumn col in _dgvFiches.Columns)
-                        col.Visible = false;
-                    int di = 0;
-                    void ShowCol(string name, string header)
+                    // ── N1 : fiches ingrédients de l'activité (lecture seule) ───
+                    if (_lblFichesHeader != null)
+                        _lblFichesHeader.Text = "Fiches Ingrédients — " +
+                            (_state.ActiveActivite?.Nom ?? _state.ActiveContexte?.ActiviteNom ?? "");
+
+                    int idActivite = _state.ActiveActivite?.Id
+                                  ?? _state.ActiveContexte?.IdActivite
+                                  ?? 0;
+                    _dgvFiches.DataSource = IngredientDAL.GetAll(idActivite: idActivite);
+
+                    if (_dgvFiches.Columns.Count > 0)
                     {
-                        var col = _dgvFiches.Columns[name];
-                        if (col == null) return;
-                        col.Visible       = true;
-                        col.HeaderText    = header;
-                        col.DisplayIndex  = di++;
+                        foreach (DataGridViewColumn col in _dgvFiches.Columns)
+                            col.Visible = false;
+                        int di = 0;
+                        void ShowCol(string name, string header)
+                        {
+                            var col = _dgvFiches.Columns[name];
+                            if (col == null) return;
+                            col.Visible      = true;
+                            col.HeaderText   = header;
+                            col.DisplayIndex = di++;
+                        }
+                        ShowCol("Nom",                  "Ingrédient");
+                        ShowCol("ConditionnementLabel", "Conditionnement");
+                        ShowCol("UniteMesure",          "Unité base");
+                        ShowCol("TypePhysique",         "Type physique");
+                        ShowCol("NomFournisseur",       "Fournisseur");
+                        _dgvFiches.AutoResizeColumns(DataGridViewAutoSizeColumnsMode.AllCells);
                     }
-                    // ↓ Modifier l'ordre ici pour changer l'ordre des colonnes
-                    ShowCol("Nom",              "Fiche");
-                    ShowCol("UniteOutput",      "Unité");
-                    ShowCol("QuantiteOutput",   "Output / lot");
-                    ShowCol("TempsPreparation", "Tps (min)");
-                    ShowCol("DateCreation",     "Créée le");
-                    _dgvFiches.AutoResizeColumns(DataGridViewAutoSizeColumnsMode.AllCells);
+
+                    // Boutons non applicables en mode lecture fiches ingrédients
+                    if (_btnNouvFiche != null) _btnNouvFiche.Enabled = false;
+                    if (_btnModFiche  != null) _btnModFiche.Enabled  = false;
+                    if (_btnSupFiche  != null) _btnSupFiche.Enabled  = false;
+                    if (_btnDupFiche  != null) _btnDupFiche.Enabled  = false;
+                }
+                else
+                {
+                    // ── N2+ : fiches BOM du niveau ─────────────────────────────
+                    _dgvFiches.DataSource = BomFicheDAL.GetByNiveau(niv.Id);
+                    if (_dgvFiches.Columns.Count > 0)
+                    {
+                        foreach (DataGridViewColumn col in _dgvFiches.Columns)
+                            col.Visible = false;
+                        int di = 0;
+                        void ShowCol(string name, string header)
+                        {
+                            var col = _dgvFiches.Columns[name];
+                            if (col == null) return;
+                            col.Visible      = true;
+                            col.HeaderText   = header;
+                            col.DisplayIndex = di++;
+                        }
+                        // ↓ Modifier l'ordre ici pour changer l'ordre des colonnes
+                        ShowCol("Nom",              "Fiche");
+                        ShowCol("UniteOutput",      "Unité");
+                        ShowCol("QuantiteOutput",   "Output / lot");
+                        ShowCol("TempsPreparation", "Tps (min)");
+                        ShowCol("DateCreation",     "Créée le");
+                        _dgvFiches.AutoResizeColumns(DataGridViewAutoSizeColumnsMode.AllCells);
+                    }
+
+                    // Réactiver les boutons BOM fiche
+                    if (_btnNouvFiche != null) _btnNouvFiche.Enabled = true;
+                    if (_btnModFiche  != null) _btnModFiche.Enabled  = true;
+                    if (_btnSupFiche  != null) _btnSupFiche.Enabled  = true;
+                    // Dupliquer reste géré par SelectionChanged
                 }
             }
             catch (Exception ex)
@@ -1041,28 +1087,66 @@ namespace CharlesNadejda.Forms
             try
             {
                 _dgvStock.DataSource = null;
-                _dgvStock.DataSource = BomStockDAL.GetByNiveau(niv.Id);
-                if (_dgvStock.Columns.Count > 0)
+                _dgvStock.Columns.Clear();
+
+                if (niv.Ordre == 1)
                 {
-                    foreach (DataGridViewColumn col in _dgvStock.Columns)
-                        col.Visible = false;
-                    int di = 0;
-                    void ShowCol(string name, string header)
+                    // ── Niveau de base : fiches ingrédients de l'activité ──────
+                    // Même données que l'écran Ressources > Fiches Ingrédients,
+                    // filtrées sur l'activité active du contexte courant.
+                    int idActivite = _state.ActiveActivite?.Id
+                                  ?? _state.ActiveContexte?.IdActivite
+                                  ?? 0;
+                    _dgvStock.DataSource = IngredientDAL.GetAll(idActivite: idActivite);
+                    if (_dgvStock.Columns.Count > 0)
                     {
-                        var col = _dgvStock.Columns[name];
-                        if (col == null) return;
-                        col.Visible      = true;
-                        col.HeaderText   = header;
-                        col.DisplayIndex = di++;
+                        foreach (DataGridViewColumn col in _dgvStock.Columns)
+                            col.Visible = false;
+                        int di = 0;
+                        void ShowCol(string name, string header)
+                        {
+                            var col = _dgvStock.Columns[name];
+                            if (col == null) return;
+                            col.Visible      = true;
+                            col.HeaderText   = header;
+                            col.DisplayIndex = di++;
+                        }
+                        // ↓ Modifier l'ordre ici pour changer l'ordre des colonnes
+                        ShowCol("Nom",                 "Ingrédient");
+                        ShowCol("ConditionnementLabel","Conditionnement");
+                        ShowCol("UniteMesure",         "Unité base");
+                        ShowCol("StockNom",            "Stock (lieu)");
+                        ShowCol("StockActuel",         "Dispo");
+                        ShowCol("PrixAchatReference",  "€/cond.");
+                        _dgvStock.AutoResizeColumns(DataGridViewAutoSizeColumnsMode.AllCells);
                     }
-                    // ↓ Modifier l'ordre ici pour changer l'ordre des colonnes
-                    ShowCol("NomFiche",           "Fiche");
-                    ShowCol("QuantiteDisponible", "Qté dispo");
-                    ShowCol("UniteOutput",        "Unité");
-                    ShowCol("DateProduction",     "Produit le");
-                    ShowCol("DateDlc",            "DLC");
-                    ShowCol("CoutUnitaire",       "Coût/u");
-                    _dgvStock.AutoResizeColumns(DataGridViewAutoSizeColumnsMode.AllCells);
+                }
+                else
+                {
+                    // ── Niveaux supérieurs : bom_stocks produits à ce niveau ───
+                    _dgvStock.DataSource = BomStockDAL.GetByNiveau(niv.Id);
+                    if (_dgvStock.Columns.Count > 0)
+                    {
+                        foreach (DataGridViewColumn col in _dgvStock.Columns)
+                            col.Visible = false;
+                        int di = 0;
+                        void ShowCol(string name, string header)
+                        {
+                            var col = _dgvStock.Columns[name];
+                            if (col == null) return;
+                            col.Visible      = true;
+                            col.HeaderText   = header;
+                            col.DisplayIndex = di++;
+                        }
+                        // ↓ Modifier l'ordre ici pour changer l'ordre des colonnes
+                        ShowCol("NomFiche",           "Fiche");
+                        ShowCol("QuantiteDisponible", "Qté dispo");
+                        ShowCol("UniteOutput",        "Unité");
+                        ShowCol("DateProduction",     "Produit le");
+                        ShowCol("DateDlc",            "DLC");
+                        ShowCol("CoutUnitaire",       "Coût/u");
+                        _dgvStock.AutoResizeColumns(DataGridViewAutoSizeColumnsMode.AllCells);
+                    }
                 }
             }
             catch (Exception ex)
