@@ -11,6 +11,10 @@
 | 5 | `NumericUpDown.Enter += Select(0, Text.Length)` — sélectionne tout au focus, l'utilisateur tape directement sans effacer | `FormHelper.cs` | 2026-04-20 |
 | 6 | Prix référence dans achat : ne pas conditionner à `nudPrix.Value == 0` — toujours rafraîchir à chaque changement d'ingrédient | `FrmAchatEdit.cs` | 2026-04-20 |
 | 7 | `SetFiltreAlertes(false)` doit être appelé dans `ShowRessourceScreen()` avant la lecture de `FiltreAlertesSeulement` pour éviter la persistence cross-navigation | `FrmPrincipal.cs` | 2026-04-20 |
+| 8 | `SplitContainer.Panel1MinSize` / `Panel2MinSize` ne peuvent pas être définis dans le constructeur si le contrôle n'est pas encore layouté (Width = 0) — `InvalidOperationException` garantie. Définir après `Loaded` ou laisser les valeurs par défaut (25px) | `FrmPrincipal.cs` | 2026-04-20 |
+| 9 | La propriété d'alignement d'un `Label` WinForms est `TextAlign` (type `ContentAlignment`) et NON `ContentAlignment` — cette propriété n'existe pas sur Label | `FrmPrincipal.cs` | 2026-04-20 |
+| 10 | `AutoSizeColumnsMode.Fill` empêche le scroll horizontal (les colonnes s'étirent toujours). Pour scroll H + auto-fit au contenu : `None` + `AutoResizeColumns(AllCells)` après binding + `ScrollBars = Both` | `FrmPrincipal.cs` | 2026-04-20 |
+| 11 | Forcer l'ordre des colonnes DGV avec `DisplayIndex` incrémenté (compteur `int di = 0`) dans les appels `ShowCol()` séquentiels — le `FillWeight` est ignoré en mode `None` | `FrmPrincipal.cs` | 2026-04-20 |
 
 ---
 
@@ -313,3 +317,37 @@ US-09 UI — Bouton "🖨 Rapport du jour" ajouté dans `pnlHdr` (visible si `pr
 **Fichiers :** 32 fichiers · 5 439 insertions · branche `feat/refactoring-sprints-p0-p3`
 
 **Résumé :** `git push` + `gh pr create` — PR #1 ouverte sur `ernesthdj/CharlesNadejda-Project`. Inclut tous les sprints P0→P3, la couche Navigation/, Services/, et les docs agents.
+
+---
+
+### [2026-04-20 23:00] FEAT — Vue contexte : volet "Stock produit par ce niveau"
+
+**Fichiers :**
+- `CharlesNadejda/Forms/FrmPrincipal.cs` — +114 lignes, -15 lignes
+
+**Résumé :** Ajout d'un volet droit dans la vue contexte/niveau. Quand l'utilisateur clique sur un niveau (N1, N2…), la zone inférieure se divise en deux panneaux via `SplitContainer` vertical : à gauche les fiches BOM existantes (`_dgvFiches`), à droite le stock de production instancié par ce niveau (`_dgvStock`). Les données proviennent de `BomStockDAL.GetByNiveau()` (existait déjà — retourne uniquement `quantite_disponible > 0`, ordre FIFO). Colonnes affichées : Fiche · Qté dispo · Unité · Produit le · DLC · Coût/u.
+
+**Erreur corrigée — SplitterDistance (R8) :**
+- Symptôme : `InvalidOperationException` au clic sur un contexte
+- Cause : `Panel1MinSize = 220, Panel2MinSize = 160` définis dans le constructeur du `SplitContainer`, avant que le contrôle soit layouté (Width = 0 → `Width - Panel2MinSize = -160` — contrainte impossible)
+- Fix : retirer `Panel1MinSize` et `Panel2MinSize` du constructeur (valeurs par défaut 25px suffisent)
+- Règle retenue : **règle #8** — ne jamais définir Panel1/Panel2MinSize au constructeur
+
+**Erreur corrigée — Label.ContentAlignment (R9) :**
+- Symptôme : `CS0117 — 'Label' ne contient pas de définition pour 'ContentAlignment'`
+- Cause : la propriété d'alignement du Label est `TextAlign`, pas `ContentAlignment` (qui est seulement l'enum de valeur)
+- Fix : `ContentAlignment = ...` → `TextAlign = ContentAlignment.MiddleLeft`
+
+**DGV auto-sizing + scroll horizontal (R10, R11) :**
+- `AutoSizeColumnsMode.Fill` remplacé par `None` sur les deux DGVs
+- `ScrollBars = Both` ajouté pour scroll H automatique si colonnes > largeur
+- `AutoResizeColumns(AllCells)` appelé après le binding pour ajuster à la largeur du contenu
+- `DisplayIndex` forcé via compteur `int di = 0` dans `ShowCol()` — ordre modifiable par simple réordonnancement des appels `ShowCol`
+
+**Selfdoubt appliqué :**
+- `BomStockDAL.GetByNiveau()` existant et retournant `NomFiche`, `UniteOutput` (✅ Certain — lu)
+- `AutoSizeColumnsMode.None` compatible avec `AutoResizeColumns` (✅ Certain)
+- `SplitterDistance` exception avant layout : pattern documenté dans Règle #8 (✅ Certain — reproduit et corrigé)
+- Build 0 erreur / 0 warning après chaque correction (✅ Certain — `dotnet build` exécuté)
+
+---

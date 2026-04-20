@@ -54,6 +54,7 @@ namespace CharlesNadejda.Forms
         // ── Contexte screen ───────────────────────────────────────────────
         private Dictionary<int, Panel> _niveauPanels = new Dictionary<int, Panel>();
         private DataGridView           _dgvFiches;
+        private DataGridView           _dgvStock;
         private Label                  _lblFichesHeader;
         private Button                 _btnNouveauNiveau;
 
@@ -742,6 +743,7 @@ namespace CharlesNadejda.Forms
             if (_state.ActiveContexte == null) return;
             _niveauPanels.Clear();
             _dgvFiches        = null;
+            _dgvStock         = null;
             _lblFichesHeader  = null;
             _btnNouveauNiveau = null;
 
@@ -869,11 +871,12 @@ namespace CharlesNadejda.Forms
                 AllowUserToAddRows = false, AllowUserToDeleteRows = false,
                 AllowUserToResizeRows = false, MultiSelect = false, ReadOnly = true,
                 SelectionMode = DataGridViewSelectionMode.FullRowSelect,
-                AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill,
+                AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.None,
+                ScrollBars = ScrollBars.Both,
                 ColumnHeadersHeightSizeMode = DataGridViewColumnHeadersHeightSizeMode.DisableResizing,
                 ColumnHeadersHeight = 30
             };
-            _dgvFiches.ColumnHeadersDefaultCellStyle.BackColor  = CREME;
+            _dgvFiches.ColumnHeadersDefaultCellStyle.BackColor  = CREME; 
             _dgvFiches.ColumnHeadersDefaultCellStyle.ForeColor  = CHOCO_BRAND;
             _dgvFiches.ColumnHeadersDefaultCellStyle.Font       = new Font("Segoe UI", 9F, FontStyle.Bold);
             _dgvFiches.DefaultCellStyle.SelectionBackColor       = CHOCO_BRAND;
@@ -887,7 +890,63 @@ namespace CharlesNadejda.Forms
             _dgvFiches.SelectionChanged += (s, ev) =>
                 btnDupFiche.Enabled = _dgvFiches.CurrentRow?.DataBoundItem is BomFiche;
 
-            pnlFiches.Controls.Add(_dgvFiches);
+            // ── Volet stock de production (panneau droit) ──────────────────
+            var pnlStockSide = new Panel { Dock = DockStyle.Fill, BackColor = CREME_WARM };
+
+            var pnlStockHdr = new Panel
+            {
+                Dock = DockStyle.Top, Height = 32,
+                BackColor = CREME, Padding = new Padding(12, 0, 0, 0)
+            };
+            pnlStockHdr.Paint += (s, ev) =>
+            {
+                using (var pen = new Pen(BORDER_CLR, 1))
+                    ev.Graphics.DrawLine(pen, 0, 0, ((Control)s).Width, 0);
+            };
+            var lblStockHdr = new Label
+            {
+                Text = "Stock produit par ce niveau",
+                Dock = DockStyle.Fill,
+                TextAlign = ContentAlignment.MiddleLeft,
+                ForeColor = CHOCO_MED,
+                Font = new Font("Segoe UI", 8.5F, FontStyle.Bold)
+            };
+            pnlStockHdr.Controls.Add(lblStockHdr);
+
+            _dgvStock = new DataGridView
+            {
+                Dock = DockStyle.Fill, Font = new Font("Segoe UI", 9F),
+                BackgroundColor = Color.White, BorderStyle = BorderStyle.None,
+                GridColor = BORDER_CLR, RowHeadersVisible = false,
+                AllowUserToAddRows = false, AllowUserToDeleteRows = false,
+                AllowUserToResizeRows = false, MultiSelect = false, ReadOnly = true,
+                SelectionMode = DataGridViewSelectionMode.FullRowSelect,
+                AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.None,
+                ScrollBars = ScrollBars.Both,
+                ColumnHeadersHeightSizeMode = DataGridViewColumnHeadersHeightSizeMode.DisableResizing,
+                ColumnHeadersHeight = 30
+            };
+            _dgvStock.ColumnHeadersDefaultCellStyle.BackColor   = CREME;
+            _dgvStock.ColumnHeadersDefaultCellStyle.ForeColor   = CHOCO_BRAND;
+            _dgvStock.ColumnHeadersDefaultCellStyle.Font        = new Font("Segoe UI", 9F, FontStyle.Bold);
+            _dgvStock.DefaultCellStyle.SelectionBackColor        = CHOCO_BRAND;
+            _dgvStock.DefaultCellStyle.SelectionForeColor        = Color.White;
+            _dgvStock.AlternatingRowsDefaultCellStyle.BackColor  = Color.FromArgb(250, 246, 238);
+
+            pnlStockSide.Controls.Add(_dgvStock);
+            pnlStockSide.Controls.Add(pnlStockHdr);
+
+            // ── SplitContainer fiches | stock ──────────────────────────────
+            var splitFichesStock = new SplitContainer
+            {
+                Dock = DockStyle.Fill, Orientation = Orientation.Vertical,
+                SplitterWidth = 4,
+                BackColor = BORDER_CLR
+            };
+            splitFichesStock.Panel1.Controls.Add(_dgvFiches);
+            splitFichesStock.Panel2.Controls.Add(pnlStockSide);
+
+            pnlFiches.Controls.Add(splitFichesStock);
             pnlFiches.Controls.Add(pnlFichesTop);
 
             _pnlDroit.Controls.Add(pnlFiches);
@@ -950,25 +1009,65 @@ namespace CharlesNadejda.Forms
                 {
                     foreach (DataGridViewColumn col in _dgvFiches.Columns)
                         col.Visible = false;
-                    void ShowCol(string name, string header, int fill)
+                    int di = 0;
+                    void ShowCol(string name, string header)
                     {
-                        if (_dgvFiches.Columns[name] != null)
-                        {
-                            _dgvFiches.Columns[name].Visible    = true;
-                            _dgvFiches.Columns[name].HeaderText = header;
-                            _dgvFiches.Columns[name].FillWeight = fill;
-                        }
+                        var col = _dgvFiches.Columns[name];
+                        if (col == null) return;
+                        col.Visible       = true;
+                        col.HeaderText    = header;
+                        col.DisplayIndex  = di++;
                     }
-                    ShowCol("Nom",              "Fiche",        45);
-                    ShowCol("QuantiteOutput",   "Output / lot", 15);
-                    ShowCol("UniteOutput",      "Unité",        10);
-                    ShowCol("TempsPreparation", "Tps (min)",    10);
-                    ShowCol("DateCreation",     "Créée le",     15);
+                    // ↓ Modifier l'ordre ici pour changer l'ordre des colonnes
+                    ShowCol("Nom",              "Fiche");
+                    ShowCol("UniteOutput",      "Unité");
+                    ShowCol("QuantiteOutput",   "Output / lot");
+                    ShowCol("TempsPreparation", "Tps (min)");
+                    ShowCol("DateCreation",     "Créée le");
+                    _dgvFiches.AutoResizeColumns(DataGridViewAutoSizeColumnsMode.AllCells);
                 }
             }
             catch (Exception ex)
             {
                 MessageBox.Show("Erreur chargement fiches : " + ex.Message, "Erreur",
+                    MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+            ChargerStockNiveau(niv);
+        }
+
+        private void ChargerStockNiveau(BomNiveau niv)
+        {
+            if (_dgvStock == null) return;
+            try
+            {
+                _dgvStock.DataSource = null;
+                _dgvStock.DataSource = BomStockDAL.GetByNiveau(niv.Id);
+                if (_dgvStock.Columns.Count > 0)
+                {
+                    foreach (DataGridViewColumn col in _dgvStock.Columns)
+                        col.Visible = false;
+                    int di = 0;
+                    void ShowCol(string name, string header)
+                    {
+                        var col = _dgvStock.Columns[name];
+                        if (col == null) return;
+                        col.Visible      = true;
+                        col.HeaderText   = header;
+                        col.DisplayIndex = di++;
+                    }
+                    // ↓ Modifier l'ordre ici pour changer l'ordre des colonnes
+                    ShowCol("NomFiche",           "Fiche");
+                    ShowCol("QuantiteDisponible", "Qté dispo");
+                    ShowCol("UniteOutput",        "Unité");
+                    ShowCol("DateProduction",     "Produit le");
+                    ShowCol("DateDlc",            "DLC");
+                    ShowCol("CoutUnitaire",       "Coût/u");
+                    _dgvStock.AutoResizeColumns(DataGridViewAutoSizeColumnsMode.AllCells);
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("Erreur chargement stock niveau : " + ex.Message, "Erreur",
                     MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
         }
