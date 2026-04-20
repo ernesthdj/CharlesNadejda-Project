@@ -34,11 +34,17 @@ namespace CharlesNadejda.Forms
         /// <summary>Y disponible après btnSupprimer pour un bouton supplémentaire.</summary>
         protected const int BtnYExtra = 196;
 
-        // ── Palette artisanale — cohérente avec FrmPrincipal ─────────
-        private static readonly Color CHOCOLAT_FONCE = Color.FromArgb(61,  40, 23);
-        private static readonly Color CHOCOLAT_MOYEN = Color.FromArgb(111, 78, 55);
-        private static readonly Color CREME          = Color.FromArgb(245, 230, 211);
-        private static readonly Color OR             = Color.FromArgb(212, 175, 55);
+        // ── Palette Charles & Nadejda Design System ──────────────────
+        private static readonly Color CHOCOLAT_FONCE = Color.FromArgb(61,   40,  23);   // #3D2817
+        private static readonly Color CHOCOLAT_MOYEN = Color.FromArgb(111,  78,  55);   // #6F4E37
+        private static readonly Color CHOCO_ABYSS    = Color.FromArgb(30,   15,   8);   // #1E0F08
+        private static readonly Color CREME          = Color.FromArgb(245, 230, 211);   // #F5E6D3
+        private static readonly Color CREME_WARM     = Color.FromArgb(236, 233, 216);   // #ECE9D8
+        private static readonly Color OR             = Color.FromArgb(212, 175,  55);   // #D4AF37
+        private static readonly Color GREEN          = Color.FromArgb(62,  162,  62);   // #3EA23E
+        private static readonly Color RED            = Color.FromArgb(199,  44,  72);   // #C72C48
+        private static readonly Color GREY_BTN       = Color.FromArgb(239, 234, 225);   // #EFEAE1
+        private static readonly Color BORDER         = Color.FromArgb(195, 185, 168);   // #C3B9A8
 
         protected FrmListeBase()
         {
@@ -58,9 +64,9 @@ namespace CharlesNadejda.Forms
                                             | AnchorStyles.Left | AnchorStyles.Right,
                 Font                        = new Font("Segoe UI", 9.5F),
                 RowHeadersVisible           = false,
-                BackgroundColor             = Color.White,
+                BackgroundColor             = Color.FromArgb(253, 251, 246),
                 BorderStyle                 = BorderStyle.None,
-                GridColor                   = Color.FromArgb(230, 220, 210),
+                GridColor                   = Color.FromArgb(195, 185, 168),
                 ColumnHeadersHeightSizeMode = DataGridViewColumnHeadersHeightSizeMode.DisableResizing,
                 ColumnHeadersHeight         = 32
             };
@@ -71,12 +77,12 @@ namespace CharlesNadejda.Forms
             dgv.ColumnHeadersDefaultCellStyle.Font               = new Font("Segoe UI", 9F, FontStyle.Bold);
             dgv.ColumnHeadersDefaultCellStyle.SelectionBackColor = CREME;
 
-            // Sélection chocolat moyen
-            dgv.DefaultCellStyle.SelectionBackColor = CHOCOLAT_MOYEN;
+            // Sélection chocolat foncé (contraste renforcé)
+            dgv.DefaultCellStyle.SelectionBackColor = CHOCOLAT_FONCE;
             dgv.DefaultCellStyle.SelectionForeColor = Color.White;
 
-            // Lignes alternées gris très léger (loi de Gestalt : continuité)
-            dgv.AlternatingRowsDefaultCellStyle.BackColor = Color.FromArgb(250, 247, 244);
+            // Lignes alternées crème très léger (loi de Gestalt : continuité)
+            dgv.AlternatingRowsDefaultCellStyle.BackColor = Color.FromArgb(250, 246, 238);
 
             // Double-clic → Modifier (Nielsen #7 : flexibilité power users)
             dgv.CellDoubleClick += (s, ev) => { if (ev.RowIndex >= 0) OnModifier(); };
@@ -96,10 +102,23 @@ namespace CharlesNadejda.Forms
             var ancreHD = AnchorStyles.Top | AnchorStyles.Right;
             var ancreBD = AnchorStyles.Bottom | AnchorStyles.Right;
 
-            btnAjouter   = CreerBouton("+ Ajouter",  BtnX, 52,  ancreHD, CHOCOLAT_FONCE, Color.White);
-            btnModifier  = CreerBouton("✎  Modifier", BtnX, 96,  ancreHD, Color.FromArgb(90, 130, 80), Color.White);
-            btnSupprimer = CreerBouton("✕  Supprimer", BtnX, 140, ancreHD, Color.FromArgb(180, 50, 40), Color.White);
-            btnFermer    = CreerBouton("Fermer",       BtnX, 436, ancreBD, Color.FromArgb(100, 90, 80), Color.White);
+            btnAjouter   = CreerBouton("＋  Ajouter",   BtnX, 52,  ancreHD, CHOCOLAT_FONCE, Color.White);
+            btnModifier  = CreerBouton("✎  Modifier",  BtnX, 96,  ancreHD, GREEN,           Color.White);
+            btnSupprimer = CreerBouton("✕  Supprimer", BtnX, 140, ancreHD, RED,             Color.White);
+            btnFermer    = CreerBouton("Fermer",        BtnX, 436, ancreBD, GREY_BTN,        CHOCOLAT_FONCE);
+
+            // FlatAppearance borders & hover — palette Charles & Nadejda
+            btnAjouter.FlatAppearance.BorderColor        = CHOCO_ABYSS;
+            btnAjouter.FlatAppearance.MouseOverBackColor = Color.FromArgb(88, 60, 36);
+
+            btnModifier.FlatAppearance.BorderColor        = Color.FromArgb(46, 125, 50);
+            btnModifier.FlatAppearance.MouseOverBackColor = Color.FromArgb(46, 125, 50);
+
+            btnSupprimer.FlatAppearance.BorderColor        = Color.FromArgb(141, 31, 51);
+            btnSupprimer.FlatAppearance.MouseOverBackColor = Color.FromArgb(158, 31, 55);
+
+            btnFermer.FlatAppearance.BorderColor        = BORDER;
+            btnFermer.FlatAppearance.MouseOverBackColor = Color.FromArgb(220, 213, 202);
 
             btnAjouter.Click   += (s, e) => OnAjouter();
             btnModifier.Click  += (s, e) => OnModifier();
@@ -114,7 +133,7 @@ namespace CharlesNadejda.Forms
             FormBorderStyle     = FormBorderStyle.Sizable;
             MaximizeBox         = true;
             StartPosition       = FormStartPosition.CenterParent;
-            BackColor           = Color.White;
+            BackColor           = Color.FromArgb(253, 251, 246);
 
             Controls.AddRange(new Control[]
             {
@@ -226,7 +245,7 @@ namespace CharlesNadejda.Forms
                 BackColor = backColor ?? SystemColors.Control,
                 ForeColor = foreColor ?? SystemColors.ControlText
             };
-            btn.FlatAppearance.BorderSize = 0;
+            btn.FlatAppearance.BorderSize = 1;
             return btn;
         }
 

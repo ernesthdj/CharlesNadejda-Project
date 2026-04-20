@@ -24,7 +24,9 @@ namespace CharlesNadejda.Forms
 
         private void FrmIngredientEdit_Load(object sender, EventArgs e)
         {
-            Text = _isEdit ? "Modifier l'ingrédient" : "Nouvel ingrédient";
+            FormHelper.ActiverPointDecimal(nudPrix, nudQteConditionnement, nudDensite);
+            FormHelper.ActiverSelectionAuFocus(nudPrix, nudQteConditionnement, nudDensite);
+            Text = _isEdit ? "Modifier la fiche ingrédient" : "Nouvelle fiche ingrédient";
 
             cmbTypePhysique.Items.AddRange(new object[] { "solide", "liquide", "poudre", "piece" });
             // Unités standard ERP : masse (mg/g/kg) + volume (ml/cl/dl/l) + pièce

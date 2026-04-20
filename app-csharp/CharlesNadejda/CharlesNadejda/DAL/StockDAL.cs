@@ -99,13 +99,25 @@ namespace CharlesNadejda.DAL
             using (var conn = DbHelper.GetConnection())
             using (var cmd  = conn.CreateCommand())
             {
+                // Vérification 1 : fiches_ingredients liées
                 cmd.CommandText = "SELECT COUNT(*) FROM fiches_ingredients WHERE id_stock = @id";
                 cmd.Parameters.AddWithValue("@id", id);
                 int nb = Convert.ToInt32(cmd.ExecuteScalar());
                 if (nb > 0)
                     throw new InvalidOperationException(
-                        $"Impossible de supprimer : ce stock contient {nb} ingrédient(s).\n" +
+                        $"Impossible de supprimer : ce stock contient {nb} fiche(s) d'ingrédients.\n" +
                         "Déplacez ou supprimez les ingrédients avant de supprimer le stock.");
+
+                // Vérification 2 : lots_ingredients actifs
+                cmd.CommandText = @"SELECT COUNT(*) FROM lots_ingredients li
+                                    INNER JOIN fiches_ingredients fi ON fi.id = li.id_fiche_ingredient
+                                    WHERE fi.id_stock = @id AND li.quantite_disponible > 0";
+                cmd.Parameters.Clear();
+                cmd.Parameters.AddWithValue("@id", id);
+                int nbLots = Convert.ToInt32(cmd.ExecuteScalar());
+                if (nbLots > 0)
+                    throw new InvalidOperationException(
+                        $"Impossible de supprimer : ce stock contient {nbLots} lot(s) d'ingrédients actifs.");
 
                 cmd.CommandText = "DELETE FROM stocks WHERE id = @id";
                 cmd.Parameters.Clear();
@@ -139,6 +151,26 @@ namespace CharlesNadejda.DAL
                 cmd.Parameters.AddWithValue("@idStock",    idStock);
                 cmd.ExecuteNonQuery();
             }
+        }
+
+        /// <summary>
+        /// Retourne les ids des activités liées à un stock via activites_stocks.
+        /// Utilisé par FrmStocks pour initialiser les checkboxes du panel de liaison.
+        /// </summary>
+        /// <param name="idStock">Id du stock.</param>
+        /// <returns>Liste des ids d'activités liées.</returns>
+        public static List<int> GetActivitesLiees(int idStock)
+        {
+            var list = new List<int>();
+            using (var conn = DbHelper.GetConnection())
+            using (var cmd  = conn.CreateCommand())
+            {
+                cmd.CommandText = "SELECT id_activite FROM activites_stocks WHERE id_stock = @id";
+                cmd.Parameters.AddWithValue("@id", idStock);
+                using (var r = cmd.ExecuteReader())
+                    while (r.Read()) list.Add(Convert.ToInt32(r["id_activite"]));
+            }
+            return list;
         }
 
         private static void Bind(MySqlCommand cmd, Stock s)

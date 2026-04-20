@@ -1,787 +1,482 @@
-# 03 — Plan PDSGBD : Application C# Windows Forms (Artisastock)
+# 03 — Plan PDSGBD : Application C# Windows Forms (ArtisaStock ERP)
 
-> Plan complet de l'application desktop de gestion interne.
-> Cette app se connecte à la **même base MySQL** que le site PHP.
->
-> **Concept** : c'est l'adaptation des idées d'ArtisaStock (voir `05_ARTISASTOCK_INTEGRATION.md`)
-> en Windows Forms + MySQL, conforme aux exigences du cours PDSGBD.
+> **⚠️ Ce document reflète l'implémentation RÉELLE (sessions 1–12).**
+> L'architecture initiale (plan simple) a été entièrement remplacée par un ERP générique BOM.
+> Pour l'historique complet des décisions : voir `docs/JOURNAL.md`.
 
 ---
 
-## 🎯 Rappel des critères PDSGBD (grille de notation)
+## 🎯 Rappel des critères PDSGBD
 
 | Critère | Points | Couvert par |
 |---------|--------|-------------|
-| C# - langage | /10 | Toute l'application |
-| C# - techniques POO | /10 | Classes Produit, Commande, Client... |
-| C# - contrôles d'édition | /10 | TextBox, DateTimePicker, NumericUpDown |
-| C# - contrôles de sélection | /10 | ComboBox, ListBox, DataGridView, CheckBox |
-| C# - gestion formulaires & interactions | /5 | Navigation entre formulaires, passage de données |
-| MySQL - INSERT | /5 | Ajout produit, parfum, etc. |
-| MySQL - UPDATE | /5 | Modification statut, produit, client |
-| MySQL - DELETE | /5 | Suppression produit, parfum |
-| MySQL - jointure | /10 | Affichage commandes avec clients et produits |
-| MySQL - critère de sélection | /5 | Filtres et recherches |
-| MySQL - protection injection + formatage | /10 | Requêtes paramétrées partout |
-| Édition - création / modification | /10 | Formulaire produit, client |
-| Édition - unicité à l'ajout | /5 | Vérif email unique, nom produit unique |
-| Édition - validité données | /10 | Validation avant INSERT/UPDATE |
-| Édition - unicité à la modification | /10 | Vérif email ≠ autre utilisateur |
-| Édition - suppression | /5 | Bouton supprimer avec confirmation |
-| Édition - suppression en cascade | /5 | Supprimer commande → lignes supprimées |
-| Édition - vérification avant suppression | /5 | Bloquer si FK violated |
-| Affichage - liste d'enregistrements | /5 | DataGridView produits, clients |
-| Affichage - liste avec FK | /10 | Commandes avec nom client + produits |
-| Affichage - tri pertinent | /5 | Tri par date, nom, statut |
-| Affichage - filtrage pertinent | /5 | Filtre par statut commande, catégorie |
+| C# — langage | /10 | Toute l'application |
+| C# — techniques POO | /10 | Models, classes de base, propriétés calculées |
+| C# — contrôles d'édition | /10 | TextBox, NumericUpDown, DateTimePicker |
+| C# — contrôles de sélection | /10 | ComboBox, ListBox custom-draw, DataGridView, CheckBox |
+| C# — gestion formulaires & interactions | /5 | Navigation entre formulaires, passage de données |
+| MySQL — INSERT | /5 | Achats, fiches, productions, activités… |
+| MySQL — UPDATE | /5 | Stocks, statuts, ingrédients… |
+| MySQL — DELETE | /5 | Suppression avec vérification FK |
+| MySQL — jointure | /10 | Toutes les listes (activités, stocks, niveaux) |
+| MySQL — critère de sélection | /5 | Filtres par activité, niveau, statut DLC |
+| MySQL — protection injection + formatage | /10 | `AddWithValue` systématique dans tous les DAL |
+| Édition — création / modification | /10 | FrmEditBase + formulaires spécialisés |
+| Édition — unicité à l'ajout | /5 | `NomExiste()` dans chaque DAL |
+| Édition — validité données | /10 | Validation avant INSERT/UPDATE |
+| Édition — unicité à la modification | /10 | `NomExiste(nom, excludeId)` |
+| Édition — suppression | /5 | Bouton supprimer + confirmation |
+| Édition — suppression en cascade | /5 | Transactions multi-tables |
+| Édition — vérification avant suppression | /5 | Guard FK dans chaque DAL |
+| Affichage — liste d'enregistrements | /5 | DataGridView (DGV) partout |
+| Affichage — liste avec FK | /10 | JOIN activités, stocks, niveaux, fiches |
+| Affichage — tri pertinent | /5 | ORDER BY date, nom, statut |
+| Affichage — filtrage pertinent | /5 | Chips par activité/stock, filtres DGV |
 | **TOTAL** | **/150** | |
 
 ---
 
-## 🔐 Écran de Connexion (`FrmLogin`)
-
-L'app démarre sur un écran de login — usage interne mais sécurisé.
+## 🏗️ Architecture Générale
 
 ```
-┌─────────────────────────────────────┐
-│   🍫 Charles & Nadejda — Artisastock │
-│                                     │
-│   Email    [___________________]    │
-│   Mot de passe [________________]   │
-│                                     │
-│          [Se connecter]             │
-└─────────────────────────────────────┘
+app-csharp/CharlesNadejda/
+├── CharlesNadejda.sln          ← Solution Visual Studio (.NET Framework 4.8.1)
+├── App.config                  ← Connection string MySQL + clés Cloudinary
+├── Models/                     ← Classes de données (POO)
+├── DAL/                        ← Data Access Layer — requêtes paramétrées
+├── Forms/                      ← Windows Forms (UI)
+│   └── UnitConvertisseur.cs    ← Utilitaire conversions (namespace racine, PAS Forms)
+└── CharlesNadejda.csproj       ← IMPORTANT : tout nouveau .cs doit être ajouté manuellement
+```
+
+### NuGet installés
+- `MySql.Data` — connecteur MySQL
+- `BCrypt.Net-Next` — hash mots de passe (compatible PHP password_hash)
+- `Newtonsoft.Json` — parsing réponses Cloudinary
+
+### Connexion DB
+```xml
+<!-- App.config -->
+<connectionStrings>
+  <add name="charlesnadejda"
+       connectionString="Server=localhost;Port=3306;Database=charlesnadejda;Uid=root;Pwd=root;"
+       providerName="MySql.Data.MySqlClient"/>
+</connectionStrings>
 ```
 
 ```csharp
-// FrmLogin.cs — vérification contre la table utilisateurs (role = 'admin')
-private void btnConnexion_Click(object sender, EventArgs e)
+// DAL/DbHelper.cs
+public static MySqlConnection GetConnection()
 {
-    string email = txtEmail.Text.Trim();
-    string mdp   = txtPassword.Text;
-
-    var user = UtilisateurDAL.Authenticate(email, mdp); // vérifie password_verify côté C#
-    if (user != null && user.Role == "admin")
-    {
-        var principal = new FrmPrincipal(user);
-        principal.Show();
-        this.Hide();
-    }
-    else
-    {
-        lblErreur.Text = "Email ou mot de passe incorrect.";
-        lblErreur.Visible = true;
-    }
+    string cs = ConfigurationManager.ConnectionStrings["charlesnadejda"].ConnectionString;
+    var conn = new MySqlConnection(cs);
+    conn.Open();
+    return conn;
 }
 ```
 
-> **Note** : `password_verify()` est côté PHP. En C#, les mots de passe admin sont hashés avec BCrypt.
-> Package NuGet à ajouter : `BCrypt.Net-Next`.
+---
+
+## 🔑 Règles absolues (ne jamais déroger)
+
+1. **Requêtes paramétrées** → `cmd.Parameters.AddWithValue("@param", valeur)` — jamais de concaténation
+2. **Multi-tables** → `MySqlTransaction` (BEGIN / COMMIT / ROLLBACK)
+3. **Multi-statements interdits** → utiliser `cmd.LastInsertedId` après INSERT (pas `SELECT LAST_INSERT_ID()`)
+4. **Nouveau fichier .cs** → ajouter `<Compile Include="..."/>` dans `CharlesNadejda.csproj`
+5. **Activités** → toujours via objet `Activite` (Id + Nom) depuis `ActiviteDAL` — jamais de string hardcodée
+6. **Lambdas dans handlers `EventArgs e`** → utiliser `ev` (pas `e`) pour éviter CS0136
+7. **Conversion d'unités** → `UnitConvertisseur.Convertir()` dans `namespace CharlesNadejda` (pas Forms)
+8. **Suppression niveau BOM** → vérifier `MAX(ordre)` — jamais supprimer un niveau intermédiaire
+9. **DB_HOST Laravel** → `mysql` (nom service Docker) jamais `localhost`
 
 ---
 
-## 🏗️ Architecture de l'Application
+## 📐 Classes de base (héritage UI)
 
-L'app est organisée en **5 modules** correspondant chacun à un onglet/menu dans `FrmPrincipal` :
+### `Forms/FrmListeBase.cs`
+Classe générique pour tous les formulaires liste CRUD.
+- Palette CHOCOLAT_FONCE / CREME / OR centralisée
+- DGV styling : header crème, alternance, sélection chocolat, BorderStyle=None
+- 4 boutons FlatStyle sémantiques : chocolat=Ajouter, vert=Modifier, rouge=Supprimer, gris=Fermer
+- `CellDoubleClick` → `OnModifier()`
+- `DefaultButton.Button2` sur toutes les confirmations de suppression (Nielsen #3)
 
-```
-CharlesNadejda.sln
-└── CharlesNadejda/
-    ├── Models/                    ← Classes de données (POO)
-    │   ├── Categorie.cs
-    │   ├── Parfum.cs
-    │   ├── Produit.cs
-    │   ├── Ingredient.cs          ← NOUVEAU (ArtisaStock)
-    │   ├── Fournisseur.cs         ← NOUVEAU
-    │   ├── Recette.cs             ← NOUVEAU
-    │   ├── RecetteIngredient.cs   ← NOUVEAU
-    │   ├── Production.cs          ← NOUVEAU
-    │   ├── MouvementStock.cs      ← NOUVEAU
-    │   ├── Utilisateur.cs
-    │   ├── Commande.cs
-    │   └── LigneCommande.cs
-    │
-    ├── DAL/                       ← Data Access Layer
-    │   ├── DatabaseHelper.cs      ← Connexion MySQL (singleton)
-    │   ├── CategorieDAL.cs
-    │   ├── ParfumDAL.cs
-    │   ├── ProduitDAL.cs
-    │   ├── IngredientDAL.cs       ← NOUVEAU
-    │   ├── FournisseurDAL.cs      ← NOUVEAU
-    │   ├── RecetteDAL.cs          ← NOUVEAU (le plus complexe)
-    │   ├── ProductionDAL.cs       ← NOUVEAU
-    │   ├── MouvementStockDAL.cs   ← NOUVEAU
-    │   ├── UtilisateurDAL.cs
-    │   └── CommandeDAL.cs
-    │
-    ├── Forms/
-    │   ├── FrmPrincipal.cs           ← Fenêtre principale avec MenuStrip
-    │   │
-    │   │   ── MODULE 1 : CATALOGUE (impact direct boutique PHP) ──
-    │   ├── FrmCategories.cs
-    │   ├── FrmCategorieEdit.cs
-    │   ├── FrmParfums.cs
-    │   ├── FrmParfumEdit.cs
-    │   ├── FrmProduits.cs
-    │   ├── FrmProduitEdit.cs
-    │   │
-    │   │   ── MODULE 2 : INGRÉDIENTS & STOCK ──
-    │   ├── FrmIngredients.cs         ← Liste + alertes stock (rouge si bas)
-    │   ├── FrmIngredientEdit.cs      ← CRUD avec NumericUpDown, ComboBox
-    │   ├── FrmAchatStock.cs          ← Enregistrer un achat (entrée stock)
-    │   ├── FrmMouvementsStock.cs     ← Historique avec filtres date/type
-    │   │
-    │   │   ── MODULE 3 : RECETTES ──
-    │   ├── FrmRecettes.cs            ← Liste avec coût de revient calculé
-    │   ├── FrmRecetteEdit.cs         ← Formulaire complexe (ajout dynamique ingrédients)
-    │   │
-    │   │   ── MODULE 4 : PRODUCTION ──
-    │   ├── FrmProduction.cs          ← Valider + lancer une production
-    │   ├── FrmHistoriqueProductions.cs ← Historique avec marges
-    │   │
-    │   │   ── MODULE 5 : COMMANDES (lecture du site PHP) ──
-    │   ├── FrmCommandes.cs
-    │   └── FrmCommandeDetail.cs
-    │
-    └── Program.cs
-```
+> ⚠️ Le Designer VS ne peut pas ouvrir les Forms héritant d'une classe générique.
+> Toujours vider le `Designer.cs` correspondant.
+
+### `Forms/FrmEditBase.cs`
+Classe de base pour les formulaires d'édition.
+- `ErrorProvider.BlinkStyle = NeverBlink`
+- `btnEnregistrer` CHOCOLAT_FONCE + Cursor=Hand
+- `btnAnnuler` ton neutre FlatStyle
 
 ---
 
-## 🖥️ FrmPrincipal — Navigation par menus
+## 🗄️ Base de données — État actuel
 
-```
-┌─────────────────────────────────────────────────────────────────┐
-│ Charles & Nadejda — Gestion Artisanale              [v1.0]      │
-├──────────┬──────────────┬──────────┬──────────────┬────────────┤
-│ Catalogue│  Ingrédients │ Recettes │  Production  │ Commandes  │
-│──────────│──────────────│──────────│──────────────│────────────│
-│ Catégories│ Ingrédients │ Mes      │ Lancer une   │ Voir les   │
-│ Parfums  │ Achats       │ recettes │ production   │ commandes  │
-│ Produits │ Mouvements   │          │ Historique   │            │
-└──────────┴──────────────┴──────────┴──────────────┴────────────┘
-                    Contenu du formulaire actif
-```
+**42 tables** dans `charlesnadejda` (MySQL 8 via Docker).
+
+### Tables principales (hors BOM)
+
+| Table | Rôle |
+|-------|------|
+| `utilisateurs` | Authentification (BCrypt) + rôle admin/client |
+| `categories` | Catégories produits boutique |
+| `produits` | Catalogue vitrine web |
+| `parfums` | 15 parfums disponibles |
+| `fournisseurs` | Fournisseurs matières premières |
+| `fiches_ingredients` | Ingrédients avec conditionnement + type physique + densité |
+| `lots_ingredients` | Achats de matières premières (FIFO, DLC, prix HTVA) |
+| `activites` | Activités ERP (Chocolaterie, Pâtisserie, Glacier…) — dynamiques |
+| `stocks` | Stocks physiques indépendants |
+| `activites_stocks` | M:N — une activité peut pointer N stocks |
+
+### Tables BOM (préfixe `bom_`)
+
+| Table | Rôle |
+|-------|------|
+| `bom_contextes` | Configurations de production nommées, liées à une activité |
+| `bom_niveaux` | Niveaux ordonnés dans un contexte (N0=ingrédients, N1, N2…) |
+| `bom_fiches` | Templates de recettes globaux (liés à un niveau) |
+| `bom_fiches_lignes` | Composition d'une fiche (inputs = ingrédient OU autre fiche N-1) |
+| `bom_productions` | Log d'exécution d'une fiche dans un contexte |
+| `bom_stocks` | Stock par niveau × fiche (lot de production), avec id_contexte + id_activite |
+| `bom_productions_lignes` | Traçabilité détaillée des consommations FIFO |
+| `bom_reservations` | Réservations sur lots — dispo réelle = quantite - SUM(réservations actives) |
+
+### VIEW
+
+| View | Rôle |
+|------|------|
+| `vue_stock_global` | Union lots ingrédients + bom_stocks — consultée par FrmVueStock |
 
 ---
 
-## 🧱 Modèles (Classes C#)
+## 📦 Models (Classes C#)
+
+### Models ERP de base
+| Fichier | Table |
+|---------|-------|
+| `Utilisateur.cs` | utilisateurs |
+| `Categorie.cs` | categories |
+| `Produit.cs` | produits |
+| `Parfum.cs` | parfums |
+| `Fournisseur.cs` | fournisseurs |
+| `Ingredient.cs` | fiches_ingredients (+TypePhysique, +Densite, +ConditionnementLabel, +QteParConditionnement) |
+| `Lot.cs` | lots_ingredients (+TvaPct, +NbConditionnements) |
+| `Activite.cs` | activites |
+| `Stock.cs` | stocks |
+
+### Models BOM
+| Fichier | Table | Propriétés calculées |
+|---------|-------|----------------------|
+| `BomContexte.cs` | bom_contextes | — |
+| `BomNiveau.cs` | bom_niveaux | — |
+| `BomFiche.cs` | bom_fiches | `CoutBatch`, `CoutUnitaire` |
+| `BomFicheLigne.cs` | bom_fiches_lignes | `SousTotal` |
+| `BomProduction.cs` | bom_productions | — |
+| `BomStock.cs` | bom_stocks | `EstPerime` |
+| `BomProductionLigne.cs` | bom_productions_lignes | `SousTotal` |
+| `BomReservation.cs` | bom_reservations | — |
+| `VueStockGlobal.cs` | vue_stock_global (VIEW) | lecture seule |
+| `RapportCout.cs` | — (calcul en mémoire) | `LigneCout` récursif |
+
+---
+
+## 🔌 DAL (Data Access Layer)
+
+### DAL de base
+| Fichier | Responsabilités clés |
+|---------|----------------------|
+| `DbHelper.cs` | `GetConnection()` depuis App.config |
+| `UtilisateurDAL.cs` | `Authenticate(email, mdp)` — BCrypt.Verify |
+| `CategorieDAL.cs` | GetAll, Insert, Update, Delete |
+| `ProduitDAL.cs` | GetAll (JOIN catégorie), Insert, Update, Delete |
+| `ParfumDAL.cs` | GetAll, Insert, Update, Delete |
+| `FournisseurDAL.cs` | GetAll, Insert, Update, Delete |
+| `IngredientDAL.cs` | GetAll(idStock, idActivite), Insert, Update, Delete |
+| `LotDAL.cs` | GetAll (FIFO), Insert, Update, Delete — prix HTVA |
+| `ActiviteDAL.cs` | GetAll, GetById, NomExiste, Insert, Update, Desactiver (soft delete avec guard contextes/ingrédients actifs) |
+| `StockDAL.cs` | GetAll, GetByActivite, Insert, Update, Delete (guard ingrédients), LierActivite, DelierActivite |
+
+### DAL BOM
+| Fichier | Responsabilités clés |
+|---------|----------------------|
+| `BomContexteDAL.cs` | GetAll(idActivite), GetById, NomExiste, Insert (+ niveau par défaut en transaction), Update, Delete |
+| `BomNiveauDAL.cs` | GetByContexte, GetById, GetOrdreMax, Insert (ordre=MAX+1), Update, Delete (lève `InvalidOperationException` si pas top-level) |
+| `BomFicheDAL.cs` | GetAll(idActivite), GetById (avec lignes), NomExiste(nom, idNiveau), Insert (transaction header+lignes), Update (replace lignes), Delete |
+| `BomFicheLigneDAL.cs` | GetByFiche avec COALESCE sur `fiches_ingredients` + `bom_fiches` |
+| `BomStockDAL.cs` | GetByNiveau, GetDisponible, GetLotsDispoFIFO (ORDER BY date_production ASC) |
+| `BomReservationDAL.cs` | GetByContexte, Insert, Liberer, LibererToutContexte |
+| `BomProductionDAL.cs` | VerifierDisponibilite, Simuler, Executer (transaction atomique FIFO) |
+| `BomCoutDAL.cs` | CalculerCout(idFiche, nBatches) — récursif multi-niveaux ; GetPrixMoyenIngredient() — moyenne pondérée lots |
+| `VueStockGlobalDAL.cs` | GetAll, GetByActivite, GetByContexte, GetByNiveau |
+
+---
+
+## ⚙️ UnitConvertisseur
+
+**Fichier** : `Forms/UnitConvertisseur.cs`
+**Namespace** : `CharlesNadejda` (racine — PAS `CharlesNadejda.Forms`)
+
+> Raison : le DAL l'appelle sans créer une dépendance DAL→Forms (Clean Architecture).
 
 ```csharp
-// Models/Produit.cs
-public class Produit
-{
-    public int    Id           { get; set; }
-    public int    IdCategorie  { get; set; }
-    public string Categorie    { get; set; }  // Jointure
-    public string Nom          { get; set; }
-    public string Description  { get; set; }
-    public decimal PrixTTC     { get; set; }
-    public int    Stock        { get; set; }
-    public string Image        { get; set; }
-    public bool   Configurable { get; set; }
-    public int?   CapaciteMax  { get; set; }
-    public bool   Disponible   { get; set; }
+// Groupes supportés
+// Masse  : mg / g / cg / kg
+// Volume : ml / cl / dl / l
+// Pièce  : piece
 
-    public override string ToString() => $"{Nom} ({PrixTTC:F2} €)";
-}
+UnitConvertisseur.Convertir(decimal valeur, string uniteSource, string uniteCible)
+UnitConvertisseur.SontCompatibles(string u1, string u2)
+UnitConvertisseur.UnitesCompatibles(string unite)  // retourne le groupe
+UnitConvertisseur.UniteBase(string unite)           // retourne "g" ou "ml"
+UnitConvertisseur.VersUniteBase(decimal valeur, string unite)
+```
 
-// Models/Commande.cs
-public class Commande
-{
-    public int      Id             { get; set; }
-    public int      IdClient       { get; set; }
-    public string   NomClient      { get; set; }  // Jointure
-    public string   PrenomClient   { get; set; }  // Jointure
-    public DateTime DateCommande   { get; set; }
-    public string   Statut         { get; set; }
-    public decimal  TotalTTC       { get; set; }
-    public string   Adresse        { get; set; }
-    public string   Notes          { get; set; }
-
-    public List<LigneCommande> Lignes { get; set; } = new();
-}
+**Règle critique** : dans `BomProductionDAL`, toujours convertir avant toute comparaison stock.
+```
+// TypeInput == "fiche" : ligne.UniteMesureInput = unite_output de la fiche source
+qteNecessaire = UnitConvertisseur.Convertir(qteNecessaire, ligne.UniteMesure, ligne.UniteMesureInput);
 ```
 
 ---
 
-## 🔌 Couche d'Accès aux Données (DAL)
+## 🏭 Architecture BOM (Bill of Materials)
 
-### `DAL/DatabaseHelper.cs`
-
-```csharp
-using MySql.Data.MySqlClient;
-
-public class DatabaseHelper
-{
-    private static MySqlConnection _connection = null;
-    private const string CONNECTION_STRING =
-        "Server=localhost;Database=charlesnadejda;Uid=root;Pwd=;CharSet=utf8mb4;";
-
-    public static MySqlConnection GetConnection()
-    {
-        if (_connection == null || _connection.State != System.Data.ConnectionState.Open)
-        {
-            _connection = new MySqlConnection(CONNECTION_STRING);
-            _connection.Open();
-        }
-        return _connection;
-    }
-}
+### Principe
+```
+Niveau 0 = Stock ingrédients global
+           ↑ consommé par
+Contexte ─── Niveau 1 (nommé par artisan) ─── Niveau 2 ─── Niveau N
+             stock propre                      stock propre   stock propre
 ```
 
-### `DAL/ProduitDAL.cs` (exemple complet)
+### Règles métier
+1. Niveau 0 = stock ingrédients global (partagé)
+2. Tout contexte naît avec 1 niveau par défaut vide
+3. Niveaux supprimables uniquement depuis le haut (`MAX(ordre)` du contexte)
+4. Niveau N consomme **uniquement** le niveau N-1 (pas de saut)
+5. Fiches = templates réutilisables entre contextes (liées à un niveau)
+6. Production : vérifie dispo N-1 → consomme → crée stock N
+7. `quantiteCible` dans `BomProductionDAL` = **nombre de batches** (pas quantité finale)
+   - `qteProduite = quantiteCible × fiche.QuantiteOutput`
+8. Dispo réelle lot = `quantite_disponible - SUM(bom_reservations WHERE actif=1)`
+9. FIFO sur consommation (`ORDER BY date_production ASC`)
+10. Conversions d'unités obligatoires avant toute comparaison stock
 
-```csharp
-public class ProduitDAL
-{
-    // ── READ : liste avec jointure catégorie
-    public List<Produit> GetAll(int? idCategorie = null, bool seulementDisponibles = false)
-    {
-        var produits = new List<Produit>();
-        string sql = @"
-            SELECT p.id, p.nom, p.description, p.prix_ttc, p.stock,
-                   p.configurable, p.capacite_max, p.disponible,
-                   c.id AS id_categorie, c.nom AS categorie
-            FROM produits p
-            INNER JOIN categories c ON p.id_categorie = c.id
-            WHERE 1=1";
+### Workflow Production (BomProductionDAL.Executer)
+```
+1. VerifierDisponibilite()        hors transaction — lève exception si manque
+2. BEGIN TRANSACTION
+   a. INSERT bom_productions      (cout = 0 provisoire)
+   b. Pour chaque ligne de fiche :
+      - ConvertirUnités()         UnitConvertisseur
+      - ConsumeStock() FIFO       UPDATE lots/bom_stocks + INSERT bom_productions_lignes
+   c. UPDATE bom_productions      SET cout_ingredients, cout_unitaire
+   d. INSERT bom_stocks           lot produit au niveau N (avec id_contexte + id_activite)
+3. COMMIT (ou ROLLBACK si exception)
+```
 
-        if (idCategorie.HasValue) sql += " AND p.id_categorie = @idCat";
-        if (seulementDisponibles)  sql += " AND p.disponible = 1";
-        sql += " ORDER BY c.ordre_affichage, p.nom";
+### Calcul de coût (BomCoutDAL.CalculerCout)
+- Descente récursive sur tous les niveaux jusqu'aux ingrédients N0
+- Règle de 3 inter-niveaux : `nBatchesSource = qteConsommée / QuantiteOutput(source)`
+- Prix ingrédients = moyenne pondérée lots disponibles (fallback `prix_achat_reference`)
+- Résultat : `RapportCout` (coût total + coût par unité output)
 
-        using var cmd = new MySqlCommand(sql, DatabaseHelper.GetConnection());
-        if (idCategorie.HasValue) cmd.Parameters.AddWithValue("@idCat", idCategorie.Value);
+---
 
-        using var reader = cmd.ExecuteReader();
-        while (reader.Read())
-        {
-            produits.Add(new Produit {
-                Id           = reader.GetInt32("id"),
-                Nom          = reader.GetString("nom"),
-                Description  = reader.IsDBNull(reader.GetOrdinal("description")) ? "" : reader.GetString("description"),
-                PrixTTC      = reader.GetDecimal("prix_ttc"),
-                Stock        = reader.GetInt32("stock"),
-                Configurable = reader.GetBoolean("configurable"),
-                CapaciteMax  = reader.IsDBNull(reader.GetOrdinal("capacite_max")) ? null : reader.GetInt32("capacite_max"),
-                Disponible   = reader.GetBoolean("disponible"),
-                IdCategorie  = reader.GetInt32("id_categorie"),
-                Categorie    = reader.GetString("categorie")
-            });
-        }
-        return produits;
-    }
+## 🖥️ Formulaires — Architecture de navigation
 
-    // ── CREATE
-    public void Insert(Produit p)
-    {
-        // Vérifier unicité du nom d'abord
-        if (NomExiste(p.Nom))
-            throw new Exception($"Un produit nommé '{p.Nom}' existe déjà.");
+### FrmLogin
+- Écran de démarrage
+- `txtEmail` + `txtMotDePasse` (PasswordChar)
+- `UtilisateurDAL.Authenticate()` → BCrypt.Verify
+- Redirige vers `FrmPrincipal` si role = 'admin'
+- Credentials de test : `charles@charlesnadejda.be` / `password`
 
-        string sql = @"
-            INSERT INTO produits
-                (id_categorie, nom, description, prix_ttc, stock,
-                 configurable, capacite_max, image_url, disponible)
-            VALUES
-                (@idCat, @nom, @desc, @prix, @stock,
-                 @conf, @cap, @imgUrl, @dispo)";
+### FrmPrincipal — Navigation principale
+```
+┌─ Bandeau haut ──────────────────────────────────────────┐
+│  "ArtisaStock"  [+ Activité]  [📦 Stocks]  [⚙ Config]  │
+└─────────────────────────────────────────────────────────┘
+┌─ Rail gauche ───────────────────────────────────────────┐
+│  RESSOURCES                                             │
+│    📊 Vue stock global                                  │
+│    🥦 Ingrédients                                       │
+│    🚚 Fournisseurs                                      │
+│                                                         │
+│  ACTIVITÉS (liste verticale, custom-draw)               │
+│    ▶ Chocolaterie    ← sélection active                 │
+│      Pâtisserie                                         │
+│      [+ Activité]                                       │
+│                                                         │
+│  CONTEXTES (filtrés par activité sélectionnée)          │
+│    ▶ Pralines Noël                                      │
+│      Ganaches classiques                                 │
+└─────────────────────────────────────────────────────────┘
+┌─ Zone droite — Niveaux du contexte sélectionné ─────────┐
+│  Niveau 0 : Stock ingrédients (global)                  │
+│  Niveau 1 : Préparations de base                        │
+│  Niveau 2 : Assemblages finaux                          │
+│  [Fiches] [Produire] [Simuler]                          │
+└─────────────────────────────────────────────────────────┘
+```
 
-        using var cmd = new MySqlCommand(sql, DatabaseHelper.GetConnection());
-        cmd.Parameters.AddWithValue("@idCat",  p.IdCategorie);
-        cmd.Parameters.AddWithValue("@nom",    p.Nom);
-        cmd.Parameters.AddWithValue("@desc",   p.Description);
-        cmd.Parameters.AddWithValue("@prix",   p.PrixTTC);
-        cmd.Parameters.AddWithValue("@stock",  p.Stock);
-        cmd.Parameters.AddWithValue("@conf",   p.Configurable);
-        cmd.Parameters.AddWithValue("@cap",    (object)p.CapaciteMax ?? DBNull.Value);
-        cmd.Parameters.AddWithValue("@imgUrl", (object)p.ImageUrl ?? DBNull.Value);
-        cmd.Parameters.AddWithValue("@dispo",  p.Disponible);
-        cmd.ExecuteNonQuery();
-    }
+**Menus** (MenuStrip) : Catalogue web [à venir] | Commandes web [à venir]
+> Le catalogue web est en placeholder — focus ERP actif.
 
-    // ── UPDATE
-    public void Update(Produit p)
-    {
-        if (NomExiste(p.Nom, p.Id))
-            throw new Exception($"Un autre produit porte déjà le nom '{p.Nom}'.");
+---
 
-        string sql = @"
-            UPDATE produits
-            SET id_categorie = @idCat, nom = @nom, description = @desc,
-                prix_ttc = @prix, stock = @stock, disponible = @dispo
-            WHERE id = @id";
+## 📋 Formulaires implémentés
 
-        using var cmd = new MySqlCommand(sql, DatabaseHelper.GetConnection());
-        cmd.Parameters.AddWithValue("@idCat", p.IdCategorie);
-        cmd.Parameters.AddWithValue("@nom",   p.Nom);
-        cmd.Parameters.AddWithValue("@desc",  p.Description);
-        cmd.Parameters.AddWithValue("@prix",  p.PrixTTC);
-        cmd.Parameters.AddWithValue("@stock", p.Stock);
-        cmd.Parameters.AddWithValue("@dispo", p.Disponible);
-        cmd.Parameters.AddWithValue("@id",    p.Id);
-        cmd.ExecuteNonQuery();
-    }
+### Module Activités
+| Form | Rôle |
+|------|------|
+| `FrmActivites` | CRUD activités — DGV + Nouveau/Modifier/Désactiver + bouton "📦 Stocks liés" |
+| `FrmActiviteEdit` | Création/modification (Nom + Description) |
+| `FrmActiviteStocks` | CheckedListBox — lier/délier des stocks à une activité |
 
-    // ── DELETE (avec vérification FK)
-    public void Delete(int id)
-    {
-        // Vérifier si des lignes de commande référencent ce produit
-        string checkSql = "SELECT COUNT(*) FROM lignes_commandes WHERE id_produit = @id";
-        using var checkCmd = new MySqlCommand(checkSql, DatabaseHelper.GetConnection());
-        checkCmd.Parameters.AddWithValue("@id", id);
-        int count = Convert.ToInt32(checkCmd.ExecuteScalar());
+### Module Stocks & Ingrédients
+| Form | Rôle |
+|------|------|
+| `FrmStocks` | CRUD stocks physiques/logiques |
+| `FrmStockEdit` | Formulaire stock (Nom + Description, validation unicité) |
+| `FrmIngredients` | Liste avec chips "Tous / Stock A / Stock B…" — filtre par stock |
+| `FrmIngredientEdit` | CRUD ingrédient (TypePhysique, Densité, Conditionnement, Prix) |
+| `FrmAchats` | Liste des achats (lots) par stock/activité |
+| `FrmAchatEdit` | Enregistrer un achat — radio HTVA/TVAC, live preview "× Xg = Yg en stock" |
+| `FrmVueStock` | Vue unifiée (vue_stock_global) — lots + produits fabriqués, code couleur DLC, chips activité |
 
-        if (count > 0)
-            throw new Exception($"Impossible de supprimer : {count} commande(s) contiennent ce produit.");
+### Module Fournisseurs
+| Form | Rôle |
+|------|------|
+| `FrmFournisseurs` | CRUD fournisseurs |
+| `FrmFournisseurEdit` | Formulaire fournisseur |
 
-        string sql = "DELETE FROM produits WHERE id = @id";
-        using var cmd = new MySqlCommand(sql, DatabaseHelper.GetConnection());
-        cmd.Parameters.AddWithValue("@id", id);
-        cmd.ExecuteNonQuery();
-    }
+### Module BOM — Configuration
+| Form | Rôle |
+|------|------|
+| `FrmBomContextes` | Liste des contextes de production d'une activité |
+| `FrmBomContexteEdit` | Création/modification contexte (Nom, Activité, Description) |
+| `FrmBomNiveaux` | Liste des niveaux d'un contexte (ordre topologique) |
+| `FrmBomNiveauEdit` | Création/modification niveau (Ordre en lecture seule) |
+| `FrmBomFiches` | Liste globale des fiches BOM |
+| `FrmBomFicheEdit` | Formulaire fiche BOM — sélection input (ingrédient/fiche), quantité, unité verrouillée sur l'input source, recalcul coût en temps réel |
 
-    // ── Unicité
-    private bool NomExiste(string nom, int? excludeId = null)
-    {
-        string sql = "SELECT COUNT(*) FROM produits WHERE nom = @nom";
-        if (excludeId.HasValue) sql += " AND id != @id";
+### Module BOM — Production
+| Form | Rôle |
+|------|------|
+| `FrmBomProductionSimulation` | **Formulaire unifié** : sélection recette + nb batches → Simuler → grille vert/rouge → "Lancer la production" activé si 0 pénuries → BomProductionDAL.Executer(). Affiche coût estimé via BomCoutDAL |
 
-        using var cmd = new MySqlCommand(sql, DatabaseHelper.GetConnection());
-        cmd.Parameters.AddWithValue("@nom", nom);
-        if (excludeId.HasValue) cmd.Parameters.AddWithValue("@id", excludeId.Value);
-        return Convert.ToInt32(cmd.ExecuteScalar()) > 0;
-    }
-}
+### Catalogue web (placeholder)
+| Form | Statut |
+|------|--------|
+| `FrmCategories / Edit` | Implémenté mais accessible via placeholder menu |
+| `FrmProduits / Edit` | Implémenté mais accessible via placeholder menu |
+| `FrmParfums / Edit` | Implémenté mais accessible via placeholder menu |
+
+---
+
+## 🎨 FrmBomFicheEdit — Le formulaire le plus complexe
+
+**Cascade de sélection :**
+1. `cboTypeInput` : "Ingrédient" ou "Fiche (N-1)"
+2. `cboInput` : peuplé selon le type — tous les ingrédients du stock OU toutes les fiches du niveau N-1
+3. `nudQteLigne` : quantité (si pièce → forcé à 1, désactivé)
+4. `cboUniteLigne` : **verrouillé sur l'unité de l'input sélectionné** (jamais libre)
+
+**Recalcul temps réel :**
+```
+Sur chaque modification → recalculer SousTotal de chaque ligne
+→ CoutBatch = Σ(SousTotaux)
+→ CoutUnitaire = CoutBatch / nudRendement.Value
 ```
 
 ---
 
-## 🖥️ Formulaires Windows Forms
+## 🖥️ FrmBomProductionSimulation — Workflow de production
 
-### `FrmCommandes` — Liste des commandes (le plus complexe, grosse valeur d'exam)
-
-**Contrôles :**
-- `DataGridView dgvCommandes` — liste des commandes
-- `ComboBox cmbStatut` — filtre par statut
-- `DateTimePicker dtpDebut / dtpFin` — filtre par date
-- `TextBox txtRecherche` — recherche par nom client
-- `Button btnVoir` — ouvrir le détail
-- `Button btnChgStatut` — changer le statut de la commande
-
-**Affichage avec jointure :**
-```sql
-SELECT c.id, u.nom, u.prenom, u.email,
-       c.date_commande, c.statut, c.total_ttc, c.ville_livraison
-FROM commandes c
-INNER JOIN utilisateurs u ON c.id_client = u.id
-WHERE (@statut = '' OR c.statut = @statut)
-  AND c.date_commande BETWEEN @debut AND @fin
-  AND (u.nom LIKE @search OR u.prenom LIKE @search)
-ORDER BY c.date_commande DESC
 ```
+[Sélectionner contexte ▼]  →  [Sélectionner niveau ▼]  →  [Sélectionner fiche ▼]
+[Nombre de batches: ___]       lblInfoBatch: "1 batch = 20 pièces"
+
+[Simuler ▶]
+       ↓
+┌──────────────┬──────────────┬──────────────┬──────────────┐
+│ Ingrédient   │ En stock     │ Nécessaire   │ Statut       │
+├──────────────┼──────────────┼──────────────┼──────────────┤
+│ Chocolat lait│ 3,200 kg     │ 1,600 kg     │ ✅ OK (vert) │
+│ Beurre cacao │ 0,800 kg     │ 1,200 kg     │ ❌ PÉNURIE   │
+└──────────────┴──────────────┴──────────────┴──────────────┘
+lblCoutEstime : "Coût estimé : 16,80 € — 0,21 €/pièce"
+
+[Annuler]   [✅ Lancer la production]  ← GRISÉ si pénuries, ACTIF si tout OK
+```
+
+**Règle** : `btnLancerProduction.Enabled = (pénuries.Count == 0)`
 
 ---
 
-### `FrmProduitEdit` — Ajout / Modification Produit
+## 🔄 Conditionnement universel
 
-**Contrôles d'édition :**
-- `TextBox txtNom`
-- `RichTextBox rtbDescription`
-- `NumericUpDown nudPrix` (décimal, min 0)
-- `NumericUpDown nudStock` (entier, min 0)
-- `CheckBox chkConfigurable`
-- `NumericUpDown nudCapacite` (activé seulement si configurable coché)
-- `CheckBox chkDisponible`
-
-**Contrôles de sélection :**
-- `ComboBox cmbCategorie` (rempli depuis BDD)
-- `CheckedListBox clbParfums` (visible si configurable)
-
-**Validation avant sauvegarde :**
-```csharp
-private bool Valider()
-{
-    errorProvider.Clear();
-    bool ok = true;
-
-    if (string.IsNullOrWhiteSpace(txtNom.Text)) {
-        errorProvider.SetError(txtNom, "Le nom est obligatoire.");
-        ok = false;
-    }
-    if (nudPrix.Value <= 0) {
-        errorProvider.SetError(nudPrix, "Le prix doit être positif.");
-        ok = false;
-    }
-    if (cmbCategorie.SelectedIndex < 0) {
-        errorProvider.SetError(cmbCategorie, "Choisissez une catégorie.");
-        ok = false;
-    }
-    return ok;
-}
-```
+Le conditionnement définit l'identité d'un ingrédient :
+- 2 tailles de sac = 2 ingrédients distincts
+- Stock toujours stocké en **unité de base** (g, ml, piece)
+- À l'achat : `QuantiteInitiale = NbConditionnements × QteParConditionnement`
+- Au BOM : conversion automatique via `UnitConvertisseur`
+- Prix BOM : `prix_ref = prix_achat_reference / qte_par_conditionnement` (€/unité de base)
 
 ---
 
-### Passage de données entre formulaires
+## 🚀 Checklist de développement (état réel)
 
-```csharp
-// Dans FrmProduits — clic sur "Modifier"
-private void btnModifier_Click(object sender, EventArgs e)
-{
-    if (dgvProduits.SelectedRows.Count == 0) return;
-    int id = (int)dgvProduits.SelectedRows[0].Cells["id"].Value;
-    Produit p = _produitDAL.GetById(id);
+### ✅ Terminé
+- [x] Infrastructure Docker + App.config
+- [x] DbHelper + UtilisateurDAL + FrmLogin
+- [x] FrmListeBase + FrmEditBase (classes de base)
+- [x] UnitConvertisseur (namespace racine)
+- [x] ActiviteDAL + FrmActivites/Edit
+- [x] StockDAL + FrmStocks/Edit + FrmActiviteStocks
+- [x] IngredientDAL (avec conditionnement) + FrmIngredients/Edit
+- [x] LotDAL (HTVA/TVAC) + FrmAchats/Edit
+- [x] FournisseurDAL + FrmFournisseurs/Edit
+- [x] BomContexteDAL + BomNiveauDAL + BomFicheDAL + BomFicheLigneDAL
+- [x] BomStockDAL + BomReservationDAL + BomProductionDAL
+- [x] BomCoutDAL (calcul coût récursif)
+- [x] VueStockGlobalDAL + FrmVueStock
+- [x] FrmBomContextes/Edit + FrmBomNiveaux/Edit
+- [x] FrmBomFiches + FrmBomFicheEdit
+- [x] FrmBomProductionSimulation (fusion simulation + production)
+- [x] FrmPrincipal : rail gauche + activités dynamiques + onboarding
+- [x] Rework UI/UX complet : palette chocolat, DGV styling, FlatStyle, DefaultButton.Button2
 
-    using var frm = new FrmProduitEdit(p);  // Passe l'objet au formulaire
-    if (frm.ShowDialog() == DialogResult.OK)
-    {
-        ChargerProduits();  // Recharge la liste
-    }
-}
-
-// Dans FrmProduitEdit — constructeur
-public FrmProduitEdit(Produit produit = null)
-{
-    InitializeComponent();
-    _produit = produit;
-    _estModification = produit != null;
-    Text = _estModification ? "Modifier un produit" : "Ajouter un produit";
-}
-```
-
----
-
-## 🧱 Modèles ArtisaStock (nouvelles classes C#)
-
-```csharp
-// Models/Ingredient.cs
-public class Ingredient
-{
-    public int     Id             { get; set; }
-    public string  Nom            { get; set; }
-    public string  Marque         { get; set; }
-    public string  UniteMesure    { get; set; }   // "kg", "g", "l", "ml", "piece"
-    public decimal PrixUnitaire   { get; set; }
-    public decimal StockActuel    { get; set; }
-    public decimal? SeuilAlerte   { get; set; }
-    public string  Fournisseur    { get; set; }   // Jointure optionnelle
-
-    // Propriété calculée (POO)
-    public bool EstEnAlerte => SeuilAlerte.HasValue && StockActuel <= SeuilAlerte.Value;
-
-    public override string ToString() => $"{Nom} ({StockActuel} {UniteMesure})";
-}
-
-// Models/Recette.cs
-public class Recette
-{
-    public int    Id                  { get; set; }
-    public string Nom                 { get; set; }
-    public string Description         { get; set; }
-    public decimal RendementQuantite  { get; set; }
-    public int?   TempsPreparation    { get; set; }
-    public bool   Active              { get; set; }
-
-    // Navigation
-    public List<RecetteIngredient> Ingredients { get; set; } = new();
-
-    // Propriété calculée — coût total d'une batch
-    public decimal CoutBatch =>
-        Ingredients.Sum(ri => ri.Quantite * ri.PrixUnitaire);
-
-    // Coût par pièce
-    public decimal CoutUnitaire =>
-        RendementQuantite > 0 ? CoutBatch / RendementQuantite : 0;
-}
-
-// Models/RecetteIngredient.cs
-public class RecetteIngredient
-{
-    public int     IdRecette     { get; set; }
-    public int     IdIngredient  { get; set; }
-    public string  NomIngredient { get; set; }   // Jointure
-    public string  Unite         { get; set; }   // Jointure
-    public decimal Quantite      { get; set; }
-    public decimal PrixUnitaire  { get; set; }   // Jointure
-
-    public decimal SousTotal => Quantite * PrixUnitaire;
-}
-
-// Models/Production.cs
-public class Production
-{
-    public int      Id                { get; set; }
-    public int      IdRecette         { get; set; }
-    public string   NomRecette        { get; set; }   // Jointure
-    public DateTime DateProduction    { get; set; }
-    public decimal  QuantiteProduite  { get; set; }
-    public decimal  CoutTotal         { get; set; }
-    public decimal  CoutUnitaire      { get; set; }
-    public decimal? PrixVenteReel     { get; set; }
-    public decimal? MargeBrute        { get; set; }
-    public string   Notes             { get; set; }
-
-    public decimal? MargePercent =>
-        PrixVenteReel > 0 && MargeBrute.HasValue
-            ? Math.Round((MargeBrute.Value / (PrixVenteReel.Value * QuantiteProduite)) * 100, 1)
-            : null;
-}
-```
+### ⏳ À faire
+- [ ] Commandes web : FrmCommandes + FrmCommandeDetail (lecture BDD Laravel)
+- [ ] Catalogue web : FrmCategories/Produits/Parfums (débloquer depuis placeholder)
+- [ ] Cloudinary : upload images produits depuis FrmProduitEdit
+- [ ] Rapport BOM explosé (tous niveaux) + export PDF
 
 ---
 
-## 🖥️ FrmRecetteEdit — Le formulaire le plus riche (cœur du PDSGBD)
+## 📝 Règles apprises (extraites du JOURNAL.md)
 
-C'est ici que se concentrent le plus de critères d'examen :
-
-```
-┌─────────────────────────────────────────────────────────────────┐
-│  Ajouter / Modifier une recette                                  │
-├──────────────────────────────────────┬──────────────────────────┤
-│  Nom de la recette :  [____________] │  Rendement : [20] pièces │
-│  Description :        [____________] │  Temps prépa: [45] min   │
-│  [x] Recette active                  │                          │
-├──────────────────────────────────────┴──────────────────────────┤
-│  Ingrédients de la recette                                       │
-│  ┌──────────────────────────────────────────────────────────┐   │
-│  │ Sélectionner un ingrédient : [ComboBox▼] Qté: [____] [+]│   │
-│  ├──────────┬───────────────┬──────────┬────────────────────┤   │
-│  │ Ingrédient│ Unité        │ Quantité │ Sous-total  [suppr]│   │
-│  ├──────────┼───────────────┼──────────┼────────────────────┤   │
-│  │ Chocolat │ kg            │ 0,200    │ 2,20 €      [X]   │   │
-│  │ Praliné  │ kg            │ 0,150    │ 2,70 €      [X]   │   │
-│  └──────────┴───────────────┴──────────┴────────────────────┘   │
-│                                                                   │
-│  Coût de revient : 4,90 € / batch (20 pièces) = 0,245 €/pièce  │
-│  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━  │
-│                        [Annuler]   [Enregistrer]                 │
-└─────────────────────────────────────────────────────────────────┘
-```
-
-**Critères couverts par ce seul formulaire** :
-- Contrôles d'édition (TextBox, NumericUpDown)
-- Contrôles de sélection (ComboBox pour ingrédients)
-- Ajout dynamique de lignes → recalcul du coût en temps réel
-- Validation : nom non vide, au moins 1 ingrédient, quantités > 0
-- Unicité du nom
-- INSERT + liaison recettes_ingredients
-
----
-
-## 🖥️ FrmProduction — Workflow de production
-
-```
-┌─────────────────────────────────────────────────────────────────┐
-│  Lancer une Production                                           │
-├─────────────────────────────────────────────────────────────────┤
-│  Recette : [ComboBox ▼ — Praline Praliné        ]               │
-│  Quantité à produire : [40] pièces                              │
-│                                                                   │
-│  ── Vérification du stock ──────────────────────────────────    │
-│  ┌───────────────┬────────────┬─────────────┬──────────────┐   │
-│  │ Ingrédient    │ En stock   │ Nécessaire  │ Statut       │   │
-│  ├───────────────┼────────────┼─────────────┼──────────────┤   │
-│  │ Chocolat lait │ 4,000 kg   │ 0,400 kg    │ ✅ OK        │   │
-│  │ Praliné       │ 0,200 kg   │ 0,300 kg    │ ❌ MANQUANT  │   │
-│  │ Beurre        │ 2,000 kg   │ 0,060 kg    │ ✅ OK        │   │
-│  └───────────────┴────────────┴─────────────┴──────────────┘   │
-│                                                                   │
-│  Coût total estimé : 8,64 €    Coût/pièce : 0,216 €             │
-│  Prix de vente réel (optionnel) : [______] €                     │
-│                                                                   │
-│  ⚠️ Stock insuffisant pour Praliné. Commandez avant de produire. │
-│                                                                   │
-│            [Annuler]   [✅ Valider et produire]  (grisé si ❌)   │
-└─────────────────────────────────────────────────────────────────┘
-```
-
-**Logique C# du bouton "Valider et produire"** :
-```csharp
-private void btnProduire_Click(object sender, EventArgs e)
-{
-    // 1. Vérifier que tous les ingrédients sont OK
-    if (!_verificationOK)
-    {
-        MessageBox.Show("Stock insuffisant pour produire cette quantité.");
-        return;
-    }
-
-    // 2. Confirmation
-    var result = MessageBox.Show(
-        $"Produire {nudQuantite.Value} {recette.Nom} ?\n" +
-        $"Coût total : {coutTotal:F2} €\n" +
-        $"Cette action déduira les ingrédients du stock.",
-        "Confirmer la production",
-        MessageBoxButtons.OKCancel,
-        MessageBoxIcon.Question
-    );
-    if (result != DialogResult.OK) return;
-
-    // 3. Exécuter la production (INSERT + UPDATE stock x N ingrédients)
-    try
-    {
-        _productionDAL.LancerProduction(_recette, (decimal)nudQuantite.Value, prixVente);
-        MessageBox.Show("Production enregistrée avec succès !");
-        this.DialogResult = DialogResult.OK;
-    }
-    catch (Exception ex)
-    {
-        MessageBox.Show($"Erreur lors de la production : {ex.Message}");
-    }
-}
-```
-
----
-
-## 📸 Upload d'images via Cloudinary
-
-Les images produits sont gérées depuis l'app C# et stockées sur Cloudinary. L'URL générée est sauvée dans `produits.image_url`.
-
-**NuGet à installer** : pas de SDK officiel Cloudinary pour .NET, on utilise `HttpClient` avec l'API REST.
-
-```csharp
-// CloudinaryHelper.cs
-using System.Net.Http;
-using System.Net.Http.Headers;
-
-public static class CloudinaryHelper
-{
-    private static readonly string CloudName = "VOTRE_CLOUD_NAME";
-    private static readonly string ApiKey    = "VOTRE_API_KEY";
-    private static readonly string ApiSecret = "VOTRE_API_SECRET";
-
-    // Retourne l'URL Cloudinary après upload
-    public static async Task<string> UploadImageAsync(string cheminFichierLocal)
-    {
-        string timestamp = DateTimeOffset.UtcNow.ToUnixTimeSeconds().ToString();
-        string signature = GenererSignature(timestamp);
-
-        using var client  = new HttpClient();
-        using var content = new MultipartFormDataContent();
-
-        var imageBytes = await File.ReadAllBytesAsync(cheminFichierLocal);
-        content.Add(new ByteArrayContent(imageBytes), "file", Path.GetFileName(cheminFichierLocal));
-        content.Add(new StringContent(ApiKey),    "api_key");
-        content.Add(new StringContent(timestamp), "timestamp");
-        content.Add(new StringContent(signature), "signature");
-        content.Add(new StringContent("charlesnadejda/produits"), "folder");
-
-        var response = await client.PostAsync(
-            $"https://api.cloudinary.com/v1_1/{CloudName}/image/upload", content);
-
-        var json = await response.Content.ReadAsStringAsync();
-        // Parser la réponse JSON pour extraire "secure_url"
-        dynamic result = Newtonsoft.Json.JsonConvert.DeserializeObject(json);
-        return result.secure_url;
-    }
-
-    private static string GenererSignature(string timestamp)
-    {
-        string str = $"folder=charlesnadejda/produits&timestamp={timestamp}{ApiSecret}";
-        using var sha1 = System.Security.Cryptography.SHA1.Create();
-        var hash = sha1.ComputeHash(System.Text.Encoding.UTF8.GetBytes(str));
-        return BitConverter.ToString(hash).Replace("-", "").ToLower();
-    }
-}
-```
-
-**Utilisation dans `FrmProduitEdit`** :
-
-```csharp
-private async void btnChoisirImage_Click(object sender, EventArgs e)
-{
-    using var dialog = new OpenFileDialog();
-    dialog.Filter = "Images|*.jpg;*.jpeg;*.png;*.webp";
-
-    if (dialog.ShowDialog() == DialogResult.OK)
-    {
-        btnChoisirImage.Enabled = false;
-        lblImageStatus.Text = "Upload en cours...";
-
-        try
-        {
-            string url = await CloudinaryHelper.UploadImageAsync(dialog.FileName);
-            _imageUrl = url;
-            picApercu.ImageLocation = url;   // aperçu dans le formulaire
-            lblImageStatus.Text = "Image uploadée ✓";
-        }
-        catch (Exception ex)
-        {
-            lblImageStatus.Text = "Erreur : " + ex.Message;
-        }
-        finally
-        {
-            btnChoisirImage.Enabled = true;
-        }
-    }
-}
-```
-
-**NuGet supplémentaire** : `Newtonsoft.Json` pour parser la réponse Cloudinary.
-
----
-
-## 🌐 Langue du site (i18n) — Impact sur les données
-
-Le site est en **Français + Anglais**. Cela n'affecte pas la structure BDD (les noms de produits restent en une seule langue dans la BDD). Les traductions sont gérées côté Laravel avec les fichiers de langue. L'app C# travaille uniquement en français.
-
----
-
-## 🚀 Checklist de développement PDSGBD
-
-### Setup
-- [ ] Créer solution Visual Studio `CharlesNadejda.sln`
-- [ ] Installer NuGet : `MySql.Data` (Connector/NET)
-- [ ] Créer `DatabaseHelper.cs` + tester la connexion
-
-### Modèles
-- [ ] `Categorie.cs`, `Parfum.cs`, `Produit.cs`
-- [ ] `Ingredient.cs`, `Fournisseur.cs`
-- [ ] `Recette.cs`, `RecetteIngredient.cs`
-- [ ] `Production.cs`, `MouvementStock.cs`
-- [ ] `Commande.cs`, `LigneCommande.cs`
-
-### DAL (dans cet ordre)
-- [ ] `DatabaseHelper.cs`
-- [ ] `CategorieDAL.cs` : GetAll
-- [ ] `ParfumDAL.cs` : GetAll, Insert, Update, Delete
-- [ ] `ProduitDAL.cs` : GetAll (jointure cat), Insert, Update, Delete
-- [ ] `FournisseurDAL.cs` : GetAll
-- [ ] `IngredientDAL.cs` : GetAll (jointure fournisseur), Insert, Update, Delete, UpdateStock
-- [ ] `RecetteDAL.cs` : GetAll (coût calculé), GetById (avec ingrédients), Insert, Update, Delete
-- [ ] `ProductionDAL.cs` : LancerProduction (transaction), GetAll (jointure)
-- [ ] `MouvementStockDAL.cs` : GetByIngredient (filtres), Insert
-- [ ] `CommandeDAL.cs` : GetAll (jointures), GetDetail, UpdateStatut
-
-### Formulaires — Module Catalogue
-- [ ] `FrmPrincipal` : MenuStrip avec 5 menus
-- [ ] `FrmCategories` + `FrmCategorieEdit`
-- [ ] `FrmParfums` + `FrmParfumEdit`
-- [ ] `FrmProduits` + `FrmProduitEdit`
-
-### Formulaires — Module Ingrédients
-- [ ] `FrmIngredients` (DataGridView avec alertes colorées)
-- [ ] `FrmIngredientEdit`
-- [ ] `FrmAchatStock`
-- [ ] `FrmMouvementsStock` (filtres date + type)
-
-### Formulaires — Module Recettes
-- [ ] `FrmRecettes` (liste avec coût de revient)
-- [ ] `FrmRecetteEdit` (ajout dynamique d'ingrédients)
-
-### Formulaires — Module Production
-- [ ] `FrmProduction` (vérif stock + workflow)
-- [ ] `FrmHistoriqueProductions`
-
-### Formulaires — Module Commandes
-- [ ] `FrmCommandes` + `FrmCommandeDetail`
-
-### Points clés à soigner partout
-- [ ] Toutes les requêtes avec `AddWithValue` (anti-injection)
-- [ ] `ErrorProvider` sur tous les formulaires d'édition
-- [ ] Messages d'erreur explicites en cas de violation FK (try/catch)
-- [ ] Confirmations avant suppression (`MessageBox.Show`)
-- [ ] Tri et filtrage fonctionnels dans les DataGridView
-- [ ] Coloration conditionnelle : rouge si stock bas, vert/orange/rouge pour marges
+| # | Règle |
+|---|-------|
+| 1 | Nouveau `.cs` → ajouter `<Compile>` dans `.csproj` manuellement |
+| 2 | `DB_HOST=mysql` sous Docker, jamais `localhost` |
+| 3 | MySQL 8 n'enforce pas CHECK sur FK — validation dans le DAL |
+| 4 | `bom_fiches` liée à `id_niveau`, pas juste à une activité |
+| 5 | Nouveau champ Model → vérifier SELECT / INSERT / UPDATE / Map() |
+| 6 | DGV : `Sizable` + `AllCells` + `MinimumWidth` + Anchor 4 bords |
+| 7 | Unité ligne BOM = unité de l'input source — ComboBox verrouillé |
+| 8 | ENUM → FK : supprimer l'ancienne colonne ET ajouter la nouvelle dans le même ALTER |
+| 9 | Activités : jamais hardcodées — toujours via `Activite` (Id + Nom) depuis ActiviteDAL |
+| 10 | Après refactor de signature DAL : grep TOUS les call sites avant de clore |
+| 11 | DockStyle WinForms (non-partial) : Fill index 0, Bottom index 1, Top index 2 |
+| 12 | Lambda dans `EventArgs e` : utiliser `ev` (pas `e`) → évite CS0136 |
+| 13 | Paramètres optionnels réordonnés : utiliser paramètres nommés dans tous les call sites |
+| 14 | `lots_ingredients.date_peremption` ≠ `date_dlc` — aliaser dans les VIEWs |
+| 15 | `quantiteCible` = **nombre de batches** ; `qteProduite = batches × QuantiteOutput` |
+| 16 | TypeInput == "fiche" : toujours convertir `qteNecessaire` avant comparaison stock |
+| 17 | VIEW MySQL ne contient que les colonnes explicites — JOIN dans le DAL pour les FK labels |

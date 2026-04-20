@@ -153,9 +153,25 @@ namespace CharlesNadejda.Forms
                 Padding   = new Padding(16, 6, 16, 6)
             };
 
-            CreerLegende(pnlBas, VERT_DISPO,   "Disponible",    0);
-            CreerLegende(pnlBas, ORANGE_RESERV, "Réservé",      130);
-            CreerLegende(pnlBas, ROUGE_PENUR,   "Pénurie / DLC", 260);
+            // US-06 : bouton Export CSV — à gauche des légendes
+            var btnCsv = new Button
+            {
+                Text      = "🖨 Exporter CSV",
+                Font      = new Font("Segoe UI", 8.5F),
+                BackColor = CHOCOLAT_MOYEN,
+                ForeColor = Color.White,
+                FlatStyle = FlatStyle.Flat,
+                Size      = new Size(120, 32),
+                Location  = new Point(0, 10),
+                Cursor    = Cursors.Hand
+            };
+            btnCsv.FlatAppearance.BorderSize = 0;
+            btnCsv.Click += (s, e) => ExporterCsv();
+            pnlBas.Controls.Add(btnCsv);
+
+            CreerLegende(pnlBas, VERT_DISPO,   "Disponible",    130);
+            CreerLegende(pnlBas, ORANGE_RESERV, "Réservé",      260);
+            CreerLegende(pnlBas, ROUGE_PENUR,   "Pénurie / DLC", 390);
 
             _lblTotal = new Label
             {
@@ -301,6 +317,51 @@ namespace CharlesNadejda.Forms
             _lblTotal.Text = $"{_lignes.Count} entrée{(_lignes.Count > 1 ? "s" : "")} " +
                              $"· {_lignes.Count(x => x.EstEnAlerte)} pénurie{(_lignes.Count(x => x.EstEnAlerte) > 1 ? "s" : "")}";
         }
+
+        // ════════════════════════════════════════════════════════════
+        //  US-06 — Export CSV
+        // ════════════════════════════════════════════════════════════
+
+        private void ExporterCsv()
+        {
+            using (var dlg = new SaveFileDialog())
+            {
+                dlg.Filter           = "CSV (*.csv)|*.csv";
+                dlg.FileName         = $"stock_global_{DateTime.Today:yyyy-MM-dd}.csv";
+                dlg.InitialDirectory = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments);
+                if (dlg.ShowDialog() != DialogResult.OK) return;
+
+                using (var sw = new System.IO.StreamWriter(dlg.FileName, false, new System.Text.UTF8Encoding(true)))
+                {
+                    // En-tête
+                    sw.WriteLine("Type;Nom;Disponible;Réservé;Total;Unité;DLC;Stock / Activité;Coût unit.");
+
+                    foreach (var l in _lignes)
+                    {
+                        string dlcText   = l.DateDlc.HasValue ? l.DateDlc.Value.ToString("dd/MM/yyyy") : "";
+                        string lieuText  = l.EstLot ? (l.StockNom ?? "") : (l.NomActivite ?? "");
+                        string typeLabel = l.EstLot ? "Ingrédient" : "Produit BOM";
+
+                        sw.WriteLine(string.Join(";",
+                            Escape(typeLabel),
+                            Escape(l.Nom),
+                            l.QuantiteDispoReelle.ToString("F3"),
+                            l.QuantiteReservee.ToString("F3"),
+                            l.QuantiteTotale.ToString("F3"),
+                            Escape(l.Unite),
+                            dlcText,
+                            Escape(lieuText),
+                            l.CoutUnitaire > 0 ? l.CoutUnitaire.ToString("F4") : ""));
+                    }
+                }
+                MessageBox.Show($"Fichier exporté :\n{dlg.FileName}", "Export réussi",
+                    MessageBoxButtons.OK, MessageBoxIcon.Information);
+            }
+        }
+
+        /// <summary>Échappe un champ CSV si il contient le séparateur ';'.</summary>
+        private static string Escape(string s)
+            => s != null && s.Contains(';') ? $"\"{s}\"" : (s ?? "");
 
         // ── Coloration des cellules ───────────────────────────────────
 

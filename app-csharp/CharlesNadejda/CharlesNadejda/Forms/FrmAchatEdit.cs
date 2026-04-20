@@ -281,6 +281,8 @@ namespace CharlesNadejda.Forms
             Controls.Add(btnEnregistrer);
             Controls.Add(btnAnnuler);
 
+            FormHelper.ActiverPointDecimal(nudQuantite, nudPrix, nudTvaPct);
+            FormHelper.ActiverSelectionAuFocus(nudQuantite, nudPrix, nudTvaPct);
             Load += FrmAchatEdit_Load;
         }
 
@@ -367,6 +369,12 @@ namespace CharlesNadejda.Forms
             {
                 _ingredientSelectionne = ing;
                 MajInfoConditionnement();
+
+                // Pré-remplir avec le prix de référence de la fiche (facilité de saisie).
+                // Mis à jour à chaque changement d'ingrédient. L'utilisateur reste libre
+                // de modifier — chaque achat enregistré alimente l'historique tarifaire.
+                if (ing.PrixAchatReference > 0)
+                    nudPrix.Value = ing.PrixAchatReference;
             }
             else
             {
