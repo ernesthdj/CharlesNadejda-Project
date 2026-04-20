@@ -7,6 +7,10 @@
 | 1 | SFA Pattern : ne jamais démarrer `Application.Run()` sur FrmLogin — FrmPrincipal doit être la Form racine | `Program.cs` · `FrmLogin.cs` | 2026-04-19 |
 | 2 | `DialogResult = DialogResult.OK` ferme automatiquement une Form ouverte via `ShowDialog()` — pas besoin de `this.Close()` | `FrmLogin.cs` | 2026-04-19 |
 | 3 | `Application.Restart()` est la solution la plus robuste pour déconnexion/reconnexion — perd tout état mémoire (acceptable si pas de données non persistées) | `FrmPrincipal.cs` | 2026-04-19 |
+| 4 | `Controls.Add()` place un contrôle EN ARRIÈRE (ZOrder) — appeler `BringToFront()` si un contrôle sans DockStyle doit apparaître au-dessus d'un `DockStyle.Fill` | `FrmPrincipal.cs` | 2026-04-20 |
+| 5 | `NumericUpDown.Enter += Select(0, Text.Length)` — sélectionne tout au focus, l'utilisateur tape directement sans effacer | `FormHelper.cs` | 2026-04-20 |
+| 6 | Prix référence dans achat : ne pas conditionner à `nudPrix.Value == 0` — toujours rafraîchir à chaque changement d'ingrédient | `FrmAchatEdit.cs` | 2026-04-20 |
+| 7 | `SetFiltreAlertes(false)` doit être appelé dans `ShowRessourceScreen()` avant la lecture de `FiltreAlertesSeulement` pour éviter la persistence cross-navigation | `FrmPrincipal.cs` | 2026-04-20 |
 
 ---
 
@@ -272,7 +276,40 @@ US-09 UI — Bouton "🖨 Rapport du jour" ajouté dans `pnlHdr` (visible si `pr
 - `StockContientDonnees()` retourne toujours false (⚠️ Warning confirmé ligne 293 FrmStocks.cs)
 
 **Alerte agent suivant (Agent #7 DevOps ou Agent #8 Knowledge Curator) :**
-1. W1 — `SetFiltreAlertes(false)` absent de `ShowRessourceScreen()` : si l'utilisateur clique StatCard H4 (filtreAlertes=true) puis navigue via sidebar (Ressources → Ingrédients), le filtre reste actif. Ajouter `_state.SetFiltreAlertes(false)` au début de `ShowRessourceScreen()` AVANT la lecture de `_state.FiltreAlertesSeulement`
-2. W2 — `StockContientDonnees()` retourne toujours `false` (ligne 293 FrmStocks.cs) : le bouton Supprimer est toujours actif même si le stock contient des ingrédients. La DAL bloque la suppression, mais l'UX est dégradée (pas de désactivation préventive). Implémenter `StockDAL.ContientDonnees(int idStock)` dans un sprint futur
-3. Build MSBuild non exécuté par aucun agent (permission Bash refusée) — OBLIGATOIRE avant déploiement
-4. Les credentials `#if DEBUG` dans `FrmLogin.cs` (lignes 20-23) restent présents. Acceptables en dev (bloc conditionnel propre), mais à retirer avant toute release via flag `#if DEBUG` dans le .csproj ou via une configuration Release dédiée
+1. ~~W1 — `SetFiltreAlertes(false)` absent de `ShowRessourceScreen()`~~ **RÉSOLU** (voir session 2026-04-20)
+2. W2 — `StockContientDonnees()` retourne toujours `false` (ligne 293 FrmStocks.cs) : à implémenter dans un sprint futur
+3. ~~Build MSBuild non validé par les agents~~ **RÉSOLU** — build propre 0 erreur / 0 warning confirmé
+4. Les credentials `#if DEBUG` dans `FrmLogin.cs` restent présents — acceptables en dev, à retirer avant release
+
+---
+
+### SESSION 2 — 2026-04-20
+
+---
+
+### [2026-04-20] FIX — W1 filtre alertes + UX post-tests mentalyas
+
+**Fichiers :**
+- `CharlesNadejda/Forms/FrmPrincipal.cs` — reset `FiltreAlertesSeulement` dans `ShowRessourceScreen()`
+- `CharlesNadejda/Forms/FrmPrincipal.cs` — `BringToFront()` sur `btnNouvCtxSide` (bouton caché derrière `DockFill` label)
+- `CharlesNadejda/Forms/FrmPrincipal.cs` — renommages sidebar : "Stocks" → "Stock/Liaisons", "Ingrédients" → "Fiches Ingrédients"
+- `CharlesNadejda/Forms/FrmIngredients.cs` — titres "Stock ingrédients" → "Fiches ingrédients"
+- `CharlesNadejda/Forms/FormHelper.cs` — nouveau : `ActiverPointDecimal()` + `ActiverSelectionAuFocus()`
+- `CharlesNadejda/Forms/FrmAchatEdit.cs` — prix référence rafraîchi à chaque changement d'ingrédient
+- `CharlesNadejda/Forms/FrmIngredientEdit.cs` — titre "Nouvelle fiche ingrédient", point decimal + sélection au focus
+
+**Résumé :** Corrections post-tests utilisateur. Bug critique : le bouton "＋" contexte était invisible (couvert par `DockStyle.Fill` label — `BringToFront()` manquant). Fix W1 QA : `FiltreAlertesSeulement` était persistent entre navigations, maintenant relu et remis à `false` dans `ShowRessourceScreen()`. Ajout `FormHelper` pour convertisseur "." → "," et sélection automatique au focus sur tous les `NumericUpDown`. Prix de référence dans `FrmAchatEdit` mis à jour à chaque sélection d'ingrédient (pas seulement quand valeur = 0).
+
+**Erreur corrigée — BringToFront :**
+- Symptôme : le bouton "＋" n'apparaissait pas dans l'en-tête "Contextes"
+- Cause : `Controls.Add()` place le contrôle en dernier (ZOrder arrière) — le `Label DockFill` le recouvrait entièrement
+- Fix : `btnNouvCtxSide.BringToFront()` après `Controls.Add()`
+- Règle retenue : toujours appeler `BringToFront()` sur un contrôle positionné (non Dock) ajouté après un `DockStyle.Fill`
+
+---
+
+### [2026-04-20] CHORE — PR GitHub créée
+
+**Fichiers :** 32 fichiers · 5 439 insertions · branche `feat/refactoring-sprints-p0-p3`
+
+**Résumé :** `git push` + `gh pr create` — PR #1 ouverte sur `ernesthdj/CharlesNadejda-Project`. Inclut tous les sprints P0→P3, la couche Navigation/, Services/, et les docs agents.
