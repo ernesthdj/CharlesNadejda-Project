@@ -123,6 +123,7 @@
     <Compile Include="DAL\ProduitDAL.cs" />
     <Compile Include="DAL\RecetteDAL.cs" />
     <Compile Include="DAL\UtilisateurDAL.cs" />
+    <Compile Include="Forms\FormHelper.cs" />
     <Compile Include="Forms\UnitConvertisseur.cs" />
     <Compile Include="Forms\FrmListeBase.cs">
       <SubType>Form</SubType>
@@ -330,6 +331,13 @@
     <Compile Include="Models\Recette.cs" />
     <Compile Include="Models\RecetteIngredient.cs" />
     <Compile Include="Models\Utilisateur.cs" />
+    <Compile Include="Navigation\AppState.cs" />
+    <Compile Include="Navigation\NavigationParams.cs" />
+    <Compile Include="Navigation\RessourceType.cs" />
+    <Compile Include="Navigation\ScreenId.cs" />
+    <Compile Include="Navigation\ScreenRouter.cs" />
+    <Compile Include="Services\SimulationResultat.cs" />
+    <Compile Include="Services\SimulationService.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <EmbeddedResource Include="Properties\Resources.resx">

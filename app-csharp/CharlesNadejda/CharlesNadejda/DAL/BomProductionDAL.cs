@@ -37,6 +37,65 @@ namespace CharlesNadejda.DAL
             return list;
         }
 
+        public static List<BomProduction> GetRecentByActivite(int idActivite, int limit = 10)
+        {
+            var list = new List<BomProduction>();
+            using (var conn = DbHelper.GetConnection())
+            using (var cmd = conn.CreateCommand())
+            {
+                cmd.CommandText = @"
+                    SELECT p.id, p.id_niveau, p.id_fiche, p.quantite_produite,
+                           p.cout_ingredients, p.cout_unitaire, p.date_production, p.notes,
+                           f.nom AS nom_fiche,
+                           n.nom AS nom_niveau, n.ordre,
+                           c.nom AS nom_contexte
+                    FROM bom_productions p
+                    INNER JOIN bom_fiches    f ON f.id = p.id_fiche
+                    INNER JOIN bom_niveaux   n ON n.id = p.id_niveau
+                    INNER JOIN bom_contextes c ON c.id = n.id_contexte
+                    WHERE c.id_activite = @idActivite
+                    ORDER BY p.date_production DESC
+                    LIMIT @limit";
+                cmd.Parameters.AddWithValue("@idActivite", idActivite);
+                cmd.Parameters.AddWithValue("@limit",      limit);
+                using (var r = cmd.ExecuteReader())
+                    while (r.Read()) list.Add(MapHeader(r));
+            }
+            return list;
+        }
+
+        /// <summary>
+        /// Retourne les productions du jour pour une activité.
+        /// Filtre sur date_production = CURDATE() côté MySQL.
+        /// </summary>
+        /// <param name="idActivite">Id de l'activité.</param>
+        /// <returns>Liste des BomProduction du jour, triée par date_production DESC.</returns>
+        public static List<BomProduction> GetDuJourByActivite(int idActivite)
+        {
+            var list = new List<BomProduction>();
+            using (var conn = DbHelper.GetConnection())
+            using (var cmd = conn.CreateCommand())
+            {
+                cmd.CommandText = @"
+                    SELECT p.id, p.id_niveau, p.id_fiche, p.quantite_produite,
+                           p.cout_ingredients, p.cout_unitaire, p.date_production, p.notes,
+                           f.nom AS nom_fiche,
+                           n.nom AS nom_niveau, n.ordre,
+                           c.nom AS nom_contexte
+                    FROM bom_productions p
+                    INNER JOIN bom_fiches    f ON f.id = p.id_fiche
+                    INNER JOIN bom_niveaux   n ON n.id = p.id_niveau
+                    INNER JOIN bom_contextes c ON c.id = n.id_contexte
+                    WHERE c.id_activite = @idActivite
+                      AND DATE(p.date_production) = CURDATE()
+                    ORDER BY p.date_production DESC";
+                cmd.Parameters.AddWithValue("@idActivite", idActivite);
+                using (var r = cmd.ExecuteReader())
+                    while (r.Read()) list.Add(MapHeader(r));
+            }
+            return list;
+        }
+
         // ── Vérification de disponibilité ────────────────────────────────
 
         /// <summary>

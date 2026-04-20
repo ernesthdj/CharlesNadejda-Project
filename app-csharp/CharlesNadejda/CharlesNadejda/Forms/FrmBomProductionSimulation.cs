@@ -229,7 +229,7 @@ namespace CharlesNadejda.Forms
 
         // ── Exécution de la production ───────────────────────────────────
 
-        private void btnLancerProduction_Click(object sender, EventArgs e)
+        private async void btnLancerProduction_Click(object sender, EventArgs e)
         {
             if (!SélectionValide() || !_simulationValide) return;
 
@@ -252,22 +252,27 @@ namespace CharlesNadejda.Forms
 
             if (confirm != DialogResult.Yes) return;
 
-            // Feedback visuel — désactiver pendant l'écriture en base
+            // Protection double-clic + feedback visuel pendant l'écriture en base
             btnLancerProduction.Enabled = false;
+            btnSimuler.Enabled          = false;
             Cursor = Cursors.WaitCursor;
 
             try
             {
                 string notes = string.IsNullOrWhiteSpace(txtNotes.Text) ? null : txtNotes.Text.Trim();
-                BomProductionDAL.Executer(niveau.Id, fiche.Id, nudQuantite.Value, notes);
+
+                int idProd = await System.Threading.Tasks.Task.Run(() =>
+                    BomProductionDAL.Executer(niveau.Id, fiche.Id, nudQuantite.Value, notes));
 
                 MessageBox.Show(
-                    $"Production exécutée avec succès.\n" +
+                    $"Production enregistrée (ID #{idProd}).\n" +
                     $"{nudQuantite.Value} batch(es) → {qteTotale} {fiche.UniteOutput} de « {fiche.Nom} » ajoutés au stock du niveau « {niveau.Nom} ».",
                     "Production réussie", MessageBoxButtons.OK, MessageBoxIcon.Information);
 
-                RéinitialiserRésultats();
                 txtNotes.Clear();
+
+                // Rechargement de la simulation après succès
+                btnSimuler_Click(sender, e);
             }
             catch (InvalidOperationException ex)
             {
@@ -281,7 +286,9 @@ namespace CharlesNadejda.Forms
             }
             finally
             {
-                // Toujours rétablir le curseur (la simulation reste visible, l'utilisateur peut relancer)
+                // Toujours réactiver les boutons et rétablir le curseur quoi qu'il arrive
+                btnLancerProduction.Enabled = _simulationValide;
+                btnSimuler.Enabled          = true;
                 Cursor = Cursors.Default;
             }
         }

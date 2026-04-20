@@ -1,54 +1,70 @@
 using System;
 using System.Collections.Generic;
 using System.Drawing;
+using System.Drawing.Drawing2D;
+using System.Linq;
 using System.Windows.Forms;
 using CharlesNadejda.DAL;
 using CharlesNadejda.Models;
+using CharlesNadejda.Navigation;
 
 namespace CharlesNadejda.Forms
 {
     /// <summary>
-    /// Hub principal d'ArtisaStock.
-    /// Bandeau supérieur : boutons d'activité générés dynamiquement depuis la DB + bouton ⚙.
-    /// Panneau gauche : liste des contextes de l'activité sélectionnée.
-    /// Panneau droit  : niveaux de transformation du contexte sélectionné.
-    ///
-    /// Ergonomie :
-    ///  - Activité active = bouton surligné OR (Gestalt similarité)
-    ///  - Bouton ⚙ fixé à l'extrémité droite du bandeau (Fitts — position prévisible)
-    ///  - Split principal/secondaire φ ≈ 62%/38% selon la largeur de fenêtre
+    /// Hub principal — Single-Form Application (SFA).
+    /// Tout s'affiche dans Panel2 du SplitContainer ; aucun ShowDialog() de ressource/production.
     /// </summary>
     public partial class FrmPrincipal : Form
     {
-        private readonly Utilisateur _utilisateur;
-        private Activite _activite;                  // activité sélectionnée (null si aucune)
+        private readonly Utilisateur  _utilisateur;
+        private readonly AppState     _state = new AppState();
+        private          ScreenRouter _router;
+        private List<BomNiveau>       _niveauxListe = new List<BomNiveau>();
 
-        // ── Couleurs ─────────────────────────────────────────────────
-        private static readonly Color CHOCOLAT_FONCE = Color.FromArgb(61,  40,  23);
-        private static readonly Color CHOCOLAT_MOYEN = Color.FromArgb(111, 78,  55);
-        private static readonly Color CREME          = Color.FromArgb(245, 230, 211);
-        private static readonly Color OR             = Color.FromArgb(212, 175, 55);
-        private static readonly Color[] NIVEAU_ACCENTS = {
-            Color.FromArgb(74,  144, 217),
-            Color.FromArgb(92,  184,  92),
-            Color.FromArgb(240, 173,  78),
-            Color.FromArgb(155,  89, 182),
-            Color.FromArgb(52,  152, 219),
-        };
+        // ── Palette ──────────────────────────────────────────────────────
+        private static readonly Color CHOCO_BRAND  = Color.FromArgb(61,  40,  23);
+        private static readonly Color CHOCO_MED    = Color.FromArgb(111, 78,  55);
+        private static readonly Color CHOCO_ABYSS  = Color.FromArgb(30,  15,   8);
+        private static readonly Color CHOCO_DARK   = Color.FromArgb(44,  24,  16);
+        private static readonly Color OR           = Color.FromArgb(212, 175,  55);
+        private static readonly Color CREME        = Color.FromArgb(245, 230, 211);
+        private static readonly Color CREME_WARM   = Color.FromArgb(253, 251, 246);
+        private static readonly Color CREME_BG     = Color.FromArgb(236, 233, 216);
+        private static readonly Color SIDEBAR_TXT  = Color.FromArgb(232, 217, 192);
+        private static readonly Color SIDEBAR_META = Color.FromArgb(158, 123,  92);
+        private static readonly Color BORDER_CLR   = Color.FromArgb(195, 185, 168);
+        private static readonly Color GREEN_OK     = Color.FromArgb(92,  184,  92);
+        private static readonly Color RED_CRIT     = Color.FromArgb(199,  44,  72);
+        private static readonly Color ORG_WARN     = Color.FromArgb(211,  84,   0);
 
-        // ── Contrôles du hub ─────────────────────────────────────────
-        private SplitContainer  _split;
-        private ListBox         _lstActivites;           // liste verticale des activités
-        private ListBox         _lstContextes;
-        private Label           _lblContexteNom;
-        private Label           _lblContexteDesc;
-        private FlowLayoutPanel _flowNiveaux;
-        private Button          _btnAjouterNiveau;
-        private Panel           _pnlActivite;
+        // ── Sidebar controls ──────────────────────────────────────────────
+        private SplitContainer _split;
+        private ListBox        _lstActivites;
+        private ListBox        _lstContextes;
+        private ListBox        _lstNiveaux;
+        private Panel          _pnlContextesFull;
+        private Panel          _pnlNiveauxFull;
+        private Panel          _pnlHdrContextes;
+        private Panel          _pnlHdrNiveaux;
+        private Panel          _pnlRes;
+
+        // ── Panneau droit ─────────────────────────────────────────────────
+        private Panel _pnlDroit;
+
+        // ── Contexte screen ───────────────────────────────────────────────
+        private Dictionary<int, Panel> _niveauPanels = new Dictionary<int, Panel>();
+        private DataGridView           _dgvFiches;
+        private Label                  _lblFichesHeader;
+        private Button                 _btnNouveauNiveau;
+
+        // ════════════════════════════════════════════════════════════════
+        //  Constructeur / Load
+        // ════════════════════════════════════════════════════════════════
 
         public FrmPrincipal(Utilisateur utilisateur)
         {
             _utilisateur = utilisateur;
+            _router      = new ScreenRouter(_state);
             InitializeComponent();
         }
 
@@ -56,778 +72,1547 @@ namespace CharlesNadejda.Forms
         {
             lblUtilisateur.Text = $"Connecté : {_utilisateur}";
             BuildHub();
-            ChargerActivites();   // charge les activités dans le rail gauche et sélectionne la 1ère
+            InitRouter();
+            ChargerActivites();
         }
 
-        // ════════════════════════════════════════════════════════════
-        //  Construction du hub (une seule fois au Load)
-        // ════════════════════════════════════════════════════════════
+        // ════════════════════════════════════════════════════════════════
+        //  Router — câblage des écrans inline
+        // ════════════════════════════════════════════════════════════════
+
+        private void InitRouter()
+        {
+            _router.OnOnboarding      = p => ShowOnboarding();
+            _router.OnHub             = p => ShowHubScreen();
+            _router.OnContexteNiveaux = p => ShowContexteScreen();
+            _router.OnRessources      = p => ShowRessourceScreen(_state.RessourceActive, p);
+            _router.OnProduction      = p => ShowProductionScreen(p);
+        }
+
+        // ════════════════════════════════════════════════════════════════
+        //  Construction du hub
+        // ════════════════════════════════════════════════════════════════
 
         private void BuildHub()
         {
-            // ── Bandeau — identité de l'application uniquement ───────────
-            _pnlActivite = new Panel
+            // ── Barre titre gradient ──────────────────────────────────────
+            var pnlTitle = new Panel { Dock = DockStyle.Top, Height = 34, BackColor = CHOCO_BRAND };
+            pnlTitle.Paint += (s, ev) =>
             {
-                Dock      = DockStyle.Top,
-                Height    = 48,
-                BackColor = CHOCOLAT_FONCE,
-                Padding   = new Padding(12, 8, 8, 8)
+                using (var br = new LinearGradientBrush(pnlTitle.ClientRectangle,
+                    CHOCO_BRAND, CHOCO_MED, LinearGradientMode.Horizontal))
+                    ev.Graphics.FillRectangle(br, pnlTitle.ClientRectangle);
             };
 
-            var lblAppNom = new Label
+            var lblBrand = new Label
             {
-                Text      = "ArtisaStock",
-                Font      = new Font("Segoe UI", 13F, FontStyle.Bold),
-                ForeColor = OR,
-                AutoSize  = true,
-                Location  = new Point(14, 12)
+                Text = "🍫  Charles & Nadejda  ·  ArtisaStock",
+                Font = new Font("Segoe UI", 11F, FontStyle.Bold),
+                ForeColor = OR, AutoSize = true, Location = new Point(12, 7)
             };
 
-            // Bouton ⚙ fixé à droite — gestion globale (Fitts + Nielsen #4)
-            var btnGerer = new Button
+            var btnGererAct = new Button
             {
-                Text      = "⚙",
-                Font      = new Font("Segoe UI", 11F),
-                FlatStyle = FlatStyle.Flat,
-                Size      = new Size(32, 32),
-                Cursor    = Cursors.Hand,
-                BackColor = Color.FromArgb(80, 60, 40),
-                ForeColor = Color.FromArgb(200, 180, 160)
+                Text = "⚙ Activités", Font = new Font("Segoe UI", 8.5F),
+                FlatStyle = FlatStyle.Flat, BackColor = Color.FromArgb(30, 255, 255, 255),
+                ForeColor = CREME, Size = new Size(90, 22), Cursor = Cursors.Hand
             };
-            btnGerer.FlatAppearance.BorderSize = 0;
-            btnGerer.Click += (s, ev) =>
+            btnGererAct.FlatAppearance.BorderColor = Color.FromArgb(140, OR);
+            btnGererAct.FlatAppearance.BorderSize  = 1;
+            btnGererAct.Click += (s, ev) => { new FrmActivites().ShowDialog(this); ChargerActivites(); };
+
+            var btnNouvAct = new Button
             {
-                using (var frm = new FrmActivites())
-                    frm.ShowDialog(this);
-                ChargerActivites();
+                Text = "+ Activité", Font = new Font("Segoe UI", 8.5F, FontStyle.Bold),
+                FlatStyle = FlatStyle.Flat, BackColor = OR,
+                ForeColor = CHOCO_BRAND, Size = new Size(80, 22), Cursor = Cursors.Hand
             };
+            btnNouvAct.FlatAppearance.BorderColor = Color.FromArgb(168, 137, 30);
+            btnNouvAct.FlatAppearance.BorderSize  = 1;
+            btnNouvAct.Click += (s, ev) => { new FrmActivites().ShowDialog(this); ChargerActivites(); };
 
-            _pnlActivite.Resize += (s, ev) =>
+            pnlTitle.Resize += (s, ev) =>
             {
-                btnGerer.Location = new Point(_pnlActivite.ClientSize.Width - 40, 8);
+                btnGererAct.Location = new Point(pnlTitle.Width - 98,  6);
+                btnNouvAct.Location  = new Point(pnlTitle.Width - 184, 6);
             };
-            btnGerer.Location = new Point(_pnlActivite.ClientSize.Width - 40, 8);
+            pnlTitle.Controls.Add(lblBrand);
+            pnlTitle.Controls.Add(btnGererAct);
+            pnlTitle.Controls.Add(btnNouvAct);
+            this.Controls.Add(pnlTitle);
+            pnlTitle.BringToFront();
 
-            _pnlActivite.Controls.Add(lblAppNom);
-            _pnlActivite.Controls.Add(btnGerer);
-
-            this.Controls.Add(_pnlActivite);
-            _pnlActivite.BringToFront();
-
-            // ── SplitContainer ────────────────────────────────────────
+            // ── SplitContainer ────────────────────────────────────────────
             _split = new SplitContainer
             {
-                Dock        = DockStyle.Fill,
-                BorderStyle = BorderStyle.None,
-                BackColor   = Color.FromArgb(240, 235, 228)
+                Dock = DockStyle.Fill, BorderStyle = BorderStyle.None, BackColor = CHOCO_ABYSS
             };
+            LayoutEventHandler firstLayout = null;
+            firstLayout = (s, ev) =>
+            {
+                _split.Layout -= firstLayout;
+                _split.IsSplitterFixed = true;
+                _split.Panel1MinSize   = 220;
+                _split.Panel2MinSize   = 300;
+                if (_split.Width > 560)
+                    _split.SplitterDistance = 260;
+            };
+            _split.Layout += firstLayout;
             this.Controls.Add(_split);
             _split.BringToFront();
-
-            // Ratio φ ≈ 38% gauche / 62% droite
-            _split.Panel1MinSize    = 200;
-            _split.Panel2MinSize    = 340;
-            _split.SplitterDistance = 260;
 
             BuildLeftPanel();
             BuildRightPanel();
         }
 
-        // ════════════════════════════════════════════════════════════
-        //  Activités — liste verticale dans le rail gauche
-        // ════════════════════════════════════════════════════════════
-
-        private void ChargerActivites()
-        {
-            if (_lstActivites == null) return;
-
-            _lstActivites.Items.Clear();
-
-            var activites = ActiviteDAL.GetAll();
-
-            if (activites.Count == 0)
-            {
-                _activite = null;
-                AfficherPanneauVide();
-                return;
-            }
-
-            foreach (var act in activites)
-                _lstActivites.Items.Add(act);
-
-            // Conserver la sélection courante ou prendre la première
-            int idx = 0;
-            if (_activite != null)
-            {
-                int found = activites.FindIndex(a => a.Id == _activite.Id);
-                if (found >= 0) idx = found;
-            }
-            _lstActivites.SelectedIndex = idx;   // déclenche SelectedIndexChanged → ChangerActivite
-        }
-
-        private void LstActivites_SelectedIndexChanged(object sender, EventArgs e)
-        {
-            if (_lstActivites.SelectedItem is Activite act)
-                ChangerActivite(act);
-        }
-
-        private void ChangerActivite(Activite activite)
-        {
-            _activite = activite;
-            ChargerContextes();
-        }
-
-        // ── Panneau gauche — Ressources + Contextes ──────────────────
+        // ════════════════════════════════════════════════════════════════
+        //  Rail gauche
+        // ════════════════════════════════════════════════════════════════
 
         private void BuildLeftPanel()
         {
-            _split.Panel1.BackColor = Color.FromArgb(248, 244, 240);
+            _split.Panel1.BackColor = CHOCO_DARK;
 
-            // ── Section RESSOURCES — header ───────────────────────────
-            var pnlHeaderRessources = new Panel { Dock = DockStyle.Top, Height = 32, BackColor = CHOCOLAT_MOYEN };
-            pnlHeaderRessources.Controls.Add(new Label
+            var pnlBrand = new Panel { Dock = DockStyle.Top, Height = 58, BackColor = CHOCO_ABYSS };
+            pnlBrand.Paint += (s, ev) =>
             {
-                Text      = "RESSOURCES",
-                Font      = new Font("Segoe UI", 8.5F, FontStyle.Bold),
-                ForeColor = Color.White,
-                Dock      = DockStyle.Fill,
-                TextAlign = ContentAlignment.MiddleLeft,
-                Padding   = new Padding(12, 0, 0, 0)
+                using (var pen = new Pen(CHOCO_BRAND, 1))
+                    ev.Graphics.DrawLine(pen, 0, pnlBrand.Height - 1, pnlBrand.Width, pnlBrand.Height - 1);
+            };
+            pnlBrand.Controls.Add(new Label
+            {
+                Text = "ATELIER", Font = new Font("Segoe UI", 7.5F, FontStyle.Bold),
+                ForeColor = SIDEBAR_META, Location = new Point(14, 10), AutoSize = true
+            });
+            pnlBrand.Controls.Add(new Label
+            {
+                Text = "Charles & Nadejda", Font = new Font("Segoe UI", 13F, FontStyle.Bold),
+                ForeColor = CREME, Location = new Point(14, 24), AutoSize = true
             });
 
-            // ── Section RESSOURCES — boutons (grille 8px : 3×32px + marges) ─
-            // Hauteur : 8 top + 32 + 4 + 32 + 4 + 32 + 8 bottom = 120px
-            var pnlRessources = new Panel
+            // ── RESSOURCES (navigation inline — SFA) ──────────────────────
+            var pnlHdrRes = MakeSectionHeader("Ressources");
+
+            var resItems = new (string icon, string lbl, Action act)[]
             {
-                Dock      = DockStyle.Top,
-                Height    = 160,
-                BackColor = Color.FromArgb(248, 244, 240)
+                ("📊", "Vue stock global",  () => { _state.SetRessource(RessourceType.VueStock);    _router.Navigate(ScreenId.Ressources); }),
+                ("📦", "Stock/Liaisons",     () => { _state.SetRessource(RessourceType.Stocks);       _router.Navigate(ScreenId.Ressources); }),
+                ("🥣", "Fiches Ingrédients",() => { _state.SetRessource(RessourceType.Ingredients);  _router.Navigate(ScreenId.Ressources); }),
+                ("🏢", "Fournisseurs",      () => { _state.SetRessource(RessourceType.Fournisseurs); _router.Navigate(ScreenId.Ressources); }),
+                ("🧾", "Achats / Lots",     () => { _state.SetRessource(RessourceType.Achats);       _router.Navigate(ScreenId.Ressources); }),
+            };
+            _pnlRes = new Panel { Dock = DockStyle.Top, Height = resItems.Length * 34 + 4, BackColor = CHOCO_DARK };
+            int ry = 4;
+            foreach (var (icon, lbl, act) in resItems)
+            {
+                var btn = MakeSidebarButton(icon, lbl, act);
+                btn.Location = new Point(0, ry);
+                _pnlRes.Controls.Add(btn);
+                ry += 34;
+            }
+            _split.Panel1.SizeChanged += (s, ev) =>
+            {
+                int w = _split.Panel1.ClientSize.Width;
+                foreach (Control c in _pnlRes.Controls) c.Width = w;
             };
 
-            var btnStocksRail = new Button
-            {
-                Text      = "📦  Stocks",
-                Font      = new Font("Segoe UI", 9.5F),
-                FlatStyle = FlatStyle.Flat,
-                Location  = new Point(8, 8),
-                Size      = new Size(_split.SplitterDistance - 20, 32),
-                TextAlign = ContentAlignment.MiddleLeft,
-                Padding   = new Padding(8, 0, 0, 0),
-                BackColor = Color.Transparent,
-                ForeColor = CHOCOLAT_FONCE,
-                Cursor    = Cursors.Hand
-            };
-            btnStocksRail.FlatAppearance.BorderSize           = 0;
-            btnStocksRail.FlatAppearance.MouseOverBackColor   = Color.FromArgb(232, 222, 208);
-            btnStocksRail.Click += (s, ev) => new FrmStocks().ShowDialog(this);
+            var pnlSep1 = MakeSeparator();
 
-            var btnIngsRail = new Button
-            {
-                Text      = "🧪  Ingrédients",
-                Font      = new Font("Segoe UI", 9.5F),
-                FlatStyle = FlatStyle.Flat,
-                Location  = new Point(8, 44),
-                Size      = new Size(_split.SplitterDistance - 20, 32),
-                TextAlign = ContentAlignment.MiddleLeft,
-                Padding   = new Padding(8, 0, 0, 0),
-                BackColor = Color.Transparent,
-                ForeColor = CHOCOLAT_FONCE,
-                Cursor    = Cursors.Hand
-            };
-            btnIngsRail.FlatAppearance.BorderSize         = 0;
-            btnIngsRail.FlatAppearance.MouseOverBackColor = Color.FromArgb(232, 222, 208);
-            btnIngsRail.Click += (s, ev) => new FrmIngredients(_activite).ShowDialog(this);
-
-            var btnFournsRail = new Button
-            {
-                Text      = "🚚  Fournisseurs",
-                Font      = new Font("Segoe UI", 9.5F),
-                FlatStyle = FlatStyle.Flat,
-                Location  = new Point(8, 80),
-                Size      = new Size(_split.SplitterDistance - 20, 32),
-                TextAlign = ContentAlignment.MiddleLeft,
-                Padding   = new Padding(8, 0, 0, 0),
-                BackColor = Color.Transparent,
-                ForeColor = CHOCOLAT_FONCE,
-                Cursor    = Cursors.Hand
-            };
-            btnFournsRail.FlatAppearance.BorderSize         = 0;
-            btnFournsRail.FlatAppearance.MouseOverBackColor = Color.FromArgb(232, 222, 208);
-            btnFournsRail.Click += (s, ev) => new FrmFournisseurs().ShowDialog(this);
-
-            var btnVueStockRail = new Button
-            {
-                Text      = "📊  Vue stock global",
-                Font      = new Font("Segoe UI", 9.5F),
-                FlatStyle = FlatStyle.Flat,
-                Location  = new Point(8, 120),
-                Size      = new Size(_split.SplitterDistance - 20, 32),
-                TextAlign = ContentAlignment.MiddleLeft,
-                Padding   = new Padding(8, 0, 0, 0),
-                BackColor = Color.Transparent,
-                ForeColor = CHOCOLAT_FONCE,
-                Cursor    = Cursors.Hand
-            };
-            btnVueStockRail.FlatAppearance.BorderSize         = 0;
-            btnVueStockRail.FlatAppearance.MouseOverBackColor = Color.FromArgb(232, 222, 208);
-            btnVueStockRail.Click += (s, ev) => new FrmVueStock().ShowDialog(this);
-
-            pnlRessources.Controls.AddRange(new Control[] { btnStocksRail, btnIngsRail, btnFournsRail, btnVueStockRail });
-
-            // ── Séparateur Ressources → Activités ────────────────────
-            var pnlSep1 = new Panel { Dock = DockStyle.Top, Height = 8, BackColor = Color.FromArgb(248, 244, 240) };
-            pnlSep1.Paint += (s, ev) =>
-            {
-                using (var pen = new Pen(Color.FromArgb(210, 195, 175)))
-                    ev.Graphics.DrawLine(pen, 12, 0, pnlSep1.Width - 12, 0);
-            };
-
-            // ── Section ACTIVITÉS — header ────────────────────────────
-            var pnlHeaderActivites = new Panel { Dock = DockStyle.Top, Height = 32, BackColor = CHOCOLAT_MOYEN };
-            pnlHeaderActivites.Controls.Add(new Label
-            {
-                Text      = "ACTIVITÉS",
-                Font      = new Font("Segoe UI", 8.5F, FontStyle.Bold),
-                ForeColor = Color.White,
-                Dock      = DockStyle.Fill,
-                TextAlign = ContentAlignment.MiddleLeft,
-                Padding   = new Padding(12, 0, 0, 0)
-            });
-
-            // ── Section ACTIVITÉS — liste + bouton ajout ──────────────
-            // Hauteur fixe : 4 items × 34px + 40px bas = 176px
-            var pnlActivitesSection = new Panel { Dock = DockStyle.Top, Height = 176, BackColor = Color.FromArgb(248, 244, 240) };
+            // ── ACTIVITÉS ─────────────────────────────────────────────────
+            var pnlHdrAct = MakeSectionHeader("Activités");
 
             _lstActivites = new ListBox
             {
-                Dock        = DockStyle.Fill,
-                Font        = new Font("Segoe UI", 10F),
-                BorderStyle = BorderStyle.None,
-                BackColor   = Color.FromArgb(248, 244, 240),
-                ItemHeight  = 34,
-                DrawMode    = DrawMode.OwnerDrawFixed
+                Dock = DockStyle.Fill, BorderStyle = BorderStyle.None,
+                BackColor = CHOCO_DARK, ForeColor = SIDEBAR_TXT,
+                ItemHeight = 34, DrawMode = DrawMode.OwnerDrawFixed
             };
             _lstActivites.DrawItem             += LstActivites_DrawItem;
             _lstActivites.SelectedIndexChanged += LstActivites_SelectedIndexChanged;
 
-            var pnlBasActivites = new Panel
-            {
-                Dock      = DockStyle.Bottom,
-                Height    = 40,
-                BackColor = Color.FromArgb(235, 228, 220),
-                Padding   = new Padding(8, 4, 8, 4)
-            };
-            var btnNouvelleActivite = new Button
-            {
-                Text      = "+ Nouvelle activité",
-                Font      = new Font("Segoe UI", 9F, FontStyle.Bold),
-                BackColor = CHOCOLAT_FONCE,
-                ForeColor = Color.White,
-                FlatStyle = FlatStyle.Flat,
-                Height    = 32,
-                Width     = 172,
-                Location  = new Point(8, 4),
-                Cursor    = Cursors.Hand
-            };
-            btnNouvelleActivite.FlatAppearance.BorderSize = 0;
-            btnNouvelleActivite.Click += (s, ev) =>
-            {
-                using (var frm = new FrmActivites())
-                    frm.ShowDialog(this);
-                ChargerActivites();
-            };
-            pnlBasActivites.Controls.Add(btnNouvelleActivite);
+            var pnlActSection = new Panel { Dock = DockStyle.Top, Height = 170, BackColor = CHOCO_DARK };
+            pnlActSection.Controls.Add(_lstActivites);
 
-            // Ordre strict dans pnlActivitesSection : Fill en premier, Bottom ensuite
-            pnlActivitesSection.Controls.Add(_lstActivites);   // Fill
-            pnlActivitesSection.Controls.Add(pnlBasActivites); // Bottom
+            // ── CONTEXTES ─────────────────────────────────────────────────
+            _pnlHdrContextes = MakeSectionHeader("Contextes");
 
-            // ── Séparateur Activités → Contextes ─────────────────────
-            var pnlSep2 = new Panel { Dock = DockStyle.Top, Height = 8, BackColor = Color.FromArgb(248, 244, 240) };
-            pnlSep2.Paint += (s, ev) =>
+            // US-02 : bouton "＋" dans l'en-tête Contextes (Fitts — position prévisible à droite)
+            var btnNouvCtxSide = new Button
             {
-                using (var pen = new Pen(Color.FromArgb(210, 195, 175)))
-                    ev.Graphics.DrawLine(pen, 12, 0, pnlSep2.Width - 12, 0);
+                Text      = "＋", Font = new Font("Segoe UI", 9F, FontStyle.Bold),
+                FlatStyle = FlatStyle.Flat, BackColor = Color.Transparent, ForeColor = OR,
+                Size      = new Size(26, 26), Cursor = Cursors.Hand
             };
+            btnNouvCtxSide.FlatAppearance.BorderSize         = 0;
+            btnNouvCtxSide.FlatAppearance.MouseOverBackColor = Color.FromArgb(40, 255, 255, 255);
+            btnNouvCtxSide.Click += BtnNouveauContexte_Click;
+            _pnlHdrContextes.Resize += (s, ev) => btnNouvCtxSide.Location = new Point(_pnlHdrContextes.Width - 28, 2);
+            _pnlHdrContextes.Controls.Add(btnNouvCtxSide);
+            btnNouvCtxSide.BringToFront();
 
-            // ── Section CONTEXTES — header ────────────────────────────
-            var pnlHeaderContextes = new Panel { Dock = DockStyle.Top, Height = 32, BackColor = CHOCOLAT_MOYEN };
-            pnlHeaderContextes.Controls.Add(new Label
-            {
-                Text      = "CONTEXTES",
-                Font      = new Font("Segoe UI", 8.5F, FontStyle.Bold),
-                ForeColor = Color.White,
-                Dock      = DockStyle.Fill,
-                TextAlign = ContentAlignment.MiddleLeft,
-                Padding   = new Padding(12, 0, 0, 0)
-            });
-
-            // ── Liste des contextes (Fill) ────────────────────────────
             _lstContextes = new ListBox
             {
-                Dock        = DockStyle.Fill,
-                Font        = new Font("Segoe UI", 10F),
-                BorderStyle = BorderStyle.None,
-                BackColor   = Color.FromArgb(248, 244, 240),
-                ItemHeight  = 34,
-                DrawMode    = DrawMode.OwnerDrawFixed
+                Dock = DockStyle.Fill, BorderStyle = BorderStyle.None,
+                BackColor = CHOCO_DARK, ForeColor = SIDEBAR_TXT,
+                ItemHeight = 34, DrawMode = DrawMode.OwnerDrawFixed
             };
             _lstContextes.DrawItem             += LstContextes_DrawItem;
             _lstContextes.SelectedIndexChanged += LstContextes_SelectedIndexChanged;
 
-            // ── Bas — actions contexte ────────────────────────────────
-            var pnlBas = new Panel
+            _pnlContextesFull = new Panel { Dock = DockStyle.Fill, BackColor = CHOCO_DARK, Visible = false };
+            _pnlContextesFull.Controls.Add(_lstContextes);
+            _pnlContextesFull.Controls.Add(_pnlHdrContextes);
+
+            // ── NIVEAUX ───────────────────────────────────────────────────
+            _pnlHdrNiveaux = MakeSectionHeader("Niveaux");
+
+            _lstNiveaux = new ListBox
             {
-                Dock      = DockStyle.Bottom,
-                Height    = 48,
-                BackColor = Color.FromArgb(235, 228, 220),
-                Padding   = new Padding(8, 8, 8, 8)
+                Dock = DockStyle.Fill, BorderStyle = BorderStyle.None,
+                BackColor = CHOCO_DARK, ForeColor = SIDEBAR_TXT,
+                ItemHeight = 34, DrawMode = DrawMode.OwnerDrawFixed
             };
+            _lstNiveaux.DrawItem             += LstNiveaux_DrawItem;
+            _lstNiveaux.SelectedIndexChanged += LstNiveaux_SelectedIndexChanged;
 
-            var btnNouv = new Button
+            _pnlNiveauxFull = new Panel { Dock = DockStyle.Bottom, Height = 170, BackColor = CHOCO_DARK, Visible = false };
+            _pnlNiveauxFull.Controls.Add(_lstNiveaux);
+            _pnlNiveauxFull.Controls.Add(_pnlHdrNiveaux);
+
+            // ── Status connecté ───────────────────────────────────────────
+            var pnlConnected = new Panel { Dock = DockStyle.Bottom, Height = 28, BackColor = CHOCO_ABYSS };
+            pnlConnected.Paint += (s, ev) =>
             {
-                Text      = "+ Nouveau contexte",
-                Font      = new Font("Segoe UI", 9F, FontStyle.Bold),
-                BackColor = CHOCOLAT_FONCE,
-                ForeColor = Color.White,
-                FlatStyle = FlatStyle.Flat,
-                Height    = 32,
-                Width     = 160,
-                Location  = new Point(8, 8),
-                Cursor    = Cursors.Hand
+                using (var pen = new Pen(CHOCO_BRAND, 1))
+                    ev.Graphics.DrawLine(pen, 0, 0, pnlConnected.Width, 0);
             };
-            btnNouv.FlatAppearance.BorderSize = 0;
-            btnNouv.Click += BtnNouveauContexte_Click;
-
-            var btnModif = new Button
+            pnlConnected.Controls.Add(new Label
             {
-                Text      = "✎",
-                Font      = new Font("Segoe UI", 11F),
-                BackColor = Color.FromArgb(200, 190, 178),
-                FlatStyle = FlatStyle.Flat,
-                Height    = 32, Width = 34,
-                Location  = new Point(174, 8),
-                Cursor    = Cursors.Hand
-            };
-            btnModif.FlatAppearance.BorderSize = 0;
-            btnModif.Click += BtnModifierContexte_Click;
+                Text = $"●  {_utilisateur.Prenom} {_utilisateur.Nom}",
+                Font = new Font("Segoe UI", 8F), ForeColor = SIDEBAR_META,
+                Dock = DockStyle.Fill, TextAlign = ContentAlignment.MiddleLeft,
+                Padding = new Padding(12, 0, 0, 0)
+            });
 
-            var btnSupp = new Button
-            {
-                Text      = "✕",
-                Font      = new Font("Segoe UI", 10F),
-                BackColor = Color.FromArgb(200, 190, 178),
-                FlatStyle = FlatStyle.Flat,
-                Height    = 32, Width = 34,
-                Location  = new Point(212, 8),
-                Cursor    = Cursors.Hand
-            };
-            btnSupp.FlatAppearance.BorderSize = 0;
-            btnSupp.Click += BtnSupprimerContexte_Click;
-
-            pnlBas.Controls.AddRange(new Control[] { btnNouv, btnModif, btnSupp });
-
-            // Ordre d'ajout strict (WinForms — traitement en ordre inverse) :
-            // Fill en index 0, Bottom ensuite, Tops en ordre inverse de position visuelle
-            // (dernier ajouté = premier visuellement)
-            _split.Panel1.Controls.Add(_lstContextes);        // Fill
-            _split.Panel1.Controls.Add(pnlBas);               // Bottom
-            _split.Panel1.Controls.Add(pnlHeaderContextes);   // Top #6
-            _split.Panel1.Controls.Add(pnlSep2);              // Top #5
-            _split.Panel1.Controls.Add(pnlActivitesSection);  // Top #4
-            _split.Panel1.Controls.Add(pnlHeaderActivites);   // Top #3
-            _split.Panel1.Controls.Add(pnlSep1);              // Top #2
-            _split.Panel1.Controls.Add(pnlRessources);        // Top #1b
-            _split.Panel1.Controls.Add(pnlHeaderRessources);  // Top #1a — premier visuellement
+            // Ordre : Fill d'abord, Bottom avant Bottom, Top en dernier (topmost = dernier ajouté)
+            _split.Panel1.Controls.Add(_pnlContextesFull);
+            _split.Panel1.Controls.Add(_pnlNiveauxFull);
+            _split.Panel1.Controls.Add(pnlConnected);
+            _split.Panel1.Controls.Add(pnlActSection);
+            _split.Panel1.Controls.Add(pnlHdrAct);
+            _split.Panel1.Controls.Add(pnlSep1);
+            _split.Panel1.Controls.Add(_pnlRes);
+            _split.Panel1.Controls.Add(pnlHdrRes);
+            _split.Panel1.Controls.Add(pnlBrand);
         }
 
-        // ── Panneau droit — niveaux du contexte ──────────────────────
+        // ════════════════════════════════════════════════════════════════
+        //  Panneau droit (conteneur)
+        // ════════════════════════════════════════════════════════════════
 
         private void BuildRightPanel()
         {
-            _split.Panel2.BackColor = Color.White;
-
-            // Ordre d'ajout strict (WinForms docking) : Fill en 1er, Top en dernier
-            var pnlScroll = new Panel { Dock = DockStyle.Fill, AutoScroll = true, BackColor = Color.White };
-            _flowNiveaux = new FlowLayoutPanel
+            _pnlDroit = new Panel
             {
-                Dock         = DockStyle.Top,
-                AutoSize     = true,
-                AutoSizeMode = AutoSizeMode.GrowAndShrink,
-                FlowDirection= FlowDirection.TopDown,
-                WrapContents = false,
-                BackColor    = Color.White,
-                Padding      = new Padding(20, 14, 20, 14)
+                Dock = DockStyle.Fill, AutoScroll = true,
+                BackColor = CREME_WARM, Padding = new Padding(0)
             };
-            pnlScroll.Controls.Add(_flowNiveaux);
-            _split.Panel2.Controls.Add(pnlScroll);
-
-            var pnlBas = new Panel { Dock = DockStyle.Bottom, Height = 48, BackColor = Color.White, Padding = new Padding(20, 8, 20, 8) };
-            _btnAjouterNiveau = new Button
-            {
-                Text      = "+ Ajouter un niveau de transformation",
-                Font      = new Font("Segoe UI", 9.5F),
-                ForeColor = CHOCOLAT_MOYEN,
-                BackColor = Color.FromArgb(245, 240, 234),
-                FlatStyle = FlatStyle.Flat,
-                Height    = 32,
-                Width     = 280,
-                Enabled   = false,
-                Cursor    = Cursors.Hand
-            };
-            _btnAjouterNiveau.FlatAppearance.BorderColor = Color.FromArgb(180, 155, 120);
-            _btnAjouterNiveau.Click += BtnAjouterNiveau_Click;
-            pnlBas.Controls.Add(_btnAjouterNiveau);
-            _split.Panel2.Controls.Add(pnlBas);
-
-            var pnlNivTitre = new Panel { Dock = DockStyle.Top, Height = 32, BackColor = Color.White, Padding = new Padding(20, 0, 20, 0) };
-            var lblNivTitre = new Label { Text = "NIVEAUX DE TRANSFORMATION", Font = new Font("Segoe UI", 7.5F, FontStyle.Bold), ForeColor = Color.FromArgb(160, 130, 100), Dock = DockStyle.Fill, TextAlign = ContentAlignment.MiddleLeft };
-            var sep = new Panel { Dock = DockStyle.Bottom, Height = 1, BackColor = Color.FromArgb(225, 215, 202) };
-            pnlNivTitre.Controls.Add(lblNivTitre);
-            pnlNivTitre.Controls.Add(sep);
-            _split.Panel2.Controls.Add(pnlNivTitre);
-
-            var pnlInfo = new Panel { Dock = DockStyle.Top, Height = 72, BackColor = CREME, Padding = new Padding(20, 10, 20, 10) };
-            _lblContexteNom = new Label { Text = "Sélectionnez ou créez un contexte", Font = new Font("Segoe UI", 13F, FontStyle.Bold), ForeColor = CHOCOLAT_FONCE, Dock = DockStyle.Top, Height = 28 };
-            _lblContexteDesc = new Label { Text = "Utilisez « + Nouveau contexte » pour démarrer", Font = new Font("Segoe UI", 9F, FontStyle.Italic), ForeColor = CHOCOLAT_MOYEN, Dock = DockStyle.Fill };
-            pnlInfo.Controls.Add(_lblContexteDesc);
-            pnlInfo.Controls.Add(_lblContexteNom);
-            _split.Panel2.Controls.Add(pnlInfo);
+            _split.Panel2.Controls.Add(_pnlDroit);
         }
 
-        // ════════════════════════════════════════════════════════════
-        //  Chargement et affichage
-        // ════════════════════════════════════════════════════════════
+        // ════════════════════════════════════════════════════════════════
+        //  Chargement des données
+        // ════════════════════════════════════════════════════════════════
+
+        private void ChargerActivites()
+        {
+            if (_lstActivites == null) return;
+            _lstActivites.Items.Clear();
+            var acts = ActiviteDAL.GetAll();
+            if (acts.Count == 0) { _state.SetActivite(null); ShowOnboarding(); return; }
+            foreach (var a in acts) _lstActivites.Items.Add(a);
+            int idx = _state.ActiveActivite != null
+                ? Math.Max(0, acts.FindIndex(a => a.Id == _state.ActiveActivite.Id))
+                : 0;
+            _lstActivites.SelectedIndex = idx;
+        }
 
         private void ChargerContextes()
         {
-            var ctxActuel = _lstContextes?.SelectedItem as BomContexte;
             _lstContextes.Items.Clear();
-
-            if (_activite == null) { AfficherPanneauVide(); return; }
-
-            foreach (var ctx in BomContexteDAL.GetAll(_activite.Id))
-                _lstContextes.Items.Add(ctx);
-
-            // Restaurer la sélection précédente
-            if (ctxActuel != null)
+            if (_state.ActiveActivite == null) { _pnlContextesFull.Visible = false; return; }
+            foreach (var c in BomContexteDAL.GetAll(_state.ActiveActivite.Id))
+                _lstContextes.Items.Add(c);
+            _pnlContextesFull.Visible = true;
+            if (_lstContextes.Items.Count > 0 && _state.ActiveContexte != null)
+            {
                 for (int i = 0; i < _lstContextes.Items.Count; i++)
-                    if (((BomContexte)_lstContextes.Items[i]).Id == ctxActuel.Id)
+                    if (((BomContexte)_lstContextes.Items[i]).Id == _state.ActiveContexte.Id)
                     { _lstContextes.SelectedIndex = i; return; }
+            }
+            _state.SetContexte(null);
+            ChargerNiveaux();
+        }
 
-            if (_lstContextes.Items.Count > 0)
-                _lstContextes.SelectedIndex = 0;
-            else
-                AfficherPanneauVide();
+        private void ChargerNiveaux()
+        {
+            _lstNiveaux.Items.Clear();
+            if (_state.ActiveContexte == null) { _pnlNiveauxFull.Visible = false; return; }
+            _niveauxListe = BomNiveauDAL.GetByContexte(_state.ActiveContexte.Id);
+            foreach (var n in _niveauxListe) _lstNiveaux.Items.Add(n);
+            int h = Math.Max(30, Math.Min(_niveauxListe.Count * 34, 170));
+            _pnlNiveauxFull.Height  = h + 30;
+            _pnlNiveauxFull.Visible = _niveauxListe.Count > 0;
+        }
+
+        // ════════════════════════════════════════════════════════════════
+        //  Changements d'état (sidebar → droite)
+        // ════════════════════════════════════════════════════════════════
+
+        private void LstActivites_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            if (_lstActivites.SelectedItem is Activite act)
+            {
+                _state.SetActivite(act);
+                ChargerContextes();
+                if (_state.ActiveContexte == null) ShowHubScreen();
+            }
         }
 
         private void LstContextes_SelectedIndexChanged(object sender, EventArgs e)
         {
-            var ctx = _lstContextes.SelectedItem as BomContexte;
-            if (ctx == null) AfficherPanneauVide();
-            else             AfficherContexte(ctx);
+            if (_lstContextes.SelectedItem is BomContexte ctx)
+            {
+                _state.SetContexte(ctx);
+                ChargerNiveaux();
+                ShowContexteScreen();
+            }
         }
 
-        private void AfficherPanneauVide()
+        private void LstNiveaux_SelectedIndexChanged(object sender, EventArgs e)
         {
-            _btnAjouterNiveau.Enabled = false;
-            _flowNiveaux.Controls.Clear();
-
-            if (_activite == null)
+            if (_lstNiveaux.SelectedItem is BomNiveau niv)
             {
-                // ── Onboarding : aucune activité créée ───────────────────
-                _lblContexteNom.Text  = "Bienvenue dans ArtisaStock";
-                _lblContexteDesc.Text = "Configurez vos ressources, puis créez votre première activité";
+                _state.SetNiveau(niv);
+                SyncNiveauSelection();
+            }
+        }
 
-                var pnlOnboard = new Panel
-                {
-                    Width     = Math.Max(_split.Panel2.ClientSize.Width - 80, 400),
-                    Height    = 240,
-                    BackColor = Color.White,
-                    Padding   = new Padding(32, 24, 32, 24),
-                    Margin    = new Padding(0, 8, 0, 0)
-                };
-                pnlOnboard.Paint += (s, e) =>
-                {
-                    using (var pen = new Pen(Color.FromArgb(210, 190, 165), 1))
-                        e.Graphics.DrawRectangle(pen, 0, 0, pnlOnboard.Width - 1, pnlOnboard.Height - 1);
-                };
+        // ════════════════════════════════════════════════════════════════
+        //  Écrans du panneau droit
+        // ════════════════════════════════════════════════════════════════
 
-                var lblSteps = new Label
-                {
-                    Text      = "Pour démarrer, suivez ces 4 étapes :\r\n\r\n" +
-                                "  1.  📦  Créez vos stocks physiques  (ex : Réfrigérateur, Cave…)  — panneau gauche\r\n" +
-                                "  2.  🧪  Créez vos fiches ingrédients et réceptionnez vos achats  — panneau gauche\r\n" +
-                                "  3.  Créez une activité et liez-la à ses stocks  — bouton « + Activité » ci-dessus\r\n" +
-                                "  4.  Sélectionnez l'activité → créez un Contexte → ajoutez vos niveaux de transformation",
-                    Font      = new Font("Segoe UI", 9.5F),
-                    ForeColor = CHOCOLAT_MOYEN,
-                    AutoSize  = false,
-                    Width     = pnlOnboard.Width - 64,
-                    Height    = 136,
-                    Location  = new Point(32, 16)
-                };
-                pnlOnboard.Controls.Add(lblSteps);
+        private void ShowOnboarding()
+        {
+            _pnlDroit.SuspendLayout();
+            _pnlDroit.Controls.Clear();
 
-                var btnCreer = new Button
-                {
-                    Text      = "⚡  Créer ma première activité",
-                    Font      = new Font("Segoe UI", 10F, FontStyle.Bold),
-                    BackColor = OR,
-                    ForeColor = CHOCOLAT_FONCE,
-                    FlatStyle = FlatStyle.Flat,
-                    Height    = 40,
-                    Width     = 264,
-                    Location  = new Point(32, 168),
-                    Cursor    = Cursors.Hand
-                };
-                btnCreer.FlatAppearance.BorderSize = 0;
-                btnCreer.Click += (s, e) =>
-                {
-                    using (var frm = new FrmActivites())
-                        frm.ShowDialog(this);
-                    ChargerActivites();
-                };
-                pnlOnboard.Controls.Add(btnCreer);
+            var pnlCenter = new Panel
+            {
+                Width = 480, Height = 300, Location = new Point(60, 60),
+                BackColor = CREME, Margin = new Padding(0), Anchor = AnchorStyles.None
+            };
+            pnlCenter.Paint += (s, ev) =>
+            {
+                using (var pen = new Pen(BORDER_CLR, 1))
+                    ev.Graphics.DrawRectangle(pen, 0, 0, pnlCenter.Width - 1, pnlCenter.Height - 1);
+            };
 
-                _flowNiveaux.Controls.Add(pnlOnboard);
+            pnlCenter.Controls.Add(new Label
+            {
+                Text = "Bienvenue dans ArtisaStock",
+                Font = new Font("Segoe UI", 15F, FontStyle.Bold),
+                ForeColor = CHOCO_BRAND, Location = new Point(28, 24),
+                Size = new Size(420, 32), AutoSize = false
+            });
+            pnlCenter.Controls.Add(new Label
+            {
+                Text = "Pour démarrer :\r\n\r\n" +
+                       "  1.  \U0001f4e6  Créez un stock (lieu physique de stockage)\r\n" +
+                       "  2.  \U0001f3af  Créez une activité (ce que vous produisez)\r\n" +
+                       "  3.  \U0001f517  Liez vos stocks à l'activité\r\n" +
+                       "  4.  \U0001f3ed  Créez un contexte de production",
+                Font = new Font("Segoe UI", 9.5F), ForeColor = CHOCO_MED,
+                Location = new Point(28, 64), Size = new Size(420, 130)
+            });
+
+            // US-10 : lien "créer un stock d'abord" — étape 1 du workflow
+            var lnkStock = new LinkLabel
+            {
+                Text      = "\u2192 Créer un stock d'abord",
+                Font      = new Font("Segoe UI", 9.5F, FontStyle.Underline),
+                ForeColor = OR,
+                Cursor    = Cursors.Hand,
+                Location  = new Point(28, 196),
+                AutoSize  = true
+            };
+            lnkStock.LinkClicked += (s, ev) =>
+            {
+                _state.SetRessource(RessourceType.Stocks);
+                _router.Navigate(ScreenId.Ressources);
+            };
+            pnlCenter.Controls.Add(lnkStock);
+
+            var btnCreer = new Button
+            {
+                Text = "⚡  Créer ma première activité",
+                Font = new Font("Segoe UI", 10F, FontStyle.Bold),
+                BackColor = OR, ForeColor = CHOCO_BRAND, FlatStyle = FlatStyle.Flat,
+                Location = new Point(28, 228), Size = new Size(264, 40), Cursor = Cursors.Hand
+            };
+            btnCreer.FlatAppearance.BorderColor = Color.FromArgb(168, 137, 30);
+            btnCreer.Click += (s, ev) => { new FrmActivites().ShowDialog(this); ChargerActivites(); };
+            pnlCenter.Controls.Add(btnCreer);
+
+            _pnlDroit.Controls.Add(pnlCenter);
+            _pnlDroit.ResumeLayout();
+        }
+
+        private void ShowHubScreen()
+        {
+            if (_state.ActiveActivite == null) { ShowOnboarding(); return; }
+            _pnlDroit.SuspendLayout();
+            _pnlDroit.Controls.Clear();
+
+            List<Ingredient>    ings   = new List<Ingredient>();
+            List<BomFiche>      fiches = new List<BomFiche>();
+            List<BomProduction> prods  = new List<BomProduction>();
+            try
+            {
+                ings   = IngredientDAL.GetAll(idActivite: _state.ActiveActivite.Id);
+                fiches = BomFicheDAL.GetAll(idActivite: _state.ActiveActivite.Id);
+                prods  = BomProductionDAL.GetRecentByActivite(_state.ActiveActivite.Id, 10);
+            }
+            catch { }
+
+            var alertes    = ings.Where(i => i.EstEnAlerte).ToList();
+            int prods7j    = prods.Count(p => p.DateProduction >= DateTime.Now.AddDays(-7));
+            decimal cout7j = prods.Where(p => p.DateProduction >= DateTime.Now.AddDays(-7))
+                                  .Sum(p => p.CoutIngredients);
+
+            // US-02 : vérifier si l'activité a des contextes pour afficher le message d'onboarding
+            List<BomContexte> contextesDispo = new List<BomContexte>();
+            try { contextesDispo = BomContexteDAL.GetAll(_state.ActiveActivite.Id); } catch { }
+            bool aucunContexte = contextesDispo.Count == 0;
+
+            var pnlHdr = new Panel
+            {
+                Dock = DockStyle.Top, Height = aucunContexte ? 76 : 56,
+                BackColor = CREME_WARM, Padding = new Padding(20, 0, 20, 0)
+            };
+            pnlHdr.Paint += (s, ev) =>
+            {
+                using (var pen = new Pen(BORDER_CLR, 1))
+                    ev.Graphics.DrawLine(pen, 0, pnlHdr.Height - 1, pnlHdr.Width, pnlHdr.Height - 1);
+            };
+            pnlHdr.Controls.Add(new Label
+            {
+                Text = _state.ActiveActivite.Nom, Location = new Point(20, 8),
+                Font = new Font("Segoe UI", 15F, FontStyle.Bold),
+                ForeColor = CHOCO_BRAND, AutoSize = true
+            });
+            pnlHdr.Controls.Add(new Label
+            {
+                Text = "Vue d'ensemble · Alertes, productions récentes, contextes actifs",
+                Location = new Point(20, 32), Font = new Font("Segoe UI", 8.5F, FontStyle.Italic),
+                ForeColor = CHOCO_MED, AutoSize = true
+            });
+
+            // US-02 : message d'onboarding si aucun contexte de production
+            if (aucunContexte)
+            {
+                pnlHdr.Controls.Add(new Label
+                {
+                    Text = "Aucun contexte de production — cliquez ＋ dans le rail gauche pour en créer un.",
+                    Location = new Point(20, 54),
+                    Font = new Font("Segoe UI", 8.5F, FontStyle.Italic),
+                    ForeColor = CHOCO_MED, AutoSize = true
+                });
+            }
+
+            var btnNouvProd = new Button
+            {
+                Text = "▶  Nouvelle production", Font = new Font("Segoe UI", 8.5F, FontStyle.Bold),
+                FlatStyle = FlatStyle.Flat, BackColor = CHOCO_BRAND, ForeColor = Color.White,
+                Size = new Size(148, 26), Cursor = Cursors.Hand
+            };
+            btnNouvProd.FlatAppearance.BorderColor = CHOCO_ABYSS;
+            btnNouvProd.Click += (s, ev) => _router.Navigate(ScreenId.Production);
+
+            // US-09 : bouton "Rapport du jour" — visible seulement si productions > 0
+            var btnRapport = new Button
+            {
+                Text      = "🖨 Rapport du jour",
+                Font      = new Font("Segoe UI", 8.5F),
+                FlatStyle = FlatStyle.Flat,
+                BackColor = CHOCO_MED,
+                ForeColor = Color.White,
+                Size      = new Size(136, 26),
+                Cursor    = Cursors.Hand,
+                Visible   = prods.Count > 0
+            };
+            btnRapport.FlatAppearance.BorderColor = CHOCO_BRAND;
+            btnRapport.FlatAppearance.BorderSize  = 1;
+            btnRapport.Click += (s, ev) => GenererRapport();
+
+            pnlHdr.Resize += (s, ev) =>
+            {
+                btnNouvProd.Location = new Point(pnlHdr.Width - 156, 14);
+                btnRapport.Location  = new Point(pnlHdr.Width - 156 - 144, 14);
+            };
+            btnNouvProd.Location = new Point(900, 14);
+            btnRapport.Location  = new Point(748, 14);
+            pnlHdr.Controls.Add(btnNouvProd);
+            pnlHdr.Controls.Add(btnRapport);
+
+            var pnlStats = new Panel
+            {
+                Dock = DockStyle.Top, Height = 92,
+                BackColor = CREME_WARM, Padding = new Padding(16, 12, 16, 8)
+            };
+
+            // US-08 : StatCards avec navigation contextuelle au clic
+            var cardIngredients = MakeStatCard("🥣", "Ingrédients",      ings.Count.ToString(),    "",                                          "");
+            var cardAlertes     = MakeStatCard("⚠",  "En alerte",        alertes.Count.ToString(), alertes.Count > 0
+                                                                                                     ? string.Join(", ", alertes.Take(2).Select(i => i.Nom))
+                                                                                                     : "Aucune alerte",              alertes.Count > 0 ? "danger" : "ok");
+            var cardFiches      = MakeStatCard("🧪", "Fiches BOM",       fiches.Count.ToString(),  $"{_niveauxListe.Count} niveaux",             "gold");
+            var cardProds       = MakeStatCard("▶",  "Productions · 7j", prods7j.ToString(),       $"Coût total {cout7j:F2} €",                  "success");
+
+            // H3 — Ingrédients : navigation vers la liste complète
+            cardIngredients.Cursor = Cursors.Hand;
+            cardIngredients.Click += (s, ev) => {
+                _state.SetFiltreAlertes(false);
+                _state.SetRessource(RessourceType.Ingredients);
+                _router.Navigate(ScreenId.Ressources);
+            };
+
+            // H4 — En alerte : navigation filtrée sur alertes (uniquement si alertes > 0)
+            if (alertes.Count > 0)
+            {
+                cardAlertes.Cursor = Cursors.Hand;
+                cardAlertes.Click += (s, ev) => {
+                    _state.SetFiltreAlertes(true);
+                    _state.SetRessource(RessourceType.Ingredients);
+                    _router.Navigate(ScreenId.Ressources);
+                };
+            }
+
+            // H5 — Fiches BOM : navigation vers le premier contexte (si fiches > 0)
+            if (fiches.Count > 0 && contextesDispo.Count > 0)
+            {
+                cardFiches.Cursor = Cursors.Hand;
+                cardFiches.Click += (s, ev) => {
+                    _state.SetContexte(contextesDispo[0]);
+                    ChargerNiveaux();
+                    _router.Navigate(ScreenId.ContexteNiveaux);
+                };
+            }
+
+            // H6 — Productions 7j : navigation vers l'écran production (si prods > 0)
+            if (prods7j > 0)
+            {
+                cardProds.Cursor = Cursors.Hand;
+                cardProds.Click += (s, ev) => _router.Navigate(ScreenId.Production);
+            }
+
+            pnlStats.Resize += (s, ev) =>
+            {
+                int w = (pnlStats.ClientSize.Width - 32 - 12 * 3) / 4;
+                for (int i = 0; i < pnlStats.Controls.Count; i++)
+                    pnlStats.Controls[i].SetBounds(16 + i * (w + 12), 12, w, 68);
+            };
+            pnlStats.Controls.Add(cardIngredients);
+            pnlStats.Controls.Add(cardAlertes);
+            pnlStats.Controls.Add(cardFiches);
+            pnlStats.Controls.Add(cardProds);
+
+            var pnlMain = new Panel { Dock = DockStyle.Fill, BackColor = CREME_WARM };
+
+            var pnlAlerts = new Panel
+            {
+                Dock = DockStyle.Right, Width = 288,
+                BackColor = CREME_WARM, Padding = new Padding(12, 8, 16, 8)
+            };
+            pnlAlerts.Paint += (s, ev) =>
+            {
+                using (var pen = new Pen(BORDER_CLR, 1))
+                    ev.Graphics.DrawLine(pen, 0, 0, 0, pnlAlerts.Height);
+            };
+            pnlAlerts.Controls.Add(new Label
+            {
+                Text = "ALERTES STOCK", Font = new Font("Segoe UI", 7.5F, FontStyle.Bold),
+                ForeColor = SIDEBAR_META, Location = new Point(12, 12), AutoSize = true
+            });
+
+            int ay = 34;
+            if (alertes.Count == 0)
+            {
+                pnlAlerts.Controls.Add(new Label
+                {
+                    Text = "✓  Aucune alerte de stock",
+                    Font = new Font("Segoe UI", 9F, FontStyle.Italic), ForeColor = GREEN_OK,
+                    Location = new Point(12, ay), AutoSize = true
+                });
             }
             else
             {
-                // ── Activité sélectionnée mais aucun contexte ─────────────
-                _lblContexteNom.Text  = "Aucun contexte";
-                _lblContexteDesc.Text = $"Créez le premier contexte pour « {_activite.Nom} »";
+                foreach (var ing in alertes.Take(6))
+                {
+                    bool crit = ing.StockActuel <= 0 || (ing.SeuilAlerteStock.HasValue && ing.StockActuel <= ing.SeuilAlerteStock.Value * 0.5m);
+                    var row = MakeAlertRow(
+                        crit ? "crit" : "warn",
+                        crit ? "⚠" : "🕑",
+                        $"{ing.Nom} — {ing.StockActuel:F0} {ing.UniteMesure}",
+                        ing.SeuilAlerteStock.HasValue ? $"Seuil : {ing.SeuilAlerteStock.Value:F0} {ing.UniteMesure}" : "");
+                    row.Location = new Point(12, ay);
+                    row.Width    = pnlAlerts.ClientSize.Width - 24;
+                    pnlAlerts.Resize += (s, ev) => row.Width = pnlAlerts.ClientSize.Width - 24;
+                    pnlAlerts.Controls.Add(row);
+                    ay += row.Height + 6;
+                }
+            }
+
+            var pnlProds = new Panel { Dock = DockStyle.Fill, BackColor = CREME_WARM, Padding = new Padding(16, 8, 12, 8) };
+            pnlProds.Controls.Add(new Label
+            {
+                Text = "DERNIÈRES PRODUCTIONS", Font = new Font("Segoe UI", 7.5F, FontStyle.Bold),
+                ForeColor = SIDEBAR_META, Location = new Point(16, 12), AutoSize = true
+            });
+
+            var dgvProds = new DataGridView
+            {
+                Location = new Point(16, 36),
+                Anchor   = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right | AnchorStyles.Bottom,
+                Font = new Font("Segoe UI", 9F), BackgroundColor = Color.White,
+                BorderStyle = BorderStyle.None, GridColor = BORDER_CLR,
+                RowHeadersVisible = false, AllowUserToAddRows = false, AllowUserToDeleteRows = false,
+                AllowUserToResizeRows = false, MultiSelect = false, ReadOnly = true,
+                SelectionMode = DataGridViewSelectionMode.FullRowSelect,
+                AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill,
+                ColumnHeadersHeightSizeMode = DataGridViewColumnHeadersHeightSizeMode.DisableResizing,
+                ColumnHeadersHeight = 28
+            };
+            dgvProds.ColumnHeadersDefaultCellStyle.BackColor = CREME;
+            dgvProds.ColumnHeadersDefaultCellStyle.ForeColor = CHOCO_BRAND;
+            dgvProds.ColumnHeadersDefaultCellStyle.Font      = new Font("Segoe UI", 8.5F, FontStyle.Bold);
+            dgvProds.DefaultCellStyle.SelectionBackColor      = CHOCO_BRAND;
+            dgvProds.DefaultCellStyle.SelectionForeColor      = Color.White;
+            pnlProds.Controls.Add(dgvProds);
+            pnlProds.Resize += (s, ev) =>
+            {
+                dgvProds.Size = new Size(
+                    pnlProds.ClientSize.Width - 28,
+                    Math.Max(100, pnlProds.ClientSize.Height - 44));
+            };
+
+            if (prods.Count > 0)
+            {
+                dgvProds.DataSource = prods.Select(p => new
+                {
+                    Date    = p.DateProduction.ToString("dd/MM"),
+                    Fiche   = p.NomFiche,
+                    Niveau  = $"N{p.OrdreNiveau}",
+                    Produit = $"{p.QuantiteProduite:F0}",
+                    Cout    = $"{p.CoutIngredients:F2} \u20ac",
+                }).ToList();
+            }
+            else
+            {
+                pnlProds.Controls.Add(new Label
+                {
+                    Text = "Aucune production enregistrée pour cette activité.",
+                    Font = new Font("Segoe UI", 9F, FontStyle.Italic),
+                    ForeColor = CHOCO_MED, Location = new Point(16, 40), AutoSize = true
+                });
+            }
+
+            pnlMain.Controls.Add(pnlProds);
+            pnlMain.Controls.Add(pnlAlerts);
+
+            _pnlDroit.Controls.Add(pnlMain);
+            _pnlDroit.Controls.Add(pnlStats);
+            _pnlDroit.Controls.Add(pnlHdr);
+
+            _pnlDroit.ResumeLayout();
+        }
+
+        private void ShowContexteScreen()
+        {
+            if (_state.ActiveContexte == null) return;
+            _niveauPanels.Clear();
+            _dgvFiches        = null;
+            _lblFichesHeader  = null;
+            _btnNouveauNiveau = null;
+
+            _pnlDroit.SuspendLayout();
+            _pnlDroit.Controls.Clear();
+
+            var pnlHdr = new Panel { Dock = DockStyle.Top, Height = 60, BackColor = CREME_WARM };
+            pnlHdr.Paint += (s, ev) =>
+            {
+                using (var pen = new Pen(BORDER_CLR, 1))
+                    ev.Graphics.DrawLine(pen, 0, pnlHdr.Height - 1, pnlHdr.Width, pnlHdr.Height - 1);
+            };
+            pnlHdr.Controls.Add(new Label
+            {
+                Text = _state.ActiveContexte.Nom, Location = new Point(20, 8),
+                Font = new Font("Segoe UI", 14F, FontStyle.Bold), ForeColor = CHOCO_BRAND, AutoSize = true
+            });
+            pnlHdr.Controls.Add(new Label
+            {
+                Text = string.IsNullOrWhiteSpace(_state.ActiveContexte.Description)
+                    ? $"Activité : {_state.ActiveContexte.ActiviteNom}"
+                    : _state.ActiveContexte.Description,
+                Location = new Point(20, 34), Font = new Font("Segoe UI", 8.5F, FontStyle.Italic),
+                ForeColor = CHOCO_MED, AutoSize = true
+            });
+
+            var btnModCtx = MakeActionButton("✎  Modifier",  CHOCO_MED, Color.White);
+            var btnSupCtx = MakeActionButton("✕  Supprimer", RED_CRIT,  Color.White);
+            btnModCtx.Click += BtnModifierContexte_Click;
+            btnSupCtx.Click += BtnSupprimerContexte_Click;
+            pnlHdr.Resize += (s, ev) =>
+            {
+                btnSupCtx.Location = new Point(pnlHdr.Width - 112, 16);
+                btnModCtx.Location = new Point(pnlHdr.Width - 222, 16);
+            };
+            pnlHdr.Controls.Add(btnModCtx);
+            pnlHdr.Controls.Add(btnSupCtx);
+
+            var pnlNivLabel = new Panel { Dock = DockStyle.Top, Height = 28, BackColor = CREME_WARM };
+            pnlNivLabel.Controls.Add(new Label
+            {
+                Text = "NIVEAUX DU CONTEXTE", Font = new Font("Segoe UI", 7.5F, FontStyle.Bold),
+                ForeColor = SIDEBAR_META, Dock = DockStyle.Fill,
+                TextAlign = ContentAlignment.MiddleLeft, Padding = new Padding(20, 0, 0, 0)
+            });
+
+            var niveaux = BomNiveauDAL.GetByContexte(_state.ActiveContexte.Id);
+            _niveauxListe = niveaux;
+            int ordreMax = niveaux.Count > 0 ? niveaux.Max(n => n.Ordre) : 0;
+            var pnlNivRows = new Panel { Dock = DockStyle.Top, BackColor = CREME_WARM, Padding = new Padding(16, 4, 16, 4) };
+            int rowY = 4;
+            foreach (var niv in niveaux.OrderByDescending(n => n.Ordre))
+            {
+                int ficheCount = 0;
+                try { ficheCount = BomFicheDAL.GetByNiveau(niv.Id).Count; } catch { }
+                var row = MakeNiveauRow(niv, ficheCount, ordreMax);
+                row.Location = new Point(16, rowY);
+                pnlNivRows.Controls.Add(row);
+                rowY += row.Height + 4;
+            }
+            pnlNivRows.Height = rowY + 4;
+
+            _btnNouveauNiveau = new Button
+            {
+                Text = "＋  Nouveau niveau", Font = new Font("Segoe UI", 9F, FontStyle.Bold),
+                FlatStyle = FlatStyle.Flat, BackColor = CHOCO_BRAND, ForeColor = Color.White,
+                Size = new Size(156, 28), Location = new Point(16, rowY), Cursor = Cursors.Hand
+            };
+            _btnNouveauNiveau.FlatAppearance.BorderColor = CHOCO_ABYSS;
+            _btnNouveauNiveau.Click += BtnAjouterNiveau_Click;
+            pnlNivRows.Controls.Add(_btnNouveauNiveau);
+            pnlNivRows.Height += 36;
+            pnlNivRows.Resize += (s, ev) =>
+            {
+                int w = pnlNivRows.ClientSize.Width - 32;
+                foreach (Control c in pnlNivRows.Controls.OfType<Panel>())
+                    c.Width = Math.Max(300, w);
+            };
+
+            var pnlFiches = new Panel { Dock = DockStyle.Fill, BackColor = CREME_WARM };
+
+            var pnlFichesTop = new Panel { Dock = DockStyle.Top, Height = 44, BackColor = CREME_WARM, Padding = new Padding(16, 0, 16, 0) };
+            pnlFichesTop.Paint += (s, ev) =>
+            {
+                using (var pen = new Pen(BORDER_CLR, 1))
+                    ev.Graphics.DrawLine(pen, 0, 0, pnlFichesTop.Width, 0);
+            };
+            _lblFichesHeader = new Label
+            {
+                Text = "Sélectionnez un niveau pour voir ses fiches BOM",
+                Font = new Font("Segoe UI", 9F, FontStyle.Italic),
+                ForeColor = CHOCO_MED, Location = new Point(16, 13), AutoSize = true
+            };
+            pnlFichesTop.Controls.Add(_lblFichesHeader);
+
+            var btnNouvFiche = MakeActionButton("＋  Nouvelle fiche", CHOCO_BRAND, Color.White);
+            var btnModFiche  = MakeActionButton("✎  Modifier",        CHOCO_MED,   Color.White);
+            var btnSupFiche  = MakeActionButton("✕  Supprimer",       RED_CRIT,    Color.White);
+            // US-07 : bouton Dupliquer — désactivé par défaut, activé sur sélection
+            var btnDupFiche  = MakeActionButton("📋 Dupliquer",        CHOCO_MED,   Color.White);
+            btnDupFiche.Enabled = false;
+
+            btnNouvFiche.Click += (s, ev) => OuvrirFiche(null);
+            btnModFiche.Click  += (s, ev) => OuvrirFiche(_dgvFiches?.CurrentRow?.DataBoundItem as BomFiche);
+            btnSupFiche.Click  += (s, ev) => SupprimerFiche(_dgvFiches?.CurrentRow?.DataBoundItem as BomFiche);
+            btnDupFiche.Click  += (s, ev) => DupliquerFiche(_dgvFiches?.CurrentRow?.DataBoundItem as BomFiche);
+
+            pnlFichesTop.Resize += (s, ev) =>
+            {
+                btnSupFiche.Location  = new Point(pnlFichesTop.Width - 110, 8);
+                btnModFiche.Location  = new Point(pnlFichesTop.Width - 220, 8);
+                btnDupFiche.Location  = new Point(pnlFichesTop.Width - 330, 8);
+                btnNouvFiche.Location = new Point(pnlFichesTop.Width - 448, 8);
+            };
+            pnlFichesTop.Controls.Add(btnNouvFiche);
+            pnlFichesTop.Controls.Add(btnDupFiche);
+            pnlFichesTop.Controls.Add(btnModFiche);
+            pnlFichesTop.Controls.Add(btnSupFiche);
+
+            _dgvFiches = new DataGridView
+            {
+                Dock = DockStyle.Fill, Font = new Font("Segoe UI", 9.5F),
+                BackgroundColor = Color.White, BorderStyle = BorderStyle.None,
+                GridColor = BORDER_CLR, RowHeadersVisible = false,
+                AllowUserToAddRows = false, AllowUserToDeleteRows = false,
+                AllowUserToResizeRows = false, MultiSelect = false, ReadOnly = true,
+                SelectionMode = DataGridViewSelectionMode.FullRowSelect,
+                AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill,
+                ColumnHeadersHeightSizeMode = DataGridViewColumnHeadersHeightSizeMode.DisableResizing,
+                ColumnHeadersHeight = 30
+            };
+            _dgvFiches.ColumnHeadersDefaultCellStyle.BackColor  = CREME;
+            _dgvFiches.ColumnHeadersDefaultCellStyle.ForeColor  = CHOCO_BRAND;
+            _dgvFiches.ColumnHeadersDefaultCellStyle.Font       = new Font("Segoe UI", 9F, FontStyle.Bold);
+            _dgvFiches.DefaultCellStyle.SelectionBackColor       = CHOCO_BRAND;
+            _dgvFiches.DefaultCellStyle.SelectionForeColor       = Color.White;
+            _dgvFiches.AlternatingRowsDefaultCellStyle.BackColor = Color.FromArgb(250, 246, 238);
+            _dgvFiches.CellDoubleClick += (s, ev) =>
+            {
+                if (ev.RowIndex >= 0) OuvrirFiche(_dgvFiches.CurrentRow?.DataBoundItem as BomFiche);
+            };
+            // US-07 : activer/désactiver le bouton Dupliquer selon la sélection
+            _dgvFiches.SelectionChanged += (s, ev) =>
+                btnDupFiche.Enabled = _dgvFiches.CurrentRow?.DataBoundItem is BomFiche;
+
+            pnlFiches.Controls.Add(_dgvFiches);
+            pnlFiches.Controls.Add(pnlFichesTop);
+
+            _pnlDroit.Controls.Add(pnlFiches);
+            _pnlDroit.Controls.Add(pnlNivRows);
+            _pnlDroit.Controls.Add(pnlNivLabel);
+            _pnlDroit.Controls.Add(pnlHdr);
+
+            if (_state.ActiveNiveau != null && _niveauPanels.ContainsKey(_state.ActiveNiveau.Id))
+                SelectNiveauRow(_state.ActiveNiveau);
+            else if (niveaux.Count > 0)
+                SelectNiveauRow(niveaux[0]);
+
+            _pnlDroit.ResumeLayout();
+        }
+
+        // ════════════════════════════════════════════════════════════════
+        //  Sélection niveau (synchronise sidebar ↔ droite)
+        // ════════════════════════════════════════════════════════════════
+
+        private void SyncNiveauSelection()
+        {
+            if (_state.ActiveNiveau == null) return;
+            if (_niveauPanels.ContainsKey(_state.ActiveNiveau.Id))
+                SelectNiveauRow(_state.ActiveNiveau);
+        }
+
+        private void SelectNiveauRow(BomNiveau niv)
+        {
+            _state.SetNiveau(niv);
+
+            foreach (var kvp in _niveauPanels)
+            {
+                bool sel = kvp.Key == niv.Id;
+                kvp.Value.BackColor = sel ? Color.FromArgb(255, 250, 229) : Color.White;
+                kvp.Value.Invalidate();
+            }
+
+            for (int i = 0; i < _lstNiveaux.Items.Count; i++)
+                if (((BomNiveau)_lstNiveaux.Items[i]).Id == niv.Id)
+                {
+                    _lstNiveaux.SelectedIndexChanged -= LstNiveaux_SelectedIndexChanged;
+                    _lstNiveaux.SelectedIndex = i;
+                    _lstNiveaux.SelectedIndexChanged += LstNiveaux_SelectedIndexChanged;
+                    break;
+                }
+
+            if (_lblFichesHeader != null)
+                _lblFichesHeader.Text = $"Fiches BOM du niveau N{niv.Ordre} — {niv.Nom}";
+            ChargerFiches(niv);
+        }
+
+        private void ChargerFiches(BomNiveau niv)
+        {
+            if (_dgvFiches == null) return;
+            try
+            {
+                _dgvFiches.DataSource = null;
+                _dgvFiches.DataSource = BomFicheDAL.GetByNiveau(niv.Id);
+                if (_dgvFiches.Columns.Count > 0)
+                {
+                    foreach (DataGridViewColumn col in _dgvFiches.Columns)
+                        col.Visible = false;
+                    void ShowCol(string name, string header, int fill)
+                    {
+                        if (_dgvFiches.Columns[name] != null)
+                        {
+                            _dgvFiches.Columns[name].Visible    = true;
+                            _dgvFiches.Columns[name].HeaderText = header;
+                            _dgvFiches.Columns[name].FillWeight = fill;
+                        }
+                    }
+                    ShowCol("Nom",              "Fiche",        45);
+                    ShowCol("QuantiteOutput",   "Output / lot", 15);
+                    ShowCol("UniteOutput",      "Unité",        10);
+                    ShowCol("TempsPreparation", "Tps (min)",    10);
+                    ShowCol("DateCreation",     "Créée le",     15);
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("Erreur chargement fiches : " + ex.Message, "Erreur",
+                    MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
         }
 
-        private void AfficherContexte(BomContexte ctx)
+        // ════════════════════════════════════════════════════════════════
+        //  DrawItem handlers
+        // ════════════════════════════════════════════════════════════════
+
+        private static void DrawCustomItem(DrawItemEventArgs e,
+            string chipText, Color chipAccent, string label, string meta = null)
         {
-            _lblContexteNom.Text      = ctx.Nom;
-            _lblContexteDesc.Text     = string.IsNullOrWhiteSpace(ctx.Description)
-                ? $"Activité : {ctx.ActiviteNom}"
-                : ctx.Description;
-            _btnAjouterNiveau.Enabled = true;
-            _btnAjouterNiveau.Tag     = ctx;
+            bool selected = (e.State & DrawItemState.Selected) == DrawItemState.Selected;
 
-            _flowNiveaux.Controls.Clear();
-            foreach (var niv in BomNiveauDAL.GetByContexte(ctx.Id))
-                _flowNiveaux.Controls.Add(BuildNiveauCard(niv, ctx));
+            using (var br = new SolidBrush(selected ? Color.FromArgb(67, 45, 21) : CHOCO_DARK))
+                e.Graphics.FillRectangle(br, e.Bounds);
+
+            if (selected)
+                using (var br = new SolidBrush(chipAccent))
+                    e.Graphics.FillRectangle(br, e.Bounds.X, e.Bounds.Y, 3, e.Bounds.Height);
+
+            int cx = e.Bounds.X + 10, cy = e.Bounds.Y + (e.Bounds.Height - 20) / 2;
+            Color chipBg = selected ? chipAccent : Color.FromArgb(18, 255, 255, 255);
+            Color chipFg = selected ? CHOCO_ABYSS : chipAccent;
+            using (var br = new SolidBrush(chipBg))
+                e.Graphics.FillRectangle(br, cx, cy, 22, 20);
+            using (var f = new Font("Segoe UI", 7.5F, FontStyle.Bold))
+            using (var br = new SolidBrush(chipFg))
+                e.Graphics.DrawString(chipText, f, br,
+                    new RectangleF(cx, cy, 22, 20),
+                    new StringFormat { Alignment = StringAlignment.Center, LineAlignment = StringAlignment.Center });
+
+            int lx = cx + 28, lw = e.Bounds.Width - lx - (meta != null ? 40 : 10) - e.Bounds.X;
+            using (var f = new Font("Segoe UI", 10F, selected ? FontStyle.Bold : FontStyle.Regular))
+            using (var br = new SolidBrush(selected ? Color.White : SIDEBAR_TXT))
+                e.Graphics.DrawString(label, f, br,
+                    new RectangleF(lx, e.Bounds.Y, lw, e.Bounds.Height),
+                    new StringFormat { LineAlignment = StringAlignment.Center, Trimming = StringTrimming.EllipsisCharacter });
+
+            if (meta != null)
+                using (var f = new Font("Segoe UI", 8F, FontStyle.Bold))
+                using (var br = new SolidBrush(SIDEBAR_META))
+                    e.Graphics.DrawString(meta, f, br,
+                        new RectangleF(e.Bounds.Right - 40, e.Bounds.Y, 36, e.Bounds.Height),
+                        new StringFormat { Alignment = StringAlignment.Far, LineAlignment = StringAlignment.Center });
         }
-
-        // ── Dessin custom ListBoxes ───────────────────────────────────
 
         private void LstActivites_DrawItem(object sender, DrawItemEventArgs e)
         {
             if (e.Index < 0) return;
-            var  act      = (Activite)_lstActivites.Items[e.Index];
-            bool selected = (e.State & DrawItemState.Selected) == DrawItemState.Selected;
-
-            using (var br = new SolidBrush(selected ? CHOCOLAT_MOYEN : Color.FromArgb(248, 244, 240)))
-                e.Graphics.FillRectangle(br, e.Bounds);
-
-            if (selected)
-                using (var br = new SolidBrush(OR))
-                    e.Graphics.FillRectangle(br, new Rectangle(e.Bounds.X, e.Bounds.Y, 4, e.Bounds.Height));
-
-            var font     = new Font("Segoe UI", 10F, selected ? FontStyle.Bold : FontStyle.Regular);
-            var couleur  = selected ? Color.White : CHOCOLAT_FONCE;
-            var textRect = new Rectangle(e.Bounds.X + 14, e.Bounds.Y, e.Bounds.Width - 14, e.Bounds.Height);
-            e.Graphics.DrawString(act.Nom, font, new SolidBrush(couleur), textRect,
-                new StringFormat { LineAlignment = StringAlignment.Center });
-            font.Dispose();
+            var act = (Activite)_lstActivites.Items[e.Index];
+            DrawCustomItem(e, act.Nom.Length > 0 ? act.Nom.Substring(0, 1).ToUpper() : "A", OR, act.Nom);
         }
 
         private void LstContextes_DrawItem(object sender, DrawItemEventArgs e)
         {
             if (e.Index < 0) return;
-            var  ctx      = (BomContexte)_lstContextes.Items[e.Index];
-            bool selected = (e.State & DrawItemState.Selected) == DrawItemState.Selected;
-
-            using (var br = new SolidBrush(selected ? CHOCOLAT_MOYEN : Color.FromArgb(248, 244, 240)))
-                e.Graphics.FillRectangle(br, e.Bounds);
-
-            if (selected)
-                using (var br = new SolidBrush(OR))
-                    e.Graphics.FillRectangle(br, new Rectangle(e.Bounds.X, e.Bounds.Y, 4, e.Bounds.Height));
-
-            var font     = new Font("Segoe UI", 10F, selected ? FontStyle.Bold : FontStyle.Regular);
-            var couleur  = selected ? Color.White : CHOCOLAT_FONCE;
-            var textRect = new Rectangle(e.Bounds.X + 14, e.Bounds.Y, e.Bounds.Width - 14, e.Bounds.Height);
-            e.Graphics.DrawString(ctx.Nom, font, new SolidBrush(couleur), textRect,
-                new StringFormat { LineAlignment = StringAlignment.Center });
-            font.Dispose();
+            var ctx = (BomContexte)_lstContextes.Items[e.Index];
+            DrawCustomItem(e, ctx.Nom.Length > 0 ? ctx.Nom.Substring(0, 1).ToUpper() : "C", SIDEBAR_META, ctx.Nom);
         }
 
-        // ── Card d'un niveau ─────────────────────────────────────────
-
-        private Panel BuildNiveauCard(BomNiveau niv, BomContexte ctx)
+        private void LstNiveaux_DrawItem(object sender, DrawItemEventArgs e)
         {
-            var accent    = NIVEAU_ACCENTS[Math.Min(niv.Ordre - 1, NIVEAU_ACCENTS.Length - 1)];
-            int panelW    = _split.Panel2.ClientSize.Width - 60;
-            int cardWidth = Math.Max(panelW, 400);
-
-            var card = new Panel { Width = cardWidth, Height = 96, BackColor = Color.White, Margin = new Padding(0, 0, 0, 10) };
-            card.Paint += (s, e) =>
-            {
-                using (var pen = new Pen(Color.FromArgb(225, 215, 202)))
-                    e.Graphics.DrawRectangle(pen, 0, 0, card.Width - 1, card.Height - 1);
-                using (var br = new SolidBrush(accent))
-                    e.Graphics.FillRectangle(br, 0, 0, 5, card.Height);
-            };
-
-            var lblTitre = new Label { Text = $"N{niv.Ordre}  ·  {niv.Nom}", Font = new Font("Segoe UI", 11F, FontStyle.Bold), ForeColor = CHOCOLAT_FONCE, Location = new Point(18, 10), Size = new Size(cardWidth - 120, 24), AutoSize = false };
-            var descText = niv.Ordre == 1 ? $"Stock de base — matières premières de {niv.ActiviteNom}" : niv.Description ?? "";
-            var lblDesc  = new Label { Text = descText, Font = new Font("Segoe UI", 8.5F, FontStyle.Italic), ForeColor = Color.FromArgb(140, 115, 90), Location = new Point(18, 34), Size = new Size(cardWidth - 120, 18), AutoSize = false };
-            var lblBadge = new Label { Text = $"N{niv.Ordre}", Font = new Font("Segoe UI", 16F, FontStyle.Bold), ForeColor = accent, Location = new Point(cardWidth - 64, 8), Size = new Size(48, 36), TextAlign = ContentAlignment.MiddleCenter };
-
-            card.Controls.AddRange(new Control[] { lblTitre, lblDesc, lblBadge });
-
-            int bx = 18, by = 58;
-
-            if (niv.Ordre == 1)
-            {
-                bx = AjouterBtnCard(card, "Ingrédients", bx, by, Color.FromArgb(74, 144, 217),
-                    () => new FrmIngredients(_activite).ShowDialog());
-                AjouterBtnCard(card, "Achats & Lots", bx, by, Color.FromArgb(74, 144, 217),
-                    () => new FrmAchats(_activite).ShowDialog());
-            }
-            else
-            {
-                var niv2 = niv;
-                bx = AjouterBtnCard(card, "Fiches", bx, by, accent,
-                    () => { new FrmBomFiches(niv2).ShowDialog(); AfficherContexte(ctx); });
-                bx = AjouterBtnCard(card, "Produire", bx, by, Color.FromArgb(80, 160, 70),
-                    () => new FrmBomProductionSimulation(ctx, niv2).ShowDialog());
-
-                var btnDel = new Button { Text = "✕", Font = new Font("Segoe UI", 8F), ForeColor = Color.FromArgb(180, 120, 100), BackColor = Color.Transparent, FlatStyle = FlatStyle.Flat, Size = new Size(26, 22), Location = new Point(cardWidth - 36, by), Cursor = Cursors.Hand };
-                btnDel.FlatAppearance.BorderSize = 0;
-                btnDel.Click += (s, e) => SupprimerNiveau(niv2, ctx);
-                card.Controls.Add(btnDel);
-            }
-
-            return card;
+            if (e.Index < 0) return;
+            var niv = (BomNiveau)_lstNiveaux.Items[e.Index];
+            DrawCustomItem(e, $"N{niv.Ordre}", GREEN_OK, niv.Nom);
         }
 
-        private int AjouterBtnCard(Panel card, string txt, int x, int y, Color couleur, Action action)
-        {
-            var btn = new Button
-            {
-                Text      = txt,
-                Font      = new Font("Segoe UI", 9F),
-                ForeColor = Color.White,
-                BackColor = couleur,
-                FlatStyle = FlatStyle.Flat,
-                Location  = new Point(x, y),
-                Height    = 28,
-                Width     = txt.Length * 8 + 20,
-                Cursor    = Cursors.Hand
-            };
-            btn.FlatAppearance.BorderSize = 0;
-            btn.Click += (s, e) => action();
-            card.Controls.Add(btn);
-            return x + btn.Width + 6;
-        }
-
-        // ════════════════════════════════════════════════════════════
-        //  Actions contextes
-        // ════════════════════════════════════════════════════════════
+        // ════════════════════════════════════════════════════════════════
+        //  Actions — Contextes
+        // ════════════════════════════════════════════════════════════════
 
         private void BtnNouveauContexte_Click(object sender, EventArgs e)
         {
-            if (_activite == null)
-            {
-                MessageBox.Show("Sélectionnez d'abord une activité.", "Info",
-                    MessageBoxButtons.OK, MessageBoxIcon.Information);
-                return;
-            }
-            using (var frm = new FrmBomContexteEdit(null, _activite))
-                if (frm.ShowDialog() == DialogResult.OK) ChargerContextes();
+            if (_state.ActiveActivite == null)
+            { MessageBox.Show("Sélectionnez une activité.", "Info", MessageBoxButtons.OK, MessageBoxIcon.Information); return; }
+            using (var frm = new FrmBomContexteEdit(null, _state.ActiveActivite))
+                if (frm.ShowDialog() == DialogResult.OK)
+                { ChargerContextes(); if (_state.ActiveContexte == null) ShowHubScreen(); }
         }
 
         private void BtnModifierContexte_Click(object sender, EventArgs e)
         {
-            var ctx = _lstContextes.SelectedItem as BomContexte;
-            if (ctx == null) { MessageBox.Show("Sélectionnez un contexte.", "Info", MessageBoxButtons.OK, MessageBoxIcon.Information); return; }
-            using (var frm = new FrmBomContexteEdit(ctx, _activite))
+            if (_state.ActiveContexte == null) return;
+            using (var frm = new FrmBomContexteEdit(_state.ActiveContexte, _state.ActiveActivite))
                 if (frm.ShowDialog() == DialogResult.OK) ChargerContextes();
         }
 
         private void BtnSupprimerContexte_Click(object sender, EventArgs e)
         {
-            var ctx = _lstContextes.SelectedItem as BomContexte;
-            if (ctx == null) { MessageBox.Show("Sélectionnez un contexte.", "Info", MessageBoxButtons.OK, MessageBoxIcon.Information); return; }
-
-            if (MessageBox.Show($"Supprimer « {ctx.Nom} » et toutes ses données ?\n\nCette action est irréversible.", "Confirmation",
-                    MessageBoxButtons.YesNo, MessageBoxIcon.Warning,
+            if (_state.ActiveContexte == null) return;
+            if (MessageBox.Show($"Supprimer « {_state.ActiveContexte.Nom} » et toutes ses données ?",
+                    "Confirmation", MessageBoxButtons.YesNo, MessageBoxIcon.Warning,
                     MessageBoxDefaultButton.Button2) != DialogResult.Yes) return;
             try
             {
-                BomContexteDAL.Delete(ctx.Id);
+                BomContexteDAL.Delete(_state.ActiveContexte.Id);
+                _state.SetContexte(null);
                 ChargerContextes();
+                ShowHubScreen();
             }
             catch (Exception ex)
-            {
-                MessageBox.Show("Impossible de supprimer : " + ex.Message, "Erreur", MessageBoxButtons.OK, MessageBoxIcon.Error);
-            }
+            { MessageBox.Show("Impossible : " + ex.Message, "Erreur", MessageBoxButtons.OK, MessageBoxIcon.Error); }
         }
+
+        // ════════════════════════════════════════════════════════════════
+        //  Actions — Niveaux
+        // ════════════════════════════════════════════════════════════════
 
         private void BtnAjouterNiveau_Click(object sender, EventArgs e)
         {
-            var ctx = _lstContextes.SelectedItem as BomContexte;
-            if (ctx == null) return;
-            var n = new BomNiveau { IdContexte = ctx.Id, Ordre = BomNiveauDAL.GetOrdreMax(ctx.Id) + 1 };
+            if (_state.ActiveContexte == null) return;
+            var n = new BomNiveau
+            {
+                IdContexte = _state.ActiveContexte.Id,
+                Ordre      = BomNiveauDAL.GetOrdreMax(_state.ActiveContexte.Id) + 1
+            };
             using (var frm = new FrmBomNiveauEdit(n, false))
-                if (frm.ShowDialog() == DialogResult.OK) AfficherContexte(ctx);
+                if (frm.ShowDialog() == DialogResult.OK) { ChargerNiveaux(); ShowContexteScreen(); }
         }
 
-        private void SupprimerNiveau(BomNiveau niv, BomContexte ctx)
+        private void SupprimerNiveau(BomNiveau niv)
         {
-            if (MessageBox.Show($"Supprimer le niveau « {niv.Nom} » (N{niv.Ordre}) ?\n\nCette action est irréversible.", "Confirmation",
-                    MessageBoxButtons.YesNo, MessageBoxIcon.Warning,
+            if (MessageBox.Show($"Supprimer le niveau « {niv.Nom} » ?",
+                    "Confirmation", MessageBoxButtons.YesNo, MessageBoxIcon.Warning,
                     MessageBoxDefaultButton.Button2) != DialogResult.Yes) return;
             try
             {
                 BomNiveauDAL.Delete(niv.Id);
-                AfficherContexte(ctx);
+                if (_state.ActiveNiveau?.Id == niv.Id) _state.SetNiveau(null);
+                ChargerNiveaux();
+                ShowContexteScreen();
             }
-            catch (InvalidOperationException ex) { MessageBox.Show(ex.Message, "Impossible", MessageBoxButtons.OK, MessageBoxIcon.Warning); }
-            catch (Exception ex) { MessageBox.Show("Erreur : " + ex.Message, "Erreur", MessageBoxButtons.OK, MessageBoxIcon.Error); }
+            catch (InvalidOperationException ex)
+            { MessageBox.Show(ex.Message, "Impossible", MessageBoxButtons.OK, MessageBoxIcon.Warning); }
+            catch (Exception ex)
+            { MessageBox.Show("Erreur : " + ex.Message, "Erreur", MessageBoxButtons.OK, MessageBoxIcon.Error); }
         }
 
-        // ── Resize ───────────────────────────────────────────────────
+        // ════════════════════════════════════════════════════════════════
+        //  Actions — Fiches BOM
+        // ════════════════════════════════════════════════════════════════
 
-        private void FrmPrincipal_Resize(object sender, EventArgs e)
+        private void OuvrirFiche(BomFiche fiche)
         {
-            var ctx = _lstContextes?.SelectedItem as BomContexte;
-            if (ctx != null && _flowNiveaux != null && _split != null)
-                AfficherContexte(ctx);
+            if (_state.ActiveNiveau == null)
+            { MessageBox.Show("Sélectionnez un niveau.", "Info", MessageBoxButtons.OK, MessageBoxIcon.Information); return; }
+            using (var frm = new FrmBomFicheEdit(fiche, _state.ActiveNiveau))
+                if (frm.ShowDialog() == DialogResult.OK) ChargerFiches(_state.ActiveNiveau);
         }
 
-        // ════════════════════════════════════════════════════════════
-        //  Menu secondaire
-        // ════════════════════════════════════════════════════════════
+        private void SupprimerFiche(BomFiche fiche)
+        {
+            if (fiche == null)
+            { MessageBox.Show("Sélectionnez une fiche.", "Info", MessageBoxButtons.OK, MessageBoxIcon.Information); return; }
+            if (MessageBox.Show($"Supprimer « {fiche.Nom} » ?",
+                    "Confirmation", MessageBoxButtons.YesNo, MessageBoxIcon.Warning,
+                    MessageBoxDefaultButton.Button2) != DialogResult.Yes) return;
+            try { BomFicheDAL.Delete(fiche.Id); ChargerFiches(_state.ActiveNiveau); }
+            catch (Exception ex)
+            { MessageBox.Show("Erreur : " + ex.Message, "Erreur", MessageBoxButtons.OK, MessageBoxIcon.Error); }
+        }
 
-        private void menuCatCategories_Click(object sender, EventArgs e)  => PlaceholderCatalogueWeb();
-        private void menuCatParfums_Click(object sender, EventArgs e)     => PlaceholderCatalogueWeb();
-        private void menuCatProduits_Click(object sender, EventArgs e)    => PlaceholderCatalogueWeb();
-        private void menuFournisseurs_Click(object sender, EventArgs e)   => new FrmFournisseurs().ShowDialog();
-        private void menuCommandes_Click(object sender, EventArgs e)      => PlaceholderCatalogueWeb();
+        /// <summary>
+        /// US-07 : Duplique la fiche sélectionnée dans le même niveau via BomFicheDAL.Duplicate().
+        /// Recharge la liste et sélectionne la copie dans le DGV.
+        /// </summary>
+        private void DupliquerFiche(BomFiche fiche)
+        {
+            if (fiche == null)
+            { MessageBox.Show("Sélectionnez une fiche à dupliquer.", "Info", MessageBoxButtons.OK, MessageBoxIcon.Information); return; }
 
-        private static void PlaceholderCatalogueWeb() =>
-            MessageBox.Show(
-                "Module Catalogue Web — à venir.\n\n" +
-                "Cette section sera développée après la finalisation du module ERP\n" +
-                "(gestion des stocks, productions et consommations inter-niveaux).",
-                "En développement",
-                MessageBoxButtons.OK,
-                MessageBoxIcon.Information);
+            if (MessageBox.Show($"Dupliquer « {fiche.Nom} » ?", "Confirmation",
+                    MessageBoxButtons.YesNo, MessageBoxIcon.Question,
+                    MessageBoxDefaultButton.Button1) != DialogResult.Yes) return;
+            try
+            {
+                int idCopie = BomFicheDAL.Duplicate(fiche.Id);
+                ChargerFiches(_state.ActiveNiveau);
+                // Sélectionner la copie dans _dgvFiches
+                foreach (DataGridViewRow row in _dgvFiches.Rows)
+                    if (row.DataBoundItem is BomFiche f && f.Id == idCopie)
+                    { _dgvFiches.CurrentCell = row.Cells[0]; break; }
+            }
+            catch (Exception ex)
+            { MessageBox.Show("Erreur lors de la duplication : " + ex.Message, "Erreur", MessageBoxButtons.OK, MessageBoxIcon.Error); }
+        }
+
+        // ════════════════════════════════════════════════════════════════
+        //  US-09 — Rapport du jour
+        // ════════════════════════════════════════════════════════════════
+
+        /// <summary>
+        /// Génère et prévisualise un rapport du jour via PrintDocument + PrintPreviewDialog.
+        /// Sections : en-tête activité · productions du jour · alertes stock · coût total.
+        /// Police : Segoe UI 10pt corps, 9pt Bold sections.
+        /// </summary>
+        private void GenererRapport()
+        {
+            if (_state.ActiveActivite == null) return;
+
+            List<BomProduction> prodsJour;
+            List<Ingredient>    alertes;
+            try
+            {
+                prodsJour = BomProductionDAL.GetDuJourByActivite(_state.ActiveActivite.Id);
+                alertes   = IngredientDAL.GetAll(idActivite: _state.ActiveActivite.Id)
+                                         .Where(i => i.EstEnAlerte).ToList();
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("Erreur lors de la génération du rapport : " + ex.Message,
+                    "Erreur", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                return;
+            }
+
+            decimal coutJour = prodsJour.Sum(p => p.CoutIngredients);
+
+            var doc = new System.Drawing.Printing.PrintDocument();
+            doc.DocumentName = $"Rapport_{_state.ActiveActivite.Nom}_{DateTime.Today:yyyy-MM-dd}";
+
+            doc.PrintPage += (s, ev) =>
+            {
+                var g      = ev.Graphics;
+                var fontTitre    = new Font("Segoe UI", 13F, FontStyle.Bold);
+                var fontSection  = new Font("Segoe UI", 9F,  FontStyle.Bold);
+                var fontCorps    = new Font("Segoe UI", 10F, FontStyle.Regular);
+                var fontMeta     = new Font("Segoe UI", 8F,  FontStyle.Italic);
+                var brushNoir    = new SolidBrush(Color.FromArgb(44, 24, 16));
+                var brushAccent  = new SolidBrush(Color.FromArgb(61, 40, 23));
+                var brushMed     = new SolidBrush(Color.FromArgb(111, 78, 55));
+
+                int margin = ev.MarginBounds.Left;
+                int y      = ev.MarginBounds.Top;
+                int width  = ev.MarginBounds.Width;
+
+                // ── En-tête ──────────────────────────────────────────
+                g.DrawString($"ARTISASTOCK — Rapport du jour", fontTitre, brushAccent,
+                    new RectangleF(margin, y, width, 24));
+                y += 28;
+                g.DrawString($"Activité : {_state.ActiveActivite.Nom}   ·   {DateTime.Now:dd/MM/yyyy HH:mm}",
+                    fontMeta, brushMed, new RectangleF(margin, y, width, 18));
+                y += 24;
+
+                using (var pen = new Pen(Color.FromArgb(195, 185, 168), 1))
+                    g.DrawLine(pen, margin, y, margin + width, y);
+                y += 10;
+
+                // ── Section 1 : Productions du jour ──────────────────
+                g.DrawString("PRODUCTIONS DU JOUR", fontSection, brushAccent,
+                    new RectangleF(margin, y, width, 18));
+                y += 22;
+
+                if (prodsJour.Count == 0)
+                {
+                    g.DrawString("Aucune production ce jour.", fontMeta, brushMed,
+                        new RectangleF(margin, y, width, 18));
+                    y += 20;
+                }
+                else
+                {
+                    foreach (var p in prodsJour)
+                    {
+                        string ligne = $"  {p.DateProduction:HH:mm}  {p.NomFiche}  —  " +
+                                       $"{p.QuantiteProduite:F0} {(p.NomNiveau ?? "")}  · " +
+                                       $"Coût : {p.CoutIngredients:F2} €";
+                        g.DrawString(ligne, fontCorps, brushNoir, new RectangleF(margin, y, width, 18));
+                        y += 20;
+                    }
+                }
+                y += 8;
+
+                using (var pen = new Pen(Color.FromArgb(195, 185, 168), 1))
+                    g.DrawLine(pen, margin, y, margin + width, y);
+                y += 10;
+
+                // ── Section 2 : Alertes stock ─────────────────────────
+                g.DrawString("ALERTES STOCK", fontSection, brushAccent,
+                    new RectangleF(margin, y, width, 18));
+                y += 22;
+
+                if (alertes.Count == 0)
+                {
+                    g.DrawString("✓  Aucune alerte de stock.", fontCorps, brushMed,
+                        new RectangleF(margin, y, width, 18));
+                    y += 20;
+                }
+                else
+                {
+                    foreach (var ing in alertes)
+                    {
+                        string ligne = $"  ⚠  {ing.Nom}  —  {ing.StockActuel:F0} {ing.UniteMesure}" +
+                                       (ing.SeuilAlerteStock.HasValue
+                                           ? $"  (seuil : {ing.SeuilAlerteStock.Value:F0} {ing.UniteMesure})"
+                                           : "");
+                        g.DrawString(ligne, fontCorps, brushNoir, new RectangleF(margin, y, width, 18));
+                        y += 20;
+                    }
+                }
+                y += 8;
+
+                using (var pen = new Pen(Color.FromArgb(195, 185, 168), 1))
+                    g.DrawLine(pen, margin, y, margin + width, y);
+                y += 10;
+
+                // ── Pied de page : coût total ─────────────────────────
+                g.DrawString($"Coût total du jour : {coutJour:F2} €", fontSection, brushAccent,
+                    new RectangleF(margin, y, width, 20));
+
+                // Libérer les ressources GDI
+                fontTitre.Dispose(); fontSection.Dispose(); fontCorps.Dispose(); fontMeta.Dispose();
+                brushNoir.Dispose(); brushAccent.Dispose(); brushMed.Dispose();
+            };
+
+            using (var preview = new System.Windows.Forms.PrintPreviewDialog { Document = doc, Width = 900, Height = 700 })
+                preview.ShowDialog(this);
+        }
+
+        // ════════════════════════════════════════════════════════════════
+        //  Builder helpers
+        // ════════════════════════════════════════════════════════════════
+
+        private Panel MakeSectionHeader(string title)
+        {
+            var pnl = new Panel { Dock = DockStyle.Top, Height = 30, BackColor = CHOCO_DARK };
+            pnl.Paint += (s, ev) =>
+            {
+                using (var pen = new Pen(Color.FromArgb(50, 255, 255, 255), 1))
+                    ev.Graphics.DrawLine(pen, 12, pnl.Height - 1, pnl.Width - 12, pnl.Height - 1);
+            };
+            pnl.Controls.Add(new Label
+            {
+                Text = title.ToUpper(), Font = new Font("Segoe UI", 7.5F, FontStyle.Bold),
+                ForeColor = SIDEBAR_META, Dock = DockStyle.Fill,
+                TextAlign = ContentAlignment.MiddleLeft, Padding = new Padding(14, 0, 0, 0)
+            });
+            return pnl;
+        }
+
+        private Button MakeSidebarButton(string icon, string label, Action onClick)
+        {
+            var btn = new Button
+            {
+                Text      = $"{icon}  {label}",
+                Font      = new Font("Segoe UI", 10F), FlatStyle = FlatStyle.Flat,
+                Width     = _split?.Panel1.ClientSize.Width ?? 240, Height = 34,
+                TextAlign = ContentAlignment.MiddleLeft,
+                Padding   = new Padding(12, 0, 0, 0),
+                BackColor = CHOCO_DARK, ForeColor = SIDEBAR_TXT, Cursor = Cursors.Hand
+            };
+            btn.FlatAppearance.BorderSize         = 0;
+            btn.FlatAppearance.MouseOverBackColor = CHOCO_MED;
+            btn.Click += (s, ev) => onClick();
+            return btn;
+        }
+
+        private static Panel MakeSeparator()
+        {
+            var pnl = new Panel { Dock = DockStyle.Top, Height = 6, BackColor = CHOCO_DARK };
+            pnl.Paint += (s, ev) =>
+            {
+                using (var pen = new Pen(Color.FromArgb(61, 40, 23), 1))
+                    ev.Graphics.DrawLine(pen, 12, 3, pnl.Width - 12, 3);
+            };
+            return pnl;
+        }
+
+        private static Panel MakeStatCard(string icon, string label, string value, string delta, string tone)
+        {
+            Color bg     = Color.White;
+            Color accent = CHOCO_BRAND;
+            if (tone == "danger")  { bg = Color.FromArgb(255, 242, 242); accent = RED_CRIT; }
+            if (tone == "gold")    { bg = Color.FromArgb(255, 252, 236); accent = OR;       }
+            if (tone == "success") { bg = Color.FromArgb(242, 253, 242); accent = GREEN_OK; }
+
+            var card = new Panel { BackColor = bg, Height = 68 };
+            card.Paint += (s, ev) =>
+            {
+                using (var pen = new Pen(BORDER_CLR, 1))
+                    ev.Graphics.DrawRectangle(pen, 0, 0, card.Width - 1, card.Height - 1);
+                using (var br = new SolidBrush(accent))
+                    ev.Graphics.FillRectangle(br, 0, 0, 3, card.Height);
+            };
+            card.Controls.Add(new Label { Text = $"{icon} {label}", Font = new Font("Segoe UI", 8F), ForeColor = Color.FromArgb(120, 100, 80), Location = new Point(10, 8), AutoSize = true });
+            card.Controls.Add(new Label { Text = value, Font = new Font("Segoe UI", 22F, FontStyle.Bold), ForeColor = accent == OR ? Color.FromArgb(160, 130, 0) : accent, Location = new Point(10, 20), AutoSize = true });
+            if (!string.IsNullOrEmpty(delta))
+                card.Controls.Add(new Label { Text = delta, Font = new Font("Segoe UI", 7.5F), ForeColor = Color.FromArgb(120, 100, 80), Location = new Point(10, 50), AutoSize = true, MaximumSize = new Size(200, 0) });
+            return card;
+        }
+
+        private static Panel MakeAlertRow(string tone, string icon, string title, string desc)
+        {
+            Color bg     = tone == "crit" ? Color.FromArgb(255, 242, 242) : Color.FromArgb(255, 248, 236);
+            Color border = tone == "crit" ? RED_CRIT : ORG_WARN;
+            var row = new Panel { Height = 52, BackColor = bg, Padding = new Padding(8, 6, 8, 6) };
+            row.Paint += (s, ev) =>
+            {
+                using (var pen = new Pen(border, 1))
+                    ev.Graphics.DrawRectangle(pen, 0, 0, row.Width - 1, row.Height - 1);
+                using (var br = new SolidBrush(border))
+                    ev.Graphics.FillRectangle(br, 0, 0, 4, row.Height);
+            };
+            row.Controls.Add(new Label { Text = icon, Font = new Font("Segoe UI", 13F), ForeColor = border, Location = new Point(10, 14), AutoSize = true });
+            row.Controls.Add(new Label { Text = title, Font = new Font("Segoe UI", 8.5F, FontStyle.Bold), ForeColor = border, Location = new Point(30, 8), Size = new Size(row.Width - 38, 18) });
+            if (!string.IsNullOrEmpty(desc))
+                row.Controls.Add(new Label { Text = desc, Font = new Font("Segoe UI", 7.5F), ForeColor = Color.FromArgb(100, 80, 60), Location = new Point(30, 26), Size = new Size(row.Width - 38, 16) });
+            return row;
+        }
+
+        private Panel MakeNiveauRow(BomNiveau niv, int ficheCount, int ordreMax)
+        {
+            bool locked = niv.Ordre == 0;
+            var row = new Panel { Height = 64, BackColor = Color.White, Width = 600 };
+            row.Paint += (s, ev) =>
+            {
+                bool sel  = _state.ActiveNiveau?.Id == niv.Id;
+                Color leftC = locked ? Color.FromArgb(195, 165, 135) : sel ? OR : CHOCO_MED;
+                Color brdC  = sel ? OR : BORDER_CLR;
+                row.BackColor = sel ? Color.FromArgb(255, 250, 229) : Color.White;
+                using (var pen = new Pen(brdC, 1))
+                    ev.Graphics.DrawRectangle(pen, 0, 0, row.Width - 1, row.Height - 1);
+                using (var br = new SolidBrush(leftC))
+                    ev.Graphics.FillRectangle(br, 0, 0, 4, row.Height);
+            };
+
+            var lblOrdre = new Label
+            {
+                Text = $"N{niv.Ordre}", Font = new Font("Segoe UI", 20F, FontStyle.Bold),
+                ForeColor = CHOCO_BRAND, Location = new Point(12, 10), Size = new Size(52, 40),
+                TextAlign = ContentAlignment.MiddleCenter
+            };
+            var lblNom = new Label
+            {
+                Text = niv.Nom, Font = new Font("Segoe UI", 11F, FontStyle.Bold),
+                ForeColor = CHOCO_BRAND, Location = new Point(68, 8), AutoSize = true
+            };
+            // US-11 : badge pill selon le statut du niveau
+            Label pillBadge = null;
+            if (niv.Ordre == ordreMax && ordreMax > 0)
+            {
+                pillBadge = new Label
+                {
+                    Text      = "top \u00b7 supprimable",
+                    Font      = new Font("Segoe UI", 7.5F, FontStyle.Bold),
+                    BackColor = OR,
+                    ForeColor = CHOCO_BRAND,
+                    AutoSize  = true,
+                    Padding   = new Padding(6, 2, 6, 2),
+                    Location  = new Point(68, 8)
+                };
+            }
+            else if (niv.Ordre == 0)
+            {
+                pillBadge = new Label
+                {
+                    Text      = "verrouill\u00e9",
+                    Font      = new Font("Segoe UI", 7.5F, FontStyle.Bold),
+                    BackColor = CHOCO_MED,
+                    ForeColor = Color.White,
+                    AutoSize  = true,
+                    Padding   = new Padding(6, 2, 6, 2),
+                    Location  = new Point(68, 8)
+                };
+            }
+
+            var lblDesc = new Label
+            {
+                Text = string.IsNullOrWhiteSpace(niv.Description)
+                    ? (niv.Ordre == 0 ? "Stock global partagé — consommé par N1" : "")
+                    : niv.Description,
+                Font = new Font("Segoe UI", 8F, FontStyle.Italic),
+                ForeColor = CHOCO_MED, Location = new Point(68, 30), AutoSize = true, MaximumSize = new Size(400, 0)
+            };
+            var lblFiches = new Label
+            {
+                Text = ficheCount > 0 ? $"{ficheCount} fiches" : "—",
+                Font = new Font("Segoe UI", 9F, FontStyle.Bold),
+                ForeColor = CHOCO_BRAND, TextAlign = ContentAlignment.MiddleRight,
+                Anchor = AnchorStyles.Top | AnchorStyles.Right
+            };
+
+            row.Controls.Add(lblOrdre);
+            row.Controls.Add(lblNom);
+            if (pillBadge != null)
+            {
+                // Positionner le badge à droite du nom une fois la taille connue
+                lblNom.SizeChanged += (s, ev) =>
+                    pillBadge.Location = new Point(68 + lblNom.Width + 8, lblNom.Location.Y + 2);
+                row.Controls.Add(pillBadge);
+                pillBadge.BringToFront();
+            }
+            row.Controls.Add(lblDesc);
+            row.Controls.Add(lblFiches);
+
+            row.Resize += (s, ev) =>
+            {
+                lblFiches.SetBounds(row.Width - 100, 10, 88, 20);
+                foreach (Control c in row.Controls.OfType<Label>())
+                    if (c != lblOrdre && c != lblFiches) c.MaximumSize = new Size(row.Width - 200, 0);
+            };
+
+            if (!locked)
+            {
+                var btnFiches = new Button
+                {
+                    Text = "Fiches", Font = new Font("Segoe UI", 8F),
+                    FlatStyle = FlatStyle.Flat, BackColor = CHOCO_BRAND, ForeColor = Color.White,
+                    Size = new Size(64, 22), Location = new Point(68, 36), Cursor = Cursors.Hand
+                };
+                btnFiches.FlatAppearance.BorderSize = 0;
+                btnFiches.Click += (s, ev) => { SelectNiveauRow(niv); new FrmBomFiches(niv).ShowDialog(this); ChargerFiches(niv); };
+
+                var btnProd = new Button
+                {
+                    Text = "Produire", Font = new Font("Segoe UI", 8F),
+                    FlatStyle = FlatStyle.Flat, BackColor = GREEN_OK, ForeColor = Color.White,
+                    Size = new Size(64, 22), Location = new Point(138, 36), Cursor = Cursors.Hand
+                };
+                btnProd.FlatAppearance.BorderSize = 0;
+                btnProd.Click += (s, ev) => { SelectNiveauRow(niv); _router.Navigate(ScreenId.Production); };
+
+                bool estTop = niv.Ordre == ordreMax;
+                var btnDel = new Button
+                {
+                    Text    = "✕", Font = new Font("Segoe UI", 9F),
+                    FlatStyle = FlatStyle.Flat, BackColor = Color.White,
+                    ForeColor = estTop ? Color.FromArgb(160, 120, 100) : Color.FromArgb(200, 190, 180),
+                    Size    = new Size(24, 22), Cursor = estTop ? Cursors.Hand : Cursors.Default,
+                    Enabled = estTop
+                };
+                btnDel.FlatAppearance.BorderSize = 0;
+                if (!estTop)
+                {
+                    var tip = new ToolTip();
+                    tip.SetToolTip(btnDel, "Seul le niveau le plus haut (ordre max) est supprimable");
+                }
+                row.Resize += (s, ev) => btnDel.Location = new Point(row.Width - 30, 36);
+                btnDel.Location = new Point(550, 36);
+                btnDel.Click += (s, ev) => SupprimerNiveau(niv);
+
+                row.Controls.Add(btnFiches);
+                row.Controls.Add(btnProd);
+                row.Controls.Add(btnDel);
+            }
+
+            row.Click += (s, ev) => SelectNiveauRow(niv);
+            foreach (Control c in row.Controls) c.Click += (s, ev) => { };
+
+            _niveauPanels[niv.Id] = row;
+            row.Anchor = AnchorStyles.Left | AnchorStyles.Top | AnchorStyles.Right;
+            return row;
+        }
+
+        private static Button MakeActionButton(string text, Color bg, Color fg)
+        {
+            var btn = new Button
+            {
+                Text = text, Font = new Font("Segoe UI", 8.5F),
+                FlatStyle = FlatStyle.Flat, BackColor = bg, ForeColor = fg,
+                Size = new Size(102, 28), Cursor = Cursors.Hand
+            };
+            btn.FlatAppearance.BorderSize = 0;
+            return btn;
+        }
+
+        // ════════════════════════════════════════════════════════════════
+        //  Écrans ressources & production — SFA (embed inline)
+        // ════════════════════════════════════════════════════════════════
+
+        private void ShowRessourceScreen(RessourceType type, NavigationParams p)
+        {
+            // US-08 : lire et réinitialiser le filtre alertes — évite la persistence entre navigations
+            bool filtreAlertes = _state.FiltreAlertesSeulement;
+            _state.SetFiltreAlertes(false);
+
+            Form frm;
+            switch (type)
+            {
+                case RessourceType.Fournisseurs: frm = new FrmFournisseurs();                     break;
+                case RessourceType.Stocks:       frm = new FrmStocks();                           break;
+                case RessourceType.Ingredients:  frm = new FrmIngredients(_state.ActiveActivite, filtreAlertes); break;
+                case RessourceType.Achats:       frm = new FrmAchats(_state.ActiveActivite);       break;
+                case RessourceType.VueStock:     frm = new FrmVueStock();                         break;
+                default:                         return;
+            }
+            EmbedForm(frm);
+        }
+
+        private void ShowProductionScreen(NavigationParams p)
+        {
+            var frm = (_state.ActiveContexte != null && _state.ActiveNiveau != null)
+                ? new FrmBomProductionSimulation(_state.ActiveContexte, _state.ActiveNiveau)
+                : new FrmBomProductionSimulation(_state.ActiveActivite?.Id ?? 0);
+            EmbedForm(frm);
+        }
+
+        /// <summary>
+        /// Intègre un formulaire dans le panneau droit sans TopLevel (SFA).
+        /// FormClosed déclenche le retour automatique à l'écran précédent.
+        /// </summary>
+        private void EmbedForm(Form frm)
+        {
+            _pnlDroit.SuspendLayout();
+            _pnlDroit.Controls.Clear();
+            frm.TopLevel        = false;
+            frm.FormBorderStyle = FormBorderStyle.None;
+            frm.Dock            = DockStyle.Fill;
+            frm.FormClosed     += (s, ev) =>
+            {
+                if (IsDisposed) return;
+                if (_state.ActiveContexte != null) ShowContexteScreen();
+                else if (_state.ActiveActivite != null) ShowHubScreen();
+                else ShowOnboarding();
+            };
+            _pnlDroit.Controls.Add(frm);
+            frm.Show();
+            _pnlDroit.ResumeLayout();
+        }
+
+        // ════════════════════════════════════════════════════════════════
+        //  Menu / Session
+        // ════════════════════════════════════════════════════════════════
+
+        private void menuCatCategories_Click(object sender, EventArgs e)  => PlaceholderWeb();
+        private void menuCatParfums_Click(object sender, EventArgs e)     => PlaceholderWeb();
+        private void menuCatProduits_Click(object sender, EventArgs e)    => PlaceholderWeb();
+        private void menuFournisseurs_Click(object sender, EventArgs e)
+        {
+            _state.SetRessource(RessourceType.Fournisseurs);
+            _router.Navigate(ScreenId.Ressources);
+        }
+        private void menuCommandes_Click(object sender, EventArgs e) => PlaceholderWeb();
+
+        private static void PlaceholderWeb() =>
+            MessageBox.Show("Module Catalogue Web — à venir.", "En développement",
+                MessageBoxButtons.OK, MessageBoxIcon.Information);
 
         private void menuDeconnexion_Click(object sender, EventArgs e)
         {
-            if (MessageBox.Show("Se déconnecter ?", "Confirmation", MessageBoxButtons.YesNo, MessageBoxIcon.Question) == DialogResult.Yes)
+            if (MessageBox.Show("Se déconnecter ?", "Confirmation",
+                    MessageBoxButtons.YesNo, MessageBoxIcon.Question) == DialogResult.Yes)
             {
-                new FrmLogin().Show();
-                this.Close();
+                // Application.Restart() relance le processus complet → FrmLogin s'affiche à nouveau.
+                // Toute donnée non persistée est perdue — acceptable pour ArtisaStock (pas de session mémoire critique).
+                Application.Restart();
             }
         }
 
@@ -837,22 +1622,21 @@ namespace CharlesNadejda.Forms
             Application.Exit();
         }
 
-        // ════════════════════════════════════════════════════════════
+        private void FrmPrincipal_Resize(object sender, EventArgs e) { }
+
+        // ════════════════════════════════════════════════════════════════
         //  Renderer menu sombre
-        // ════════════════════════════════════════════════════════════
+        // ════════════════════════════════════════════════════════════════
 
         public class DarkMenuRenderer : ToolStripProfessionalRenderer
         {
             public DarkMenuRenderer() : base(new DarkColorTable()) { }
-
             protected override void OnRenderMenuItemBackground(ToolStripItemRenderEventArgs e)
             {
-                var rect = new Rectangle(Point.Empty, e.Item.Size);
                 using (var br = new SolidBrush((e.Item.Selected || e.Item.Pressed)
                     ? Color.FromArgb(212, 175, 55) : Color.FromArgb(61, 40, 23)))
-                    e.Graphics.FillRectangle(br, rect);
+                    e.Graphics.FillRectangle(br, new Rectangle(Point.Empty, e.Item.Size));
             }
-
             protected override void OnRenderItemText(ToolStripItemTextRenderEventArgs e)
             {
                 e.TextColor = (e.Item.Selected || e.Item.Pressed) ? Color.FromArgb(61, 40, 23) : Color.White;
@@ -862,13 +1646,13 @@ namespace CharlesNadejda.Forms
 
         private class DarkColorTable : ProfessionalColorTable
         {
-            public override Color MenuItemSelected             => Color.FromArgb(212, 175, 55);
-            public override Color MenuItemBorder               => Color.Transparent;
-            public override Color MenuBorder                   => Color.FromArgb(80, 55, 30);
-            public override Color ToolStripDropDownBackground  => Color.FromArgb(50, 32, 18);
-            public override Color ImageMarginGradientBegin     => Color.FromArgb(50, 32, 18);
-            public override Color ImageMarginGradientMiddle    => Color.FromArgb(50, 32, 18);
-            public override Color ImageMarginGradientEnd       => Color.FromArgb(50, 32, 18);
+            public override Color MenuItemSelected              => Color.FromArgb(212, 175, 55);
+            public override Color MenuItemBorder                => Color.Transparent;
+            public override Color MenuBorder                    => Color.FromArgb(80, 55, 30);
+            public override Color ToolStripDropDownBackground   => Color.FromArgb(50, 32, 18);
+            public override Color ImageMarginGradientBegin      => Color.FromArgb(50, 32, 18);
+            public override Color ImageMarginGradientMiddle     => Color.FromArgb(50, 32, 18);
+            public override Color ImageMarginGradientEnd        => Color.FromArgb(50, 32, 18);
             public override Color MenuItemSelectedGradientBegin => Color.FromArgb(212, 175, 55);
             public override Color MenuItemSelectedGradientEnd   => Color.FromArgb(212, 175, 55);
         }

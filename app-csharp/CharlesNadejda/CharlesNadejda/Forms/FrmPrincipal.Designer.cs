@@ -77,7 +77,7 @@ namespace CharlesNadejda.Forms
             this.menuDeconnexion.Click += new System.EventHandler(this.menuDeconnexion_Click);
 
             // ── statusStrip ───────────────────────────────────────────
-            this.statusStrip.BackColor = System.Drawing.Color.FromArgb(50, 32, 18);
+            this.statusStrip.BackColor = System.Drawing.Color.FromArgb(30, 15, 8);
             this.statusStrip.ForeColor = System.Drawing.Color.FromArgb(200, 180, 160);
             this.statusStrip.Items.Add(this.lblUtilisateur);
             this.lblUtilisateur.Name = "lblUtilisateur";

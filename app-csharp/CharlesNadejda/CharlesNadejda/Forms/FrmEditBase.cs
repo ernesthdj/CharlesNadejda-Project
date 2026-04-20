@@ -24,8 +24,11 @@ namespace CharlesNadejda.Forms
         protected readonly Button        btnEnregistrer;
         protected readonly Button        btnAnnuler;
 
-        // ── Palette artisanale partagée ───────────────────────────────
-        private static readonly Color CHOCOLAT_FONCE = Color.FromArgb(61, 40, 23);
+        // ── Palette Charles & Nadejda Design System ──────────────────
+        private static readonly Color CHOCOLAT_FONCE = Color.FromArgb(61,  40,  23);   // #3D2817
+        private static readonly Color CHOCO_ABYSS    = Color.FromArgb(30,  15,   8);   // #1E0F08
+        private static readonly Color GREY_BTN       = Color.FromArgb(239, 234, 225);  // #EFEAE1
+        private static readonly Color BORDER         = Color.FromArgb(195, 185, 168);  // #C3B9A8
 
         protected FrmEditBase()
         {
@@ -41,7 +44,8 @@ namespace CharlesNadejda.Forms
                 FlatStyle = FlatStyle.Flat,
                 Cursor    = Cursors.Hand
             };
-            btnEnregistrer.FlatAppearance.BorderSize        = 0;
+            btnEnregistrer.FlatAppearance.BorderSize        = 1;
+            btnEnregistrer.FlatAppearance.BorderColor       = CHOCO_ABYSS;
             btnEnregistrer.FlatAppearance.MouseOverBackColor = Color.FromArgb(88, 60, 36);
 
             btnAnnuler = new Button
@@ -50,11 +54,13 @@ namespace CharlesNadejda.Forms
                 Size      = new Size(160, 36),
                 Font      = new Font("Segoe UI", 10F),
                 FlatStyle = FlatStyle.Flat,
-                BackColor = Color.FromArgb(220, 215, 210),
+                BackColor = GREY_BTN,
                 ForeColor = CHOCOLAT_FONCE,
                 Cursor    = Cursors.Hand
             };
-            btnAnnuler.FlatAppearance.BorderSize = 0;
+            btnAnnuler.FlatAppearance.BorderSize        = 1;
+            btnAnnuler.FlatAppearance.BorderColor       = BORDER;
+            btnAnnuler.FlatAppearance.MouseOverBackColor = Color.FromArgb(220, 213, 202);
 
             btnEnregistrer.Click += (s, e) => Confirmer();
             btnAnnuler.Click     += (s, e) => { DialogResult = DialogResult.Cancel; Close(); };
@@ -69,7 +75,7 @@ namespace CharlesNadejda.Forms
             MaximizeBox         = false;
             MinimizeBox         = false;
             StartPosition       = FormStartPosition.CenterParent;
-            BackColor           = Color.White;
+            BackColor           = Color.FromArgb(253, 251, 246);
         }
 
         // ── Positionnement ────────────────────────────────────────────────

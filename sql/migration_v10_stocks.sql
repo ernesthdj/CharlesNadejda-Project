@@ -45,8 +45,8 @@ CREATE TABLE IF NOT EXISTS activites_stocks (
 -- 3. fiches_ingredients : id_activite → id_stock
 --    La DB est vide (v9) donc pas de data migration nécessaire.
 -- ============================================================
-ALTER TABLE fiches_ingredients DROP FOREIGN KEY fk_fi_activite;
-ALTER TABLE fiches_ingredients DROP COLUMN id_activite;
+ALTER TABLE fiches_ingredients DROP FOREIGN KEY IF EXISTS fk_fi_activite;
+ALTER TABLE fiches_ingredients DROP COLUMN IF EXISTS id_activite;
 ALTER TABLE fiches_ingredients ADD COLUMN id_stock INT NOT NULL AFTER densite;
 
 ALTER TABLE fiches_ingredients

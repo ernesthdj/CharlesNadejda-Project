@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Drawing;
+using System.Linq;
 using System.Windows.Forms;
 using CharlesNadejda.DAL;
 using CharlesNadejda.Models;
@@ -9,8 +10,9 @@ namespace CharlesNadejda.Forms
 {
     public partial class FrmIngredients : Form
     {
-        private readonly Activite _activite;    // null = vue globale
-        private Stock             _stockFiltre; // null = Tous
+        private readonly Activite _activite;            // null = vue globale
+        private readonly bool     _filtreAlertes;       // US-08 : afficher seulement les alertes
+        private Stock             _stockFiltre;         // null = Tous
 
         private FlowLayoutPanel _pnlChips;
         private Button          _btnChipTous;
@@ -18,13 +20,16 @@ namespace CharlesNadejda.Forms
         private static readonly Color CHIP_ACTIF   = Color.FromArgb(111, 78, 55);
         private static readonly Color CHIP_INACTIF = Color.FromArgb(220, 210, 200);
 
-        public FrmIngredients(Activite activite = null)
+        /// <param name="activite">Activité contextuelle (affichage titre). null = vue globale.</param>
+        /// <param name="filtreAlertesSeulement">US-08 : si true, affiche uniquement les ingrédients en alerte.</param>
+        public FrmIngredients(Activite activite = null, bool filtreAlertesSeulement = false)
         {
             InitializeComponent();
-            _activite     = activite;
-            lblTitre.Text = activite != null
-                ? $"Stock ingrédients — {activite.Nom}"
-                : "Tous les ingrédients";
+            _activite      = activite;
+            _filtreAlertes = filtreAlertesSeulement;
+            lblTitre.Text  = filtreAlertesSeulement
+                ? "Fiches ingrédients en alerte"
+                : (activite != null ? $"Fiches ingrédients — {activite.Nom}" : "Fiches ingrédients");
         }
 
         private void FrmIngredients_Load(object sender, EventArgs e)
@@ -51,12 +56,10 @@ namespace CharlesNadejda.Forms
             _btnChipTous = CreerChip("Tous", null, true);
             _pnlChips.Controls.Add(_btnChipTous);
 
-            if (_activite != null)
-            {
-                var stocks = StockDAL.GetByActivite(_activite.Id);
-                foreach (var s in stocks)
-                    _pnlChips.Controls.Add(CreerChip(s.Nom, s, false));
-            }
+            // US-01 : tous les stocks physiques actifs — pas de filtre par activité
+            var stocks = StockDAL.GetAll();
+            foreach (var s in stocks)
+                _pnlChips.Controls.Add(CreerChip(s.Nom, s, false));
 
             // Décaler le DGV vers le bas pour faire de la place
             dgv.Location = new Point(dgv.Location.X, 84);
@@ -112,27 +115,46 @@ namespace CharlesNadejda.Forms
                 if (_stockFiltre != null)
                     liste = IngredientDAL.GetAll(idStock: _stockFiltre.Id);
                 else
-                    liste = IngredientDAL.GetAll(idActivite: _activite?.Id ?? 0);
+                    liste = IngredientDAL.GetAll(); // US-01 : tous les ingrédients — pas de filtre activité
+
+                // US-08 : filtre alertes-seulement si activé depuis les StatCards du Hub
+                if (_filtreAlertes)
+                    liste = liste.Where(i => i.EstEnAlerte).ToList();
 
                 dgv.DataSource = null;
                 dgv.DataSource = liste;
 
-                // ── Colonnes cachées ─────────────────────────────────────
+                // ── Colonnes cachées — design v10 ───────────────────────
+                // Masquer tout ce qui n'est pas dans le design cible
                 string[] cachées = { "Id", "IdFournisseurDefaut", "IdStock", "Actif",
-                                     "Description", "EstEnAlerte", "Densite" };
+                                     "Description", "EstEnAlerte",
+                                     "Marque",               // absent du design v10
+                                     "SeuilAlerteStock",     // info interne
+                                     "NomFournisseur",       // absent du design v10
+                                     "QteParConditionnement",
+                                     "PrixParUniteBase",
+                                     "ToString" };
                 foreach (string col in cachées)
                     if (dgv.Columns[col] != null) dgv.Columns[col].Visible = false;
 
-                // ── Colonnes visibles ────────────────────────────────────
-                ConfigCol("Nom",                "Ingrédient",    180, 120);
-                ConfigCol("Marque",             "Marque",        120,  80);
-                ConfigCol("TypePhysique",       "Type",           75,  65);
-                ConfigCol("UniteMesure",        "Unité",          60,  55);
-                ConfigCol("StockActuel",        "Stock actuel",   95,  75);
-                ConfigCol("SeuilAlerteStock",   "Seuil alerte",   90,  75);
-                ConfigCol("PrixAchatReference", "Prix réf. (€)",  90,  80);
-                ConfigCol("NomFournisseur",     "Fournisseur",   130,  80);
-                ConfigCol("StockNom",           "Stock",          90,  75);
+                // ── Colonnes visibles — ordre design v10 ─────────────────
+                // Nom · Conditionnement · Unité base · Stock (lieu) · Type physique · Densité · Dispo · €/cond.
+                ConfigCol("Nom",                 "Ingrédient",       180, 120);
+                ConfigCol("ConditionnementLabel","Conditionnement",  140,  90);
+                ConfigCol("UniteMesure",         "Unité base",        70,  55);
+                ConfigCol("StockNom",            "Stock (lieu)",     110,  75);
+                ConfigCol("TypePhysique",        "Type physique",     90,  65);
+                ConfigCol("Densite",             "Densité",           70,  55);
+                ConfigCol("StockActuel",         "Dispo",             80,  65);
+                ConfigCol("PrixAchatReference",  "€/cond.",           80,  65);
+
+                // Ordre des colonnes (DisplayIndex) — respecte le design v10
+                var displayOrder = new[] { "Nom", "ConditionnementLabel", "UniteMesure",
+                    "StockNom", "TypePhysique", "Densite", "StockActuel", "PrixAchatReference" }
+                    .Select((name, idx) => new { name, idx })
+                    .ToArray();
+                foreach (var item in displayOrder)
+                    if (dgv.Columns[item.name] != null) dgv.Columns[item.name].DisplayIndex = item.idx;
 
                 dgv.AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.AllCells;
 

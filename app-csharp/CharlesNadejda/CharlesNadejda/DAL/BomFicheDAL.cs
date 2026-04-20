@@ -170,9 +170,43 @@ namespace CharlesNadejda.DAL
             }
         }
 
+        /// <summary>
+        /// Duplique une fiche BOM dans le même niveau.
+        /// Le nom de la copie est "Copie de [nom original]".
+        /// Si ce nom existe déjà, suffixe numérique (2), (3)...
+        /// Retourne l'id de la nouvelle fiche.
+        /// </summary>
+        /// <param name="idFiche">Id de la fiche source à dupliquer.</param>
+        /// <returns>Id de la fiche copiée (int).</returns>
+        public static int Duplicate(int idFiche)
+        {
+            var source = GetById(idFiche, avecLignes: true);
+            if (source == null)
+                throw new ArgumentException($"Fiche {idFiche} introuvable.");
+
+            // Générer un nom unique dans le scope du même niveau
+            string nomBase = $"Copie de {source.Nom}";
+            string nom     = nomBase;
+            int    suffixe = 2;
+            while (NomExiste(nom, source.IdNiveau))
+                nom = $"{nomBase} ({suffixe++})";
+
+            var copie = new BomFiche
+            {
+                IdNiveau         = source.IdNiveau,
+                Nom              = nom,
+                Description      = source.Description,
+                UniteOutput      = source.UniteOutput,
+                QuantiteOutput   = source.QuantiteOutput,
+                TempsPreparation = source.TempsPreparation,
+                Lignes           = source.Lignes   // Insert() réinsère chaque ligne
+            };
+            return Insert(copie);
+        }
+
         // ── Helpers privés ───────────────────────────────────────────────
 
-        private static void InsertLignes(MySqlConnection conn, MySqlTransaction tx,
+        internal static void InsertLignes(MySqlConnection conn, MySqlTransaction tx,
                                           int idFiche, List<BomFicheLigne> lignes)
         {
             foreach (var l in lignes)

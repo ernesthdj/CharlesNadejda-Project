@@ -1,4 +1,6 @@
 using System;
+using System.Drawing;
+using System.Drawing.Drawing2D;
 using System.Windows.Forms;
 using CharlesNadejda.DAL;
 using CharlesNadejda.Models;
@@ -7,6 +9,11 @@ namespace CharlesNadejda.Forms
 {
     public partial class FrmLogin : Form
     {
+        /// <summary>
+        /// Utilisateur authentifié — disponible après DialogResult.OK.
+        /// </summary>
+        public Utilisateur Utilisateur { get; private set; }
+
         public FrmLogin()
         {
             InitializeComponent();
@@ -36,9 +43,10 @@ namespace CharlesNadejda.Forms
 
                 if (u != null)
                 {
-                    var frmPrincipal = new FrmPrincipal(u);
-                    frmPrincipal.Show();
-                    this.Hide();
+                    // SFA Pattern : exposer l'utilisateur puis fermer en DialogResult.OK.
+                    // Program.Main instanciera FrmPrincipal comme Form racine.
+                    Utilisateur    = u;
+                    DialogResult   = DialogResult.OK;
                 }
                 else
                 {
@@ -61,6 +69,20 @@ namespace CharlesNadejda.Forms
         {
             if (e.KeyCode == Keys.Enter)
                 btnConnexion_Click(sender, e);
+        }
+
+        // ── Gradient horizontal bandeau titre : #3D2817 → #6F4E37 ──────────
+        private void PnlHeader_Paint(object sender, PaintEventArgs e)
+        {
+            var panel = (Panel)sender;
+            using (var brush = new LinearGradientBrush(
+                panel.ClientRectangle,
+                Color.FromArgb(61,  40, 23),   // #3D2817 CHOCOLAT_FONCE
+                Color.FromArgb(111, 78, 55),   // #6F4E37 CHOCOLAT_MOYEN
+                LinearGradientMode.Horizontal))
+            {
+                e.Graphics.FillRectangle(brush, panel.ClientRectangle);
+            }
         }
     }
 }
