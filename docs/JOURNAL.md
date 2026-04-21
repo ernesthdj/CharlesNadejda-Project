@@ -34,6 +34,104 @@
 
 ---
 
+### SESSION 15 — 2026-04-21
+> Bugfixes volets N1 : filtrage par activité, stock instancié uniquement. NRE SelectionChanged. Navigation singleton centralisée via NavigateTo().
+
+---
+
+#### [2026-04-21] FIX — Volets N1 : filtrage par activité + stock instancié seulement
+**Fichiers :** `Forms/FrmPrincipal.cs`
+**Résumé :** Les deux volets N1 (fiches gauche + stock droite) appelaient `IngredientDAL.GetAll()` sans filtre → affichaient les ingrédients de TOUTES les activités. Fix : `GetAll(idActivite: _state.ActiveActivite?.Id ?? 0)` sur les deux appels. Volet droit affiné : `.Where(i => i.StockActuel > 0)` — n'affiche que les ingrédients instanciés (au moins un lot acheté disponible). Les ingrédients catalogue sans stock disparaissent du volet droit.
+
+---
+
+#### [2026-04-21] FIX — NRE SelectionChanged (lambda capture champ nullé)
+**Fichiers :** `Forms/FrmPrincipal.cs` (ligne ~916)
+**Résumé :** Le lambda `_dgvFiches.SelectionChanged` capturait le champ `_dgvFiches` par référence. Lors d'une re-navigation, `_dgvFiches = null` (ligne 762) puis `Controls.Clear()` → l'ancien DGV déclenche `SelectionChanged` → NRE. Fix : variable locale `dgvFichesCapture = _dgvFiches` capturée par instance dans le lambda + guard `btnDupFiche.IsDisposed`.
+
+---
+
+#### [2026-04-21] REFACTOR — Navigation singleton : NavigateTo() + ScreenRouter guard
+**Fichiers :** `Navigation/ScreenRouter.cs`, `Forms/FrmPrincipal.cs`
+**Résumé :** Trois couches de protection contre les re-navigations inutiles :
+1. **ScreenRouter** : mémorise `(_lastScreen, _lastContexteId, _lastRessource)` — `Navigate()` est un no-op si état identique. `Invalidate()` force le prochain appel à passer.
+2. **ListBox handlers** : guard ID avant `ChargerContextes/Niveaux` (opérations coûteuses). `LstActivites`, `LstContextes`, `LstNiveaux` retournent immédiatement si même item sélectionné.
+3. **`NavigateTo(screen, stateSetup, forceRefresh)`** : méthode unique dans FrmPrincipal — tous les 15 call sites migrent vers elle. Élimine les patterns `{ setup(); _router.Navigate(); }` dispersés. `forceRefresh: true` pour les callbacks post-CRUD (add/edit/delete niveau, contexte, production).
+
+**Règle retenue :** Toute navigation dans FrmPrincipal passe par `NavigateTo`. Jamais `_router.Navigate()` ni `ShowXxxScreen()` directement depuis les handlers.
+
+---
+
+### SESSION 14 — 2026-04-21
+> Sprint post-audit suite : T-14 (migration FrmListeBase<T> × 4 formulaires liste).
+
+---
+
+#### [2026-04-21] REFACTOR — T-14 : FrmBomContextes, FrmBomFiches, FrmBomNiveaux, FrmAchats → FrmListeBase<T>
+**Fichiers :**
+- `Forms/FrmBomContextes.cs` — migration complète + btnNiveaux extra à BtnYExtra=196
+- `Forms/FrmBomFiches.cs` — migration + TICKET-19 _lblEtatVide préservé via AppliquerStylesLignes()
+- `Forms/FrmBomNiveaux.cs` — migration + logique GetOrdreMax+1 dans OuvrirFormulaire(null)
+- `Forms/FrmAchats.cs` — migration standard (NomElement = NomIngredient + DateAchat)
+- `Forms/FrmBomContextes.Designer.cs` — supprimé
+- `Forms/FrmBomFiches.Designer.cs` — supprimé
+- `Forms/FrmBomNiveaux.Designer.cs` — supprimé
+- `Forms/FrmAchats.Designer.cs` — supprimé
+- `CharlesNadejda.csproj` — 4 entrées SubType+Designer remplacées par `<Compile Include="..." />`
+
+**Résumé :** Les 4 formulaires partial héritant de Form migrés vers FrmListeBase<T>. Particularités préservées : (1) FrmBomContextes ajoute btnNiveaux via OnLoad avant base.OnLoad(e) ; (2) FrmBomFiches crée _lblEtatVide dans OnLoad et le gère via AppliquerStylesLignes() → dgv.Rows.Count==0 ; (3) FrmBomNiveaux calcule GetOrdreMax dans OuvrirFormulaire(null) ; (4) FrmAchats NomElement() = NomIngredient + DateAchat formatée.
+
+---
+
+### SESSION 13 — 2026-04-21
+> Sprint post-audit : corrections P0 → P1. Tickets T-01 à T-13 + T-16 à T-21 (P0+P1 complets). T-05, T-06, T-07 également appliqués (UX P0).
+
+---
+
+#### [2026-04-21] UX — cboActivite → Label + btnSuppCtx/btnSuppNiv agrandis (T-05, T-06, T-07)
+**Fichiers :** `Forms/FrmBomFicheEdit.cs`, `Forms/FrmArtisaStock.cs`
+**Résumé :** T-05 : `cboActivite` + `lblActivite` supprimés de `FrmBomFicheEdit` ; remplacés par `lblActiviteValeur` (lecture seule) alimenté via `_niveau.ActiviteNom` — élimine un champ grisé sans utilité cognitive (Nielsen #8). T-06 : `btnSuppCtx` → `Size(90,30)` + texte "Supprimer" + ToolTip dans `FrmArtisaStock` (Fitts — ex 36px < seuil 44px). T-07 : `btnSuppNiv` dans les cards → `Size(36,28)` + ToolTip "Supprimer ce niveau" (Fitts — ex 28×22 sous le minimum).
+
+---
+
+#### [2026-04-21] FIX — Race condition TOCTOU + réservations (T-01, T-08)
+**Fichiers :** `DAL/BomProductionDAL.cs`
+**Résumé :** `VerifierDisponibilite()` déplacé DANS la transaction (T-01). Ajout d'un `UPDATE bom_reservations SET actif=0 WHERE id_lot=@id AND actif=1` inline dans ConsumeStock après chaque décrémentation de lot (T-08), dans la même `conn`+`tx`.
+
+#### [2026-04-21] DB — Migration v13 : CHECK quantite_disponible >= 0 (T-02)
+**Fichiers :** `sql/migration_v13_check_stock_positif.sql`
+**Résumé :** Contraintes CHECK ajoutées sur `lots_ingredients.quantite_disponible` et `bom_stocks.quantite_disponible`. MySQL 8 enforce ces CHECK sur scalaires — protection filet de dernier recours contre stocks négatifs.
+
+#### [2026-04-21] FIX — Null-guards fiche/niveau + guards UnitConvertisseur (T-03, T-04)
+**Fichiers :** `DAL/BomProductionDAL.cs`, `Forms/UnitConvertisseur.cs`
+**Résumé :** Guards `if (fiche == null)` et `if (niveau == null)` dans Executer() avec `InvalidOperationException` explicite (T-03). Guards `ArgumentNullException` sur `uniteSource`/`uniteCible` et `ArgumentOutOfRangeException` sur valeur négative dans `UnitConvertisseur.Convertir()` (T-04).
+
+#### [2026-04-21] REFACTOR — Anti-cycle BomCoutDAL via HashSet<int> (T-09)
+**Fichiers :** `DAL/BomCoutDAL.cs`
+**Résumé :** Surcharge privée `CalculerCout(idFiche, nBatches, HashSet<int> fichesVisitees)` — détecte les cycles (fiche A → B → A) et lève `InvalidOperationException` explicite. L'entrée publique crée un `new HashSet<int>()`. `CalculerLigneFiche` propage le HashSet avec une copie (`new HashSet<int>(fichesVisitees)`) pour éviter les faux-positifs sur branches parallèles.
+
+#### [2026-04-21] FIX — Catches silencieux remplacés par Trace.TraceError (T-10, T-11)
+**Fichiers :** `Forms/FrmPrincipal.cs`, `Forms/FrmBomProductionSimulation.cs`
+**Résumé :** Les deux `catch { }` dans `ShowHubScreen()` (chargement DAL + contextes) remplacés par `catch (Exception ex) { Trace.TraceError(...); }` (T-10). Le `catch { lblCoutEstime.Text = ""; }` dans le calcul de coût remplacé par logging + `"Coût non disponible"` en rouge (T-11). `using System.Diagnostics` ajouté aux deux fichiers.
+
+#### [2026-04-21] FEAT — Palette centralisée AppColors + migration 5 fichiers (T-12, T-13)
+**Fichiers :** `Forms/AppColors.cs` (nouveau), `Forms/FrmListeBase.cs`, `Forms/FrmActivites.cs`, `Forms/FrmArtisaStock.cs`, `Forms/FrmVueStock.cs`, `Forms/FrmIngredients.cs`, `CharlesNadejda.csproj`
+**Résumé :** Classe statique `AppColors` créée avec palette complète (ChocoBrand, ChocoMed, ChocoAbyss, Creme, CremeWarm, CremeBg, Or, GreyBtn, Border, GreenOk, RedCrit, OrgWarn, VertDispo, OrangeReserv, RougePenur). 4 fichiers migrent leurs constantes privates vers AppColors (T-12). `FrmIngredients` migré de `partial class Form` vers `FrmListeBase<Ingredient>` — Designer.cs supprimé, membres abstraits implémentés, chip panel préservé via `OnLoad` override (T-13).
+
+#### [2026-04-21] REFACTOR — Suppression FrmBomProduction doublon (T-16)
+**Fichiers :** `Forms/FrmBomProduction.cs`, `Forms/FrmBomProduction.Designer.cs` (supprimés), `CharlesNadejda.csproj`
+**Résumé :** `FrmBomProduction` n'était instancié nulle part (grep confirmé). Fichiers supprimés + entrées .csproj retirées. `FrmBomProductionSimulation` est le formulaire de production unique (US-C01).
+
+#### [2026-04-21] FEAT — Module Catalogue connecté dans FrmPrincipal (T-17)
+**Fichiers :** `Navigation/RessourceType.cs`, `Forms/FrmPrincipal.cs`
+**Résumé :** Ajout de `Categories`, `Parfums`, `Produits` à l'enum `RessourceType`. Cases correspondantes dans `ShowRessourceScreen()`. Les 3 handlers `menuCatCategories/Parfums/Produits_Click` remplacent `PlaceholderWeb()` par la navigation SFA (SetRessource + _router.Navigate). `PlaceholderWeb()` conservé pour `menuCommandes_Click`.
+
+#### [2026-04-21] UX — Style btnFermer artisanal + hint label production + états vides (T-18, T-19, T-20, T-21)
+**Fichiers :** `Forms/FrmBomProductionSimulation.cs`, `Forms/FrmBomFiches.cs`, `Forms/FrmBomFicheEdit.cs`
+**Résumé :** T-18 : `btnFermer` styled AppColors.GreyBtn + ChocoBrand + Border dans Load(). T-19 : label `_lblEtatVide` dans `FrmBomFiches`, hint dans `lblResultat` si aucun contexte BOM. T-20 : `btnEnregistrer.Enabled = cboInput.Items.Count > 0` dans `ChargerInputsDisponibles()`. T-21 : label hint sous `btnLancerProduction` géré via `EnabledChanged` event.
+
+---
+
 ### SESSION 12 — 2026-04-17
 > Agent #3 UI/UX Designer : rework esthétique et ergonomique WinForms — palette chocolat unifiée, DGV artisanaux, boutons sémantiques FlatStyle, protection des suppressions (DefaultButton.Button2), WaitCursor sur opérations longues.
 

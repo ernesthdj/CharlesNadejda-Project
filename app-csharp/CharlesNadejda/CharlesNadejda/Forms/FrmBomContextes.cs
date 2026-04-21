@@ -1,97 +1,92 @@
 using System;
+using System.Collections.Generic;
+using System.Drawing;
 using System.Windows.Forms;
 using CharlesNadejda.DAL;
 using CharlesNadejda.Models;
 
 namespace CharlesNadejda.Forms
 {
-    public partial class FrmBomContextes : Form
+    /// <summary>
+    /// Liste des contextes de production — hérite de FrmListeBase&lt;BomContexte&gt;.
+    ///
+    /// TICKET-14 : migration depuis partial class Form vers FrmListeBase&lt;T&gt;.
+    /// Bouton supplémentaire « → Niveaux » ajouté en OnLoad à la position BtnYExtra.
+    /// </summary>
+    public class FrmBomContextes : FrmListeBase<BomContexte>
     {
         private readonly Activite _activite;
+        private Button            _btnNiveaux;
 
         public FrmBomContextes(Activite activite = null)
         {
-            InitializeComponent();
-            _activite     = activite;
-            lblTitre.Text = activite != null
-                ? $"Contextes de production — {activite.Nom}"
-                : "Contextes de production";
+            _activite = activite;
         }
 
-        private void FrmBomContextes_Load(object sender, EventArgs e) => Charger();
+        // ── Membres abstraits FrmListeBase<BomContexte> ───────────────────
 
-        private void Charger()
+        protected override string Titre => _activite != null
+            ? $"Contextes de production — {_activite.Nom}"
+            : "Contextes de production";
+
+        protected override List<BomContexte> ChargerDonnees()
+            => BomContexteDAL.GetAll(_activite?.Id ?? 0);
+
+        protected override void ConfigurerColonnes()
         {
-            try
+            CacherColonnes("Actif", "DateCreation", "Niveaux");
+            if (dgv.Columns["Nom"]         != null) dgv.Columns["Nom"].HeaderText         = "Nom du contexte";
+            if (dgv.Columns["ActiviteNom"] != null) dgv.Columns["ActiviteNom"].HeaderText = "Activité";
+            if (dgv.Columns["Description"] != null) dgv.Columns["Description"].HeaderText = "Description";
+        }
+
+        protected override Form OuvrirFormulaire(BomContexte element)
+            => element == null
+                ? new FrmBomContexteEdit(null, _activite)
+                : new FrmBomContexteEdit(element, _activite);
+
+        protected override void Supprimer(BomContexte element)
+            => BomContexteDAL.Delete(element.Id);
+
+        protected override string NomElement(BomContexte element) => element?.Nom ?? "?";
+
+        // ── Cycle de vie ──────────────────────────────────────────────────
+
+        protected override void OnLoad(EventArgs e)
+        {
+            // Bouton supplémentaire : navigation vers les niveaux du contexte
+            _btnNiveaux = new Button
             {
-                dgv.DataSource = null;
-                dgv.DataSource = BomContexteDAL.GetAll(_activite?.Id ?? 0);
+                Text      = "→ Niveaux",
+                Location  = new Point(BtnX, BtnYExtra),
+                Size      = new Size(130, 36),
+                Font      = new Font("Segoe UI", 9.5F),
+                Anchor    = AnchorStyles.Top | AnchorStyles.Right,
+                FlatStyle = FlatStyle.Flat,
+                Cursor    = Cursors.Hand,
+                BackColor = Color.FromArgb(63, 81, 181),
+                ForeColor = Color.White
+            };
+            _btnNiveaux.FlatAppearance.BorderSize = 0;
+            _btnNiveaux.FlatAppearance.MouseOverBackColor = Color.FromArgb(48, 63, 159);
+            _btnNiveaux.Click += (s, ev) => OuvrirNiveaux();
+            Controls.Add(_btnNiveaux);
 
-                foreach (string col in new[] { "Actif", "DateCreation", "Niveaux" })
-                    if (dgv.Columns[col] != null) dgv.Columns[col].Visible = false;
+            base.OnLoad(e);
+        }
 
-                if (dgv.Columns["Nom"]      != null) dgv.Columns["Nom"].HeaderText      = "Nom du contexte";
-                if (dgv.Columns["ActiviteNom"] != null) dgv.Columns["ActiviteNom"].HeaderText = "Activité";
-                if (dgv.Columns["Description"] != null) dgv.Columns["Description"].HeaderText = "Description";
-            }
-            catch (Exception ex)
+        private void OuvrirNiveaux()
+        {
+            var ctx = Selectionne();
+            if (ctx == null)
             {
-                MessageBox.Show("Erreur : " + ex.Message, "Erreur", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                MessageBox.Show("Sélectionnez un contexte.", "Aucune sélection",
+                    MessageBoxButtons.OK, MessageBoxIcon.Information);
+                return;
             }
-        }
-
-        private BomContexte Sélectionné()
-        {
-            if (dgv.CurrentRow == null) return null;
-            return dgv.CurrentRow.DataBoundItem as BomContexte;
-        }
-
-        private void btnAjouter_Click(object sender, EventArgs e)
-        {
-            using (var frm = new FrmBomContexteEdit(null, _activite))
-                if (frm.ShowDialog() == DialogResult.OK) Charger();
-        }
-
-        private void btnModifier_Click(object sender, EventArgs e)
-        {
-            var ctx = Sélectionné();
-            if (ctx == null) { MessageBox.Show("Sélectionnez un contexte."); return; }
-
-            using (var frm = new FrmBomContexteEdit(ctx, _activite))
-                if (frm.ShowDialog() == DialogResult.OK) Charger();
-        }
-
-        private void btnNiveaux_Click(object sender, EventArgs e)
-        {
-            var ctx = Sélectionné();
-            if (ctx == null) { MessageBox.Show("Sélectionnez un contexte."); return; }
-
             using (var frm = new FrmBomNiveaux(ctx))
-                frm.ShowDialog();
+                frm.ShowDialog(this);
+            Charger();   // rafraîchir après modification des niveaux
         }
-
-        private void btnSupprimer_Click(object sender, EventArgs e)
-        {
-            var ctx = Sélectionné();
-            if (ctx == null) { MessageBox.Show("Sélectionnez un contexte."); return; }
-
-            var confirm = MessageBox.Show(
-                $"Supprimer le contexte « {ctx.Nom} » ?\n\nTous les niveaux, stocks et productions associés seront supprimés.",
-                "Confirmation", MessageBoxButtons.YesNo, MessageBoxIcon.Warning);
-            if (confirm != DialogResult.Yes) return;
-
-            try
-            {
-                BomContexteDAL.Delete(ctx.Id);
-                Charger();
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show("Impossible de supprimer : des données liées existent.\n\n" + ex.Message,
-                    "Erreur", MessageBoxButtons.OK, MessageBoxIcon.Error);
-            }
-        }
-
-        private void btnFermer_Click(object sender, EventArgs e) => Close();
     }
 }

@@ -12,10 +12,10 @@ namespace CharlesNadejda.Forms
     ///
     /// Reçoit le BomNiveau auquel appartient la fiche. Le niveau détermine
     /// automatiquement quels inputs sont proposés :
-    ///   - N2 (ordre == 2) → inputs = ingrédients du N1 (lots)
-    ///   - N3+ (ordre >= 3) → inputs = fiches du niveau N-1
+    ///   - Toujours disponibles : ingrédients de l'activité (base N1)
+    ///   - Si ordre >= 3 : aussi les fiches de TOUS les niveaux inférieurs (N2, N3, …, N-1)
     ///
-    /// Règle stricte : niveau N consomme UNIQUEMENT niveau N-1.
+    /// Règle : niveau N peut consommer n'importe quel niveau inférieur, jamais supérieur.
     /// </summary>
     public partial class FrmBomFicheEdit : Form
     {
@@ -24,8 +24,7 @@ namespace CharlesNadejda.Forms
         private readonly bool        _isEdit;
         private readonly List<BomFicheLigne> _lignes = new List<BomFicheLigne>();
 
-        // Type d'input auto-déterminé depuis le niveau
-        private string _typeInputAuto;   // "ingredient" si ordre==2, "fiche" si ordre>=3
+        // (plus de _typeInputAuto : une fiche peut mixer ingrédients ET fiches de niveaux inférieurs)
 
         public FrmBomFicheEdit(BomFiche fiche, BomNiveau niveau)
         {
@@ -44,20 +43,12 @@ namespace CharlesNadejda.Forms
                 ? $"Modifier la fiche  —  {_niveau.NomContexte} › {_niveau.Nom}"
                 : $"Nouvelle fiche  —  {_niveau.NomContexte} › {_niveau.Nom} (N{_niveau.Ordre})";
 
-            // Détermination automatique du type d'input
-            _typeInputAuto = _niveau.Ordre >= 3 ? "fiche" : "ingredient";
-
-            // Masquer le sélecteur de type (plus de choix : imposé par le niveau)
+            // Masquer le sélecteur de type legacy (type déterminé par l'item choisi dans le combo)
             if (cboTypeInput != null) cboTypeInput.Visible = false;
 
-            // Masquer le sélecteur d'activité (hérité du niveau)
-            if (cboActivite != null)
-            {
-                cboActivite.Items.Clear();
-                cboActivite.Items.Add(_niveau.ActiviteNom);
-                cboActivite.SelectedIndex = 0;
-                cboActivite.Enabled       = false;
-            }
+            // Afficher le nom de l'activité en lecture seule — hérité du niveau (TICKET-05)
+            if (lblActiviteValeur != null)
+                lblActiviteValeur.Text = _niveau.ActiviteNom ?? "";
 
             // Unités output
             cboUniteOutput.Items.Clear();
@@ -84,9 +75,9 @@ namespace CharlesNadejda.Forms
 
         private void AfficherInfoInput()
         {
-            string msg = _typeInputAuto == "ingredient"
+            string msg = _niveau.Ordre <= 2
                 ? "Inputs : ingrédients du stock (N1)"
-                : $"Inputs : fiches du niveau N{_niveau.Ordre - 1}";
+                : "Inputs : ingrédients + fiches de tous les niveaux inférieurs";
 
             if (lblTypeInput != null)
             {
@@ -103,40 +94,29 @@ namespace CharlesNadejda.Forms
         {
             cboInput.Items.Clear();
 
-            if (_typeInputAuto == "ingredient")
+            // Ingrédients du stock (base, toujours disponibles quel que soit le niveau)
+            foreach (var ing in IngredientDAL.GetAll(idActivite: _niveau.IdActivite))
+                cboInput.Items.Add(new InputItem
+                {
+                    Id        = ing.Id,
+                    Nom       = "[Ingr.]  " + ing.Nom,
+                    Unite     = ing.UniteMesure,
+                    TypeInput = "ingredient"
+                });
+
+            // Fiches de TOUS les niveaux inférieurs (ordre >= 2 et ordre < niveau actuel)
+            // Règle : N peut consommer n'importe quel niveau < N, jamais >= N.
+            foreach (var niv in BomNiveauDAL.GetByContexte(_niveau.IdContexte))
             {
-                // N2 : ingrédients du stock N1
-                foreach (var ing in IngredientDAL.GetAll(idActivite: _niveau.IdActivite))
+                if (niv.Ordre >= _niveau.Ordre || niv.Ordre < 2) continue;
+                foreach (var f in BomFicheDAL.GetByNiveau(niv.Id))
                     cboInput.Items.Add(new InputItem
                     {
-                        Id        = ing.Id,
-                        Nom       = ing.Nom,
-                        Unite     = ing.UniteMesure,
-                        TypeInput = "ingredient"
+                        Id        = f.Id,
+                        Nom       = $"[N{niv.Ordre}]  {f.Nom}",
+                        Unite     = f.UniteOutput,
+                        TypeInput = "fiche"
                     });
-            }
-            else
-            {
-                // N3+ : fiches du niveau N-1
-                var niveauPrecedent = BomNiveauDAL.GetByContexteEtOrdre(_niveau.IdContexte, _niveau.Ordre - 1);
-                if (niveauPrecedent != null)
-                {
-                    foreach (var f in BomFicheDAL.GetByNiveau(niveauPrecedent.Id))
-                        cboInput.Items.Add(new InputItem
-                        {
-                            Id        = f.Id,
-                            Nom       = f.Nom,
-                            Unite     = f.UniteOutput,
-                            TypeInput = "fiche"
-                        });
-                }
-
-                if (cboInput.Items.Count == 0)
-                    MessageBox.Show(
-                        $"Aucune fiche disponible au niveau N{_niveau.Ordre - 1}.\n" +
-                        "Créez d'abord des fiches dans le niveau précédent.",
-                        "Niveau précédent vide",
-                        MessageBoxButtons.OK, MessageBoxIcon.Information);
             }
 
             if (cboInput.Items.Count > 0)
@@ -144,6 +124,10 @@ namespace CharlesNadejda.Forms
                 cboInput.SelectedIndex = 0;
                 SynchroniserUniteInput();
             }
+
+            // TICKET-20 : désactiver l'enregistrement si aucun input disponible
+            if (btnEnregistrer != null)
+                btnEnregistrer.Enabled = cboInput.Items.Count > 0;
         }
 
         private void cboInput_SelectedIndexChanged(object sender, EventArgs e)

@@ -34,17 +34,7 @@ namespace CharlesNadejda.Forms
         /// <summary>Y disponible après btnSupprimer pour un bouton supplémentaire.</summary>
         protected const int BtnYExtra = 196;
 
-        // ── Palette Charles & Nadejda Design System ──────────────────
-        private static readonly Color CHOCOLAT_FONCE = Color.FromArgb(61,   40,  23);   // #3D2817
-        private static readonly Color CHOCOLAT_MOYEN = Color.FromArgb(111,  78,  55);   // #6F4E37
-        private static readonly Color CHOCO_ABYSS    = Color.FromArgb(30,   15,   8);   // #1E0F08
-        private static readonly Color CREME          = Color.FromArgb(245, 230, 211);   // #F5E6D3
-        private static readonly Color CREME_WARM     = Color.FromArgb(236, 233, 216);   // #ECE9D8
-        private static readonly Color OR             = Color.FromArgb(212, 175,  55);   // #D4AF37
-        private static readonly Color GREEN          = Color.FromArgb(62,  162,  62);   // #3EA23E
-        private static readonly Color RED            = Color.FromArgb(199,  44,  72);   // #C72C48
-        private static readonly Color GREY_BTN       = Color.FromArgb(239, 234, 225);   // #EFEAE1
-        private static readonly Color BORDER         = Color.FromArgb(195, 185, 168);   // #C3B9A8
+        // ── Palette — voir AppColors (TICKET-12) ─────────────────────
 
         protected FrmListeBase()
         {
@@ -71,14 +61,14 @@ namespace CharlesNadejda.Forms
                 ColumnHeadersHeight         = 32
             };
 
-            // En-tête chocolat clair (CREME) — cohérence palette
-            dgv.ColumnHeadersDefaultCellStyle.BackColor          = CREME;
-            dgv.ColumnHeadersDefaultCellStyle.ForeColor          = CHOCOLAT_FONCE;
+            // En-tête chocolat clair (AppColors.Creme) — cohérence palette
+            dgv.ColumnHeadersDefaultCellStyle.BackColor          = AppColors.Creme;
+            dgv.ColumnHeadersDefaultCellStyle.ForeColor          = AppColors.ChocoBrand;
             dgv.ColumnHeadersDefaultCellStyle.Font               = new Font("Segoe UI", 9F, FontStyle.Bold);
-            dgv.ColumnHeadersDefaultCellStyle.SelectionBackColor = CREME;
+            dgv.ColumnHeadersDefaultCellStyle.SelectionBackColor = AppColors.Creme;
 
             // Sélection chocolat foncé (contraste renforcé)
-            dgv.DefaultCellStyle.SelectionBackColor = CHOCOLAT_FONCE;
+            dgv.DefaultCellStyle.SelectionBackColor = AppColors.ChocoBrand;
             dgv.DefaultCellStyle.SelectionForeColor = Color.White;
 
             // Lignes alternées crème très léger (loi de Gestalt : continuité)
@@ -92,7 +82,7 @@ namespace CharlesNadejda.Forms
             {
                 AutoSize  = false,
                 Font      = new Font("Segoe UI", 13F, FontStyle.Bold),
-                ForeColor = CHOCOLAT_FONCE,
+                ForeColor = AppColors.ChocoBrand,
                 Location  = new Point(12, 12),
                 Size      = new Size(700, 30),
                 Anchor    = AnchorStyles.Top | AnchorStyles.Left
@@ -102,13 +92,13 @@ namespace CharlesNadejda.Forms
             var ancreHD = AnchorStyles.Top | AnchorStyles.Right;
             var ancreBD = AnchorStyles.Bottom | AnchorStyles.Right;
 
-            btnAjouter   = CreerBouton("＋  Ajouter",   BtnX, 52,  ancreHD, CHOCOLAT_FONCE, Color.White);
-            btnModifier  = CreerBouton("✎  Modifier",  BtnX, 96,  ancreHD, GREEN,           Color.White);
-            btnSupprimer = CreerBouton("✕  Supprimer", BtnX, 140, ancreHD, RED,             Color.White);
-            btnFermer    = CreerBouton("Fermer",        BtnX, 436, ancreBD, GREY_BTN,        CHOCOLAT_FONCE);
+            btnAjouter   = CreerBouton("＋  Ajouter",   BtnX, 52,  ancreHD, AppColors.ChocoBrand, Color.White);
+            btnModifier  = CreerBouton("✎  Modifier",  BtnX, 96,  ancreHD, AppColors.GreenOk,  Color.White);
+            btnSupprimer = CreerBouton("✕  Supprimer", BtnX, 140, ancreHD, AppColors.RedCrit,  Color.White);
+            btnFermer    = CreerBouton("Fermer",        BtnX, 436, ancreBD, AppColors.GreyBtn,        AppColors.ChocoBrand);
 
             // FlatAppearance borders & hover — palette Charles & Nadejda
-            btnAjouter.FlatAppearance.BorderColor        = CHOCO_ABYSS;
+            btnAjouter.FlatAppearance.BorderColor        = AppColors.ChocoAbyss;
             btnAjouter.FlatAppearance.MouseOverBackColor = Color.FromArgb(88, 60, 36);
 
             btnModifier.FlatAppearance.BorderColor        = Color.FromArgb(46, 125, 50);
@@ -117,7 +107,7 @@ namespace CharlesNadejda.Forms
             btnSupprimer.FlatAppearance.BorderColor        = Color.FromArgb(141, 31, 51);
             btnSupprimer.FlatAppearance.MouseOverBackColor = Color.FromArgb(158, 31, 55);
 
-            btnFermer.FlatAppearance.BorderColor        = BORDER;
+            btnFermer.FlatAppearance.BorderColor        = AppColors.Border;
             btnFermer.FlatAppearance.MouseOverBackColor = Color.FromArgb(220, 213, 202);
 
             btnAjouter.Click   += (s, e) => OnAjouter();

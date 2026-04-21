@@ -26,7 +26,8 @@ namespace CharlesNadejda.Models
         public string NomContexte { get; set; }
         public string NomActivite { get; set; }
 
-        public bool EstPerime => DateDlc.HasValue && DateDlc.Value < DateTime.Today;
+        public bool    EstPerime  => DateDlc.HasValue && DateDlc.Value < DateTime.Today;
+        public decimal CoutTotal  => QuantiteDisponible * CoutUnitaire;
 
         public override string ToString() =>
             $"{NomFiche} — {QuantiteDisponible} {UniteOutput} [{NomNiveau}]";

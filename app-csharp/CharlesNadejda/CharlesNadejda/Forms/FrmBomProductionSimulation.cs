@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Drawing;
 using System.Windows.Forms;
 using CharlesNadejda.DAL;
@@ -45,6 +46,30 @@ namespace CharlesNadejda.Forms
 
         private void FrmBomProductionSimulation_Load(object sender, EventArgs e)
         {
+            // TICKET-18 : unifier le style de btnFermer avec la palette artisanale
+            btnFermer.BackColor = AppColors.GreyBtn;
+            btnFermer.ForeColor = AppColors.ChocoBrand;
+            btnFermer.FlatStyle = FlatStyle.Flat;
+            btnFermer.FlatAppearance.BorderColor = AppColors.Border;
+            btnFermer.FlatAppearance.MouseOverBackColor = Color.FromArgb(220, 213, 202);
+
+            // TICKET-21 : hint dynamique affiché quand btnLancerProduction est grisé
+            var lblHint = new Label
+            {
+                Text      = "Simulez d'abord — aucune pénurie requise pour activer la production.",
+                Font      = new Font("Segoe UI", 8F, FontStyle.Italic),
+                ForeColor = AppColors.ChocoMed,
+                AutoSize  = false,
+                Size      = new Size(240, 32),
+                Location  = new Point(btnLancerProduction.Left, btnLancerProduction.Bottom + 4),
+                Visible   = true
+            };
+            this.Controls.Add(lblHint);
+            lblHint.BringToFront();
+
+            btnLancerProduction.EnabledChanged += (s, ev) =>
+                lblHint.Visible = !btnLancerProduction.Enabled;
+
             ChargerContextes();
             btnLancerProduction.Enabled = false;
 
@@ -80,8 +105,19 @@ namespace CharlesNadejda.Forms
             cboContexte.Items.Clear();
             foreach (var ctx in BomContexteDAL.GetAll(_idActivite))
                 cboContexte.Items.Add(ctx);
-            if (cboContexte.Items.Count > 0 && _contexteInitial == null)
+
+            // TICKET-19 : état vide si aucun contexte disponible pour cette activité
+            if (cboContexte.Items.Count == 0)
+            {
+                lblResultat.ForeColor = System.Drawing.Color.FromArgb(140, 110, 80);
+                lblResultat.Text      = "Aucun contexte BOM disponible pour cette activité. " +
+                                        "Créez d'abord un contexte et ses niveaux depuis la vue stock.";
+                btnSimuler.Enabled = false;
+            }
+            else if (cboContexte.Items.Count > 0 && _contexteInitial == null)
+            {
                 cboContexte.SelectedIndex = 0;
+            }
         }
 
         private void cboContexte_SelectedIndexChanged(object sender, EventArgs e)
@@ -178,9 +214,12 @@ namespace CharlesNadejda.Forms
                               $"→  {nudQuantite.Value} batch(es) × {fiche.QuantiteOutput} {fiche.UniteOutput}"
                             : "Coût estimé : données de prix manquantes";
                     }
-                    catch
+                    catch (Exception exCout)
                     {
-                        lblCoutEstime.Text = "";
+                        // TICKET-11 : logguer au lieu d'avaler silencieusement — afficher un message explicite
+                        Trace.TraceError("FrmBomProductionSimulation — calcul coût : {0}", exCout);
+                        lblCoutEstime.ForeColor = System.Drawing.Color.DarkRed;
+                        lblCoutEstime.Text      = "Coût non disponible";
                     }
                 }
                 else
@@ -259,10 +298,11 @@ namespace CharlesNadejda.Forms
 
             try
             {
-                string notes = string.IsNullOrWhiteSpace(txtNotes.Text) ? null : txtNotes.Text.Trim();
+                string notes    = string.IsNullOrWhiteSpace(txtNotes.Text) ? null : txtNotes.Text.Trim();
+                int    delaiJ   = (int)nudDelaiConservation.Value;   // 0 = pas de DLC
 
                 int idProd = await System.Threading.Tasks.Task.Run(() =>
-                    BomProductionDAL.Executer(niveau.Id, fiche.Id, nudQuantite.Value, notes));
+                    BomProductionDAL.Executer(niveau.Id, fiche.Id, nudQuantite.Value, notes, delaiJ));
 
                 MessageBox.Show(
                     $"Production enregistrée (ID #{idProd}).\n" +

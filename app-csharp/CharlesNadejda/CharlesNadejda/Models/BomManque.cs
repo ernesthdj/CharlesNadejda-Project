@@ -10,7 +10,9 @@ namespace CharlesNadejda.Models
         public string  Unite             { get; set; }
         public decimal QuantiteNecessaire { get; set; }
         public decimal QuantiteDisponible { get; set; }
-        public decimal Manque            => QuantiteNecessaire - QuantiteDisponible;
+        public decimal Manque            => QuantiteNecessaire > QuantiteDisponible
+                                               ? QuantiteNecessaire - QuantiteDisponible
+                                               : 0m;
 
         public override string ToString() =>
             $"{NomInput} : besoin {QuantiteNecessaire} {Unite}, dispo {QuantiteDisponible} {Unite} (manque {Manque} {Unite})";

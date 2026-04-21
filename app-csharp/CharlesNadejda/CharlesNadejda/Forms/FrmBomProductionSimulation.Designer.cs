@@ -12,20 +12,22 @@ namespace CharlesNadejda.Forms
 
         private void InitializeComponent()
         {
-            this.lblTitre           = new System.Windows.Forms.Label();
-            this.grpSélection       = new System.Windows.Forms.GroupBox();
-            this.lblContexte        = new System.Windows.Forms.Label();
-            this.cboContexte        = new System.Windows.Forms.ComboBox();
-            this.lblNiveau          = new System.Windows.Forms.Label();
-            this.cboNiveau          = new System.Windows.Forms.ComboBox();
-            this.lblFiche           = new System.Windows.Forms.Label();
-            this.cboFiche           = new System.Windows.Forms.ComboBox();
-            this.lblQuantite        = new System.Windows.Forms.Label();
-            this.nudQuantite        = new System.Windows.Forms.NumericUpDown();
-            this.lblInfoBatch       = new System.Windows.Forms.Label();
-            this.btnSimuler         = new System.Windows.Forms.Button();
-            this.lblNotes           = new System.Windows.Forms.Label();
-            this.txtNotes           = new System.Windows.Forms.TextBox();
+            this.lblTitre               = new System.Windows.Forms.Label();
+            this.grpSélection           = new System.Windows.Forms.GroupBox();
+            this.lblContexte            = new System.Windows.Forms.Label();
+            this.cboContexte            = new System.Windows.Forms.ComboBox();
+            this.lblNiveau              = new System.Windows.Forms.Label();
+            this.cboNiveau              = new System.Windows.Forms.ComboBox();
+            this.lblFiche               = new System.Windows.Forms.Label();
+            this.cboFiche               = new System.Windows.Forms.ComboBox();
+            this.lblQuantite            = new System.Windows.Forms.Label();
+            this.nudQuantite            = new System.Windows.Forms.NumericUpDown();
+            this.lblInfoBatch           = new System.Windows.Forms.Label();
+            this.btnSimuler             = new System.Windows.Forms.Button();
+            this.lblDelaiConservation   = new System.Windows.Forms.Label();
+            this.nudDelaiConservation   = new System.Windows.Forms.NumericUpDown();
+            this.lblNotes               = new System.Windows.Forms.Label();
+            this.txtNotes               = new System.Windows.Forms.TextBox();
             this.grpResultat        = new System.Windows.Forms.GroupBox();
             this.lblResultat        = new System.Windows.Forms.Label();
             this.lblCoutEstime      = new System.Windows.Forms.Label();
@@ -34,6 +36,7 @@ namespace CharlesNadejda.Forms
             this.btnLancerProduction = new System.Windows.Forms.Button();
             this.btnFermer          = new System.Windows.Forms.Button();
             ((System.ComponentModel.ISupportInitialize)(this.nudQuantite)).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)(this.nudDelaiConservation)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.dgvSimulation)).BeginInit();
             this.grpSélection.SuspendLayout();
             this.grpResultat.SuspendLayout();
@@ -132,6 +135,22 @@ namespace CharlesNadejda.Forms
             this.btnSimuler.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
             this.btnSimuler.Click    += new System.EventHandler(this.btnSimuler_Click);
 
+            // lblDelaiConservation
+            this.lblDelaiConservation.AutoSize = true;
+            this.lblDelaiConservation.Font     = new System.Drawing.Font("Segoe UI", 10F);
+            this.lblDelaiConservation.Location = new System.Drawing.Point(370, 88);
+            this.lblDelaiConservation.Text     = "Délai conservation (jours)";
+
+            // nudDelaiConservation — 0 = pas de DLC
+            this.nudDelaiConservation.DecimalPlaces = 0;
+            this.nudDelaiConservation.Minimum       = 0;
+            this.nudDelaiConservation.Maximum       = 3650;
+            this.nudDelaiConservation.Value         = 0;
+            this.nudDelaiConservation.Font          = new System.Drawing.Font("Segoe UI", 10F);
+            this.nudDelaiConservation.Location      = new System.Drawing.Point(370, 108);
+            this.nudDelaiConservation.Size          = new System.Drawing.Size(100, 26);
+            this.nudDelaiConservation.TabIndex      = 4;
+
             // lblNotes
             this.lblNotes.AutoSize = true;
             this.lblNotes.Font     = new System.Drawing.Font("Segoe UI", 10F);
@@ -154,6 +173,8 @@ namespace CharlesNadejda.Forms
             this.grpSélection.Controls.Add(this.nudQuantite);
             this.grpSélection.Controls.Add(this.lblInfoBatch);
             this.grpSélection.Controls.Add(this.btnSimuler);
+            this.grpSélection.Controls.Add(this.lblDelaiConservation);
+            this.grpSélection.Controls.Add(this.nudDelaiConservation);
             this.grpSélection.Controls.Add(this.lblNotes);
             this.grpSélection.Controls.Add(this.txtNotes);
 
@@ -254,6 +275,7 @@ namespace CharlesNadejda.Forms
             this.Load           += new System.EventHandler(this.FrmBomProductionSimulation_Load);
 
             ((System.ComponentModel.ISupportInitialize)(this.nudQuantite)).EndInit();
+            ((System.ComponentModel.ISupportInitialize)(this.nudDelaiConservation)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.dgvSimulation)).EndInit();
             this.grpSélection.ResumeLayout(false);
             this.grpSélection.PerformLayout();
@@ -273,6 +295,8 @@ namespace CharlesNadejda.Forms
         private System.Windows.Forms.NumericUpDown nudQuantite;
         private System.Windows.Forms.Label         lblInfoBatch;
         private System.Windows.Forms.Button        btnSimuler;
+        private System.Windows.Forms.Label         lblDelaiConservation;
+        private System.Windows.Forms.NumericUpDown nudDelaiConservation;
         private System.Windows.Forms.Label         lblNotes;
         private System.Windows.Forms.TextBox       txtNotes;
         private System.Windows.Forms.GroupBox      grpResultat;

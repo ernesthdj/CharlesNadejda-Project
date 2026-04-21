@@ -141,12 +141,12 @@ namespace CharlesNadejda.DAL
                 }
                 else
                 {
-                    // Niveau N (N > 1) : consomme le bom_stock du niveau précédent.
-                    // bom_stocks stocke dans l'unité output de la fiche source (ligne.UniteMesureInput).
-                    // qteNecessaire est dans ligne.UniteMesure — conversion obligatoire avant comparaison.
-                    int idNiveauPrecedent = GetIdNiveauPrecedent(idNiveau, niveau.IdContexte, niveau.Ordre);
-                    qteDisponible = idNiveauPrecedent > 0
-                        ? BomStockDAL.GetDisponible(idNiveauPrecedent, ligne.IdInputFiche.Value)
+                    // Consomme le bom_stock du niveau où la fiche source a été produite.
+                    // Un niveau N peut référencer n'importe quel niveau inférieur (pas seulement N-1).
+                    // On cherche le niveau réel de la fiche, pas forcément N-1.
+                    int idNiveauSource = GetIdNiveauDeFiche(ligne.IdInputFiche.Value);
+                    qteDisponible = idNiveauSource > 0
+                        ? BomStockDAL.GetDisponible(idNiveauSource, ligne.IdInputFiche.Value)
                         : 0;
 
                     decimal qteNecessaireConv = UnitConvertisseur.Convertir(
@@ -205,9 +205,9 @@ namespace CharlesNadejda.DAL
                     qteNecessaireAffichee = UnitConvertisseur.Convertir(
                         qteNecessaire, ligne.UniteMesure, ligne.UniteMesureInput);
                     uniteAffichee = ligne.UniteMesureInput;
-                    int idNiveauPrecedent = GetIdNiveauPrecedent(idNiveau, niveau.IdContexte, niveau.Ordre);
-                    qteDisponible = idNiveauPrecedent > 0
-                        ? BomStockDAL.GetDisponible(idNiveauPrecedent, ligne.IdInputFiche.Value)
+                    int idNiveauSource = GetIdNiveauDeFiche(ligne.IdInputFiche.Value);
+                    qteDisponible = idNiveauSource > 0
+                        ? BomStockDAL.GetDisponible(idNiveauSource, ligne.IdInputFiche.Value)
                         : 0;
                 }
 
@@ -232,28 +232,36 @@ namespace CharlesNadejda.DAL
         /// 4. Crée l'entrée de stock N dans bom_stocks.
         /// Retourne l'id de la production créée.
         /// </summary>
-        public static int Executer(int idNiveau, int idFiche, decimal quantiteCible, string notes = null)
+        public static int Executer(int idNiveau, int idFiche, decimal quantiteCible, string notes = null, int delaiConservationJours = 0)
         {
-            // Vérification préalable (hors transaction pour ne pas bloquer inutilement)
-            var manques = VerifierDisponibilite(idNiveau, idFiche, quantiteCible);
-            if (manques.Count > 0)
-            {
-                var details = string.Join("\n", manques);
-                throw new InvalidOperationException(
-                    $"Stock insuffisant pour lancer la production :\n{details}");
-            }
-
-            var niveau = BomNiveauDAL.GetById(idNiveau);
-            var fiche  = BomFicheDAL.GetById(idFiche);
-            // quantiteCible = nombre de batches. Quantité réellement produite = batches × QuantiteOutput.
-            decimal multiplicateur = quantiteCible;
-            decimal qteProduite    = quantiteCible * fiche.QuantiteOutput;
-
             using (var conn = DbHelper.GetConnection())
             using (var tx = conn.BeginTransaction())
             {
                 try
                 {
+                    // TICKET-01 : Vérification DANS la transaction pour éviter la race condition TOCTOU
+                    // (Time-Of-Check Time-Of-Use — vérif et consommation sont maintenant atomiques).
+                    var manques = VerifierDisponibilite(idNiveau, idFiche, quantiteCible);
+                    if (manques.Count > 0)
+                    {
+                        var details = string.Join("\n", manques);
+                        throw new InvalidOperationException(
+                            $"Stock insuffisant pour lancer la production :\n{details}");
+                    }
+
+                    var niveau = BomNiveauDAL.GetById(idNiveau);
+                    var fiche  = BomFicheDAL.GetById(idFiche);
+
+                    // TICKET-03 : null-guard — fiche ou niveau supprimé entre la vérif et l'exécution
+                    if (niveau == null)
+                        throw new InvalidOperationException($"Le niveau BOM (id={idNiveau}) n'existe plus — production annulée.");
+                    if (fiche == null)
+                        throw new InvalidOperationException($"La fiche BOM (id={idFiche}) n'existe plus — production annulée.");
+
+                    // quantiteCible = nombre de batches. Quantité réellement produite = batches × QuantiteOutput.
+                    decimal multiplicateur = quantiteCible;
+                    decimal qteProduite    = quantiteCible * fiche.QuantiteOutput;
+
                     decimal coutTotalIngredients = 0;
 
                     // 1. Insérer l'enregistrement de production (cout_unitaire calculé après)
@@ -302,12 +310,19 @@ namespace CharlesNadejda.DAL
                     using (var cmd = conn.CreateCommand())
                     {
                         cmd.Transaction = tx;
-                        cmd.CommandText = @"
+                        // DLC = date production + délai en jours (NULL si délai = 0)
+                        string sqlDlc = delaiConservationJours > 0
+                            ? "DATE_ADD(CURDATE(), INTERVAL @delaiJours DAY)"
+                            : "NULL";
+
+                        cmd.CommandText = $@"
                             INSERT INTO bom_stocks
                                 (id_niveau, id_contexte, id_activite, id_fiche, id_production,
-                                 quantite_disponible, cout_unitaire, date_production)
-                            VALUES (@idNiv, @idCtx, @idAct, @idFiche, @idProd, @qte, @coutUnit, CURDATE())";
+                                 quantite_disponible, cout_unitaire, date_production, date_dlc)
+                            VALUES (@idNiv, @idCtx, @idAct, @idFiche, @idProd, @qte, @coutUnit, CURDATE(), {sqlDlc})";
                         cmd.Parameters.AddWithValue("@idNiv",    idNiveau);
+                        if (delaiConservationJours > 0)
+                            cmd.Parameters.AddWithValue("@delaiJours", delaiConservationJours);
                         cmd.Parameters.AddWithValue("@idCtx",    niveau.IdContexte);
                         cmd.Parameters.AddWithValue("@idAct",    niveau.IdActivite);
                         cmd.Parameters.AddWithValue("@idFiche",  idFiche);
@@ -369,6 +384,18 @@ namespace CharlesNadejda.DAL
                         cmd.ExecuteNonQuery();
                     }
 
+                    // TICKET-08 : libérer les réservations actives sur ce lot (dans la même transaction)
+                    using (var cmdRes = conn.CreateCommand())
+                    {
+                        cmdRes.Transaction = tx;
+                        cmdRes.CommandText = @"
+                            UPDATE bom_reservations
+                            SET actif = 0
+                            WHERE id_lot = @idLot AND actif = 1";
+                        cmdRes.Parameters.AddWithValue("@idLot", idLot);
+                        cmdRes.ExecuteNonQuery();
+                    }
+
                     // Traçabilité
                     InsertLigne(conn, tx, idProduction, "lot_ingredient", idLot, null, pris, prixUnit);
 
@@ -378,8 +405,8 @@ namespace CharlesNadejda.DAL
             }
             else
             {
-                int idNiveauPrecedent = GetIdNiveauPrecedent(niveau.Id, niveau.IdContexte, niveau.Ordre);
-                var stocks = BomStockDAL.GetBomStocksFIFO(idNiveauPrecedent, ligne.IdInputFiche.Value);
+                int idNiveauSource = GetIdNiveauDeFiche(ligne.IdInputFiche.Value);
+                var stocks = BomStockDAL.GetBomStocksFIFO(idNiveauSource, ligne.IdInputFiche.Value);
 
                 foreach (var (idStock, dispo, coutUnit) in stocks)
                 {
@@ -427,6 +454,24 @@ namespace CharlesNadejda.DAL
                 cmd.Parameters.AddWithValue("@qte",     quantite);
                 cmd.Parameters.AddWithValue("@cout",    coutUnit);
                 cmd.ExecuteNonQuery();
+            }
+        }
+
+        /// <summary>
+        /// Retourne l'id du niveau auquel appartient la fiche donnée.
+        /// Utilisé pour consommer le stock du bon niveau source, quel que soit son ordre
+        /// (un niveau N peut référencer n'importe quel niveau inférieur, pas seulement N-1).
+        /// Retourne 0 si la fiche n'existe pas.
+        /// </summary>
+        private static int GetIdNiveauDeFiche(int idFiche)
+        {
+            using (var conn = DbHelper.GetConnection())
+            using (var cmd = conn.CreateCommand())
+            {
+                cmd.CommandText = "SELECT id_niveau FROM bom_fiches WHERE id = @id";
+                cmd.Parameters.AddWithValue("@id", idFiche);
+                var res = cmd.ExecuteScalar();
+                return res == null ? 0 : Convert.ToInt32(res);
             }
         }
 

@@ -6,6 +6,10 @@ namespace CharlesNadejda.Navigation
         Ingredients,
         Fournisseurs,
         Achats,
-        VueStock
+        VueStock,
+        // TICKET-17 : module Catalogue connecté
+        Categories,
+        Parfums,
+        Produits
     }
 }

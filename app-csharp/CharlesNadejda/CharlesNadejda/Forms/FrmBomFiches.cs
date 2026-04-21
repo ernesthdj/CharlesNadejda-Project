@@ -1,4 +1,6 @@
 using System;
+using System.Collections.Generic;
+using System.Drawing;
 using System.Windows.Forms;
 using CharlesNadejda.DAL;
 using CharlesNadejda.Models;
@@ -6,94 +8,82 @@ using CharlesNadejda.Models;
 namespace CharlesNadejda.Forms
 {
     /// <summary>
-    /// Liste des fiches d'un niveau de transformation donné.
-    /// Appelé depuis FrmArtisaStock avec le niveau sélectionné.
+    /// Liste des fiches d'un niveau de transformation donné — hérite de FrmListeBase&lt;BomFiche&gt;.
+    ///
+    /// TICKET-14 : migration depuis partial class Form vers FrmListeBase&lt;T&gt;.
+    /// TICKET-19 : label état vide préservé via AppliquerStylesLignes().
     /// </summary>
-    public partial class FrmBomFiches : Form
+    public class FrmBomFiches : FrmListeBase<BomFiche>
     {
         private readonly BomNiveau _niveau;
+        private Label              _lblEtatVide;   // TICKET-19 : message quand liste vide
 
         public FrmBomFiches(BomNiveau niveau)
         {
-            InitializeComponent();
-            _niveau       = niveau;
-            lblTitre.Text = $"{niveau.NomContexte}  ›  {niveau.Nom}  (N{niveau.Ordre})";
+            _niveau = niveau;
         }
 
-        private void FrmBomFiches_Load(object sender, EventArgs e) => Charger();
+        // ── Membres abstraits FrmListeBase<BomFiche> ──────────────────────
 
-        private void Charger()
+        protected override string Titre
+            => $"{_niveau.NomContexte}  ›  {_niveau.Nom}  (N{_niveau.Ordre})";
+
+        protected override List<BomFiche> ChargerDonnees()
+            => BomFicheDAL.GetByNiveau(_niveau.Id);
+
+        protected override void ConfigurerColonnes()
         {
-            try
-            {
-                dgv.DataSource = null;
-                dgv.DataSource = BomFicheDAL.GetByNiveau(_niveau.Id);
+            CacherColonnes("Id", "IdNiveau", "Actif", "DateCreation", "Lignes",
+                           "NomNiveau", "OrdreNiveau", "IdContexte", "NomContexte",
+                           "CoutBatch", "CoutUnitaire");
 
-                string[] cachées = { "Id", "IdNiveau", "Actif", "DateCreation", "Lignes",
-                                     "NomNiveau", "OrdreNiveau", "IdContexte", "NomContexte" };
-                foreach (string col in cachées)
-                    if (dgv.Columns[col] != null) dgv.Columns[col].Visible = false;
+            ConfigCol("Nom",              "Nom de la fiche", 220, 120);
+            ConfigCol("UniteOutput",      "Unité",            70,  55);
+            ConfigCol("QuantiteOutput",   "Qté/exec.",         80,  65);
+            ConfigCol("TempsPreparation", "Temps (min)",       90,  70);
+            ConfigCol("Description",      "Description",      200,  80);
 
-                if (dgv.Columns["Nom"]              != null)   dgv.Columns["Nom"].HeaderText              = "Nom de la fiche";
-                if (dgv.Columns["Activite"]         != null) { dgv.Columns["Activite"].HeaderText         = "Activité";     dgv.Columns["Activite"].Width = 110; }
-                if (dgv.Columns["UniteOutput"]      != null) { dgv.Columns["UniteOutput"].HeaderText      = "Unité";        dgv.Columns["UniteOutput"].Width = 70; }
-                if (dgv.Columns["QuantiteOutput"]   != null) { dgv.Columns["QuantiteOutput"].HeaderText   = "Qté/exec.";   dgv.Columns["QuantiteOutput"].Width = 80; }
-                if (dgv.Columns["TempsPreparation"] != null) { dgv.Columns["TempsPreparation"].HeaderText = "Temps (min)"; dgv.Columns["TempsPreparation"].Width = 90; }
-                if (dgv.Columns["Description"]      != null)   dgv.Columns["Description"].HeaderText      = "Description";
-                if (dgv.Columns["CoutBatch"]        != null)   dgv.Columns["CoutBatch"].Visible           = false;
-                if (dgv.Columns["CoutUnitaire"]     != null)   dgv.Columns["CoutUnitaire"].Visible        = false;
-            }
-            catch (Exception ex)
+            if (dgv.Columns["Activite"] != null)
             {
-                MessageBox.Show("Erreur : " + ex.Message, "Erreur", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                dgv.Columns["Activite"].HeaderText = "Activité";
+                dgv.Columns["Activite"].Width      = 110;
             }
         }
 
-        private BomFiche Sélectionnée()
+        protected override Form OuvrirFormulaire(BomFiche element)
+            => element == null
+                ? new FrmBomFicheEdit(null, _niveau)
+                : new FrmBomFicheEdit(BomFicheDAL.GetById(element.Id), _niveau);
+
+        protected override void Supprimer(BomFiche element)
+            => BomFicheDAL.Delete(element.Id);
+
+        protected override string NomElement(BomFiche element) => element?.Nom ?? "?";
+
+        /// <summary>TICKET-19 : affiche le label état vide si aucune fiche dans ce niveau.</summary>
+        protected override void AppliquerStylesLignes()
         {
-            if (dgv.CurrentRow == null) return null;
-            return dgv.CurrentRow.DataBoundItem as BomFiche;
+            if (_lblEtatVide != null)
+                _lblEtatVide.Visible = dgv.Rows.Count == 0;
         }
 
-        private void btnAjouter_Click(object sender, EventArgs e)
+        // ── Cycle de vie ──────────────────────────────────────────────────
+
+        protected override void OnLoad(EventArgs e)
         {
-            using (var frm = new FrmBomFicheEdit(null, _niveau))
-                if (frm.ShowDialog() == DialogResult.OK) Charger();
-        }
-
-        private void btnModifier_Click(object sender, EventArgs e)
-        {
-            var fiche = Sélectionnée();
-            if (fiche == null) { MessageBox.Show("Sélectionnez une fiche."); return; }
-
-            fiche = BomFicheDAL.GetById(fiche.Id);
-            using (var frm = new FrmBomFicheEdit(fiche, _niveau))
-                if (frm.ShowDialog() == DialogResult.OK) Charger();
-        }
-
-        private void btnSupprimer_Click(object sender, EventArgs e)
-        {
-            var fiche = Sélectionnée();
-            if (fiche == null) { MessageBox.Show("Sélectionnez une fiche."); return; }
-
-            var confirm = MessageBox.Show(
-                $"Supprimer la fiche « {fiche.Nom} » ?\n\nCette action est irréversible.",
-                "Confirmation", MessageBoxButtons.YesNo, MessageBoxIcon.Warning,
-                MessageBoxDefaultButton.Button2);
-            if (confirm != DialogResult.Yes) return;
-
-            try
+            // TICKET-19 : label état vide — positionné sur le DGV, caché par défaut
+            _lblEtatVide = new Label
             {
-                BomFicheDAL.Delete(fiche.Id);
-                Charger();
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show("Impossible de supprimer : cette fiche est utilisée dans des productions.\n\n" + ex.Message,
-                    "Erreur", MessageBoxButtons.OK, MessageBoxIcon.Error);
-            }
-        }
+                Text      = "Aucune fiche dans ce niveau.\nCliquez « ＋ Ajouter » pour créer la première.",
+                Font      = new Font("Segoe UI", 10F, FontStyle.Italic),
+                ForeColor = Color.FromArgb(140, 110, 80),
+                TextAlign = ContentAlignment.MiddleCenter,
+                Dock      = DockStyle.Fill,
+                Visible   = false
+            };
+            dgv.Controls.Add(_lblEtatVide);
 
-        private void btnFermer_Click(object sender, EventArgs e) => Close();
+            base.OnLoad(e);   // → FrmListeBase : Titre + Charger() → AppliquerStylesLignes()
+        }
     }
 }

@@ -16,8 +16,8 @@ namespace CharlesNadejda.Forms
             this.errorProvider     = new System.Windows.Forms.ErrorProvider(this.components);
             this.lblNom            = new System.Windows.Forms.Label();
             this.txtNom            = new System.Windows.Forms.TextBox();
-            this.lblActivite       = new System.Windows.Forms.Label();
-            this.cboActivite       = new System.Windows.Forms.ComboBox();
+            this.lblActivite        = new System.Windows.Forms.Label();
+            this.lblActiviteValeur  = new System.Windows.Forms.Label();
             this.lblUniteOutput    = new System.Windows.Forms.Label();
             this.cboUniteOutput    = new System.Windows.Forms.ComboBox();
             this.lblQuantiteOutput = new System.Windows.Forms.Label();
@@ -71,12 +71,13 @@ namespace CharlesNadejda.Forms
             this.lblActivite.Location = new System.Drawing.Point(304, 15);
             this.lblActivite.Text     = "Activité *";
 
-            // cboActivite
-            this.cboActivite.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
-            this.cboActivite.Font          = new System.Drawing.Font("Segoe UI", 10F);
-            this.cboActivite.Location      = new System.Drawing.Point(304, 36);
-            this.cboActivite.Size          = new System.Drawing.Size(140, 26);
-            this.cboActivite.TabIndex      = 1;
+            // lblActiviteValeur — lecture seule, remplace le combobox grisé (TICKET-05)
+            this.lblActiviteValeur.AutoSize  = true;
+            this.lblActiviteValeur.Font      = new System.Drawing.Font("Segoe UI", 10F, System.Drawing.FontStyle.Bold);
+            this.lblActiviteValeur.Location  = new System.Drawing.Point(304, 36);
+            this.lblActiviteValeur.Name      = "lblActiviteValeur";
+            this.lblActiviteValeur.ForeColor = System.Drawing.Color.FromArgb(61, 40, 23);
+            this.lblActiviteValeur.Text      = "";
 
             // lblUniteOutput
             this.lblUniteOutput.AutoSize = true;
@@ -278,7 +279,7 @@ namespace CharlesNadejda.Forms
             this.Controls.Add(this.lblNom);
             this.Controls.Add(this.txtNom);
             this.Controls.Add(this.lblActivite);
-            this.Controls.Add(this.cboActivite);
+            this.Controls.Add(this.lblActiviteValeur);
             this.Controls.Add(this.lblUniteOutput);
             this.Controls.Add(this.cboUniteOutput);
             this.Controls.Add(this.lblQuantiteOutput);
@@ -312,7 +313,7 @@ namespace CharlesNadejda.Forms
         private System.Windows.Forms.Label             lblNom;
         private System.Windows.Forms.TextBox           txtNom;
         private System.Windows.Forms.Label             lblActivite;
-        private System.Windows.Forms.ComboBox          cboActivite;
+        private System.Windows.Forms.Label             lblActiviteValeur;
         private System.Windows.Forms.Label             lblUniteOutput;
         private System.Windows.Forms.ComboBox          cboUniteOutput;
         private System.Windows.Forms.Label             lblQuantiteOutput;

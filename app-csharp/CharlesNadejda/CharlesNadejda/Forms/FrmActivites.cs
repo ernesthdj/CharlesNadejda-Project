@@ -20,10 +20,7 @@ namespace CharlesNadejda.Forms
         private Button _btnSupprimer;
         private Button _btnStocks;
 
-        private static readonly Color CHOCOLAT_FONCE = Color.FromArgb(61, 40, 23);
-        private static readonly Color CHOCOLAT_MOYEN = Color.FromArgb(111, 78, 55);
-        private static readonly Color CREME          = Color.FromArgb(245, 230, 211);
-        private static readonly Color OR             = Color.FromArgb(212, 175, 55);
+        // ── Palette — voir AppColors (TICKET-12) ─────────────────────
 
         public FrmActivites()
         {
@@ -46,14 +43,14 @@ namespace CharlesNadejda.Forms
             {
                 Dock      = DockStyle.Top,
                 Height    = 48,
-                BackColor = CHOCOLAT_FONCE,
+                BackColor = AppColors.ChocoBrand,
                 Padding   = new Padding(16, 0, 16, 0)
             };
             var lblTitre = new Label
             {
                 Text      = "ACTIVITÉS",
                 Font      = new Font("Segoe UI", 11F, FontStyle.Bold),
-                ForeColor = OR,
+                ForeColor = AppColors.Or,
                 Dock      = DockStyle.Left,
                 AutoSize  = false,
                 Width     = 200,
@@ -87,11 +84,11 @@ namespace CharlesNadejda.Forms
                 Font                  = new Font("Segoe UI", 9.5F),
                 GridColor             = Color.FromArgb(230, 220, 210)
             };
-            _dgv.ColumnHeadersDefaultCellStyle.BackColor   = CREME;
-            _dgv.ColumnHeadersDefaultCellStyle.ForeColor   = CHOCOLAT_FONCE;
+            _dgv.ColumnHeadersDefaultCellStyle.BackColor   = AppColors.Creme;
+            _dgv.ColumnHeadersDefaultCellStyle.ForeColor   = AppColors.ChocoBrand;
             _dgv.ColumnHeadersDefaultCellStyle.Font        = new Font("Segoe UI", 8.5F, FontStyle.Bold);
-            _dgv.ColumnHeadersDefaultCellStyle.SelectionBackColor = CREME;
-            _dgv.DefaultCellStyle.SelectionBackColor        = CHOCOLAT_MOYEN;
+            _dgv.ColumnHeadersDefaultCellStyle.SelectionBackColor = AppColors.Creme;
+            _dgv.DefaultCellStyle.SelectionBackColor        = AppColors.ChocoMed;
             _dgv.DefaultCellStyle.SelectionForeColor        = Color.White;
             _dgv.CellDoubleClick += (s, e) => { if (e.RowIndex >= 0) Modifier(); };
 
@@ -112,7 +109,7 @@ namespace CharlesNadejda.Forms
 
             // Fitts : action principale (Nouveau) à gauche, actions secondaires à droite
             // 5 boutons × 104px + 4 espaces × 14px = 576px = largeur utile (620 - 2×22 padding)
-            _btnNouveau    = CreerBouton("+ Nouvelle activité", CHOCOLAT_FONCE,                   Color.White,   0);
+            _btnNouveau    = CreerBouton("+ Nouvelle activité", AppColors.ChocoBrand,                   Color.White,   0);
             _btnModifier   = CreerBouton("✎  Modifier",         Color.FromArgb(90, 130, 80),      Color.White, 118);
             _btnDesactiver = CreerBouton("✕  Désactiver",        Color.FromArgb(160, 120, 60),     Color.White, 236);
             _btnSupprimer  = CreerBouton("🗑  Supprimer",         Color.FromArgb(180, 50,  40),     Color.White, 354);

@@ -24,14 +24,7 @@ namespace CharlesNadejda.Forms
     /// </summary>
     public class FrmVueStock : Form
     {
-        // ── Couleurs ─────────────────────────────────────────────────
-        private static readonly Color CHOCOLAT_FONCE = Color.FromArgb(61,  40, 23);
-        private static readonly Color CHOCOLAT_MOYEN = Color.FromArgb(111, 78, 55);
-        private static readonly Color CREME          = Color.FromArgb(245, 230, 211);
-        private static readonly Color OR             = Color.FromArgb(212, 175, 55);
-        private static readonly Color VERT_DISPO     = Color.FromArgb(224, 243, 224);
-        private static readonly Color ORANGE_RESERV  = Color.FromArgb(255, 237, 204);
-        private static readonly Color ROUGE_PENUR    = Color.FromArgb(255, 218, 218);
+        // ── Couleurs — voir AppColors (TICKET-12) ────────────────────
 
         // ── Contrôles ────────────────────────────────────────────────
         private DataGridView    _dgv;
@@ -68,14 +61,14 @@ namespace CharlesNadejda.Forms
             {
                 Dock      = DockStyle.Top,
                 Height    = 48,
-                BackColor = CHOCOLAT_FONCE,
+                BackColor = AppColors.ChocoBrand,
                 Padding   = new Padding(16, 0, 16, 0)
             };
             pnlHeader.Controls.Add(new Label
             {
                 Text      = "VUE STOCK GLOBAL",
                 Font      = new Font("Segoe UI", 11F, FontStyle.Bold),
-                ForeColor = OR,
+                ForeColor = AppColors.Or,
                 Dock      = DockStyle.Left,
                 AutoSize  = false,
                 Width     = 220,
@@ -95,7 +88,7 @@ namespace CharlesNadejda.Forms
             {
                 Dock      = DockStyle.Top,
                 Height    = 44,
-                BackColor = CREME,
+                BackColor = AppColors.Creme,
                 Padding   = new Padding(12, 6, 12, 6)
             };
             _flowChips = new FlowLayoutPanel
@@ -125,10 +118,10 @@ namespace CharlesNadejda.Forms
                 Font                    = new Font("Segoe UI", 9.5F),
                 GridColor               = Color.FromArgb(230, 220, 210)
             };
-            _dgv.ColumnHeadersDefaultCellStyle.BackColor           = CREME;
-            _dgv.ColumnHeadersDefaultCellStyle.ForeColor           = CHOCOLAT_FONCE;
+            _dgv.ColumnHeadersDefaultCellStyle.BackColor           = AppColors.Creme;
+            _dgv.ColumnHeadersDefaultCellStyle.ForeColor           = AppColors.ChocoBrand;
             _dgv.ColumnHeadersDefaultCellStyle.Font                = new Font("Segoe UI", 8.5F, FontStyle.Bold);
-            _dgv.ColumnHeadersDefaultCellStyle.SelectionBackColor  = CREME;
+            _dgv.ColumnHeadersDefaultCellStyle.SelectionBackColor  = AppColors.Creme;
             _dgv.DefaultCellStyle.SelectionBackColor               = Color.FromArgb(111, 78, 55);
             _dgv.DefaultCellStyle.SelectionForeColor               = Color.White;
 
@@ -158,7 +151,7 @@ namespace CharlesNadejda.Forms
             {
                 Text      = "🖨 Exporter CSV",
                 Font      = new Font("Segoe UI", 8.5F),
-                BackColor = CHOCOLAT_MOYEN,
+                BackColor = AppColors.ChocoMed,
                 ForeColor = Color.White,
                 FlatStyle = FlatStyle.Flat,
                 Size      = new Size(120, 32),
@@ -169,14 +162,14 @@ namespace CharlesNadejda.Forms
             btnCsv.Click += (s, e) => ExporterCsv();
             pnlBas.Controls.Add(btnCsv);
 
-            CreerLegende(pnlBas, VERT_DISPO,   "Disponible",    130);
-            CreerLegende(pnlBas, ORANGE_RESERV, "Réservé",      260);
-            CreerLegende(pnlBas, ROUGE_PENUR,   "Pénurie / DLC", 390);
+            CreerLegende(pnlBas, AppColors.VertDispo,   "Disponible",    130);
+            CreerLegende(pnlBas, AppColors.OrangeReserv, "Réservé",      260);
+            CreerLegende(pnlBas, AppColors.RougePenur,   "Pénurie / DLC", 390);
 
             _lblTotal = new Label
             {
                 Font      = new Font("Segoe UI", 8.5F, FontStyle.Italic),
-                ForeColor = CHOCOLAT_MOYEN,
+                ForeColor = AppColors.ChocoMed,
                 AutoSize  = true,
                 Location  = new Point(420, 16)
             };
@@ -186,7 +179,7 @@ namespace CharlesNadejda.Forms
             {
                 Text      = "Fermer",
                 Font      = new Font("Segoe UI", 9F),
-                BackColor = CHOCOLAT_FONCE,
+                BackColor = AppColors.ChocoBrand,
                 ForeColor = Color.White,
                 FlatStyle = FlatStyle.Flat,
                 Size      = new Size(90, 32),
@@ -220,7 +213,7 @@ namespace CharlesNadejda.Forms
             {
                 Text      = texte,
                 Font      = new Font("Segoe UI", 8.5F),
-                ForeColor = CHOCOLAT_FONCE,
+                ForeColor = AppColors.ChocoBrand,
                 AutoSize  = true,
                 Location  = new Point(x + 20, 17)
             };
@@ -253,8 +246,8 @@ namespace CharlesNadejda.Forms
             {
                 Text      = texte,
                 Font      = new Font("Segoe UI", 9F, selected ? FontStyle.Bold : FontStyle.Regular),
-                BackColor = selected ? CHOCOLAT_FONCE : Color.FromArgb(220, 208, 192),
-                ForeColor = selected ? Color.White     : CHOCOLAT_FONCE,
+                BackColor = selected ? AppColors.ChocoBrand : Color.FromArgb(220, 208, 192),
+                ForeColor = selected ? Color.White     : AppColors.ChocoBrand,
                 FlatStyle = FlatStyle.Flat,
                 AutoSize  = false,
                 Height    = 28,
@@ -377,11 +370,11 @@ namespace CharlesNadejda.Forms
             // Couleur de fond de la ligne entière
             Color fond;
             if (l.EstEnAlerte)
-                fond = ROUGE_PENUR;
+                fond = AppColors.RougePenur;
             else if (l.QuantiteReservee > 0)
-                fond = ORANGE_RESERV;
+                fond = AppColors.OrangeReserv;
             else
-                fond = VERT_DISPO;
+                fond = AppColors.VertDispo;
 
             row.DefaultCellStyle.BackColor = fond;
 

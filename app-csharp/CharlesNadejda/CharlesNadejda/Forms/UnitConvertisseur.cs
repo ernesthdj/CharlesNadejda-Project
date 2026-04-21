@@ -101,6 +101,11 @@ namespace CharlesNadejda
         /// </summary>
         public static decimal Convertir(decimal valeur, string uniteSource, string uniteCible)
         {
+            // TICKET-04 : guards contre null et valeur négative
+            if (uniteSource == null) throw new ArgumentNullException(nameof(uniteSource));
+            if (uniteCible  == null) throw new ArgumentNullException(nameof(uniteCible));
+            if (valeur < 0) throw new ArgumentOutOfRangeException(nameof(valeur), "La valeur à convertir ne peut pas être négative.");
+
             if (string.Equals(uniteSource, uniteCible, StringComparison.OrdinalIgnoreCase))
                 return valeur;
 

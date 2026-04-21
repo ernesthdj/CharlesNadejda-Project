@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Drawing;
 using System.Drawing.Drawing2D;
 using System.Linq;
@@ -92,6 +93,22 @@ namespace CharlesNadejda.Forms
             _router.OnContexteNiveaux = p => ShowContexteScreen();
             _router.OnRessources      = p => ShowRessourceScreen(_state.RessourceActive, p);
             _router.OnProduction      = p => ShowProductionScreen(p);
+        }
+
+        /// <summary>
+        /// Point d'entrée unique pour toute navigation.
+        /// <para>• <paramref name="stateSetup"/> : action optionnelle exécutée avant la navigation
+        ///   (ex. SetRessource, SetContexte) — permet d'éviter le pattern { setup(); router.Navigate(); }.</para>
+        /// <para>• <paramref name="forceRefresh"/> : invalide le guard singleton pour forcer une
+        ///   reconstruction (à utiliser après toute opération CRUD).</para>
+        /// Le guard de re-navigation est centralisé dans <see cref="ScreenRouter"/> — si on est déjà
+        /// sur le même écran avec le même état, l'appel est ignoré.
+        /// </summary>
+        private void NavigateTo(ScreenId screen, Action stateSetup = null, bool forceRefresh = false)
+        {
+            stateSetup?.Invoke();
+            if (forceRefresh) _router.Invalidate();
+            _router.Navigate(screen);
         }
 
         // ════════════════════════════════════════════════════════════════
@@ -200,11 +217,11 @@ namespace CharlesNadejda.Forms
 
             var resItems = new (string icon, string lbl, Action act)[]
             {
-                ("📊", "Vue stock global",  () => { _state.SetRessource(RessourceType.VueStock);    _router.Navigate(ScreenId.Ressources); }),
-                ("📦", "Stock/Liaisons",     () => { _state.SetRessource(RessourceType.Stocks);       _router.Navigate(ScreenId.Ressources); }),
-                ("🥣", "Fiches Ingrédients",() => { _state.SetRessource(RessourceType.Ingredients);  _router.Navigate(ScreenId.Ressources); }),
-                ("🏢", "Fournisseurs",      () => { _state.SetRessource(RessourceType.Fournisseurs); _router.Navigate(ScreenId.Ressources); }),
-                ("🧾", "Achats / Lots",     () => { _state.SetRessource(RessourceType.Achats);       _router.Navigate(ScreenId.Ressources); }),
+                ("📊", "Vue stock global",  () => NavigateTo(ScreenId.Ressources, () => _state.SetRessource(RessourceType.VueStock))),
+                ("📦", "Stock/Liaisons",    () => NavigateTo(ScreenId.Ressources, () => _state.SetRessource(RessourceType.Stocks))),
+                ("🥣", "Fiches Ingrédients",() => NavigateTo(ScreenId.Ressources, () => _state.SetRessource(RessourceType.Ingredients))),
+                ("🏢", "Fournisseurs",      () => NavigateTo(ScreenId.Ressources, () => _state.SetRessource(RessourceType.Fournisseurs))),
+                ("🧾", "Achats / Lots",     () => NavigateTo(ScreenId.Ressources, () => _state.SetRessource(RessourceType.Achats))),
             };
             _pnlRes = new Panel { Dock = DockStyle.Top, Height = resItems.Length * 34 + 4, BackColor = CHOCO_DARK };
             int ry = 4;
@@ -376,31 +393,29 @@ namespace CharlesNadejda.Forms
 
         private void LstActivites_SelectedIndexChanged(object sender, EventArgs e)
         {
-            if (_lstActivites.SelectedItem is Activite act)
-            {
-                _state.SetActivite(act);
-                ChargerContextes();
-                if (_state.ActiveContexte == null) ShowHubScreen();
-            }
+            if (!(_lstActivites.SelectedItem is Activite act)) return;
+            if (act.Id == _state.ActiveActivite?.Id) return; // même activité — évite ChargerContextes inutile
+            _state.SetActivite(act);
+            ChargerContextes();
+            var cible = _state.ActiveContexte != null ? ScreenId.ContexteNiveaux : ScreenId.Hub;
+            NavigateTo(cible, forceRefresh: true);
         }
 
         private void LstContextes_SelectedIndexChanged(object sender, EventArgs e)
         {
-            if (_lstContextes.SelectedItem is BomContexte ctx)
-            {
-                _state.SetContexte(ctx);
-                ChargerNiveaux();
-                ShowContexteScreen();
-            }
+            if (!(_lstContextes.SelectedItem is BomContexte ctx)) return;
+            if (ctx.Id == _state.ActiveContexte?.Id) return; // même contexte — évite ChargerNiveaux inutile
+            _state.SetContexte(ctx);
+            ChargerNiveaux();
+            NavigateTo(ScreenId.ContexteNiveaux);
         }
 
         private void LstNiveaux_SelectedIndexChanged(object sender, EventArgs e)
         {
-            if (_lstNiveaux.SelectedItem is BomNiveau niv)
-            {
-                _state.SetNiveau(niv);
-                SyncNiveauSelection();
-            }
+            if (!(_lstNiveaux.SelectedItem is BomNiveau niv)) return;
+            if (niv.Id == _state.ActiveNiveau?.Id) return; // même niveau — rien à faire
+            _state.SetNiveau(niv);
+            SyncNiveauSelection();
         }
 
         // ════════════════════════════════════════════════════════════════
@@ -452,10 +467,7 @@ namespace CharlesNadejda.Forms
                 AutoSize  = true
             };
             lnkStock.LinkClicked += (s, ev) =>
-            {
-                _state.SetRessource(RessourceType.Stocks);
-                _router.Navigate(ScreenId.Ressources);
-            };
+                NavigateTo(ScreenId.Ressources, () => _state.SetRessource(RessourceType.Stocks));
             pnlCenter.Controls.Add(lnkStock);
 
             var btnCreer = new Button
@@ -488,7 +500,11 @@ namespace CharlesNadejda.Forms
                 fiches = BomFicheDAL.GetAll(idActivite: _state.ActiveActivite.Id);
                 prods  = BomProductionDAL.GetRecentByActivite(_state.ActiveActivite.Id, 10);
             }
-            catch { }
+            catch (Exception ex)
+            {
+                // TICKET-10 : logguer au lieu d'avaler silencieusement — le hub s'affiche quand même
+                Trace.TraceError("ShowHubScreen — chargement DAL : {0}", ex);
+            }
 
             var alertes    = ings.Where(i => i.EstEnAlerte).ToList();
             int prods7j    = prods.Count(p => p.DateProduction >= DateTime.Now.AddDays(-7));
@@ -497,7 +513,15 @@ namespace CharlesNadejda.Forms
 
             // US-02 : vérifier si l'activité a des contextes pour afficher le message d'onboarding
             List<BomContexte> contextesDispo = new List<BomContexte>();
-            try { contextesDispo = BomContexteDAL.GetAll(_state.ActiveActivite.Id); } catch { }
+            try
+            {
+                contextesDispo = BomContexteDAL.GetAll(_state.ActiveActivite.Id);
+            }
+            catch (Exception ex)
+            {
+                // TICKET-10 : logguer — aucunContexte restera false, le hub s'affiche sans onboarding
+                Trace.TraceError("ShowHubScreen — chargement contextes : {0}", ex);
+            }
             bool aucunContexte = contextesDispo.Count == 0;
 
             var pnlHdr = new Panel
@@ -542,7 +566,7 @@ namespace CharlesNadejda.Forms
                 Size = new Size(148, 26), Cursor = Cursors.Hand
             };
             btnNouvProd.FlatAppearance.BorderColor = CHOCO_ABYSS;
-            btnNouvProd.Click += (s, ev) => _router.Navigate(ScreenId.Production);
+            btnNouvProd.Click += (s, ev) => NavigateTo(ScreenId.Production);
 
             // US-09 : bouton "Rapport du jour" — visible seulement si productions > 0
             var btnRapport = new Button
@@ -588,8 +612,7 @@ namespace CharlesNadejda.Forms
             cardIngredients.Cursor = Cursors.Hand;
             cardIngredients.Click += (s, ev) => {
                 _state.SetFiltreAlertes(false);
-                _state.SetRessource(RessourceType.Ingredients);
-                _router.Navigate(ScreenId.Ressources);
+                NavigateTo(ScreenId.Ressources, () => _state.SetRessource(RessourceType.Ingredients));
             };
 
             // H4 — En alerte : navigation filtrée sur alertes (uniquement si alertes > 0)
@@ -598,8 +621,7 @@ namespace CharlesNadejda.Forms
                 cardAlertes.Cursor = Cursors.Hand;
                 cardAlertes.Click += (s, ev) => {
                     _state.SetFiltreAlertes(true);
-                    _state.SetRessource(RessourceType.Ingredients);
-                    _router.Navigate(ScreenId.Ressources);
+                    NavigateTo(ScreenId.Ressources, () => _state.SetRessource(RessourceType.Ingredients));
                 };
             }
 
@@ -610,7 +632,7 @@ namespace CharlesNadejda.Forms
                 cardFiches.Click += (s, ev) => {
                     _state.SetContexte(contextesDispo[0]);
                     ChargerNiveaux();
-                    _router.Navigate(ScreenId.ContexteNiveaux);
+                    NavigateTo(ScreenId.ContexteNiveaux);
                 };
             }
 
@@ -618,7 +640,7 @@ namespace CharlesNadejda.Forms
             if (prods7j > 0)
             {
                 cardProds.Cursor = Cursors.Hand;
-                cardProds.Click += (s, ev) => _router.Navigate(ScreenId.Production);
+                cardProds.Click += (s, ev) => NavigateTo(ScreenId.Production);
             }
 
             pnlStats.Resize += (s, ev) =>
@@ -899,8 +921,14 @@ namespace CharlesNadejda.Forms
                 if (ev.RowIndex >= 0) OuvrirFiche(_dgvFiches.CurrentRow?.DataBoundItem as BomFiche);
             };
             // US-07 : activer/désactiver le bouton Dupliquer selon la sélection
-            _dgvFiches.SelectionChanged += (s, ev) =>
-                btnDupFiche.Enabled = _dgvFiches.CurrentRow?.DataBoundItem is BomFiche;
+            // ⚠ Capturer l'instance locale (pas le champ) — le champ est nullé lors d'une re-navigation
+            // ce qui déclencherait une NRE via SelectionChanged sur l'ancien DGV encore en mémoire.
+            var dgvFichesCapture = _dgvFiches;
+            dgvFichesCapture.SelectionChanged += (s, ev) =>
+            {
+                if (btnDupFiche.IsDisposed) return;
+                btnDupFiche.Enabled = dgvFichesCapture.CurrentRow?.DataBoundItem is BomFiche;
+            };
 
             // ── Volet stock de production (panneau droit — sans header propre) ──
             _dgvStock = new DataGridView
@@ -1008,10 +1036,8 @@ namespace CharlesNadejda.Forms
                         _lblFichesHeader.Text = "Fiches Ingrédients — " +
                             (_state.ActiveActivite?.Nom ?? _state.ActiveContexte?.ActiviteNom ?? "");
 
-                    int idActivite = _state.ActiveActivite?.Id
-                                  ?? _state.ActiveContexte?.IdActivite
-                                  ?? 0;
-                    _dgvFiches.DataSource = IngredientDAL.GetAll(idActivite: idActivite);
+                    // Filtrer par activité via activites_stocks (JOIN sur id_stock)
+                    _dgvFiches.DataSource = IngredientDAL.GetAll(idActivite: _state.ActiveActivite?.Id ?? 0);
 
                     if (_dgvFiches.Columns.Count > 0)
                     {
@@ -1091,13 +1117,10 @@ namespace CharlesNadejda.Forms
 
                 if (niv.Ordre == 1)
                 {
-                    // ── Niveau de base : fiches ingrédients de l'activité ──────
-                    // Même données que l'écran Ressources > Fiches Ingrédients,
-                    // filtrées sur l'activité active du contexte courant.
-                    int idActivite = _state.ActiveActivite?.Id
-                                  ?? _state.ActiveContexte?.IdActivite
-                                  ?? 0;
-                    _dgvStock.DataSource = IngredientDAL.GetAll(idActivite: idActivite);
+                    // ── Niveau de base : ingrédients instanciés (stock disponible > 0) ──
+                    _dgvStock.DataSource = IngredientDAL.GetAll(idActivite: _state.ActiveActivite?.Id ?? 0)
+                        .Where(i => i.StockActuel > 0)
+                        .ToList();
                     if (_dgvStock.Columns.Count > 0)
                     {
                         foreach (DataGridViewColumn col in _dgvStock.Columns)
@@ -1113,11 +1136,11 @@ namespace CharlesNadejda.Forms
                         }
                         // ↓ Modifier l'ordre ici pour changer l'ordre des colonnes
                         ShowCol("Nom",                 "Ingrédient");
-                        ShowCol("ConditionnementLabel","Conditionnement");
-                        ShowCol("UniteMesure",         "Unité base");
-                        ShowCol("StockNom",            "Stock (lieu)");
                         ShowCol("StockActuel",         "Dispo");
+                        ShowCol("UniteMesure",         "Unité base");
                         ShowCol("PrixAchatReference",  "€/cond.");
+                        ShowCol("StockNom",            "Stock (lieu)");
+                        ShowCol("ConditionnementLabel","Conditionnement");
                         _dgvStock.AutoResizeColumns(DataGridViewAutoSizeColumnsMode.AllCells);
                     }
                 }
@@ -1145,6 +1168,7 @@ namespace CharlesNadejda.Forms
                         ShowCol("DateProduction",     "Produit le");
                         ShowCol("DateDlc",            "DLC");
                         ShowCol("CoutUnitaire",       "Coût/u");
+                        ShowCol("CoutTotal",          "Coût/prod");
                         _dgvStock.AutoResizeColumns(DataGridViewAutoSizeColumnsMode.AllCells);
                     }
                 }
@@ -1229,7 +1253,11 @@ namespace CharlesNadejda.Forms
             { MessageBox.Show("Sélectionnez une activité.", "Info", MessageBoxButtons.OK, MessageBoxIcon.Information); return; }
             using (var frm = new FrmBomContexteEdit(null, _state.ActiveActivite))
                 if (frm.ShowDialog() == DialogResult.OK)
-                { ChargerContextes(); if (_state.ActiveContexte == null) ShowHubScreen(); }
+                {
+                    ChargerContextes();
+                    var cible = _state.ActiveContexte != null ? ScreenId.ContexteNiveaux : ScreenId.Hub;
+                    NavigateTo(cible, forceRefresh: true);
+                }
         }
 
         private void BtnModifierContexte_Click(object sender, EventArgs e)
@@ -1250,7 +1278,7 @@ namespace CharlesNadejda.Forms
                 BomContexteDAL.Delete(_state.ActiveContexte.Id);
                 _state.SetContexte(null);
                 ChargerContextes();
-                ShowHubScreen();
+                NavigateTo(ScreenId.Hub, forceRefresh: true);
             }
             catch (Exception ex)
             { MessageBox.Show("Impossible : " + ex.Message, "Erreur", MessageBoxButtons.OK, MessageBoxIcon.Error); }
@@ -1269,7 +1297,7 @@ namespace CharlesNadejda.Forms
                 Ordre      = BomNiveauDAL.GetOrdreMax(_state.ActiveContexte.Id) + 1
             };
             using (var frm = new FrmBomNiveauEdit(n, false))
-                if (frm.ShowDialog() == DialogResult.OK) { ChargerNiveaux(); ShowContexteScreen(); }
+                if (frm.ShowDialog() == DialogResult.OK) { ChargerNiveaux(); NavigateTo(ScreenId.ContexteNiveaux, forceRefresh: true); }
         }
 
         private void SupprimerNiveau(BomNiveau niv)
@@ -1282,7 +1310,7 @@ namespace CharlesNadejda.Forms
                 BomNiveauDAL.Delete(niv.Id);
                 if (_state.ActiveNiveau?.Id == niv.Id) _state.SetNiveau(null);
                 ChargerNiveaux();
-                ShowContexteScreen();
+                NavigateTo(ScreenId.ContexteNiveaux, forceRefresh: true);
             }
             catch (InvalidOperationException ex)
             { MessageBox.Show(ex.Message, "Impossible", MessageBoxButtons.OK, MessageBoxIcon.Warning); }
@@ -1661,7 +1689,20 @@ namespace CharlesNadejda.Forms
                     Size = new Size(64, 22), Location = new Point(68, 36), Cursor = Cursors.Hand
                 };
                 btnFiches.FlatAppearance.BorderSize = 0;
-                btnFiches.Click += (s, ev) => { SelectNiveauRow(niv); new FrmBomFiches(niv).ShowDialog(this); ChargerFiches(niv); };
+                btnFiches.Click += (s, ev) =>
+                {
+                    SelectNiveauRow(niv);
+                    if (niv.Ordre == 1)
+                    {
+                        // N1 = ingrédients : raccourci vers FrmIngredients (fiches ingrédients)
+                        new FrmIngredients(new Activite { Id = niv.IdActivite }).ShowDialog(this);
+                    }
+                    else
+                    {
+                        new FrmBomFiches(niv).ShowDialog(this);
+                        ChargerFiches(niv);
+                    }
+                };
 
                 var btnProd = new Button
                 {
@@ -1670,7 +1711,7 @@ namespace CharlesNadejda.Forms
                     Size = new Size(64, 22), Location = new Point(138, 36), Cursor = Cursors.Hand
                 };
                 btnProd.FlatAppearance.BorderSize = 0;
-                btnProd.Click += (s, ev) => { SelectNiveauRow(niv); _router.Navigate(ScreenId.Production); };
+                btnProd.Click += (s, ev) => { SelectNiveauRow(niv); NavigateTo(ScreenId.Production); };
 
                 bool estTop = niv.Ordre == ordreMax;
                 var btnDel = new Button
@@ -1734,6 +1775,10 @@ namespace CharlesNadejda.Forms
                 case RessourceType.Ingredients:  frm = new FrmIngredients(_state.ActiveActivite, filtreAlertes); break;
                 case RessourceType.Achats:       frm = new FrmAchats(_state.ActiveActivite);       break;
                 case RessourceType.VueStock:     frm = new FrmVueStock();                         break;
+                // TICKET-17 : module Catalogue maintenant connecté
+                case RessourceType.Categories:   frm = new FrmCategories();                       break;
+                case RessourceType.Parfums:      frm = new FrmParfums();                          break;
+                case RessourceType.Produits:     frm = new FrmProduits();                         break;
                 default:                         return;
             }
             EmbedForm(frm);
@@ -1761,9 +1806,9 @@ namespace CharlesNadejda.Forms
             frm.FormClosed     += (s, ev) =>
             {
                 if (IsDisposed) return;
-                if (_state.ActiveContexte != null) ShowContexteScreen();
-                else if (_state.ActiveActivite != null) ShowHubScreen();
-                else ShowOnboarding();
+                if (_state.ActiveContexte != null)      NavigateTo(ScreenId.ContexteNiveaux, forceRefresh: true);
+                else if (_state.ActiveActivite != null) NavigateTo(ScreenId.Hub,             forceRefresh: true);
+                else                                    NavigateTo(ScreenId.Onboarding,      forceRefresh: true);
             };
             _pnlDroit.Controls.Add(frm);
             frm.Show();
@@ -1774,14 +1819,18 @@ namespace CharlesNadejda.Forms
         //  Menu / Session
         // ════════════════════════════════════════════════════════════════
 
-        private void menuCatCategories_Click(object sender, EventArgs e)  => PlaceholderWeb();
-        private void menuCatParfums_Click(object sender, EventArgs e)     => PlaceholderWeb();
-        private void menuCatProduits_Click(object sender, EventArgs e)    => PlaceholderWeb();
-        private void menuFournisseurs_Click(object sender, EventArgs e)
-        {
-            _state.SetRessource(RessourceType.Fournisseurs);
-            _router.Navigate(ScreenId.Ressources);
-        }
+        // TICKET-17 : module Catalogue connecté — plus de PlaceholderWeb()
+        private void menuCatCategories_Click(object sender, EventArgs e) =>
+            NavigateTo(ScreenId.Ressources, () => _state.SetRessource(RessourceType.Categories));
+
+        private void menuCatParfums_Click(object sender, EventArgs e) =>
+            NavigateTo(ScreenId.Ressources, () => _state.SetRessource(RessourceType.Parfums));
+
+        private void menuCatProduits_Click(object sender, EventArgs e) =>
+            NavigateTo(ScreenId.Ressources, () => _state.SetRessource(RessourceType.Produits));
+
+        private void menuFournisseurs_Click(object sender, EventArgs e) =>
+            NavigateTo(ScreenId.Ressources, () => _state.SetRessource(RessourceType.Fournisseurs));
         private void menuCommandes_Click(object sender, EventArgs e) => PlaceholderWeb();
 
         private static void PlaceholderWeb() =>

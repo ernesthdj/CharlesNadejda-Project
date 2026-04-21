@@ -17,11 +17,7 @@ namespace CharlesNadejda.Forms
     {
         private readonly Activite _activite;
 
-        // ── Couleurs projet ──────────────────────────────────────────────
-        private static readonly Color CHOCOLAT_FONCE = Color.FromArgb(61, 40, 23);
-        private static readonly Color CHOCOLAT_MOYEN = Color.FromArgb(111, 78, 55);
-        private static readonly Color CREME          = Color.FromArgb(245, 230, 211);
-        private static readonly Color OR             = Color.FromArgb(212, 175, 55);
+        // ── Couleurs projet — voir AppColors (TICKET-12) ─────────────
 
         // Accent par numéro de niveau
         private static readonly Color[] NIVEAU_ACCENTS = new[]
@@ -65,7 +61,7 @@ namespace CharlesNadejda.Forms
             {
                 Dock      = DockStyle.Top,
                 Height    = 56,
-                BackColor = CHOCOLAT_FONCE
+                BackColor = AppColors.ChocoBrand
             };
 
             var lblTitre = new Label
@@ -123,7 +119,7 @@ namespace CharlesNadejda.Forms
             {
                 Dock      = DockStyle.Top,
                 Height    = 44,
-                BackColor = CHOCOLAT_MOYEN
+                BackColor = AppColors.ChocoMed
             };
             var lblContextesTitre = new Label
             {
@@ -165,7 +161,7 @@ namespace CharlesNadejda.Forms
             {
                 Text      = "+ Nouveau",
                 Font      = new Font("Segoe UI", 9F, FontStyle.Bold),
-                BackColor = CHOCOLAT_FONCE,
+                BackColor = AppColors.ChocoBrand,
                 ForeColor = Color.White,
                 FlatStyle = FlatStyle.Flat,
                 Size      = new Size(90, 30),
@@ -190,11 +186,11 @@ namespace CharlesNadejda.Forms
 
             var btnSuppCtx = new Button
             {
-                Text      = "✕",
+                Text      = "Supprimer",
                 Font      = new Font("Segoe UI", 9F),
                 BackColor = Color.FromArgb(200, 190, 178),
                 FlatStyle = FlatStyle.Flat,
-                Size      = new Size(36, 30),
+                Size      = new Size(90, 30),
                 Location  = new Point(194, 6),
                 Cursor    = Cursors.Hand
             };
@@ -214,7 +210,7 @@ namespace CharlesNadejda.Forms
             {
                 Dock      = DockStyle.Top,
                 Height    = 80,
-                BackColor = CREME,
+                BackColor = AppColors.Creme,
                 Padding   = new Padding(20, 12, 20, 12)
             };
 
@@ -222,7 +218,7 @@ namespace CharlesNadejda.Forms
             {
                 Text      = "Sélectionnez un contexte",
                 Font      = new Font("Segoe UI", 14F, FontStyle.Bold),
-                ForeColor = CHOCOLAT_FONCE,
+                ForeColor = AppColors.ChocoBrand,
                 AutoSize  = false,
                 Dock      = DockStyle.Top,
                 Height    = 30
@@ -232,7 +228,7 @@ namespace CharlesNadejda.Forms
             {
                 Text      = "ou créez-en un nouveau via le bouton « + Nouveau »",
                 Font      = new Font("Segoe UI", 9F, FontStyle.Italic),
-                ForeColor = CHOCOLAT_MOYEN,
+                ForeColor = AppColors.ChocoMed,
                 AutoSize  = false,
                 Dock      = DockStyle.Fill
             };
@@ -305,7 +301,7 @@ namespace CharlesNadejda.Forms
             {
                 Text      = "+ Ajouter un niveau de transformation",
                 Font      = new Font("Segoe UI", 9.5F),
-                ForeColor = CHOCOLAT_MOYEN,
+                ForeColor = AppColors.ChocoMed,
                 BackColor = Color.FromArgb(245, 240, 234),
                 FlatStyle = FlatStyle.Flat,
                 Height    = 34,
@@ -314,7 +310,7 @@ namespace CharlesNadejda.Forms
                 Cursor    = Cursors.Hand,
                 Enabled   = false
             };
-            _btnAjouterNiveau.FlatAppearance.BorderColor = CHOCOLAT_MOYEN;
+            _btnAjouterNiveau.FlatAppearance.BorderColor = AppColors.ChocoMed;
             _btnAjouterNiveau.Click += BtnAjouterNiveau_Click;
 
             pnlBottom.Controls.Add(_btnAjouterNiveau);
@@ -335,16 +331,16 @@ namespace CharlesNadejda.Forms
             bool selected = (e.State & DrawItemState.Selected) == DrawItemState.Selected;
             var  ctx      = (BomContexte)_lstContextes.Items[e.Index];
 
-            using (var br = new SolidBrush(selected ? CHOCOLAT_MOYEN : Color.FromArgb(248, 244, 240)))
+            using (var br = new SolidBrush(selected ? AppColors.ChocoMed : Color.FromArgb(248, 244, 240)))
                 e.Graphics.FillRectangle(br, e.Bounds);
 
             if (selected)
             {
-                using (var br = new SolidBrush(OR))
+                using (var br = new SolidBrush(AppColors.Or))
                     e.Graphics.FillRectangle(br, new Rectangle(e.Bounds.X, e.Bounds.Y, 4, e.Bounds.Height));
             }
 
-            using (var br = new SolidBrush(selected ? Color.White : CHOCOLAT_FONCE))
+            using (var br = new SolidBrush(selected ? Color.White : AppColors.ChocoBrand))
             using (var font = new Font("Segoe UI", 10F, selected ? FontStyle.Bold : FontStyle.Regular))
             {
                 var textRect = new Rectangle(e.Bounds.X + 14, e.Bounds.Y, e.Bounds.Width - 14, e.Bounds.Height);
@@ -453,7 +449,7 @@ namespace CharlesNadejda.Forms
             {
                 Text      = $"N{niv.Ordre}  ·  {niv.Nom}",
                 Font      = new Font("Segoe UI", 11F, FontStyle.Bold),
-                ForeColor = CHOCOLAT_FONCE,
+                ForeColor = AppColors.ChocoBrand,
                 AutoSize  = false,
                 Location  = new Point(20, 12),
                 Size      = new Size(cardWidth - 140, 24)
@@ -523,8 +519,8 @@ namespace CharlesNadejda.Forms
                     ForeColor = Color.FromArgb(160, 120, 100),
                     BackColor = Color.Transparent,
                     FlatStyle = FlatStyle.Flat,
-                    Size      = new Size(28, 22),
-                    Location  = new Point(cardWidth - 38, btnTop),
+                    Size      = new Size(36, 28),
+                    Location  = new Point(cardWidth - 46, btnTop),
                     Cursor    = Cursors.Hand
                 };
                 btnSuppNiv.FlatAppearance.BorderSize = 0;
