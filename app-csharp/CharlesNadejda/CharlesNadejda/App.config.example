@@ -1,11 +1,12 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <configuration>
     <startup>
         <supportedRuntime version="v4.0" sku=".NETFramework,Version=v4.8.1" />
     </startup>
   <connectionStrings>
+    <!-- Copier ce fichier en App.config et renseigner les valeurs réelles -->
     <add name="charlesnadejda"
-         connectionString="Server=localhost;Port=3306;Database=charlesnadejda;Uid=root;Pwd=root;"
+         connectionString="Server=localhost;Port=3306;Database=charlesnadejda;Uid=REMPLACER;Pwd=REMPLACER;"
          providerName="MySql.Data.MySqlClient"/>
   </connectionStrings>
   <appSettings>

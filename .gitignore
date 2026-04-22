@@ -27,6 +27,7 @@ site-laravel/public/build/
 # ===========================
 # C# / .NET / WinForms
 # ===========================
+app-csharp/**/App.config
 app-csharp/**/bin/
 app-csharp/**/obj/
 app-csharp/**/*.user
@@ -57,9 +58,8 @@ docker/**/data/
 # ===========================
 # Obsidian
 # ===========================
-.obsidian/workspace.json
-.obsidian/workspace-mobile.json
-.obsidian/cache
+.obsidian/
+docs/.obsidian/
 
 # ===========================
 # Éditeurs & OS
