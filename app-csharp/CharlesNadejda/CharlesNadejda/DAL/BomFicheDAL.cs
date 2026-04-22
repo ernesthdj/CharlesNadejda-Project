@@ -159,6 +159,30 @@ namespace CharlesNadejda.DAL
             }
         }
 
+        /// <summary>
+        /// Retourne le nombre de fiches actives par id_niveau pour un contexte donné.
+        /// Une seule requête au lieu de N — utilisé pour afficher les badges de comptage.
+        /// </summary>
+        public static Dictionary<int, int> GetCountsByContexte(int idContexte)
+        {
+            var dict = new Dictionary<int, int>();
+            using (var conn = DbHelper.GetConnection())
+            using (var cmd = conn.CreateCommand())
+            {
+                cmd.CommandText = @"
+                    SELECT f.id_niveau, COUNT(*) AS cnt
+                    FROM bom_fiches f
+                    INNER JOIN bom_niveaux n ON n.id = f.id_niveau
+                    WHERE n.id_contexte = @idContexte AND f.actif = 1
+                    GROUP BY f.id_niveau";
+                cmd.Parameters.AddWithValue("@idContexte", idContexte);
+                using (var r = cmd.ExecuteReader())
+                    while (r.Read())
+                        dict[Convert.ToInt32(r["id_niveau"])] = Convert.ToInt32(r["cnt"]);
+            }
+            return dict;
+        }
+
         public static void Delete(int id)
         {
             using (var conn = DbHelper.GetConnection())

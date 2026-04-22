@@ -13,7 +13,8 @@ namespace CharlesNadejda.Forms
 {
     /// <summary>
     /// Hub principal — Single-Form Application (SFA).
-    /// Tout s'affiche dans Panel2 du SplitContainer ; aucun ShowDialog() de ressource/production.
+    /// Ressources et production s'affichent inline dans Panel2 du SplitContainer.
+    /// Les CRUD BOM (contextes, niveaux, fiches) utilisent encore ShowDialog — migration partielle.
     /// </summary>
     public partial class FrmPrincipal : Form
     {
@@ -425,7 +426,7 @@ namespace CharlesNadejda.Forms
         private void ShowOnboarding()
         {
             _pnlDroit.SuspendLayout();
-            _pnlDroit.Controls.Clear();
+            ClearAndDisposePanel();
 
             var pnlCenter = new Panel
             {
@@ -489,7 +490,7 @@ namespace CharlesNadejda.Forms
         {
             if (_state.ActiveActivite == null) { ShowOnboarding(); return; }
             _pnlDroit.SuspendLayout();
-            _pnlDroit.Controls.Clear();
+            ClearAndDisposePanel();
 
             List<Ingredient>    ings   = new List<Ingredient>();
             List<BomFiche>      fiches = new List<BomFiche>();
@@ -778,7 +779,7 @@ namespace CharlesNadejda.Forms
             _btnDupFiche      = null;
 
             _pnlDroit.SuspendLayout();
-            _pnlDroit.Controls.Clear();
+            ClearAndDisposePanel();
 
             var pnlHdr = new Panel { Dock = DockStyle.Top, Height = 60, BackColor = CREME_WARM };
             pnlHdr.Paint += (s, ev) =>
@@ -820,15 +821,16 @@ namespace CharlesNadejda.Forms
                 TextAlign = ContentAlignment.MiddleLeft, Padding = new Padding(20, 0, 0, 0)
             });
 
-            var niveaux = BomNiveauDAL.GetByContexte(_state.ActiveContexte.Id);
-            _niveauxListe = niveaux;
-            int ordreMax = niveaux.Count > 0 ? niveaux.Max(n => n.Ordre) : 0;
+            var niveaux    = BomNiveauDAL.GetByContexte(_state.ActiveContexte.Id);
+            _niveauxListe  = niveaux;
+            int ordreMax   = niveaux.Count > 0 ? niveaux.Max(n => n.Ordre) : 0;
+            // Une seule requête pour tous les comptages — remplace N requêtes GetByNiveau(id).Count
+            var ficheCounts = BomFicheDAL.GetCountsByContexte(_state.ActiveContexte.Id);
             var pnlNivRows = new Panel { Dock = DockStyle.Top, BackColor = CREME_WARM, Padding = new Padding(16, 4, 16, 4) };
             int rowY = 4;
             foreach (var niv in niveaux.OrderByDescending(n => n.Ordre))
             {
-                int ficheCount = 0;
-                try { ficheCount = BomFicheDAL.GetByNiveau(niv.Id).Count; } catch { }
+                ficheCounts.TryGetValue(niv.Id, out int ficheCount);
                 var row = MakeNiveauRow(niv, ficheCount, ordreMax);
                 row.Location = new Point(16, rowY);
                 pnlNivRows.Controls.Add(row);
@@ -930,7 +932,15 @@ namespace CharlesNadejda.Forms
                 btnDupFiche.Enabled = dgvFichesCapture.CurrentRow?.DataBoundItem is BomFiche;
             };
 
-            // ── Volet stock de production (panneau droit — sans header propre) ──
+            // ── Volet stock de production ─────────────────────────────────────
+            var lblStockHeader = new Label
+            {
+                Text = "STOCK DISPONIBLE", Font = new Font("Segoe UI", 7.5F, FontStyle.Bold),
+                ForeColor = SIDEBAR_META, Dock = DockStyle.Top, Height = 24,
+                TextAlign = ContentAlignment.MiddleLeft, Padding = new Padding(8, 0, 0, 0),
+                BackColor = CREME_WARM
+            };
+
             _dgvStock = new DataGridView
             {
                 Dock = DockStyle.Fill, Font = new Font("Segoe UI", 9F),
@@ -960,6 +970,7 @@ namespace CharlesNadejda.Forms
             };
             splitFichesStock.Panel1.Controls.Add(_dgvFiches);
             splitFichesStock.Panel2.Controls.Add(_dgvStock);
+            splitFichesStock.Panel2.Controls.Add(lblStockHeader);
 
             // Maintenir le splitter exactement à 50% lors de chaque redimensionnement
             splitFichesStock.Resize += (s, ev) =>
@@ -1024,43 +1035,44 @@ namespace CharlesNadejda.Forms
         private void ChargerFiches(BomNiveau niv)
         {
             if (_dgvFiches == null) return;
+            List<Ingredient> ingsCache = null;
             try
             {
+                _dgvFiches.SuspendLayout();
                 _dgvFiches.DataSource = null;
                 _dgvFiches.Columns.Clear();
 
                 if (niv.Ordre == 1)
                 {
-                    // ── N1 : fiches ingrédients de l'activité (lecture seule) ───
                     if (_lblFichesHeader != null)
                         _lblFichesHeader.Text = "Fiches Ingrédients — " +
                             (_state.ActiveActivite?.Nom ?? _state.ActiveContexte?.ActiviteNom ?? "");
 
-                    // Filtrer par activité via activites_stocks (JOIN sur id_stock)
-                    _dgvFiches.DataSource = IngredientDAL.GetAll(idActivite: _state.ActiveActivite?.Id ?? 0);
+                    // Cache partagé : évite un 2e appel identique dans ChargerStockNiveau
+                    ingsCache = IngredientDAL.GetAll(idActivite: _state.ActiveActivite?.Id ?? 0);
+                    _dgvFiches.DataSource = ingsCache;
 
                     if (_dgvFiches.Columns.Count > 0)
                     {
                         foreach (DataGridViewColumn col in _dgvFiches.Columns)
                             col.Visible = false;
                         int di = 0;
-                        void ShowCol(string name, string header)
+                        void ShowCol(string name, string header, int width)
                         {
                             var col = _dgvFiches.Columns[name];
                             if (col == null) return;
                             col.Visible      = true;
                             col.HeaderText   = header;
+                            col.Width        = width;
                             col.DisplayIndex = di++;
                         }
-                        ShowCol("Nom",                  "Ingrédient");
-                        ShowCol("ConditionnementLabel", "Conditionnement");
-                        ShowCol("UniteMesure",          "Unité base");
-                        ShowCol("TypePhysique",         "Type physique");
-                        ShowCol("NomFournisseur",       "Fournisseur");
-                        _dgvFiches.AutoResizeColumns(DataGridViewAutoSizeColumnsMode.AllCells);
+                        ShowCol("Nom",                  "Ingrédient",    180);
+                        ShowCol("ConditionnementLabel", "Conditionnement", 120);
+                        ShowCol("UniteMesure",          "Unité base",     80);
+                        ShowCol("TypePhysique",         "Type physique",  90);
+                        ShowCol("NomFournisseur",       "Fournisseur",   130);
                     }
 
-                    // Boutons non applicables en mode lecture fiches ingrédients
                     if (_btnNouvFiche != null) _btnNouvFiche.Enabled = false;
                     if (_btnModFiche  != null) _btnModFiche.Enabled  = false;
                     if (_btnSupFiche  != null) _btnSupFiche.Enabled  = false;
@@ -1068,35 +1080,31 @@ namespace CharlesNadejda.Forms
                 }
                 else
                 {
-                    // ── N2+ : fiches BOM du niveau ─────────────────────────────
                     _dgvFiches.DataSource = BomFicheDAL.GetByNiveau(niv.Id);
                     if (_dgvFiches.Columns.Count > 0)
                     {
                         foreach (DataGridViewColumn col in _dgvFiches.Columns)
                             col.Visible = false;
                         int di = 0;
-                        void ShowCol(string name, string header)
+                        void ShowCol(string name, string header, int width)
                         {
                             var col = _dgvFiches.Columns[name];
                             if (col == null) return;
                             col.Visible      = true;
                             col.HeaderText   = header;
+                            col.Width        = width;
                             col.DisplayIndex = di++;
                         }
-                        // ↓ Modifier l'ordre ici pour changer l'ordre des colonnes
-                        ShowCol("Nom",              "Fiche");
-                        ShowCol("UniteOutput",      "Unité");
-                        ShowCol("QuantiteOutput",   "Output / lot");
-                        ShowCol("TempsPreparation", "Tps (min)");
-                        ShowCol("DateCreation",     "Créée le");
-                        _dgvFiches.AutoResizeColumns(DataGridViewAutoSizeColumnsMode.AllCells);
+                        ShowCol("Nom",              "Fiche",        180);
+                        ShowCol("UniteOutput",      "Unité",         60);
+                        ShowCol("QuantiteOutput",   "Output / lot",  80);
+                        ShowCol("TempsPreparation", "Tps (min)",     70);
+                        ShowCol("DateCreation",     "Créée le",      90);
                     }
 
-                    // Réactiver les boutons BOM fiche
                     if (_btnNouvFiche != null) _btnNouvFiche.Enabled = true;
                     if (_btnModFiche  != null) _btnModFiche.Enabled  = true;
                     if (_btnSupFiche  != null) _btnSupFiche.Enabled  = true;
-                    // Dupliquer reste géré par SelectionChanged
                 }
             }
             catch (Exception ex)
@@ -1104,72 +1112,73 @@ namespace CharlesNadejda.Forms
                 MessageBox.Show("Erreur chargement fiches : " + ex.Message, "Erreur",
                     MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
-            ChargerStockNiveau(niv);
+            finally
+            {
+                _dgvFiches.ResumeLayout();
+            }
+            ChargerStockNiveau(niv, ingsCache);
         }
 
-        private void ChargerStockNiveau(BomNiveau niv)
+        private void ChargerStockNiveau(BomNiveau niv, List<Ingredient> ingsCache = null)
         {
             if (_dgvStock == null) return;
             try
             {
+                _dgvStock.SuspendLayout();
                 _dgvStock.DataSource = null;
                 _dgvStock.Columns.Clear();
 
                 if (niv.Ordre == 1)
                 {
-                    // ── Niveau de base : ingrédients instanciés (stock disponible > 0) ──
-                    _dgvStock.DataSource = IngredientDAL.GetAll(idActivite: _state.ActiveActivite?.Id ?? 0)
-                        .Where(i => i.StockActuel > 0)
-                        .ToList();
+                    // Réutilise le cache chargé par ChargerFiches — zéro requête supplémentaire
+                    var ings = ingsCache ?? IngredientDAL.GetAll(idActivite: _state.ActiveActivite?.Id ?? 0);
+                    _dgvStock.DataSource = ings.Where(i => i.StockActuel > 0).ToList();
                     if (_dgvStock.Columns.Count > 0)
                     {
                         foreach (DataGridViewColumn col in _dgvStock.Columns)
                             col.Visible = false;
                         int di = 0;
-                        void ShowCol(string name, string header)
+                        void ShowCol(string name, string header, int width)
                         {
                             var col = _dgvStock.Columns[name];
                             if (col == null) return;
                             col.Visible      = true;
                             col.HeaderText   = header;
+                            col.Width        = width;
                             col.DisplayIndex = di++;
                         }
-                        // ↓ Modifier l'ordre ici pour changer l'ordre des colonnes
-                        ShowCol("Nom",                 "Ingrédient");
-                        ShowCol("StockActuel",         "Dispo");
-                        ShowCol("UniteMesure",         "Unité base");
-                        ShowCol("PrixAchatReference",  "€/cond.");
-                        ShowCol("StockNom",            "Stock (lieu)");
-                        ShowCol("ConditionnementLabel","Conditionnement");
-                        _dgvStock.AutoResizeColumns(DataGridViewAutoSizeColumnsMode.AllCells);
+                        ShowCol("Nom",                 "Ingrédient",     160);
+                        ShowCol("StockActuel",         "Dispo",           70);
+                        ShowCol("UniteMesure",         "Unité base",      70);
+                        ShowCol("PrixAchatReference",  "€/cond.",         70);
+                        ShowCol("StockNom",            "Stock (lieu)",   110);
+                        ShowCol("ConditionnementLabel","Conditionnement", 110);
                     }
                 }
                 else
                 {
-                    // ── Niveaux supérieurs : bom_stocks produits à ce niveau ───
                     _dgvStock.DataSource = BomStockDAL.GetByNiveau(niv.Id);
                     if (_dgvStock.Columns.Count > 0)
                     {
                         foreach (DataGridViewColumn col in _dgvStock.Columns)
                             col.Visible = false;
                         int di = 0;
-                        void ShowCol(string name, string header)
+                        void ShowCol(string name, string header, int width)
                         {
                             var col = _dgvStock.Columns[name];
                             if (col == null) return;
                             col.Visible      = true;
                             col.HeaderText   = header;
+                            col.Width        = width;
                             col.DisplayIndex = di++;
                         }
-                        // ↓ Modifier l'ordre ici pour changer l'ordre des colonnes
-                        ShowCol("NomFiche",           "Fiche");
-                        ShowCol("QuantiteDisponible", "Qté dispo");
-                        ShowCol("UniteOutput",        "Unité");
-                        ShowCol("DateProduction",     "Produit le");
-                        ShowCol("DateDlc",            "DLC");
-                        ShowCol("CoutUnitaire",       "Coût/u");
-                        ShowCol("CoutTotal",          "Coût/prod");
-                        _dgvStock.AutoResizeColumns(DataGridViewAutoSizeColumnsMode.AllCells);
+                        ShowCol("NomFiche",           "Fiche",        160);
+                        ShowCol("QuantiteDisponible", "Qté dispo",     80);
+                        ShowCol("UniteOutput",        "Unité",         60);
+                        ShowCol("DateProduction",     "Produit le",    90);
+                        ShowCol("DateDlc",            "DLC",           90);
+                        ShowCol("CoutUnitaire",       "Coût/u",        70);
+                        ShowCol("CoutTotal",          "Coût/prod",     80);
                     }
                 }
             }
@@ -1177,6 +1186,10 @@ namespace CharlesNadejda.Forms
             {
                 MessageBox.Show("Erreur chargement stock niveau : " + ex.Message, "Erreur",
                     MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+            finally
+            {
+                _dgvStock.ResumeLayout();
             }
         }
 
@@ -1686,7 +1699,7 @@ namespace CharlesNadejda.Forms
                 {
                     Text = "Fiches", Font = new Font("Segoe UI", 8F),
                     FlatStyle = FlatStyle.Flat, BackColor = CHOCO_BRAND, ForeColor = Color.White,
-                    Size = new Size(64, 22), Location = new Point(68, 36), Cursor = Cursors.Hand
+                    Size = new Size(64, 28), Location = new Point(68, 32), Cursor = Cursors.Hand
                 };
                 btnFiches.FlatAppearance.BorderSize = 0;
                 btnFiches.Click += (s, ev) =>
@@ -1708,7 +1721,7 @@ namespace CharlesNadejda.Forms
                 {
                     Text = "Produire", Font = new Font("Segoe UI", 8F),
                     FlatStyle = FlatStyle.Flat, BackColor = GREEN_OK, ForeColor = Color.White,
-                    Size = new Size(64, 22), Location = new Point(138, 36), Cursor = Cursors.Hand
+                    Size = new Size(64, 28), Location = new Point(138, 32), Cursor = Cursors.Hand
                 };
                 btnProd.FlatAppearance.BorderSize = 0;
                 btnProd.Click += (s, ev) => { SelectNiveauRow(niv); NavigateTo(ScreenId.Production); };
@@ -1719,7 +1732,7 @@ namespace CharlesNadejda.Forms
                     Text    = "✕", Font = new Font("Segoe UI", 9F),
                     FlatStyle = FlatStyle.Flat, BackColor = Color.White,
                     ForeColor = estTop ? Color.FromArgb(160, 120, 100) : Color.FromArgb(200, 190, 180),
-                    Size    = new Size(24, 22), Cursor = estTop ? Cursors.Hand : Cursors.Default,
+                    Size    = new Size(36, 28), Cursor = estTop ? Cursors.Hand : Cursors.Default,
                     Enabled = estTop
                 };
                 btnDel.FlatAppearance.BorderSize = 0;
@@ -1775,10 +1788,6 @@ namespace CharlesNadejda.Forms
                 case RessourceType.Ingredients:  frm = new FrmIngredients(_state.ActiveActivite, filtreAlertes); break;
                 case RessourceType.Achats:       frm = new FrmAchats(_state.ActiveActivite);       break;
                 case RessourceType.VueStock:     frm = new FrmVueStock();                         break;
-                // TICKET-17 : module Catalogue maintenant connecté
-                case RessourceType.Categories:   frm = new FrmCategories();                       break;
-                case RessourceType.Parfums:      frm = new FrmParfums();                          break;
-                case RessourceType.Produits:     frm = new FrmProduits();                         break;
                 default:                         return;
             }
             EmbedForm(frm);
@@ -1799,7 +1808,7 @@ namespace CharlesNadejda.Forms
         private void EmbedForm(Form frm)
         {
             _pnlDroit.SuspendLayout();
-            _pnlDroit.Controls.Clear();
+            ClearAndDisposePanel();
             frm.TopLevel        = false;
             frm.FormBorderStyle = FormBorderStyle.None;
             frm.Dock            = DockStyle.Fill;
@@ -1815,23 +1824,34 @@ namespace CharlesNadejda.Forms
             _pnlDroit.ResumeLayout();
         }
 
+        /// <summary>
+        /// Vide _pnlDroit ET dispose les contrôles enfants (Forms embarquées, DGVs, Panels).
+        /// Sans Dispose, les Forms précédentes resteraient en mémoire avec leurs handlers DAL
+        /// et seraient disposées en cascade à la fermeture de l'app (latence visible).
+        /// </summary>
+        private void ClearAndDisposePanel()
+        {
+            while (_pnlDroit.Controls.Count > 0)
+            {
+                var c = _pnlDroit.Controls[0];
+                _pnlDroit.Controls.RemoveAt(0);
+                c.Dispose();
+            }
+        }
+
         // ════════════════════════════════════════════════════════════════
         //  Menu / Session
         // ════════════════════════════════════════════════════════════════
 
-        // TICKET-17 : module Catalogue connecté — plus de PlaceholderWeb()
-        private void menuCatCategories_Click(object sender, EventArgs e) =>
-            NavigateTo(ScreenId.Ressources, () => _state.SetRessource(RessourceType.Categories));
-
-        private void menuCatParfums_Click(object sender, EventArgs e) =>
-            NavigateTo(ScreenId.Ressources, () => _state.SetRessource(RessourceType.Parfums));
-
-        private void menuCatProduits_Click(object sender, EventArgs e) =>
-            NavigateTo(ScreenId.Ressources, () => _state.SetRessource(RessourceType.Produits));
+        // Modules du catalogue Web (Catégories, Parfums, Produits, Commandes) — à venir
+        // Connectés à une future intégration avec le site Laravel.
+        private void menuCatCategories_Click(object sender, EventArgs e) => PlaceholderWeb();
+        private void menuCatParfums_Click(object sender, EventArgs e)    => PlaceholderWeb();
+        private void menuCatProduits_Click(object sender, EventArgs e)   => PlaceholderWeb();
+        private void menuCommandes_Click(object sender, EventArgs e)     => PlaceholderWeb();
 
         private void menuFournisseurs_Click(object sender, EventArgs e) =>
             NavigateTo(ScreenId.Ressources, () => _state.SetRessource(RessourceType.Fournisseurs));
-        private void menuCommandes_Click(object sender, EventArgs e) => PlaceholderWeb();
 
         private static void PlaceholderWeb() =>
             MessageBox.Show("Module Catalogue Web — à venir.", "En développement",
