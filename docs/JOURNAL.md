@@ -27,10 +27,83 @@
 | 15  | `quantiteCible` dans `BomProductionDAL` = **nombre de batches**, pas une quantité finale. La quantité réellement produite et stockée = `quantiteCible × fiche.QuantiteOutput`. Confondre les deux = stock × 10 trop faible. | `DAL/BomProductionDAL.cs` | 2026-04-15 |
 | 16  | Dans la branche `TypeInput == "fiche"` de BomProductionDAL, `ligne.UniteMesureInput` = unité output de la fiche source. La conversion `UnitConvertisseur.Convertir(qteNecessaire, ligne.UniteMesure, ligne.UniteMesureInput)` est OBLIGATOIRE avant toute comparaison ou décrémentation de bom_stocks. Omettre = pénurie fantôme (g vs kg). | `DAL/BomProductionDAL.cs` | 2026-04-15 |
 | 17  | Une VIEW MySQL ne contient que les colonnes explicitement sélectionnées. Si l'on a besoin d'un label dérivé d'une FK (ex: `nom_activite` depuis `activites`), le JOIN doit être dans le DAL (requête SQL), pas dans le Model C#. Éviter de résoudre un FK manquant côté applicatif avec string concatenation (`"act. " + id`). | `DAL/VueStockGlobalDAL.cs`, `Models/VueStockGlobal.cs` | 2026-04-15 |
+| 18  | `Controls.Clear()` sur un conteneur hébergeant des Forms (ex: `_pnlDroit` en SFA) ne Dispose PAS les enfants — chaque navigation laisse une Form orpheline vivante avec tous ses handlers. Implémenter une méthode helper qui itère et dispose chaque enfant avant Clear. Symptôme : latence à la fermeture de l'app (dispose en cascade). | `Forms/FrmPrincipal.cs` (ClearAndDisposePanel) | 2026-04-22 |
+| 19  | Les migrations SQL dans `docker-entrypoint-initdb.d` s'exécutent en ordre alphabétique. TOUJOURS zéro-padder les numéros de version (`v01`, `v02`... `v10`) pour garantir l'ordre chronologique. Ne jamais placer de script de reset/test dans le dossier d'init Docker. | `sql/migration_v0X_*.sql` | 2026-04-22 |
+| 20  | `DataGridView.AutoResizeColumns(AllCells)` mesure chaque cellule → coût proportionnel au nombre de lignes. Préférer `AllCellsExceptHeader` ou largeurs fixes explicites par colonne. Toujours entourer les modifications DataSource+Columns par `SuspendLayout`/`ResumeLayout` sur le DGV. | `Forms/FrmPrincipal.cs` (ChargerFiches, ChargerStockNiveau) | 2026-04-22 |
+| 21  | Les colonnes INT MySQL sont retournées comme `Int32` par MySql.Data, mais `COUNT(*)` en tant que `Int64` — un cast `(int)(long)r["col"]` plante sur une colonne INT simple. Utiliser `Convert.ToInt32(r["col"])` pour une gestion sûre des types numériques hétérogènes. | `DAL/BomFicheDAL.cs` (GetCountsByContexte) | 2026-04-22 |
+| 22  | Pour éviter la duplication du cycle validation/sauvegarde dans les formulaires d'édition, toute Form Edit doit hériter de `FrmEditBase` — ne jamais redéclarer `btnEnregistrer`, `btnAnnuler`, `errorProvider`. Implémenter uniquement `Valider()` et `Sauvegarder()`. | `Forms/FrmEditBase.cs`, `Forms/Frm*Edit.cs` | 2026-04-22 |
 
 ---
 
 ## Historique
+
+---
+
+### SESSION 17 — 2026-04-22
+> Refactoring structurel post-audit : nettoyage orphelins + scope ERP pur + migration massive vers FrmEditBase + fix fuite mémoire + doc d'architecture.
+
+---
+
+#### [2026-04-22] DOCS — ARCHITECTURE.md pour défense orale
+**Fichiers :** `docs/ARCHITECTURE.md`
+**Résumé :** Documentation d'architecture avec 3 diagrammes Mermaid (couches, SFA, modules métier). Pitch en 3 phrases pour l'oral d'examen, tableau module→Forms→Base héritée, patterns appliqués (Template Method, Generics, SFA, DAL), règles WinForms critiques, arborescence. Prêt comme support de défense.
+
+---
+
+#### [2026-04-22] REFACTOR — Migration Phase 2 : 8 Forms Edit vers FrmEditBase
+**Fichiers :** `Forms/FrmBomNiveauEdit.cs`, `Forms/FrmFournisseurEdit.cs`, `Forms/FrmStockEdit.cs`, `Forms/FrmIngredientEdit.cs`, `Forms/FrmActiviteEdit.cs`, `Forms/FrmBomContexteEdit.cs`, `Forms/FrmBomFicheEdit.cs`, `Forms/FrmAchatEdit.cs`, `Forms/StringExtensions.cs` (extrait)
+**Résumé :** Les 8 Forms d'édition ERP héritent maintenant de FrmEditBase. Pattern uniforme : champs + `Valider()` + `Sauvegarder()`, cycle bouton Enregistrer/Annuler + ErrorProvider centralisés. 6 fichiers Designer.cs supprimés (FrmFournisseurEdit, FrmBomNiveauEdit, FrmIngredientEdit, FrmBomContexteEdit, FrmBomFicheEdit, FrmAchatEdit — les 2 autres étaient déjà en code-behind). `StringExtensions.NullIfEmpty()` extrait dans son propre fichier. **Total : −1 110 lignes** éliminées.
+**Règle retenue :** Pour éviter la duplication du plumbing d'édition, faire hériter toute nouvelle Form Edit de `FrmEditBase` — ne jamais redéclarer `btnEnregistrer`, `btnAnnuler`, `errorProvider`.
+
+---
+
+#### [2026-04-22] FIX — Fuite mémoire navigation SFA (ClearAndDisposePanel)
+**Fichiers :** `Forms/FrmPrincipal.cs`
+**Résumé :** Remplacement des 4 occurrences de `_pnlDroit.Controls.Clear()` par `ClearAndDisposePanel()` qui dispose les Forms enfants en plus de les retirer du panel. Avant : chaque navigation laissait une Form orpheline vivante en mémoire avec tous ses handlers DAL — visible à la fermeture (dispose en cascade). Après : transitions instantanées, fermeture sans latence.
+**Règle retenue :** `Controls.Clear()` sur un conteneur hébergeant des Forms n'appelle PAS `Dispose()` — implémenter systématiquement une méthode helper qui itère et dispose chaque enfant.
+
+---
+
+#### [2026-04-22] PERF — Optimisation écran Contexte (N+1 + cache)
+**Fichiers :** `Forms/FrmPrincipal.cs`, `DAL/BomFicheDAL.cs`
+**Résumé :** Trois optimisations sur le chargement contexte/niveau/fiches/stock : (1) `BomFicheDAL.GetCountsByContexte()` ajoute GROUP BY pour remplacer N requêtes par niveau par 1 seule — confirmé par Convert.ToInt32 pour compatibilité types MySQL Int32/Int64. (2) `IngredientDAL.GetAll()` chargé 1× dans ChargerFiches et passé en cache à ChargerStockNiveau (était appelé 2× consécutivement en N1). (3) `AutoResizeColumns(AllCells)` remplacé par largeurs explicites par colonne + `SuspendLayout`/`ResumeLayout` sur les 2 DGV. Gain utilisateur : transitions nettes, plus de freeze visible.
+**Règle retenue :** `DataGridView.AutoResizeColumns(AllCells)` mesure CHAQUE cellule → coûteux sur gros datasets. Préférer `AllCellsExceptHeader` ou largeurs fixes. Toujours entourer les modifications DataSource+Columns par `SuspendLayout`/`ResumeLayout`.
+
+---
+
+#### [2026-04-22] REFACTOR — Suppression module Catalogue Web (scope ERP pur)
+**Fichiers :** `Forms/FrmCategor*`, `Forms/FrmParfum*`, `Forms/FrmProduit*`, `Forms/FrmRecette*`, `DAL/CategorieDAL.cs`, `DAL/ParfumDAL.cs`, `DAL/ProduitDAL.cs`, `DAL/RecetteDAL.cs`, `Models/Categorie.cs`, `Models/Parfum.cs`, `Models/Produit.cs`, `Models/Recette.cs`, `Models/RecetteIngredient.cs`, `Forms/FrmPrincipal.cs`, `Navigation/RessourceType.cs`
+**Résumé :** Décision périmètre : l'app C# est un **ERP pur** (calcul production depuis ingrédients + bilan), le catalogue (catégories, parfums, produits, recettes) est **hors scope** — il relèvera d'une future intégration avec le site Laravel. Suppression de 24 fichiers : 15 Forms + 4 DALs + 5 Models. Menus du Catalogue dans FrmPrincipal redirigent vers `PlaceholderWeb()` ("Module Catalogue Web — à venir"). `RessourceType` réduit à 5 entrées ERP (Stocks, Ingredients, Fournisseurs, Achats, VueStock). **Total : −1 500 lignes** supprimées.
+
+---
+
+#### [2026-04-22] CHORE — Nettoyage orphelins Forms
+**Fichiers :** suppression de `Form1.cs/.Designer.cs/.resx`, `Forms/FrmArtisaStock.cs/.Designer.cs`, `Forms/FrmBomSimulation.cs/.Designer.cs`
+**Résumé :** 3 Forms orphelines confirmées via `grep -r "new FrmX("` → 0 instanciation. Form1 = résidu du template VS par défaut. FrmArtisaStock = ancien dashboard BOM entièrement repris par FrmPrincipal. FrmBomSimulation = remplacée par FrmBomProductionSimulation. **−1 080 lignes** de code mort supprimées du .csproj.
+
+---
+
+#### [2026-04-22] SECURITY — Retirer App.config du git + App.config.example + cn_user/cn_password
+**Fichiers :** `.gitignore`, `App.config.example` (nouveau), `App.config` (modifié puis untracked via `git rm --cached`)
+**Résumé :** L'audit DevOps avait flaggé SEC-1 critique : `App.config` versionné avec `root/root` en clair. Fix : `App.config` ajouté à `.gitignore`, `App.config.example` créé avec valeurs REMPLACER, connection string modifiée en `cn_user/cn_password` (utilisateur dédié Docker — principe de moindre privilège). Le `.env` Laravel était déjà dans `.gitignore` et non-tracké, pas d'action nécessaire.
+**Règle retenue :** Les fichiers de config contenant des credentials doivent être en `.gitignore` et accompagnés d'un fichier `.example` versionné avec valeurs fictives.
+
+---
+
+#### [2026-04-22] INFRA — Ordre migrations Docker : zéro-padding + reset hors init
+**Fichiers :** `sql/migration_v4_bom.sql` → `sql/migration_v04_bom.sql` (et v5→v09), `sql/reset_db_for_tests.sql` → `sql/tests/reset_db_for_tests.sql`
+**Résumé :** L'audit DevOps avait flaggé INFRA-1 : tri alphabétique des fichiers SQL dans `docker-entrypoint-initdb.d` exécutait v10→v13 AVANT v4→v9 (cassant les ALTER TABLE). Fix : zéro-padding sur v04→v09 + déplacement de `reset_db_for_tests.sql` dans `sql/tests/` pour l'exclure du volume Docker init.
+**Règle retenue :** Les migrations SQL dans un volume Docker init s'exécutent en ordre alphabétique → TOUJOURS zéro-padder les numéros de version (`v01`, `v02`... `v10`, `v11`) pour garantir l'ordre chronologique.
+
+---
+
+### SESSION 16 — 2026-04-22
+
+---
+
+#### [2026-04-22 00:00] DOCS — audit multi-agents 2026-04-22
+**Fichiers :** `docs/AUDIT_2026-04-22.md` — audit complet pipeline #1→#7
+**Résumé :** Audit transversal post-sprints P0→P3. 7 agents, scores : PO ~80% US, Architect 7.2/10, UI/UX 7.4/10, Backend 8.0/10, Frontend 7.0/10, QA 6.0/10, DevOps 4.5/10. Items P0 : App.config/.env en git (SEC-1/2 critiques), #if DEBUG credentials FrmLogin, FrmListeBase<T> encode ShowDialog() standardisant la violation SFA, ordre migrations Docker cassé (tri alphabétique v10 avant v4), btnDel Size(24,22) violation Fitts persistante, palette dupliquée FrmPrincipal vs AppColors, commentaire SFA trompeur ligne 15. Score global estimé 7.2/10 (↑ depuis 6.3/10).
 
 ---
 
