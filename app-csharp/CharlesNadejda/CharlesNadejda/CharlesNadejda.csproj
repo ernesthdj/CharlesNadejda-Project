@@ -101,12 +101,6 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Form1.cs">
-      <SubType>Form</SubType>
-    </Compile>
-    <Compile Include="Form1.Designer.cs">
-      <DependentUpon>Form1.cs</DependentUpon>
-    </Compile>
     <Compile Include="DAL\BomContexteDAL.cs" />
     <Compile Include="DAL\BomFicheDAL.cs" />
     <Compile Include="DAL\BomFicheLigneDAL.cs" />
@@ -114,14 +108,10 @@
     <Compile Include="DAL\BomProductionDAL.cs" />
     <Compile Include="DAL\BomReservationDAL.cs" />
     <Compile Include="DAL\BomStockDAL.cs" />
-    <Compile Include="DAL\CategorieDAL.cs" />
     <Compile Include="DAL\DbHelper.cs" />
     <Compile Include="DAL\FournisseurDAL.cs" />
     <Compile Include="DAL\IngredientDAL.cs" />
     <Compile Include="DAL\LotDAL.cs" />
-    <Compile Include="DAL\ParfumDAL.cs" />
-    <Compile Include="DAL\ProduitDAL.cs" />
-    <Compile Include="DAL\RecetteDAL.cs" />
     <Compile Include="DAL\UtilisateurDAL.cs" />
     <Compile Include="Forms\FormHelper.cs" />
     <Compile Include="Forms\UnitConvertisseur.cs" />
@@ -143,91 +133,23 @@
     <Compile Include="Forms\FrmPrincipal.Designer.cs">
       <DependentUpon>FrmPrincipal.cs</DependentUpon>
     </Compile>
-    <Compile Include="Forms\FrmCategories.cs">
-      <SubType>Form</SubType>
-    </Compile>
-    <Compile Include="Forms\FrmCategories.Designer.cs">
-      <DependentUpon>FrmCategories.cs</DependentUpon>
-    </Compile>
-    <Compile Include="Forms\FrmCategorieEdit.cs">
-      <SubType>Form</SubType>
-    </Compile>
-    <Compile Include="Forms\FrmCategorieEdit.Designer.cs">
-      <DependentUpon>FrmCategorieEdit.cs</DependentUpon>
-    </Compile>
-    <Compile Include="Forms\FrmProduits.cs">
-      <SubType>Form</SubType>
-    </Compile>
-    <Compile Include="Forms\FrmProduits.Designer.cs">
-      <DependentUpon>FrmProduits.cs</DependentUpon>
-    </Compile>
-    <Compile Include="Forms\FrmProduitEdit.cs">
-      <SubType>Form</SubType>
-    </Compile>
-    <Compile Include="Forms\FrmProduitEdit.Designer.cs">
-      <DependentUpon>FrmProduitEdit.cs</DependentUpon>
-    </Compile>
     <Compile Include="Forms\FrmFournisseurs.cs">
       <SubType>Form</SubType>
     </Compile>
     <Compile Include="Forms\FrmFournisseurs.Designer.cs">
       <DependentUpon>FrmFournisseurs.cs</DependentUpon>
     </Compile>
-    <Compile Include="Forms\FrmFournisseurEdit.cs">
-      <SubType>Form</SubType>
-    </Compile>
-    <Compile Include="Forms\FrmFournisseurEdit.Designer.cs">
-      <DependentUpon>FrmFournisseurEdit.cs</DependentUpon>
-    </Compile>
+    <Compile Include="Forms\FrmFournisseurEdit.cs" />
+    <Compile Include="Forms\StringExtensions.cs" />
     <Compile Include="Forms\FrmIngredients.cs">
       <SubType>Form</SubType>
     </Compile>
-    <Compile Include="Forms\FrmIngredientEdit.cs">
-      <SubType>Form</SubType>
-    </Compile>
-    <Compile Include="Forms\FrmIngredientEdit.Designer.cs">
-      <DependentUpon>FrmIngredientEdit.cs</DependentUpon>
-    </Compile>
+    <Compile Include="Forms\FrmIngredientEdit.cs" />
     <Compile Include="Forms\FrmAchats.cs">
       <SubType>Form</SubType>
     </Compile>
-    <Compile Include="Forms\FrmAchatEdit.cs">
-      <SubType>Form</SubType>
-    </Compile>
-    <Compile Include="Forms\FrmAchatEdit.Designer.cs">
-      <DependentUpon>FrmAchatEdit.cs</DependentUpon>
-    </Compile>
-    <Compile Include="Forms\FrmRecettes.cs">
-      <SubType>Form</SubType>
-    </Compile>
-    <Compile Include="Forms\FrmRecettes.Designer.cs">
-      <DependentUpon>FrmRecettes.cs</DependentUpon>
-    </Compile>
-    <Compile Include="Forms\FrmRecetteEdit.cs">
-      <SubType>Form</SubType>
-    </Compile>
-    <Compile Include="Forms\FrmRecetteEdit.Designer.cs">
-      <DependentUpon>FrmRecetteEdit.cs</DependentUpon>
-    </Compile>
-    <Compile Include="Forms\FrmParfums.cs">
-      <SubType>Form</SubType>
-    </Compile>
-    <Compile Include="Forms\FrmParfums.Designer.cs">
-      <DependentUpon>FrmParfums.cs</DependentUpon>
-    </Compile>
-    <Compile Include="Forms\FrmParfumEdit.cs">
-      <SubType>Form</SubType>
-    </Compile>
-    <Compile Include="Forms\FrmParfumEdit.Designer.cs">
-      <DependentUpon>FrmParfumEdit.cs</DependentUpon>
-    </Compile>
+    <Compile Include="Forms\FrmAchatEdit.cs" />
     <Compile Include="Forms\AppColors.cs" />
-    <Compile Include="Forms\FrmArtisaStock.cs">
-      <SubType>Form</SubType>
-    </Compile>
-    <Compile Include="Forms\FrmArtisaStock.Designer.cs">
-      <DependentUpon>FrmArtisaStock.cs</DependentUpon>
-    </Compile>
     <Compile Include="Forms\FrmBomContextes.cs">
       <SubType>Form</SubType>
     </Compile>
@@ -256,36 +178,15 @@
     <Compile Include="DAL\StockDAL.cs" />
     <Compile Include="DAL\VueStockGlobalDAL.cs" />
     <Compile Include="DAL\BomCoutDAL.cs" />
-    <Compile Include="Forms\FrmBomContexteEdit.cs">
-      <SubType>Form</SubType>
-    </Compile>
-    <Compile Include="Forms\FrmBomContexteEdit.Designer.cs">
-      <DependentUpon>FrmBomContexteEdit.cs</DependentUpon>
-    </Compile>
+    <Compile Include="Forms\FrmBomContexteEdit.cs" />
     <Compile Include="Forms\FrmBomNiveaux.cs">
       <SubType>Form</SubType>
     </Compile>
-    <Compile Include="Forms\FrmBomNiveauEdit.cs">
-      <SubType>Form</SubType>
-    </Compile>
-    <Compile Include="Forms\FrmBomNiveauEdit.Designer.cs">
-      <DependentUpon>FrmBomNiveauEdit.cs</DependentUpon>
-    </Compile>
+    <Compile Include="Forms\FrmBomNiveauEdit.cs" />
     <Compile Include="Forms\FrmBomFiches.cs">
       <SubType>Form</SubType>
     </Compile>
-    <Compile Include="Forms\FrmBomFicheEdit.cs">
-      <SubType>Form</SubType>
-    </Compile>
-    <Compile Include="Forms\FrmBomFicheEdit.Designer.cs">
-      <DependentUpon>FrmBomFicheEdit.cs</DependentUpon>
-    </Compile>
-    <Compile Include="Forms\FrmBomSimulation.cs">
-      <SubType>Form</SubType>
-    </Compile>
-    <Compile Include="Forms\FrmBomSimulation.Designer.cs">
-      <DependentUpon>FrmBomSimulation.cs</DependentUpon>
-    </Compile>
+    <Compile Include="Forms\FrmBomFicheEdit.cs" />
     <Compile Include="Forms\FrmBomProductionSimulation.cs">
       <SubType>Form</SubType>
     </Compile>
@@ -302,14 +203,9 @@
     <Compile Include="Models\BomReservation.cs" />
     <Compile Include="Models\BomStock.cs" />
     <Compile Include="Models\VueStockGlobal.cs" />
-    <Compile Include="Models\Categorie.cs" />
     <Compile Include="Models\Fournisseur.cs" />
     <Compile Include="Models\Ingredient.cs" />
     <Compile Include="Models\Lot.cs" />
-    <Compile Include="Models\Parfum.cs" />
-    <Compile Include="Models\Produit.cs" />
-    <Compile Include="Models\Recette.cs" />
-    <Compile Include="Models\RecetteIngredient.cs" />
     <Compile Include="Models\Utilisateur.cs" />
     <Compile Include="Navigation\AppState.cs" />
     <Compile Include="Navigation\NavigationParams.cs" />

@@ -1,9 +1,10 @@
 using System;
 using System.Collections.Generic;
+using System.ComponentModel;
+using System.Drawing;
 using System.Windows.Forms;
 using CharlesNadejda.DAL;
 using CharlesNadejda.Models;
-using CharlesNadejda;
 
 namespace CharlesNadejda.Forms
 {
@@ -13,109 +14,240 @@ namespace CharlesNadejda.Forms
     /// Reçoit le BomNiveau auquel appartient la fiche. Le niveau détermine
     /// automatiquement quels inputs sont proposés :
     ///   - Toujours disponibles : ingrédients de l'activité (base N1)
-    ///   - Si ordre >= 3 : aussi les fiches de TOUS les niveaux inférieurs (N2, N3, …, N-1)
+    ///   - Si ordre >= 3 : aussi les fiches de TOUS les niveaux inférieurs (N2, ..., N-1)
     ///
     /// Règle : niveau N peut consommer n'importe quel niveau inférieur, jamais supérieur.
+    /// Migré vers FrmEditBase — errorProvider et boutons gérés par la classe de base.
     /// </summary>
-    public partial class FrmBomFicheEdit : Form
+    public class FrmBomFicheEdit : FrmEditBase
     {
-        private readonly BomFiche    _fiche;
-        private readonly BomNiveau   _niveau;
-        private readonly bool        _isEdit;
+        private readonly BomFiche  _fiche;
+        private readonly BomNiveau _niveau;
+        private readonly bool      _isEdit;
         private readonly List<BomFicheLigne> _lignes = new List<BomFicheLigne>();
 
-        // (plus de _typeInputAuto : une fiche peut mixer ingrédients ET fiches de niveaux inférieurs)
+        // ── Contrôles en-tête ─────────────────────────────────────────────
+        private readonly TextBox       txtNom;
+        private readonly TextBox       txtDescription;
+        private readonly ComboBox      cboUniteOutput;
+        private readonly NumericUpDown nudQuantiteOutput;
+        private readonly NumericUpDown nudTemps;
+        private readonly Label         lblActiviteValeur;
+
+        // ── Contrôles section lignes ──────────────────────────────────────
+        private readonly Label         lblTypeInput;
+        private readonly ComboBox      cboInput;
+        private readonly NumericUpDown nudQteLigne;
+        private readonly ComboBox      cboUniteLigne;
+        private readonly DataGridView  dgvLignes;
 
         public FrmBomFicheEdit(BomFiche fiche, BomNiveau niveau)
         {
-            InitializeComponent();
             _isEdit = fiche != null;
             _fiche  = fiche ?? new BomFiche { IdNiveau = niveau.Id, ActiviteNom = niveau.ActiviteNom };
             _niveau = niveau;
 
             if (_isEdit && _fiche.Lignes != null)
                 _lignes.AddRange(_fiche.Lignes);
+
+            var font  = new Font("Segoe UI", 10F);
+            var fontS = new Font("Segoe UI", 9.5F);
+            ClientSize = new Size(800, 100);
+
+            // ── Ligne 1 : Nom + Activité (lecture seule) ──────────────────
+            Controls.Add(new Label { AutoSize = true, Font = font, Location = new Point(12, 15), Text = "Nom de la fiche *" });
+            txtNom = new TextBox { Font = font, Location = new Point(12, 36), Size = new Size(280, 26), TabIndex = 0 };
+            Controls.Add(txtNom);
+
+            Controls.Add(new Label { AutoSize = true, Font = font, Location = new Point(304, 15), Text = "Activité *" });
+            lblActiviteValeur = new Label
+            {
+                AutoSize  = true,
+                Font      = new Font("Segoe UI", 10F, FontStyle.Bold),
+                ForeColor = Color.FromArgb(61, 40, 23),
+                Location  = new Point(304, 36), Text = ""
+            };
+            Controls.Add(lblActiviteValeur);
+
+            // ── Ligne 2 : Unité output + Qté output + Temps ───────────────
+            Controls.Add(new Label { AutoSize = true, Font = font, Location = new Point(12, 76), Text = "Unité produite" });
+            cboUniteOutput = new ComboBox
+            {
+                DropDownStyle = ComboBoxStyle.DropDownList,
+                Font = font, Location = new Point(12, 97), Size = new Size(100, 26), TabIndex = 2
+            };
+            Controls.Add(cboUniteOutput);
+
+            Controls.Add(new Label { AutoSize = true, Font = font, Location = new Point(124, 76), Text = "Qté produite/exécution" });
+            nudQuantiteOutput = new NumericUpDown
+            {
+                DecimalPlaces = 2,
+                Minimum = new decimal(new[] { 1, 0, 0, 131072 }),
+                Maximum = new decimal(new[] { 100000, 0, 0, 0 }),
+                Value   = new decimal(new[] { 1, 0, 0, 0 }),
+                Font = font, Location = new Point(124, 97), Size = new Size(100, 26), TabIndex = 3
+            };
+            Controls.Add(nudQuantiteOutput);
+
+            Controls.Add(new Label { AutoSize = true, Font = font, Location = new Point(236, 76), Text = "Temps (min)" });
+            nudTemps = new NumericUpDown
+            {
+                Maximum = new decimal(new[] { 9999, 0, 0, 0 }),
+                Font = font, Location = new Point(236, 97), Size = new Size(80, 26), TabIndex = 4
+            };
+            Controls.Add(nudTemps);
+
+            // ── Ligne 3 : Description ─────────────────────────────────────
+            Controls.Add(new Label { AutoSize = true, Font = font, Location = new Point(12, 137), Text = "Description" });
+            txtDescription = new TextBox
+            {
+                Font = font, Location = new Point(12, 158),
+                Size = new Size(432, 50), Multiline = true, TabIndex = 5
+            };
+            Controls.Add(txtDescription);
+
+            // ── GroupBox Lignes ───────────────────────────────────────────
+            var grpLignes = new GroupBox
+            {
+                Font = new Font("Segoe UI", 10F, FontStyle.Bold),
+                Location = new Point(12, 220), Size = new Size(770, 300),
+                Text = "Composition — inputs de la fiche", TabStop = false
+            };
+            Controls.Add(grpLignes);
+
+            lblTypeInput = new Label
+            {
+                AutoSize = true, Font = fontS,
+                Location = new Point(10, 28), Text = "Type"
+            };
+            grpLignes.Controls.Add(lblTypeInput);
+
+            grpLignes.Controls.Add(new Label { AutoSize = true, Font = fontS, Location = new Point(140, 28), Text = "Input" });
+            cboInput = new ComboBox
+            {
+                DropDownStyle = ComboBoxStyle.DropDownList,
+                Font = fontS, Location = new Point(140, 47), Size = new Size(220, 24), TabIndex = 7
+            };
+            cboInput.SelectedIndexChanged += (s, e) => SynchroniserUniteInput();
+            grpLignes.Controls.Add(cboInput);
+
+            grpLignes.Controls.Add(new Label { AutoSize = true, Font = fontS, Location = new Point(370, 28), Text = "Quantité" });
+            nudQteLigne = new NumericUpDown
+            {
+                DecimalPlaces = 3,
+                Minimum = new decimal(new[] { 1, 0, 0, 196608 }),
+                Maximum = new decimal(new[] { 100000, 0, 0, 0 }),
+                Value   = new decimal(new[] { 1, 0, 0, 0 }),
+                Font = fontS, Location = new Point(370, 47), Size = new Size(90, 24), TabIndex = 8
+            };
+            grpLignes.Controls.Add(nudQteLigne);
+
+            grpLignes.Controls.Add(new Label { AutoSize = true, Font = fontS, Location = new Point(470, 28), Text = "Unité" });
+            cboUniteLigne = new ComboBox
+            {
+                DropDownStyle = ComboBoxStyle.DropDownList,
+                Font = fontS, Location = new Point(470, 47), Size = new Size(80, 24), TabIndex = 9
+            };
+            cboUniteLigne.Items.AddRange(new object[] { "piece", "kg", "g", "l", "ml", "cl" });
+            cboUniteLigne.SelectedIndex = 0;
+            grpLignes.Controls.Add(cboUniteLigne);
+
+            var btnAjouterLigne = new Button
+            {
+                Font = new Font("Segoe UI", 9.5F, FontStyle.Bold),
+                Location = new Point(560, 44), Size = new Size(90, 28),
+                Text = "+ Ajouter", TabIndex = 10,
+                BackColor = Color.FromArgb(40, 120, 40), ForeColor = Color.White,
+                FlatStyle = FlatStyle.Flat
+            };
+            btnAjouterLigne.Click += BtnAjouterLigne_Click;
+            grpLignes.Controls.Add(btnAjouterLigne);
+
+            var btnRetirerLigne = new Button
+            {
+                Font = fontS,
+                Location = new Point(660, 44), Size = new Size(90, 28),
+                Text = "Retirer", TabIndex = 11,
+                ForeColor = Color.DarkRed
+            };
+            btnRetirerLigne.Click += BtnRetirerLigne_Click;
+            grpLignes.Controls.Add(btnRetirerLigne);
+
+            dgvLignes = new DataGridView
+            {
+                AllowUserToAddRows    = false,
+                AllowUserToDeleteRows = false,
+                AutoSizeColumnsMode   = DataGridViewAutoSizeColumnsMode.Fill,
+                MultiSelect           = false,
+                ReadOnly              = true,
+                SelectionMode         = DataGridViewSelectionMode.FullRowSelect,
+                RowHeadersVisible     = false,
+                BackgroundColor       = Color.White,
+                Location              = new Point(10, 82), Size = new Size(745, 200),
+                Font                  = new Font("Segoe UI", 9F)
+            };
+            grpLignes.Controls.Add(dgvLignes);
+
+            PositionnerBoutons(535);
+
+            Load += FrmBomFicheEdit_Load;
         }
 
         private void FrmBomFicheEdit_Load(object sender, EventArgs e)
         {
-            this.Text = _isEdit
+            Text = _isEdit
                 ? $"Modifier la fiche  —  {_niveau.NomContexte} › {_niveau.Nom}"
                 : $"Nouvelle fiche  —  {_niveau.NomContexte} › {_niveau.Nom} (N{_niveau.Ordre})";
 
-            // Masquer le sélecteur de type legacy (type déterminé par l'item choisi dans le combo)
-            if (cboTypeInput != null) cboTypeInput.Visible = false;
+            lblActiviteValeur.Text = _niveau.ActiviteNom ?? "";
 
-            // Afficher le nom de l'activité en lecture seule — hérité du niveau (TICKET-05)
-            if (lblActiviteValeur != null)
-                lblActiviteValeur.Text = _niveau.ActiviteNom ?? "";
-
-            // Unités output
             cboUniteOutput.Items.Clear();
             cboUniteOutput.Items.AddRange(new[] { "piece", "kg", "g", "mg", "l", "dl", "cl", "ml" });
             cboUniteOutput.SelectedItem = _isEdit ? _fiche.UniteOutput : "piece";
 
             if (_isEdit)
             {
-                txtNom.Text              = _fiche.Nom;
-                txtDescription.Text      = _fiche.Description;
-                nudQuantiteOutput.Value  = (decimal)Math.Max(1, (double)_fiche.QuantiteOutput);
+                txtNom.Text             = _fiche.Nom;
+                txtDescription.Text     = _fiche.Description;
+                nudQuantiteOutput.Value = (decimal)Math.Max(1, (double)_fiche.QuantiteOutput);
                 if (_fiche.TempsPreparation.HasValue)
                     nudTemps.Value = _fiche.TempsPreparation.Value;
             }
 
-            // Label d'info sur les inputs attendus
             AfficherInfoInput();
-
             ChargerInputsDisponibles();
-            RafraîchirGrilleLignes();
+            RafraichirGrilleLignes();
         }
-
-        // ── Informations sur le type d'input ────────────────────────────
 
         private void AfficherInfoInput()
         {
-            string msg = _niveau.Ordre <= 2
+            lblTypeInput.Text = _niveau.Ordre <= 2
                 ? "Inputs : ingrédients du stock (N1)"
                 : "Inputs : ingrédients + fiches de tous les niveaux inférieurs";
-
-            if (lblTypeInput != null)
-            {
-                lblTypeInput.Text      = msg;
-                lblTypeInput.ForeColor = System.Drawing.Color.FromArgb(111, 78, 55);
-                lblTypeInput.Font      = new System.Drawing.Font("Segoe UI", 8.5F, System.Drawing.FontStyle.Italic);
-                lblTypeInput.AutoSize  = true;
-            }
+            lblTypeInput.ForeColor = Color.FromArgb(111, 78, 55);
+            lblTypeInput.Font      = new Font("Segoe UI", 8.5F, FontStyle.Italic);
+            lblTypeInput.AutoSize  = true;
         }
-
-        // ── Chargement des inputs disponibles ───────────────────────────
 
         private void ChargerInputsDisponibles()
         {
             cboInput.Items.Clear();
 
-            // Ingrédients du stock (base, toujours disponibles quel que soit le niveau)
             foreach (var ing in IngredientDAL.GetAll(idActivite: _niveau.IdActivite))
                 cboInput.Items.Add(new InputItem
                 {
-                    Id        = ing.Id,
-                    Nom       = "[Ingr.]  " + ing.Nom,
-                    Unite     = ing.UniteMesure,
-                    TypeInput = "ingredient"
+                    Id = ing.Id, Nom = "[Ingr.]  " + ing.Nom,
+                    Unite = ing.UniteMesure, TypeInput = "ingredient"
                 });
 
-            // Fiches de TOUS les niveaux inférieurs (ordre >= 2 et ordre < niveau actuel)
-            // Règle : N peut consommer n'importe quel niveau < N, jamais >= N.
             foreach (var niv in BomNiveauDAL.GetByContexte(_niveau.IdContexte))
             {
                 if (niv.Ordre >= _niveau.Ordre || niv.Ordre < 2) continue;
                 foreach (var f in BomFicheDAL.GetByNiveau(niv.Id))
                     cboInput.Items.Add(new InputItem
                     {
-                        Id        = f.Id,
-                        Nom       = $"[N{niv.Ordre}]  {f.Nom}",
-                        Unite     = f.UniteOutput,
-                        TypeInput = "fiche"
+                        Id = f.Id, Nom = $"[N{niv.Ordre}]  {f.Nom}",
+                        Unite = f.UniteOutput, TypeInput = "fiche"
                     });
             }
 
@@ -126,20 +258,9 @@ namespace CharlesNadejda.Forms
             }
 
             // TICKET-20 : désactiver l'enregistrement si aucun input disponible
-            if (btnEnregistrer != null)
-                btnEnregistrer.Enabled = cboInput.Items.Count > 0;
+            btnEnregistrer.Enabled = cboInput.Items.Count > 0;
         }
 
-        private void cboInput_SelectedIndexChanged(object sender, EventArgs e)
-            => SynchroniserUniteInput();
-
-        /// <summary>
-        /// Peuple cboUniteLigne avec toutes les unités compatibles avec l'input sélectionné.
-        /// - Masse (mg/g/kg) et Volume (ml/cl/dl/l) : sélection libre dans le groupe.
-        /// - Pièce : unité unique, verrouillée ET quantité forcée à 1.
-        /// La valeur choisie ici (UniteMesure) est stockée en base et sert à la conversion
-        /// lors de la vérification de stock (BomProductionDAL.Convertir).
-        /// </summary>
         private void SynchroniserUniteInput()
         {
             if (!(cboInput.SelectedItem is InputItem item)) return;
@@ -148,17 +269,13 @@ namespace CharlesNadejda.Forms
             foreach (var u in UnitConvertisseur.UnitesCompatibles(item.Unite))
                 cboUniteLigne.Items.Add(u);
 
-            // Sélectionner l'unité de l'ingrédient par défaut
             cboUniteLigne.SelectedItem = item.Unite;
             if (cboUniteLigne.SelectedIndex < 0 && cboUniteLigne.Items.Count > 0)
                 cboUniteLigne.SelectedIndex = 0;
 
             bool estPiece = string.Equals(item.Unite, "piece", StringComparison.OrdinalIgnoreCase);
-
-            // Une seule unité disponible (pièce) → verrouillé
             cboUniteLigne.Enabled = cboUniteLigne.Items.Count > 1;
 
-            // Règle métier : pièce = toujours 1 unité consommée
             if (estPiece)
             {
                 nudQteLigne.Minimum = 1;
@@ -174,9 +291,7 @@ namespace CharlesNadejda.Forms
             }
         }
 
-        // ── Gestion des lignes ───────────────────────────────────────────
-
-        private void btnAjouterLigne_Click(object sender, EventArgs e)
+        private void BtnAjouterLigne_Click(object sender, EventArgs e)
         {
             if (!(cboInput.SelectedItem is InputItem item))
             {
@@ -189,7 +304,7 @@ namespace CharlesNadejda.Forms
                 return;
             }
 
-            var ligne = new BomFicheLigne
+            _lignes.Add(new BomFicheLigne
             {
                 TypeInput         = item.TypeInput,
                 IdInputIngredient = item.TypeInput == "ingredient" ? (int?)item.Id : null,
@@ -198,31 +313,29 @@ namespace CharlesNadejda.Forms
                 UniteMesure       = cboUniteLigne.SelectedItem?.ToString() ?? item.Unite,
                 NomInput          = item.Nom,
                 UniteMesureInput  = item.Unite
-            };
-
-            _lignes.Add(ligne);
-            RafraîchirGrilleLignes();
+            });
+            RafraichirGrilleLignes();
         }
 
-        private void btnRetirerLigne_Click(object sender, EventArgs e)
+        private void BtnRetirerLigne_Click(object sender, EventArgs e)
         {
             if (dgvLignes.CurrentRow == null) return;
             int index = dgvLignes.CurrentRow.Index;
             if (index >= 0 && index < _lignes.Count)
             {
                 _lignes.RemoveAt(index);
-                RafraîchirGrilleLignes();
+                RafraichirGrilleLignes();
             }
         }
 
-        private void RafraîchirGrilleLignes()
+        private void RafraichirGrilleLignes()
         {
             dgvLignes.DataSource = null;
-            dgvLignes.DataSource = new System.ComponentModel.BindingList<BomFicheLigne>(_lignes);
+            dgvLignes.DataSource = new BindingList<BomFicheLigne>(_lignes);
 
-            string[] cachées = { "Id", "IdFiche", "IdInputIngredient", "IdInputFiche",
-                                  "UniteMesureInput", "PrixUnitaireRef", "SousTotal" };
-            foreach (string col in cachées)
+            string[] cachees = { "Id", "IdFiche", "IdInputIngredient", "IdInputFiche",
+                                 "UniteMesureInput", "PrixUnitaireRef", "SousTotal" };
+            foreach (string col in cachees)
                 if (dgvLignes.Columns[col] != null) dgvLignes.Columns[col].Visible = false;
 
             if (dgvLignes.Columns["TypeInput"]   != null) { dgvLignes.Columns["TypeInput"].HeaderText  = "Type";     dgvLignes.Columns["TypeInput"].Width = 90; }
@@ -231,69 +344,45 @@ namespace CharlesNadejda.Forms
             if (dgvLignes.Columns["UniteMesure"] != null) { dgvLignes.Columns["UniteMesure"].HeaderText= "Unité";    dgvLignes.Columns["UniteMesure"].Width = 70; }
         }
 
-        // ── Enregistrement ───────────────────────────────────────────────
-
-        private void btnEnregistrer_Click(object sender, EventArgs e)
+        protected override bool Valider()
         {
-            errorProvider.Clear();
-            bool valid = true;
+            bool ok = true;
 
             if (string.IsNullOrWhiteSpace(txtNom.Text))
-            {
-                errorProvider.SetError(txtNom, "Le nom est obligatoire.");
-                valid = false;
-            }
+            { errorProvider.SetError(txtNom, "Le nom est obligatoire."); ok = false; }
             else if (BomFicheDAL.NomExiste(txtNom.Text.Trim(), _niveau.Id, _isEdit ? _fiche.Id : 0))
-            {
-                errorProvider.SetError(txtNom, "Ce nom existe déjà dans ce niveau.");
-                valid = false;
-            }
+            { errorProvider.SetError(txtNom, "Ce nom existe déjà dans ce niveau."); ok = false; }
+
             if (_lignes.Count == 0)
             {
                 MessageBox.Show("Ajoutez au moins un input à la fiche.", "Validation",
                     MessageBoxButtons.OK, MessageBoxIcon.Warning);
-                valid = false;
+                ok = false;
             }
-            if (!valid) return;
 
-            try
-            {
-                _fiche.IdNiveau         = _niveau.Id;
-                _fiche.Nom              = txtNom.Text.Trim();
-                _fiche.Description      = string.IsNullOrWhiteSpace(txtDescription.Text) ? null : txtDescription.Text.Trim();
-                _fiche.UniteOutput      = cboUniteOutput.SelectedItem?.ToString() ?? "piece";
-                _fiche.QuantiteOutput   = nudQuantiteOutput.Value;
-                _fiche.TempsPreparation = nudTemps.Value > 0 ? (int?)nudTemps.Value : null;
-                _fiche.Lignes           = _lignes;
-
-                if (_isEdit)
-                    BomFicheDAL.Update(_fiche);
-                else
-                    BomFicheDAL.Insert(_fiche);
-
-                this.DialogResult = DialogResult.OK;
-                this.Close();
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show("Erreur : " + ex.Message, "Erreur", MessageBoxButtons.OK, MessageBoxIcon.Error);
-            }
+            return ok;
         }
 
-        private void btnAnnuler_Click(object sender, EventArgs e)
+        protected override void Sauvegarder()
         {
-            this.DialogResult = DialogResult.Cancel;
-            this.Close();
-        }
+            _fiche.IdNiveau         = _niveau.Id;
+            _fiche.Nom              = txtNom.Text.Trim();
+            _fiche.Description      = txtDescription.Text.Trim().NullIfEmpty();
+            _fiche.UniteOutput      = cboUniteOutput.SelectedItem?.ToString() ?? "piece";
+            _fiche.QuantiteOutput   = nudQuantiteOutput.Value;
+            _fiche.TempsPreparation = nudTemps.Value > 0 ? (int?)nudTemps.Value : null;
+            _fiche.Lignes           = _lignes;
 
-        // ── Classe interne — item affiché dans le ComboBox d'inputs ─────
+            if (_isEdit) BomFicheDAL.Update(_fiche);
+            else         BomFicheDAL.Insert(_fiche);
+        }
 
         private class InputItem
         {
             public int    Id        { get; set; }
             public string Nom       { get; set; }
             public string Unite     { get; set; }
-            public string TypeInput { get; set; }   // ingredient | fiche
+            public string TypeInput { get; set; }
             public override string ToString() => Nom;
         }
     }

@@ -4,7 +4,6 @@ using System.Drawing;
 using System.Windows.Forms;
 using CharlesNadejda.DAL;
 using CharlesNadejda.Models;
-// ActiviteDAL est dans CharlesNadejda.DAL — déjà importé ci-dessus
 
 namespace CharlesNadejda.Forms
 {
@@ -12,10 +11,10 @@ namespace CharlesNadejda.Forms
     /// Création / modification d'un contexte de production.
     /// En mode création : inclut la définition des niveaux de transformation
     /// (N1 "Ingrédients" automatique + N2, N3... définis par l'artisan).
-    /// En mode édition : modification du nom, description et activité uniquement
-    /// (les niveaux sont gérés depuis FrmArtisaStock).
+    /// En mode édition : modification du nom, description et activité uniquement.
+    /// Migré vers FrmEditBase — errorProvider et boutons gérés par la classe de base.
     /// </summary>
-    public partial class FrmBomContexteEdit : Form
+    public class FrmBomContexteEdit : FrmEditBase
     {
         private readonly BomContexte _contexte;
         private readonly bool        _isEdit;
@@ -24,26 +23,62 @@ namespace CharlesNadejda.Forms
         // Mode création uniquement — liste des noms de niveaux supplémentaires (N2, N3...)
         private readonly List<string> _nomsNiveauxSupp = new List<string>();
 
-        // Contrôles dynamiques (section niveaux, création uniquement)
-        private TextBox  _txtNomN1;
-        private ListBox  _lstNiveauxSupp;
-        private Button   _btnAjouterNiv;
-        private Button   _btnSupprimerNiv;
+        private readonly TextBox  txtNom;
+        private readonly TextBox  txtDescription;
+        private readonly ComboBox cboActivite;
+
+        // Mode création uniquement
+        private TextBox _txtNomN1;
+        private ListBox _lstNiveauxSupp;
+        private Button  _btnSupprimerNiv;
 
         private static readonly Color CHOCOLAT_FONCE = Color.FromArgb(61, 40, 23);
 
         public FrmBomContexteEdit(BomContexte contexte, Activite activiteForce = null)
         {
-            InitializeComponent();
             _isEdit        = contexte != null;
             _contexte      = contexte ?? new BomContexte();
             _activiteForce = activiteForce;
+
+            var font = new Font("Segoe UI", 10F);
+            ClientSize = new Size(390, 100);
+
+            // ── Nom ───────────────────────────────────────────────────────
+            Controls.Add(new Label { AutoSize = true, Font = font, Location = new Point(20, 20), Text = "Nom du contexte *" });
+            txtNom = new TextBox { Font = font, Location = new Point(20, 42), Size = new Size(340, 26), TabIndex = 0 };
+            Controls.Add(txtNom);
+
+            // ── Activité ──────────────────────────────────────────────────
+            Controls.Add(new Label { AutoSize = true, Font = font, Location = new Point(20, 82), Text = "Activité *" });
+            cboActivite = new ComboBox
+            {
+                DropDownStyle = ComboBoxStyle.DropDownList,
+                Font = font, Location = new Point(20, 104),
+                Size = new Size(200, 26), TabIndex = 1
+            };
+            Controls.Add(cboActivite);
+
+            // ── Description ───────────────────────────────────────────────
+            Controls.Add(new Label { AutoSize = true, Font = font, Location = new Point(20, 144), Text = "Description" });
+            txtDescription = new TextBox
+            {
+                Font = font, Location = new Point(20, 166),
+                Multiline = true, Size = new Size(340, 60), TabIndex = 2
+            };
+            Controls.Add(txtDescription);
+
+            // Section niveaux (création uniquement) — avant PositionnerBoutons pour que la hauteur soit correcte
+            if (!_isEdit)
+                AjouterSectionNiveaux();
+
+            PositionnerBoutons(_isEdit ? 244 : 492);
+
+            Text = _isEdit ? "Modifier le contexte" : "Nouveau contexte de production";
+            Load += FrmBomContexteEdit_Load;
         }
 
         private void FrmBomContexteEdit_Load(object sender, EventArgs e)
         {
-            this.Text = _isEdit ? "Modifier le contexte" : "Nouveau contexte de production";
-
             // Chargement dynamique des activités depuis la DB
             var activites = ActiviteDAL.GetAll();
             cboActivite.Items.Clear();
@@ -52,7 +87,6 @@ namespace CharlesNadejda.Forms
 
             if (_activiteForce != null)
             {
-                // Trouver l'activité dans la liste par Id
                 foreach (var item in cboActivite.Items)
                     if (((Activite)item).Id == _activiteForce.Id) { cboActivite.SelectedItem = item; break; }
                 cboActivite.Enabled = false;
@@ -72,143 +106,97 @@ namespace CharlesNadejda.Forms
                 txtNom.Text         = _contexte.Nom;
                 txtDescription.Text = _contexte.Description;
             }
-
-            if (!_isEdit)
-                AjouterSectionNiveaux();
         }
 
         // ── Section niveaux (mode création uniquement) ───────────────────
 
         private void AjouterSectionNiveaux()
         {
-            // Agrandir le formulaire pour la section niveaux
-            this.ClientSize = new Size(390, 540);
-
-            // Déplacer les boutons Enregistrer/Annuler en bas du nouveau formulaire
-            btnEnregistrer.Location = new Point(20, 492);
-            btnAnnuler.Location     = new Point(200, 492);
-
-            // ── Séparateur + titre section ────────────────────────────────
-            var sep = new Panel
+            // Séparateur + titre section
+            Controls.Add(new Panel
             {
-                Location  = new Point(0, 295),
-                Size      = new Size(390, 1),
+                Location = new Point(0, 240), Size = new Size(390, 1),
                 BackColor = Color.FromArgb(220, 210, 200)
-            };
-            this.Controls.Add(sep);
-
-            var lblSection = new Label
+            });
+            Controls.Add(new Label
             {
-                Text      = "NIVEAUX DE TRANSFORMATION",
-                Font      = new Font("Segoe UI", 8F, FontStyle.Bold),
+                Text = "NIVEAUX DE TRANSFORMATION",
+                Font = new Font("Segoe UI", 8F, FontStyle.Bold),
                 ForeColor = Color.FromArgb(140, 110, 80),
-                AutoSize  = false,
-                Location  = new Point(20, 306),
-                Size      = new Size(340, 18)
-            };
-            this.Controls.Add(lblSection);
+                AutoSize = false, Location = new Point(20, 250), Size = new Size(340, 18)
+            });
 
-            // ── N1 — toujours présent ─────────────────────────────────────
+            // N1 — toujours présent
             var pnlN1 = new Panel
             {
-                Location  = new Point(20, 330),
-                Size      = new Size(350, 58),
+                Location = new Point(20, 274), Size = new Size(350, 58),
                 BackColor = Color.FromArgb(232, 244, 255)
             };
-
-            var lblN1 = new Label
+            pnlN1.Controls.Add(new Label
             {
-                Text      = "N1 — Niveau de base (automatique)",
-                Font      = new Font("Segoe UI", 8.5F, FontStyle.Bold),
+                Text = "N1 — Niveau de base (automatique)",
+                Font = new Font("Segoe UI", 8.5F, FontStyle.Bold),
                 ForeColor = Color.FromArgb(74, 144, 217),
-                AutoSize  = false,
-                Location  = new Point(10, 6),
-                Size      = new Size(330, 18)
-            };
-
+                AutoSize = false, Location = new Point(10, 6), Size = new Size(330, 18)
+            });
             _txtNomN1 = new TextBox
             {
-                Text     = "Ingrédients",
-                Font     = new Font("Segoe UI", 10F),
-                Location = new Point(10, 28),
-                Size     = new Size(330, 24)
+                Text = "Ingrédients", Font = new Font("Segoe UI", 10F),
+                Location = new Point(10, 28), Size = new Size(330, 24)
             };
-
-            pnlN1.Controls.Add(lblN1);
             pnlN1.Controls.Add(_txtNomN1);
-            this.Controls.Add(pnlN1);
+            Controls.Add(pnlN1);
 
-            // ── N2, N3... ─────────────────────────────────────────────────
-            var lblNivSupp = new Label
+            // Niveaux supérieurs
+            Controls.Add(new Label
             {
-                Text      = "Niveaux supérieurs (N2, N3...)",
-                Font      = new Font("Segoe UI", 8.5F, FontStyle.Bold),
+                Text = "Niveaux supérieurs (N2, N3...)",
+                Font = new Font("Segoe UI", 8.5F, FontStyle.Bold),
                 ForeColor = Color.FromArgb(140, 110, 80),
-                AutoSize  = false,
-                Location  = new Point(20, 400),
-                Size      = new Size(240, 18)
-            };
-            this.Controls.Add(lblNivSupp);
-
+                AutoSize = false, Location = new Point(20, 344), Size = new Size(240, 18)
+            });
             _lstNiveauxSupp = new ListBox
             {
-                Font      = new Font("Segoe UI", 10F),
-                Location  = new Point(20, 422),
-                Size      = new Size(280, 60),
+                Font = new Font("Segoe UI", 10F),
+                Location = new Point(20, 366), Size = new Size(280, 60),
                 BorderStyle = BorderStyle.FixedSingle
             };
-            this.Controls.Add(_lstNiveauxSupp);
+            Controls.Add(_lstNiveauxSupp);
 
-            _btnAjouterNiv = new Button
+            var btnAjouterNiv = new Button
             {
-                Text      = "+",
-                Font      = new Font("Segoe UI", 12F, FontStyle.Bold),
-                Location  = new Point(310, 422),
-                Size      = new Size(30, 28),
-                BackColor = Color.FromArgb(92, 184, 92),
-                ForeColor = Color.White,
-                FlatStyle = FlatStyle.Flat,
-                Cursor    = Cursors.Hand
+                Text = "+", Font = new Font("Segoe UI", 12F, FontStyle.Bold),
+                Location = new Point(310, 366), Size = new Size(30, 28),
+                BackColor = Color.FromArgb(92, 184, 92), ForeColor = Color.White,
+                FlatStyle = FlatStyle.Flat, Cursor = Cursors.Hand
             };
-            _btnAjouterNiv.FlatAppearance.BorderSize = 0;
-            _btnAjouterNiv.Click += BtnAjouterNiveau_Click;
-            this.Controls.Add(_btnAjouterNiv);
+            btnAjouterNiv.FlatAppearance.BorderSize = 0;
+            btnAjouterNiv.Click += BtnAjouterNiveau_Click;
+            Controls.Add(btnAjouterNiv);
 
             _btnSupprimerNiv = new Button
             {
-                Text      = "−",
-                Font      = new Font("Segoe UI", 12F, FontStyle.Bold),
-                Location  = new Point(310, 456),
-                Size      = new Size(30, 28),
-                BackColor = Color.FromArgb(200, 80, 60),
-                ForeColor = Color.White,
-                FlatStyle = FlatStyle.Flat,
-                Cursor    = Cursors.Hand,
-                Enabled   = false
+                Text = "−", Font = new Font("Segoe UI", 12F, FontStyle.Bold),
+                Location = new Point(310, 400), Size = new Size(30, 28),
+                BackColor = Color.FromArgb(200, 80, 60), ForeColor = Color.White,
+                FlatStyle = FlatStyle.Flat, Cursor = Cursors.Hand, Enabled = false
             };
             _btnSupprimerNiv.FlatAppearance.BorderSize = 0;
             _btnSupprimerNiv.Click += BtnSupprimerDernierNiveau_Click;
-            this.Controls.Add(_btnSupprimerNiv);
+            Controls.Add(_btnSupprimerNiv);
 
-            var lblHint = new Label
+            Controls.Add(new Label
             {
-                Text      = "Ex: Recettes, Assemblages, Finitions...",
-                Font      = new Font("Segoe UI", 8F, FontStyle.Italic),
+                Text = "Ex: Recettes, Assemblages, Finitions...",
+                Font = new Font("Segoe UI", 8F, FontStyle.Italic),
                 ForeColor = Color.Gray,
-                AutoSize  = false,
-                Location  = new Point(20, 485),
-                Size      = new Size(280, 16)
-            };
-            this.Controls.Add(lblHint);
-
-            // S'assurer que les boutons sont par-dessus tout
-            btnEnregistrer.BringToFront();
-            btnAnnuler.BringToFront();
+                AutoSize = false, Location = new Point(20, 429), Size = new Size(280, 16)
+            });
         }
 
         private void BtnAjouterNiveau_Click(object sender, EventArgs e)
         {
-            int ordreProchain = _nomsNiveauxSupp.Count + 2; // N1=1, premier N supp=2
+            int ordreProchain = _nomsNiveauxSupp.Count + 2;
 
             using (var dlg = new Form())
             {
@@ -220,8 +208,12 @@ namespace CharlesNadejda.Forms
 
                 var lbl = new Label { Text = $"Nom du N{ordreProchain} :", Location = new Point(14, 14), AutoSize = true, Font = new Font("Segoe UI", 10F) };
                 var txt = new TextBox { Location = new Point(14, 36), Size = new Size(290, 26), Font = new Font("Segoe UI", 10F) };
-                var btnOk  = new Button { Text = "Ajouter", Location = new Point(14, 70), Size = new Size(120, 28), DialogResult = DialogResult.OK,
-                    BackColor = CHOCOLAT_FONCE, ForeColor = Color.White, FlatStyle = FlatStyle.Flat };
+                var btnOk  = new Button
+                {
+                    Text = "Ajouter", Location = new Point(14, 70), Size = new Size(120, 28),
+                    DialogResult = DialogResult.OK,
+                    BackColor = CHOCOLAT_FONCE, ForeColor = Color.White, FlatStyle = FlatStyle.Flat
+                };
                 btnOk.FlatAppearance.BorderSize = 0;
                 var btnNon = new Button { Text = "Annuler", Location = new Point(144, 70), Size = new Size(80, 28), DialogResult = DialogResult.Cancel };
 
@@ -247,24 +239,19 @@ namespace CharlesNadejda.Forms
             _btnSupprimerNiv.Enabled = _nomsNiveauxSupp.Count > 0;
         }
 
-        // ── Enregistrement ───────────────────────────────────────────────
+        // ── Validation + Sauvegarde ──────────────────────────────────────
 
-        private void btnEnregistrer_Click(object sender, EventArgs e)
+        protected override bool Valider()
         {
-            errorProvider.Clear();
-            bool valid = true;
+            bool ok = true;
 
             if (string.IsNullOrWhiteSpace(txtNom.Text))
-            {
-                errorProvider.SetError(txtNom, "Le nom est obligatoire.");
-                valid = false;
-            }
+            { errorProvider.SetError(txtNom, "Le nom est obligatoire."); ok = false; }
+
             if (cboActivite.SelectedItem == null)
-            {
-                errorProvider.SetError(cboActivite, "L'activité est obligatoire.");
-                valid = false;
-            }
-            if (!valid) return;
+            { errorProvider.SetError(cboActivite, "L'activité est obligatoire."); ok = false; }
+
+            if (!ok) return false;
 
             var    activite = (Activite)cboActivite.SelectedItem;
             string nom      = txtNom.Text.Trim();
@@ -272,46 +259,36 @@ namespace CharlesNadejda.Forms
             if (BomContexteDAL.NomExiste(nom, activite.Id, _isEdit ? _contexte.Id : 0))
             {
                 errorProvider.SetError(txtNom, "Un contexte avec ce nom existe déjà pour cette activité.");
-                return;
+                return false;
             }
 
-            try
-            {
-                _contexte.Nom         = nom;
-                _contexte.Description = string.IsNullOrWhiteSpace(txtDescription.Text) ? null : txtDescription.Text.Trim();
-                _contexte.IdActivite  = activite.Id;
-                _contexte.ActiviteNom = activite.Nom;
-
-                if (_isEdit)
-                {
-                    BomContexteDAL.Update(_contexte);
-                }
-                else
-                {
-                    // Construire la liste complète des noms : N1 en premier, puis les supplémentaires
-                    string nomN1 = (_txtNomN1 != null && !string.IsNullOrWhiteSpace(_txtNomN1.Text))
-                        ? _txtNomN1.Text.Trim()
-                        : "Ingrédients";
-
-                    var tousNoms = new List<string> { nomN1 };
-                    tousNoms.AddRange(_nomsNiveauxSupp);
-
-                    BomContexteDAL.InsertAvecNiveaux(_contexte, tousNoms);
-                }
-
-                this.DialogResult = DialogResult.OK;
-                this.Close();
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show("Erreur : " + ex.Message, "Erreur", MessageBoxButtons.OK, MessageBoxIcon.Error);
-            }
+            return true;
         }
 
-        private void btnAnnuler_Click(object sender, EventArgs e)
+        protected override void Sauvegarder()
         {
-            this.DialogResult = DialogResult.Cancel;
-            this.Close();
+            var activite = (Activite)cboActivite.SelectedItem;
+
+            _contexte.Nom         = txtNom.Text.Trim();
+            _contexte.Description = txtDescription.Text.Trim().NullIfEmpty();
+            _contexte.IdActivite  = activite.Id;
+            _contexte.ActiviteNom = activite.Nom;
+
+            if (_isEdit)
+            {
+                BomContexteDAL.Update(_contexte);
+            }
+            else
+            {
+                string nomN1 = (_txtNomN1 != null && !string.IsNullOrWhiteSpace(_txtNomN1.Text))
+                    ? _txtNomN1.Text.Trim()
+                    : "Ingrédients";
+
+                var tousNoms = new List<string> { nomN1 };
+                tousNoms.AddRange(_nomsNiveauxSupp);
+
+                BomContexteDAL.InsertAvecNiveaux(_contexte, tousNoms);
+            }
         }
     }
 }
