@@ -32,10 +32,38 @@
 | 20  | `DataGridView.AutoResizeColumns(AllCells)` mesure chaque cellule → coût proportionnel au nombre de lignes. Préférer `AllCellsExceptHeader` ou largeurs fixes explicites par colonne. Toujours entourer les modifications DataSource+Columns par `SuspendLayout`/`ResumeLayout` sur le DGV. | `Forms/FrmPrincipal.cs` (ChargerFiches, ChargerStockNiveau) | 2026-04-22 |
 | 21  | Les colonnes INT MySQL sont retournées comme `Int32` par MySql.Data, mais `COUNT(*)` en tant que `Int64` — un cast `(int)(long)r["col"]` plante sur une colonne INT simple. Utiliser `Convert.ToInt32(r["col"])` pour une gestion sûre des types numériques hétérogènes. | `DAL/BomFicheDAL.cs` (GetCountsByContexte) | 2026-04-22 |
 | 22  | Pour éviter la duplication du cycle validation/sauvegarde dans les formulaires d'édition, toute Form Edit doit hériter de `FrmEditBase` — ne jamais redéclarer `btnEnregistrer`, `btnAnnuler`, `errorProvider`. Implémenter uniquement `Valider()` et `Sauvegarder()`. | `Forms/FrmEditBase.cs`, `Forms/Frm*Edit.cs` | 2026-04-22 |
+| 23  | Ne jamais nommer une classe `StatusBarPanel` dans un projet WinForms — `System.Windows.Forms.StatusBarPanel` existe déjà et crée une référence ambiguë même sans `using` explicite. Préférer un nom distinctif comme `AppStatusBar`. | `Forms/Shell/StatusBarPanel.cs` → `AppStatusBar` | 2026-05-13 |
+| 24  | Pour afficher des quantités avec unité dans un DGV lié par DataSource, utiliser `CellFormatting` plutôt que modifier le modèle — cacher la colonne Unité séparée et suffixer via `FormatQte()`. Ne jamais manipuler `e.Value` sur une colonne auto-générée en dehors de CellFormatting. | `Forms/FrmIngredients.cs`, `Forms/FrmAchats.cs` et 5 autres | 2026-05-13 |
+| 25  | Le tri natif du DGV (`SortMode.Automatic`) est incompatible avec les lignes de section header insérées manuellement — le tri mélange headers et données. Désactiver le tri (`SortMode.NotSortable`) dès qu'on utilise des groupes visuels. | `Forms/FrmVueStock.cs` | 2026-05-13 |
 
 ---
 
 ## Historique
+
+---
+
+### SESSION 18 — 2026-05-13
+> Refactor ERP majeur : nouveau Shell (TitleBar + Sidebar Odoo-style + StatusBar), audit P1/P2, fusion unités/prix dans DGV, auto-conversion intelligente.
+
+---
+
+#### [2026-05-13] FEAT — Shell ERP : TitleBar + Sidebar + StatusBar
+**Fichiers :** `Forms/Shell/TitleBarPanel.cs`, `Forms/Shell/SidebarPanel.cs`, `Forms/Shell/StatusBarPanel.cs` (nouveaux), `Forms/FrmPrincipal.cs` (restructuration majeure), `Forms/FrmPrincipal.Designer.cs`
+**Résumé :** Remplacement complet du SplitContainer + 3 ListBoxes + 5 boutons ressources par un shell ERP moderne inspiré Odoo/Dynamics. TitleBar 38px avec gradient chocolat, logo monogramme "C" doré, titre document dynamique, indicateur MySQL, avatar utilisateur. Sidebar 224px avec ActivitySwitcher (ComboBox OwnerDraw), 3 groupes de navigation (Workflow / Stock & Achats / Référentiels), items avec hover/active + badges dorés. StatusBar 26px affichant connexion, activité, contexte, niveau courants. 12 NavItemId mappés vers les ScreenId existants + 4 placeholders. MenuStrip conservé invisible comme escape hatch. -409/+171 lignes dans FrmPrincipal.
+**Règle retenue :** Pour le layout DockStyle WinForms avec 4 zones (Top/Left/Bottom/Fill), ajouter Fill en premier, puis Bottom, Left, Top — dans cet ordre exact.
+
+---
+
+#### [2026-05-13] FEAT — Fusion unités + prix dans cellules DGV + auto-conversion
+**Fichiers :** `Forms/UnitConvertisseur.cs`, `Forms/FrmIngredients.cs`, `Forms/FrmAchats.cs`, `Forms/FrmBomFiches.cs`, `Forms/FrmBomProductionSimulation.cs`, `Forms/FrmPrincipal.cs`, `Forms/FrmVueStock.cs`
+**Résumé :** Suppression de toutes les colonnes "Unité" séparées dans les DGV — l'unité est fusionnée directement dans la valeur via CellFormatting (ex: `1,73 l` au lieu de `1.734` + `l`). Auto-conversion intelligente : 652 cl → 6,52 l, 1500 g → 1,50 kg. Valeurs rondes sans décimale (5 l, pas 5,00 l). Prix toujours avec 2 décimales + symbole € fusionné (30,00 €). Vue Stock Global avec 3 sections groupées (Ingrédients / Intermédiaires / Finals).
+**Règle retenue :** Utiliser `UnitConvertisseur.FormatQte()` et `FormatPrix()` pour tout affichage de quantité/prix dans les DGV — garantit cohérence et lisibilité sur l'ensemble de l'app.
+
+---
+
+#### [2026-05-13] FIX — Audit P1/P2 post-remote sync
+**Fichiers :** `DAL/ActiviteDAL.cs`, `Forms/FrmBomProductionSimulation.cs`, `Forms/FrmPrincipal.cs`, `Forms/AppColors.cs` + 6 autres
+**Résumé :** 3 corrections P1 (ActiviteDAL.Desactiver requête obsolète post-v10, async void sans try/catch global, 5× ShowDialog sans using) + centralisation palette AppColors dans 10 fichiers (suppression ~30 constantes Color.FromArgb dupliquées). Ajout AppColors.HintOnDark.
 
 ---
 
