@@ -40,9 +40,9 @@ namespace CharlesNadejda.Forms
         private static readonly Color ORG_WARN     = AppColors.OrgWarn;
 
         // ── Shell ERP ─────────────────────────────────────────────────────
-        private TitleBarPanel  _titleBar;
-        private SidebarPanel   _sidebar;
-        private StatusBarPanel _statusBar;
+        private TitleBarPanel            _titleBar;
+        private SidebarPanel             _sidebar;
+        private AppStatusBar     _statusBar;
 
         // ── Panneau droit ─────────────────────────────────────────────────
         private Panel _pnlDroit;
@@ -113,11 +113,13 @@ namespace CharlesNadejda.Forms
         private void BuildShell()
         {
             _titleBar = new TitleBarPanel(_utilisateur);
-            _statusBar = new StatusBarPanel();
+            _statusBar = new AppStatusBar();
 
             _sidebar = new SidebarPanel();
-            _sidebar.NavigationRequested += OnSidebarNavigation;
-            _sidebar.ActivityChanged += OnActivityChanged;
+            _sidebar.NavigationRequested      += OnSidebarNavigation;
+            _sidebar.ActivityChanged          += OnActivityChanged;
+            _sidebar.ManageActivitiesRequested += OnManageActivities;
+            _sidebar.NewContextRequested       += OnNewContext;
 
             _pnlDroit = new Panel
             {
@@ -142,6 +144,9 @@ namespace CharlesNadejda.Forms
                     break;
                 case NavItemId.Production:
                     NavigateTo(ScreenId.Production);
+                    break;
+                case NavItemId.StocksLiaisons:
+                    NavigateTo(ScreenId.Ressources, () => _state.SetRessource(RessourceType.Stocks));
                     break;
                 case NavItemId.VueStockGlobal:
                     NavigateTo(ScreenId.Ressources, () => _state.SetRessource(RessourceType.VueStock));
@@ -186,6 +191,17 @@ namespace CharlesNadejda.Forms
             var cible = _state.ActiveContexte != null ? ScreenId.ContexteNiveaux : ScreenId.Hub;
             NavigateTo(cible, forceRefresh: true);
             UpdateStatusBar();
+        }
+
+        private void OnManageActivities()
+        {
+            using (var frm = new FrmActivites()) frm.ShowDialog(this);
+            ChargerActivites();
+        }
+
+        private void OnNewContext()
+        {
+            BtnNouveauContexte_Click(this, EventArgs.Empty);
         }
 
         private void UpdateTitleBar()
@@ -769,6 +785,7 @@ namespace CharlesNadejda.Forms
             {
                 if (ev.RowIndex >= 0) OuvrirFiche(_dgvFiches.CurrentRow?.DataBoundItem as BomFiche);
             };
+            _dgvFiches.CellFormatting += DgvFiches_CellFormatting;
             // US-07 : activer/désactiver le bouton Dupliquer selon la sélection
             // ⚠ Capturer l'instance locale (pas le champ) — le champ est nullé lors d'une re-navigation
             // ce qui déclencherait une NRE via SelectionChanged sur l'ancien DGV encore en mémoire.
@@ -807,6 +824,7 @@ namespace CharlesNadejda.Forms
             _dgvStock.DefaultCellStyle.SelectionBackColor        = CHOCO_BRAND;
             _dgvStock.DefaultCellStyle.SelectionForeColor        = Color.White;
             _dgvStock.AlternatingRowsDefaultCellStyle.BackColor  = Color.FromArgb(250, 246, 238);
+            _dgvStock.CellFormatting += DgvStock_CellFormatting;
 
             // ── SplitContainer fiches | stock — splitter fixe à 50% ───────
             var splitFichesStock = new SplitContainer
@@ -869,6 +887,38 @@ namespace CharlesNadejda.Forms
             ChargerFiches(niv);
         }
 
+        private void DgvFiches_CellFormatting(object sender, DataGridViewCellFormattingEventArgs e)
+        {
+            if (e.RowIndex < 0 || _dgvFiches == null) return;
+            var col = _dgvFiches.Columns[e.ColumnIndex];
+            var row = _dgvFiches.Rows[e.RowIndex];
+
+            if (col.Name == "QuantiteOutput" && row.DataBoundItem is BomFiche f)
+                e.Value = UnitConvertisseur.FormatQte(f.QuantiteOutput, f.UniteOutput);
+            else if (col.Name == "StockActuel" && row.DataBoundItem is Ingredient ing)
+                e.Value = UnitConvertisseur.FormatQte(ing.StockActuel, ing.UniteMesure);
+            else if (col.Name == "PrixAchatReference" && row.DataBoundItem is Ingredient ing3)
+                e.Value = UnitConvertisseur.FormatPrix(ing3.PrixAchatReference);
+        }
+
+        private void DgvStock_CellFormatting(object sender, DataGridViewCellFormattingEventArgs e)
+        {
+            if (e.RowIndex < 0 || _dgvStock == null) return;
+            var col = _dgvStock.Columns[e.ColumnIndex];
+            var row = _dgvStock.Rows[e.RowIndex];
+
+            if (col.Name == "QuantiteDisponible" && row.DataBoundItem is BomStock bs)
+                e.Value = UnitConvertisseur.FormatQte(bs.QuantiteDisponible, bs.UniteOutput);
+            else if (col.Name == "StockActuel" && row.DataBoundItem is Ingredient ing2)
+                e.Value = UnitConvertisseur.FormatQte(ing2.StockActuel, ing2.UniteMesure);
+            else if (col.Name == "CoutUnitaire" && row.DataBoundItem is BomStock bs2)
+                e.Value = UnitConvertisseur.FormatPrix(bs2.CoutUnitaire);
+            else if (col.Name == "CoutTotal" && row.DataBoundItem is BomStock bs3)
+                e.Value = UnitConvertisseur.FormatPrix(bs3.CoutTotal);
+            else if (col.Name == "PrixAchatReference" && row.DataBoundItem is Ingredient ing4)
+                e.Value = UnitConvertisseur.FormatPrix(ing4.PrixAchatReference);
+        }
+
         private void ChargerFiches(BomNiveau niv)
         {
             if (_dgvFiches == null) return;
@@ -905,7 +955,6 @@ namespace CharlesNadejda.Forms
                         }
                         ShowCol("Nom",                  "Ingrédient",    180);
                         ShowCol("ConditionnementLabel", "Conditionnement", 120);
-                        ShowCol("UniteMesure",          "Unité base",     80);
                         ShowCol("TypePhysique",         "Type physique",  90);
                         ShowCol("NomFournisseur",       "Fournisseur",   130);
                     }
@@ -933,8 +982,7 @@ namespace CharlesNadejda.Forms
                             col.DisplayIndex = di++;
                         }
                         ShowCol("Nom",              "Fiche",        180);
-                        ShowCol("UniteOutput",      "Unité",         60);
-                        ShowCol("QuantiteOutput",   "Output / lot",  80);
+                        ShowCol("QuantiteOutput",   "Output / lot", 100);
                         ShowCol("TempsPreparation", "Tps (min)",     70);
                         ShowCol("DateCreation",     "Créée le",      90);
                     }
@@ -985,8 +1033,7 @@ namespace CharlesNadejda.Forms
                             col.DisplayIndex = di++;
                         }
                         ShowCol("Nom",                 "Ingrédient",     160);
-                        ShowCol("StockActuel",         "Dispo",           70);
-                        ShowCol("UniteMesure",         "Unité base",      70);
+                        ShowCol("StockActuel",         "Dispo",           90);
                         ShowCol("PrixAchatReference",  "€/cond.",         70);
                         ShowCol("StockNom",            "Stock (lieu)",   110);
                         ShowCol("ConditionnementLabel","Conditionnement", 110);
@@ -1010,8 +1057,7 @@ namespace CharlesNadejda.Forms
                             col.DisplayIndex = di++;
                         }
                         ShowCol("NomFiche",           "Fiche",        160);
-                        ShowCol("QuantiteDisponible", "Qté dispo",     80);
-                        ShowCol("UniteOutput",        "Unité",         60);
+                        ShowCol("QuantiteDisponible", "Qté dispo",    100);
                         ShowCol("DateProduction",     "Produit le",    90);
                         ShowCol("DateDlc",            "DLC",           90);
                         ShowCol("CoutUnitaire",       "Coût/u",        70);

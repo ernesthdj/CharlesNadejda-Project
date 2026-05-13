@@ -9,7 +9,7 @@ namespace CharlesNadejda.Forms.Shell
     /// Barre de statut inférieure (26px).
     /// Affiche : état connexion · activité · contexte · niveau · version · hints clavier.
     /// </summary>
-    internal sealed class StatusBarPanel : Panel
+    internal sealed class AppStatusBar : Panel
     {
         private readonly Label _lblConnected;
         private readonly Label _lblActivite;
@@ -20,7 +20,7 @@ namespace CharlesNadejda.Forms.Shell
 
         private const int BAR_HEIGHT = 26;
 
-        public StatusBarPanel()
+        public AppStatusBar()
         {
             Height    = BAR_HEIGHT;
             Dock      = DockStyle.Bottom;

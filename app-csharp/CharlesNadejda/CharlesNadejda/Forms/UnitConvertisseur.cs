@@ -95,6 +95,58 @@ namespace CharlesNadejda
             => Convertir(valeur, unite, UniteBase(unite));
 
         /// <summary>
+        /// Formate une quantité pour l'affichage en choisissant automatiquement
+        /// l'unité la plus lisible du groupe.
+        /// Règles : si la valeur >= seuil de l'unité supérieure, on monte.
+        ///   Ex : 652 cl → 6,52 l  |  1500 g → 1,5 kg  |  0,05 l → 50 ml
+        ///   Les pièces ne sont jamais converties.
+        /// </summary>
+        public static string FormatQte(decimal valeur, string unite)
+        {
+            if (string.IsNullOrEmpty(unite)) return $"{valeur:F3}";
+            if (string.Equals(unite, "piece", StringComparison.OrdinalIgnoreCase))
+                return $"{valeur:G} pc";
+
+            // Trouver le groupe
+            string[] groupe = null;
+            foreach (var g in _groupes)
+                if (g.Contains(unite, StringComparer.OrdinalIgnoreCase))
+                { groupe = g; break; }
+            if (groupe == null) return $"{valeur:F3} {unite}";
+
+            // Convertir en unité de base
+            decimal enBase = valeur * _versBase[unite];
+
+            // Parcourir du plus grand au plus petit — choisir la première unité
+            // où la valeur convertie >= 1 (pour éviter 0,001 kg au lieu de 1 g)
+            for (int i = groupe.Length - 1; i >= 0; i--)
+            {
+                decimal converti = enBase / _versBase[groupe[i]];
+                if (converti >= 1m || i == 0)
+                {
+                    // Valeur ronde → pas de décimale. Sinon 2 décimales max.
+                    string txt = converti == Math.Floor(converti)
+                        ? converti.ToString("F0")
+                        : converti.ToString("F2");
+                    return $"{txt} {groupe[i]}";
+                }
+            }
+            return $"{valeur:F3} {unite}";
+        }
+
+        /// <summary>
+        /// Formate un prix pour l'affichage : toujours 2 décimales + symbole €.
+        /// Ex : 30 → "30,00 €"  |  1.5 → "1,50 €"  |  0.0456 → "0,05 €"
+        /// Pour les prix très petits (&lt; 0.01), affiche 4 décimales.
+        /// </summary>
+        public static string FormatPrix(decimal prix)
+        {
+            if (prix <= 0) return "—";
+            string fmt = prix < 0.01m ? "F4" : "F2";
+            return $"{prix.ToString(fmt)} €";
+        }
+
+        /// <summary>
         /// Convertit <paramref name="valeur"/> de <paramref name="uniteSource"/>
         /// vers <paramref name="uniteCible"/>.
         /// Lance <see cref="InvalidOperationException"/> si les unités sont incompatibles.

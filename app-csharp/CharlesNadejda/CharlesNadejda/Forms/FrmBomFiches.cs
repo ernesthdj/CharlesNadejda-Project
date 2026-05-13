@@ -38,10 +38,19 @@ namespace CharlesNadejda.Forms
                            "CoutBatch", "CoutUnitaire");
 
             ConfigCol("Nom",              "Nom de la fiche", 220, 120);
-            ConfigCol("UniteOutput",      "Unité",            70,  55);
-            ConfigCol("QuantiteOutput",   "Qté/exec.",         80,  65);
+            ConfigCol("QuantiteOutput",   "Qté/exec.",        100,  75);
             ConfigCol("TempsPreparation", "Temps (min)",       90,  70);
             ConfigCol("Description",      "Description",      200,  80);
+
+            CacherColonnes("UniteOutput");
+
+            dgv.CellFormatting += (s, ev) =>
+            {
+                if (ev.RowIndex < 0) return;
+                var col = dgv.Columns[ev.ColumnIndex];
+                if (col.Name == "QuantiteOutput" && dgv.Rows[ev.RowIndex].DataBoundItem is BomFiche f)
+                    ev.Value = UnitConvertisseur.FormatQte(f.QuantiteOutput, f.UniteOutput);
+            };
 
             if (dgv.Columns["Activite"] != null)
             {

@@ -139,16 +139,22 @@
     <Compile Include="Forms\FrmFournisseurs.Designer.cs">
       <DependentUpon>FrmFournisseurs.cs</DependentUpon>
     </Compile>
-    <Compile Include="Forms\FrmFournisseurEdit.cs" />
+    <Compile Include="Forms\FrmFournisseurEdit.cs">
+      <SubType>Form</SubType>
+    </Compile>
     <Compile Include="Forms\StringExtensions.cs" />
     <Compile Include="Forms\FrmIngredients.cs">
       <SubType>Form</SubType>
     </Compile>
-    <Compile Include="Forms\FrmIngredientEdit.cs" />
+    <Compile Include="Forms\FrmIngredientEdit.cs">
+      <SubType>Form</SubType>
+    </Compile>
     <Compile Include="Forms\FrmAchats.cs">
       <SubType>Form</SubType>
     </Compile>
-    <Compile Include="Forms\FrmAchatEdit.cs" />
+    <Compile Include="Forms\FrmAchatEdit.cs">
+      <SubType>Form</SubType>
+    </Compile>
     <Compile Include="Forms\AppColors.cs" />
     <Compile Include="Forms\FrmBomContextes.cs">
       <SubType>Form</SubType>
@@ -178,15 +184,21 @@
     <Compile Include="DAL\StockDAL.cs" />
     <Compile Include="DAL\VueStockGlobalDAL.cs" />
     <Compile Include="DAL\BomCoutDAL.cs" />
-    <Compile Include="Forms\FrmBomContexteEdit.cs" />
+    <Compile Include="Forms\FrmBomContexteEdit.cs">
+      <SubType>Form</SubType>
+    </Compile>
     <Compile Include="Forms\FrmBomNiveaux.cs">
       <SubType>Form</SubType>
     </Compile>
-    <Compile Include="Forms\FrmBomNiveauEdit.cs" />
+    <Compile Include="Forms\FrmBomNiveauEdit.cs">
+      <SubType>Form</SubType>
+    </Compile>
     <Compile Include="Forms\FrmBomFiches.cs">
       <SubType>Form</SubType>
     </Compile>
-    <Compile Include="Forms\FrmBomFicheEdit.cs" />
+    <Compile Include="Forms\FrmBomFicheEdit.cs">
+      <SubType>Form</SubType>
+    </Compile>
     <Compile Include="Forms\FrmBomProductionSimulation.cs">
       <SubType>Form</SubType>
     </Compile>
@@ -213,9 +225,15 @@
     <Compile Include="Navigation\ScreenId.cs" />
     <Compile Include="Navigation\NavItemId.cs" />
     <Compile Include="Navigation\ScreenRouter.cs" />
-    <Compile Include="Forms\Shell\TitleBarPanel.cs" />
-    <Compile Include="Forms\Shell\SidebarPanel.cs" />
-    <Compile Include="Forms\Shell\StatusBarPanel.cs" />
+    <Compile Include="Forms\Shell\TitleBarPanel.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="Forms\Shell\SidebarPanel.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="Forms\Shell\StatusBarPanel.cs">
+      <SubType>Component</SubType>
+    </Compile>
     <Compile Include="Services\SimulationResultat.cs" />
     <Compile Include="Services\SimulationService.cs" />
     <Compile Include="Program.cs" />

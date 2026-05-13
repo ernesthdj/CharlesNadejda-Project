@@ -14,6 +14,7 @@ namespace CharlesNadejda.Navigation
         DevisPatisserie,
 
         // ── Stock & Achats ───────────────────────────────────────
+        StocksLiaisons,
         VueStockGlobal,
         Mouvements,
         AchatsLots,

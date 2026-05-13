@@ -31,18 +31,33 @@ namespace CharlesNadejda.Forms
         protected override void ConfigurerColonnes()
         {
             CacherColonnes("Id", "IdFicheIngredient", "IdFournisseur",
-                           "QuantiteDisponible", "Notes", "TvaPct");
+                           "QuantiteDisponible", "Notes", "TvaPct",
+                           "UniteMesure", "ConditionnementLabel",
+                           "QteParConditionnement", "NbConditionnements");
 
             ConfigCol("NomIngredient",    "Ingrédient",        180, 120);
-            ConfigCol("UniteMesure",      "Unité",              55,  45);
             ConfigCol("NumeroLot",        "N° lot",             90,  70);
             ConfigCol("NomFournisseur",   "Fournisseur",        140,  90);
             ConfigCol("DateAchat",        "Date achat",          95,  80);
             ConfigCol("DatePeremption",   "Péremption",          95,  80);
-            ConfigCol("QuantiteInitiale", "Qté achetée",         90,  70);
+            ConfigCol("QuantiteInitiale", "Qté achetée",        110,  80);
             ConfigCol("PrixUnitaire",     "Prix unit. HTVA",    100,  80);
-            ConfigCol("PrixAchatReel",    "Total HTVA (€)",      95,  75);
+            ConfigCol("PrixAchatReel",    "Total HTVA",          95,  75);
             ConfigCol("ReferenceFacture", "Réf. facture",       100,  80);
+
+            dgv.CellFormatting += (s, ev) =>
+            {
+                if (ev.RowIndex < 0) return;
+                var col = dgv.Columns[ev.ColumnIndex];
+                var item = dgv.Rows[ev.RowIndex].DataBoundItem as Lot;
+                if (item == null) return;
+                if (col.Name == "QuantiteInitiale")
+                    ev.Value = UnitConvertisseur.FormatQte(item.QuantiteInitiale, item.UniteMesure);
+                else if (col.Name == "PrixUnitaire")
+                    ev.Value = UnitConvertisseur.FormatPrix(item.PrixUnitaire);
+                else if (col.Name == "PrixAchatReel")
+                    ev.Value = UnitConvertisseur.FormatPrix(item.PrixAchatReel);
+            };
         }
 
         protected override Form OuvrirFormulaire(Lot element)

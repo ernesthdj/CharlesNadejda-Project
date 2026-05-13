@@ -108,6 +108,8 @@ namespace CharlesNadejda.Forms
                 ReadOnly                = true,
                 AllowUserToAddRows      = false,
                 AllowUserToDeleteRows   = false,
+                AllowUserToResizeColumns = false,
+                AllowUserToResizeRows    = false,
                 SelectionMode           = DataGridViewSelectionMode.FullRowSelect,
                 MultiSelect             = false,
                 RowHeadersVisible       = false,
@@ -127,13 +129,16 @@ namespace CharlesNadejda.Forms
 
             _dgv.Columns.Add(new DataGridViewTextBoxColumn { Name = "TypeStock",   HeaderText = "Type",          MinimumWidth = 80  });
             _dgv.Columns.Add(new DataGridViewTextBoxColumn { Name = "Nom",         HeaderText = "Nom",           MinimumWidth = 180 });
-            _dgv.Columns.Add(new DataGridViewTextBoxColumn { Name = "Dispo",       HeaderText = "Disponible",    MinimumWidth = 90, DefaultCellStyle = { Alignment = DataGridViewContentAlignment.MiddleRight } });
-            _dgv.Columns.Add(new DataGridViewTextBoxColumn { Name = "Reservee",    HeaderText = "Réservé",       MinimumWidth = 80, DefaultCellStyle = { Alignment = DataGridViewContentAlignment.MiddleRight } });
-            _dgv.Columns.Add(new DataGridViewTextBoxColumn { Name = "Total",       HeaderText = "Total",         MinimumWidth = 80, DefaultCellStyle = { Alignment = DataGridViewContentAlignment.MiddleRight } });
-            _dgv.Columns.Add(new DataGridViewTextBoxColumn { Name = "Unite",       HeaderText = "Unité",         MinimumWidth = 60  });
+            _dgv.Columns.Add(new DataGridViewTextBoxColumn { Name = "Dispo",       HeaderText = "Disponible",    MinimumWidth = 110, DefaultCellStyle = { Alignment = DataGridViewContentAlignment.MiddleRight } });
+            _dgv.Columns.Add(new DataGridViewTextBoxColumn { Name = "Reservee",    HeaderText = "Réservé",       MinimumWidth = 100, DefaultCellStyle = { Alignment = DataGridViewContentAlignment.MiddleRight } });
+            _dgv.Columns.Add(new DataGridViewTextBoxColumn { Name = "Total",       HeaderText = "Total",         MinimumWidth = 100, DefaultCellStyle = { Alignment = DataGridViewContentAlignment.MiddleRight } });
             _dgv.Columns.Add(new DataGridViewTextBoxColumn { Name = "DLC",         HeaderText = "DLC",           MinimumWidth = 90  });
             _dgv.Columns.Add(new DataGridViewTextBoxColumn { Name = "StockOuAct",  HeaderText = "Stock / Activité", MinimumWidth = 140 });
             _dgv.Columns.Add(new DataGridViewTextBoxColumn { Name = "CoutUnit",    HeaderText = "Coût unit.",    MinimumWidth = 90, DefaultCellStyle = { Alignment = DataGridViewContentAlignment.MiddleRight } });
+
+            // Désactiver le tri natif — incompatible avec les headers de section groupés
+            foreach (DataGridViewColumn col in _dgv.Columns)
+                col.SortMode = DataGridViewColumnSortMode.NotSortable;
 
             _dgv.CellFormatting += Dgv_CellFormatting;
 
@@ -279,36 +284,80 @@ namespace CharlesNadejda.Forms
         {
             _dgv.Rows.Clear();
 
-            var today = DateTime.Today;
-
-            foreach (var l in _lignes)
+            // Déterminer l'ordre max par contexte pour distinguer intermédiaire vs final
+            var ordreMaxParContexte = new Dictionary<int, int>();
+            foreach (var l in _lignes.Where(x => !x.EstLot && x.IdContexte.HasValue))
             {
-                string typeLabel  = l.EstLot ? "Ingrédient" : "Produit BOM";
-                string dlcText    = l.DateDlc.HasValue ? l.DateDlc.Value.ToString("dd/MM/yyyy") : "—";
-                string lieuText   = l.EstLot ? (l.StockNom ?? "—") : (l.NomActivite ?? "—");
-                string coutText   = l.CoutUnitaire > 0
-                    ? (l.CoutUnitaire < 0.01m
-                        ? l.CoutUnitaire.ToString("F4")
-                        : l.CoutUnitaire.ToString("F2")) + " €"
-                    : "—";
-
-                int idx = _dgv.Rows.Add(
-                    typeLabel,
-                    l.Nom,
-                    l.QuantiteDispoReelle.ToString("F3"),
-                    l.QuantiteReservee > 0 ? l.QuantiteReservee.ToString("F3") : "—",
-                    l.QuantiteTotale.ToString("F3"),
-                    l.Unite,
-                    dlcText,
-                    lieuText,
-                    coutText);
-
-                // Tag pour la coloration
-                _dgv.Rows[idx].Tag = l;
+                int ctxId = l.IdContexte.Value;
+                if (!ordreMaxParContexte.ContainsKey(ctxId))
+                    ordreMaxParContexte[ctxId] = BomNiveauDAL.GetOrdreMax(ctxId);
             }
+
+            // Catégoriser chaque ligne
+            var ingredients    = _lignes.Where(l => l.EstLot).ToList();
+            var intermediaires = _lignes.Where(l => !l.EstLot && l.IdNiveau.HasValue && l.IdContexte.HasValue
+                && ordreMaxParContexte.ContainsKey(l.IdContexte.Value)
+                && GetOrdreNiveau(l.IdNiveau.Value) < ordreMaxParContexte[l.IdContexte.Value]).ToList();
+            var finaux         = _lignes.Where(l => !l.EstLot && l.IdNiveau.HasValue && l.IdContexte.HasValue
+                && ordreMaxParContexte.ContainsKey(l.IdContexte.Value)
+                && GetOrdreNiveau(l.IdNiveau.Value) >= ordreMaxParContexte[l.IdContexte.Value]).ToList();
+            // Produits sans contexte (cas rare) → intermédiaires par défaut
+            var sansContexte   = _lignes.Where(l => !l.EstLot && (!l.IdNiveau.HasValue || !l.IdContexte.HasValue)).ToList();
+            intermediaires.AddRange(sansContexte);
+
+            AjouterSectionHeader($"🥣  INGRÉDIENTS  ({ingredients.Count})");
+            foreach (var l in ingredients) AjouterLigne(l, "Ingrédient");
+
+            AjouterSectionHeader($"⚙  PRODUITS INTERMÉDIAIRES  ({intermediaires.Count})");
+            foreach (var l in intermediaires) AjouterLigne(l, "Intermédiaire");
+
+            AjouterSectionHeader($"🏆  PRODUITS FINALS  ({finaux.Count})");
+            foreach (var l in finaux) AjouterLigne(l, "Produit final");
 
             _lblTotal.Text = $"{_lignes.Count} entrée{(_lignes.Count > 1 ? "s" : "")} " +
                              $"· {_lignes.Count(x => x.EstEnAlerte)} pénurie{(_lignes.Count(x => x.EstEnAlerte) > 1 ? "s" : "")}";
+        }
+
+        private void AjouterSectionHeader(string titre)
+        {
+            int idx = _dgv.Rows.Add(titre, "", "", "", "", "", "", "");
+            var row = _dgv.Rows[idx];
+            row.DefaultCellStyle.BackColor = AppColors.ChocoBrand;
+            row.DefaultCellStyle.ForeColor = AppColors.Or;
+            row.DefaultCellStyle.Font      = new Font("Segoe UI", 9F, FontStyle.Bold);
+            row.DefaultCellStyle.SelectionBackColor = AppColors.ChocoBrand;
+            row.DefaultCellStyle.SelectionForeColor = AppColors.Or;
+            row.Height = 30;
+            row.Tag    = "section"; // marqueur pour éviter la coloration automatique
+        }
+
+        private void AjouterLigne(VueStockGlobal l, string typeLabel)
+        {
+            string u       = l.Unite ?? "";
+            string dlcText  = l.DateDlc.HasValue ? l.DateDlc.Value.ToString("dd/MM/yyyy") : "—";
+            string lieuText = l.EstLot ? (l.StockNom ?? "—") : (l.NomActivite ?? "—");
+            string coutText = UnitConvertisseur.FormatPrix(l.CoutUnitaire);
+
+            int idx = _dgv.Rows.Add(
+                typeLabel, l.Nom,
+                UnitConvertisseur.FormatQte(l.QuantiteDispoReelle, u),
+                l.QuantiteReservee > 0 ? UnitConvertisseur.FormatQte(l.QuantiteReservee, u) : "—",
+                UnitConvertisseur.FormatQte(l.QuantiteTotale, u),
+                dlcText, lieuText, coutText);
+
+            _dgv.Rows[idx].Tag = l;
+        }
+
+        /// <summary>Cache d'ordres de niveaux pour éviter des requêtes répétées.</summary>
+        private readonly Dictionary<int, int> _cacheOrdreNiveau = new Dictionary<int, int>();
+        private int GetOrdreNiveau(int idNiveau)
+        {
+            if (!_cacheOrdreNiveau.ContainsKey(idNiveau))
+            {
+                var niv = BomNiveauDAL.GetById(idNiveau);
+                _cacheOrdreNiveau[idNiveau] = niv?.Ordre ?? 0;
+            }
+            return _cacheOrdreNiveau[idNiveau];
         }
 
         // ════════════════════════════════════════════════════════════
@@ -327,10 +376,11 @@ namespace CharlesNadejda.Forms
                 using (var sw = new System.IO.StreamWriter(dlg.FileName, false, new System.Text.UTF8Encoding(true)))
                 {
                     // En-tête
-                    sw.WriteLine("Type;Nom;Disponible;Réservé;Total;Unité;DLC;Stock / Activité;Coût unit.");
+                    sw.WriteLine("Type;Nom;Disponible;Réservé;Total;DLC;Stock / Activité;Coût unit.");
 
                     foreach (var l in _lignes)
                     {
+                        string u         = l.Unite ?? "";
                         string dlcText   = l.DateDlc.HasValue ? l.DateDlc.Value.ToString("dd/MM/yyyy") : "";
                         string lieuText  = l.EstLot ? (l.StockNom ?? "") : (l.NomActivite ?? "");
                         string typeLabel = l.EstLot ? "Ingrédient" : "Produit BOM";
@@ -338,10 +388,9 @@ namespace CharlesNadejda.Forms
                         sw.WriteLine(string.Join(";",
                             Escape(typeLabel),
                             Escape(l.Nom),
-                            l.QuantiteDispoReelle.ToString("F3"),
-                            l.QuantiteReservee.ToString("F3"),
-                            l.QuantiteTotale.ToString("F3"),
-                            Escape(l.Unite),
+                            $"{l.QuantiteDispoReelle:F3} {u}",
+                            $"{l.QuantiteReservee:F3} {u}",
+                            $"{l.QuantiteTotale:F3} {u}",
                             dlcText,
                             Escape(lieuText),
                             l.CoutUnitaire > 0 ? l.CoutUnitaire.ToString("F4") : ""));
@@ -362,6 +411,7 @@ namespace CharlesNadejda.Forms
         {
             if (e.RowIndex < 0 || e.RowIndex >= _dgv.Rows.Count) return;
             var row = _dgv.Rows[e.RowIndex];
+            if (row.Tag is string s && s == "section") return; // header de section
             if (!(row.Tag is VueStockGlobal l)) return;
 
             bool selected = (row.State & DataGridViewElementStates.Selected) != 0;

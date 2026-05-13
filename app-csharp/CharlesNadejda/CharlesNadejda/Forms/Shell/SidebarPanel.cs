@@ -18,6 +18,8 @@ namespace CharlesNadejda.Forms.Shell
         // ── Événements ──────────────────────────────────────────────
         public event Action<NavItemId> NavigationRequested;
         public event Action<Activite>  ActivityChanged;
+        public event Action            ManageActivitiesRequested;
+        public event Action            NewContextRequested;
 
         // ── Contrôles ───────────────────────────────────────────────
         private readonly ComboBox _cboActivite;
@@ -99,6 +101,21 @@ namespace CharlesNadejda.Forms.Shell
                     ActivityChanged?.Invoke(a);
             };
             pnlTop.Controls.Add(_cboActivite);
+
+            // ── Boutons gestion activités ────────────────────────────
+            var btnGererAct = new Button
+            {
+                Text = "⚙ Gérer les activités", Font = new Font("Segoe UI", 7.5F),
+                FlatStyle = FlatStyle.Flat, BackColor = Color.Transparent,
+                ForeColor = ACCENT_DIM, Size = new Size(130, 20),
+                Location = new Point(12, 73), Cursor = Cursors.Hand
+            };
+            btnGererAct.FlatAppearance.BorderSize = 0;
+            btnGererAct.FlatAppearance.MouseOverBackColor = BG_HOVER;
+            btnGererAct.Click += (s, e) => ManageActivitiesRequested?.Invoke();
+            pnlTop.Controls.Add(btnGererAct);
+
+            pnlTop.Height = 98;
 
             // ── Version en bas ──────────────────────────────────────
             var pnlBottom = new Panel
@@ -190,7 +207,8 @@ namespace CharlesNadejda.Forms.Shell
             y = AddNavItem(y, NavItemId.Planning,        "◷", "Planning");
             y = AddNavItem(y, NavItemId.DevisPatisserie, "◬", "Devis pâtisserie");
 
-            y = AddSection(y, "STOCK & ACHATS");
+            y = AddSection(y, "STOCK & ACHATS", "＋ Contexte", () => NewContextRequested?.Invoke());
+            y = AddNavItem(y, NavItemId.StocksLiaisons,  "📦", "Stocks & liaisons");
             y = AddNavItem(y, NavItemId.VueStockGlobal,  "▦", "Vue stock global");
             y = AddNavItem(y, NavItemId.Mouvements,      "◰", "Mouvements");
             y = AddNavItem(y, NavItemId.AchatsLots,      "◧", "Achats & lots");
@@ -203,7 +221,7 @@ namespace CharlesNadejda.Forms.Shell
             y = AddNavItem(y, NavItemId.Parametres,       "∷", "Paramètres");
         }
 
-        private int AddSection(int y, string title)
+        private int AddSection(int y, string title, string actionText = null, Action actionClick = null)
         {
             var lbl = new Label
             {
@@ -212,10 +230,30 @@ namespace CharlesNadejda.Forms.Shell
                 ForeColor = FG_SECTION,
                 AutoSize  = false,
                 Location  = new Point(14, y + 14),
-                Size      = new Size(SIDEBAR_WIDTH - 28, 16),
+                Size      = new Size(actionText != null ? SIDEBAR_WIDTH - 90 : SIDEBAR_WIDTH - 28, 16),
                 BackColor = Color.Transparent
             };
             _pnlNav.Controls.Add(lbl);
+
+            if (actionText != null && actionClick != null)
+            {
+                var btn = new Button
+                {
+                    Text      = actionText,
+                    Font      = new Font("Segoe UI", 7F, FontStyle.Bold),
+                    FlatStyle = FlatStyle.Flat,
+                    BackColor = Color.Transparent,
+                    ForeColor = ACCENT,
+                    Size      = new Size(76, 18),
+                    Location  = new Point(SIDEBAR_WIDTH - 88, y + 12),
+                    Cursor    = Cursors.Hand
+                };
+                btn.FlatAppearance.BorderSize = 0;
+                btn.FlatAppearance.MouseOverBackColor = BG_HOVER;
+                btn.Click += (s, e) => actionClick();
+                _pnlNav.Controls.Add(btn);
+            }
+
             return y + 34;
         }
 

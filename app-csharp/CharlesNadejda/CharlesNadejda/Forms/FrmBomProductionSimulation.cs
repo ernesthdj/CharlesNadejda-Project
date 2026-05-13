@@ -247,10 +247,29 @@ namespace CharlesNadejda.Forms
         private void ConfigurerGrille()
         {
             if (dgvSimulation.Columns["NomInput"]           != null) dgvSimulation.Columns["NomInput"].HeaderText           = "Ingrédient / Fiche";
-            if (dgvSimulation.Columns["Unite"]              != null) { dgvSimulation.Columns["Unite"].HeaderText             = "Unité";      dgvSimulation.Columns["Unite"].Width = 70; }
-            if (dgvSimulation.Columns["QuantiteNecessaire"] != null) { dgvSimulation.Columns["QuantiteNecessaire"].HeaderText = "Nécessaire"; dgvSimulation.Columns["QuantiteNecessaire"].Width = 100; }
-            if (dgvSimulation.Columns["QuantiteDisponible"] != null) { dgvSimulation.Columns["QuantiteDisponible"].HeaderText = "Disponible"; dgvSimulation.Columns["QuantiteDisponible"].Width = 100; }
-            if (dgvSimulation.Columns["Manque"]             != null) { dgvSimulation.Columns["Manque"].HeaderText             = "Manque";     dgvSimulation.Columns["Manque"].Width = 100; }
+            if (dgvSimulation.Columns["Unite"]              != null) dgvSimulation.Columns["Unite"].Visible = false;
+            if (dgvSimulation.Columns["QuantiteNecessaire"] != null) { dgvSimulation.Columns["QuantiteNecessaire"].HeaderText = "Nécessaire"; dgvSimulation.Columns["QuantiteNecessaire"].Width = 120; }
+            if (dgvSimulation.Columns["QuantiteDisponible"] != null) { dgvSimulation.Columns["QuantiteDisponible"].HeaderText = "Disponible"; dgvSimulation.Columns["QuantiteDisponible"].Width = 120; }
+            if (dgvSimulation.Columns["Manque"]             != null) { dgvSimulation.Columns["Manque"].HeaderText             = "Manque";     dgvSimulation.Columns["Manque"].Width = 120; }
+
+            // Suffixer l'unité dans les colonnes quantité
+            dgvSimulation.CellFormatting -= DgvSimulation_CellFormatting;
+            dgvSimulation.CellFormatting += DgvSimulation_CellFormatting;
+        }
+
+        private void DgvSimulation_CellFormatting(object sender, DataGridViewCellFormattingEventArgs e)
+        {
+            if (e.RowIndex < 0 || _lignesSimulation == null || e.RowIndex >= _lignesSimulation.Count) return;
+            var col = dgvSimulation.Columns[e.ColumnIndex];
+            var ligne = _lignesSimulation[e.RowIndex];
+            string u = ligne.Unite ?? "";
+
+            if (col.Name == "QuantiteNecessaire")
+                e.Value = UnitConvertisseur.FormatQte(ligne.QuantiteNecessaire, u);
+            else if (col.Name == "QuantiteDisponible")
+                e.Value = UnitConvertisseur.FormatQte(ligne.QuantiteDisponible, u);
+            else if (col.Name == "Manque")
+                e.Value = ligne.Manque > 0 ? UnitConvertisseur.FormatQte(ligne.Manque, u) : "—";
         }
 
         private void ColoriserLignes()
