@@ -74,5 +74,27 @@ namespace CharlesNadejda.Forms
 
         /// <summary>#FFDADA — fond rouge pâle, ingrédient en pénurie.</summary>
         public static readonly Color RougePenur   = Color.FromArgb(255, 218, 218);
+
+        // ── Shell ERP — title bar, sidebar, status bar ───────────────
+        /// <summary>#FBF9F4 — fond status bar et toolbar.</summary>
+        public static readonly Color Surface      = Color.FromArgb(250, 247, 241);
+
+        /// <summary>#43301A — fond nav item actif dans la sidebar.</summary>
+        public static readonly Color SidebarActive = Color.FromArgb(67, 45, 26);
+
+        /// <summary>#372616 — fond nav item hover dans la sidebar.</summary>
+        public static readonly Color SidebarHover  = Color.FromArgb(55, 38, 22);
+
+        /// <summary>#ECE5D7 — bordure fine entre sections (ligne 1).</summary>
+        public static readonly Color Line1         = Color.FromArgb(236, 229, 215);
+
+        /// <summary>#DDD4C0 — bordure moyenne (ligne 2).</summary>
+        public static readonly Color Line2         = Color.FromArgb(221, 212, 192);
+
+        /// <summary>#1B7A3E — vert sémantique success (plus sombre que GreenOk).</summary>
+        public static readonly Color Success       = Color.FromArgb(27, 122, 62);
+
+        /// <summary>#316AC5 — bleu info / sélection.</summary>
+        public static readonly Color Info          = Color.FromArgb(49, 106, 197);
     }
 }

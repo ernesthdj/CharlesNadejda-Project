@@ -6,6 +6,12 @@ namespace CharlesNadejda.Navigation
         Hub,
         ContexteNiveaux,
         Ressources,
-        Production
+        Production,
+
+        // Phase 2+ — placeholders
+        Planning,
+        DevisPatisserie,
+        Mouvements,
+        Parametres
     }
 }

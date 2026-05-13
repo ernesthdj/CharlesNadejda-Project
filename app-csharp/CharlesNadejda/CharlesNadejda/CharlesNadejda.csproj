@@ -211,7 +211,11 @@
     <Compile Include="Navigation\NavigationParams.cs" />
     <Compile Include="Navigation\RessourceType.cs" />
     <Compile Include="Navigation\ScreenId.cs" />
+    <Compile Include="Navigation\NavItemId.cs" />
     <Compile Include="Navigation\ScreenRouter.cs" />
+    <Compile Include="Forms\Shell\TitleBarPanel.cs" />
+    <Compile Include="Forms\Shell\SidebarPanel.cs" />
+    <Compile Include="Forms\Shell\StatusBarPanel.cs" />
     <Compile Include="Services\SimulationResultat.cs" />
     <Compile Include="Services\SimulationService.cs" />
     <Compile Include="Program.cs" />
