@@ -270,66 +270,70 @@ namespace CharlesNadejda.Forms
 
         private async void btnLancerProduction_Click(object sender, EventArgs e)
         {
-            if (!SélectionValide() || !_simulationValide) return;
-
-            var niveau = cboNiveau.SelectedItem as BomNiveau;
-            var fiche  = cboFiche.SelectedItem  as BomFiche;
-
-            decimal qteTotale = nudQuantite.Value * fiche.QuantiteOutput;
-
-            // DefaultButton.Button2 = "Non" par défaut — protection contre lancement accidentel
-            var confirm = MessageBox.Show(
-                $"Lancer la production ?\n\n" +
-                $"Fiche    : {fiche.Nom}\n" +
-                $"Niveau   : {niveau.Nom} (N{niveau.Ordre})\n" +
-                $"Contexte : {niveau.NomContexte}\n" +
-                $"Batches  : {nudQuantite.Value} × {fiche.QuantiteOutput} {fiche.UniteOutput} = {qteTotale} {fiche.UniteOutput}\n\n" +
-                $"Le stock du niveau N{niveau.Ordre - 1} sera consommé.",
-                "Confirmation de production",
-                MessageBoxButtons.YesNo, MessageBoxIcon.Question,
-                MessageBoxDefaultButton.Button2);
-
-            if (confirm != DialogResult.Yes) return;
-
-            // Protection double-clic + feedback visuel pendant l'écriture en base
-            btnLancerProduction.Enabled = false;
-            btnSimuler.Enabled          = false;
-            Cursor = Cursors.WaitCursor;
-
             try
             {
-                string notes    = string.IsNullOrWhiteSpace(txtNotes.Text) ? null : txtNotes.Text.Trim();
-                int    delaiJ   = (int)nudDelaiConservation.Value;   // 0 = pas de DLC
+                if (!SélectionValide() || !_simulationValide) return;
 
-                int idProd = await System.Threading.Tasks.Task.Run(() =>
-                    BomProductionDAL.Executer(niveau.Id, fiche.Id, nudQuantite.Value, notes, delaiJ));
+                var niveau = cboNiveau.SelectedItem as BomNiveau;
+                var fiche  = cboFiche.SelectedItem  as BomFiche;
 
-                MessageBox.Show(
-                    $"Production enregistrée (ID #{idProd}).\n" +
-                    $"{nudQuantite.Value} batch(es) → {qteTotale} {fiche.UniteOutput} de « {fiche.Nom} » ajoutés au stock du niveau « {niveau.Nom} ».",
-                    "Production réussie", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                decimal qteTotale = nudQuantite.Value * fiche.QuantiteOutput;
 
-                txtNotes.Clear();
+                // DefaultButton.Button2 = "Non" par défaut — protection contre lancement accidentel
+                var confirm = MessageBox.Show(
+                    $"Lancer la production ?\n\n" +
+                    $"Fiche    : {fiche.Nom}\n" +
+                    $"Niveau   : {niveau.Nom} (N{niveau.Ordre})\n" +
+                    $"Contexte : {niveau.NomContexte}\n" +
+                    $"Batches  : {nudQuantite.Value} × {fiche.QuantiteOutput} {fiche.UniteOutput} = {qteTotale} {fiche.UniteOutput}\n\n" +
+                    $"Le stock du niveau N{niveau.Ordre - 1} sera consommé.",
+                    "Confirmation de production",
+                    MessageBoxButtons.YesNo, MessageBoxIcon.Question,
+                    MessageBoxDefaultButton.Button2);
 
-                // Rechargement de la simulation après succès
-                btnSimuler_Click(sender, e);
-            }
-            catch (InvalidOperationException ex)
-            {
-                MessageBox.Show(ex.Message, "Stock insuffisant", MessageBoxButtons.OK, MessageBoxIcon.Warning);
-                RéinitialiserRésultats();
+                if (confirm != DialogResult.Yes) return;
+
+                // Protection double-clic + feedback visuel pendant l'écriture en base
+                btnLancerProduction.Enabled = false;
+                btnSimuler.Enabled          = false;
+                Cursor = Cursors.WaitCursor;
+
+                try
+                {
+                    string notes    = string.IsNullOrWhiteSpace(txtNotes.Text) ? null : txtNotes.Text.Trim();
+                    int    delaiJ   = (int)nudDelaiConservation.Value;   // 0 = pas de DLC
+
+                    int idProd = await System.Threading.Tasks.Task.Run(() =>
+                        BomProductionDAL.Executer(niveau.Id, fiche.Id, nudQuantite.Value, notes, delaiJ));
+
+                    MessageBox.Show(
+                        $"Production enregistrée (ID #{idProd}).\n" +
+                        $"{nudQuantite.Value} batch(es) → {qteTotale} {fiche.UniteOutput} de « {fiche.Nom} » ajoutés au stock du niveau « {niveau.Nom} ».",
+                        "Production réussie", MessageBoxButtons.OK, MessageBoxIcon.Information);
+
+                    txtNotes.Clear();
+
+                    // Rechargement de la simulation après succès
+                    btnSimuler_Click(sender, e);
+                }
+                catch (InvalidOperationException ex)
+                {
+                    MessageBox.Show(ex.Message, "Stock insuffisant", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                    RéinitialiserRésultats();
+                }
+                finally
+                {
+                    // Toujours réactiver les boutons et rétablir le curseur quoi qu'il arrive
+                    btnLancerProduction.Enabled = _simulationValide;
+                    btnSimuler.Enabled          = true;
+                    Cursor = Cursors.Default;
+                }
             }
             catch (Exception ex)
             {
-                MessageBox.Show("Erreur lors de la production : " + ex.Message,
+                Trace.TraceError("FrmBomProductionSimulation.btnLancerProduction_Click : {0}", ex);
+                MessageBox.Show("Erreur inattendue : " + ex.Message,
                     "Erreur", MessageBoxButtons.OK, MessageBoxIcon.Error);
-            }
-            finally
-            {
-                // Toujours réactiver les boutons et rétablir le curseur quoi qu'il arrive
-                btnLancerProduction.Enabled = _simulationValide;
-                btnSimuler.Enabled          = true;
-                Cursor = Cursors.Default;
             }
         }
 

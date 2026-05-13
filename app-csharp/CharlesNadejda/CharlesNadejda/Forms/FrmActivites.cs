@@ -60,7 +60,7 @@ namespace CharlesNadejda.Forms
             {
                 Text      = "Chaque activité possède son propre stock d'ingrédients",
                 Font      = new Font("Segoe UI", 8F, FontStyle.Italic),
-                ForeColor = Color.FromArgb(200, 175, 140),
+                ForeColor = AppColors.HintOnDark,
                 Dock      = DockStyle.Fill,
                 TextAlign = ContentAlignment.MiddleLeft
             };

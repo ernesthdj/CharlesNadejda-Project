@@ -54,9 +54,9 @@ namespace CharlesNadejda.Forms
                                             | AnchorStyles.Left | AnchorStyles.Right,
                 Font                        = new Font("Segoe UI", 9.5F),
                 RowHeadersVisible           = false,
-                BackgroundColor             = Color.FromArgb(253, 251, 246),
+                BackgroundColor             = AppColors.CremeWarm,
                 BorderStyle                 = BorderStyle.None,
-                GridColor                   = Color.FromArgb(195, 185, 168),
+                GridColor                   = AppColors.Border,
                 ColumnHeadersHeightSizeMode = DataGridViewColumnHeadersHeightSizeMode.DisableResizing,
                 ColumnHeadersHeight         = 32
             };
@@ -123,7 +123,7 @@ namespace CharlesNadejda.Forms
             FormBorderStyle     = FormBorderStyle.Sizable;
             MaximizeBox         = true;
             StartPosition       = FormStartPosition.CenterParent;
-            BackColor           = Color.FromArgb(253, 251, 246);
+            BackColor           = AppColors.CremeWarm;
 
             Controls.AddRange(new Control[]
             {

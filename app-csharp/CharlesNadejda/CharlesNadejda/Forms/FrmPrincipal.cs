@@ -23,21 +23,21 @@ namespace CharlesNadejda.Forms
         private          ScreenRouter _router;
         private List<BomNiveau>       _niveauxListe = new List<BomNiveau>();
 
-        // ── Palette ──────────────────────────────────────────────────────
-        private static readonly Color CHOCO_BRAND  = Color.FromArgb(61,  40,  23);
-        private static readonly Color CHOCO_MED    = Color.FromArgb(111, 78,  55);
-        private static readonly Color CHOCO_ABYSS  = Color.FromArgb(30,  15,   8);
-        private static readonly Color CHOCO_DARK   = Color.FromArgb(44,  24,  16);
-        private static readonly Color OR           = Color.FromArgb(212, 175,  55);
-        private static readonly Color CREME        = Color.FromArgb(245, 230, 211);
-        private static readonly Color CREME_WARM   = Color.FromArgb(253, 251, 246);
-        private static readonly Color CREME_BG     = Color.FromArgb(236, 233, 216);
-        private static readonly Color SIDEBAR_TXT  = Color.FromArgb(232, 217, 192);
-        private static readonly Color SIDEBAR_META = Color.FromArgb(158, 123,  92);
-        private static readonly Color BORDER_CLR   = Color.FromArgb(195, 185, 168);
-        private static readonly Color GREEN_OK     = Color.FromArgb(92,  184,  92);
-        private static readonly Color RED_CRIT     = Color.FromArgb(199,  44,  72);
-        private static readonly Color ORG_WARN     = Color.FromArgb(211,  84,   0);
+        // ── Palette — alias locaux vers AppColors (source de vérité unique) ──
+        private static readonly Color CHOCO_BRAND  = AppColors.ChocoBrand;
+        private static readonly Color CHOCO_MED    = AppColors.ChocoMed;
+        private static readonly Color CHOCO_ABYSS  = AppColors.ChocoAbyss;
+        private static readonly Color CHOCO_DARK   = AppColors.ChocoDark;
+        private static readonly Color OR           = AppColors.Or;
+        private static readonly Color CREME        = AppColors.Creme;
+        private static readonly Color CREME_WARM   = AppColors.CremeWarm;
+        private static readonly Color CREME_BG     = AppColors.CremeBg;
+        private static readonly Color SIDEBAR_TXT  = AppColors.SidebarTxt;
+        private static readonly Color SIDEBAR_META = AppColors.SidebarMeta;
+        private static readonly Color BORDER_CLR   = AppColors.Border;
+        private static readonly Color GREEN_OK     = AppColors.GreenOk;
+        private static readonly Color RED_CRIT     = AppColors.RedCrit;
+        private static readonly Color ORG_WARN     = AppColors.OrgWarn;
 
         // ── Sidebar controls ──────────────────────────────────────────────
         private SplitContainer _split;
@@ -142,7 +142,7 @@ namespace CharlesNadejda.Forms
             };
             btnGererAct.FlatAppearance.BorderColor = Color.FromArgb(140, OR);
             btnGererAct.FlatAppearance.BorderSize  = 1;
-            btnGererAct.Click += (s, ev) => { new FrmActivites().ShowDialog(this); ChargerActivites(); };
+            btnGererAct.Click += (s, ev) => { using (var frm = new FrmActivites()) frm.ShowDialog(this); ChargerActivites(); };
 
             var btnNouvAct = new Button
             {
@@ -152,7 +152,7 @@ namespace CharlesNadejda.Forms
             };
             btnNouvAct.FlatAppearance.BorderColor = Color.FromArgb(168, 137, 30);
             btnNouvAct.FlatAppearance.BorderSize  = 1;
-            btnNouvAct.Click += (s, ev) => { new FrmActivites().ShowDialog(this); ChargerActivites(); };
+            btnNouvAct.Click += (s, ev) => { using (var frm = new FrmActivites()) frm.ShowDialog(this); ChargerActivites(); };
 
             pnlTitle.Resize += (s, ev) =>
             {
@@ -479,7 +479,7 @@ namespace CharlesNadejda.Forms
                 Location = new Point(28, 228), Size = new Size(264, 40), Cursor = Cursors.Hand
             };
             btnCreer.FlatAppearance.BorderColor = Color.FromArgb(168, 137, 30);
-            btnCreer.Click += (s, ev) => { new FrmActivites().ShowDialog(this); ChargerActivites(); };
+            btnCreer.Click += (s, ev) => { using (var frm = new FrmActivites()) frm.ShowDialog(this); ChargerActivites(); };
             pnlCenter.Controls.Add(btnCreer);
 
             _pnlDroit.Controls.Add(pnlCenter);
@@ -1708,11 +1708,11 @@ namespace CharlesNadejda.Forms
                     if (niv.Ordre == 1)
                     {
                         // N1 = ingrédients : raccourci vers FrmIngredients (fiches ingrédients)
-                        new FrmIngredients(new Activite { Id = niv.IdActivite }).ShowDialog(this);
+                        using (var frm = new FrmIngredients(new Activite { Id = niv.IdActivite })) frm.ShowDialog(this);
                     }
                     else
                     {
-                        new FrmBomFiches(niv).ShowDialog(this);
+                        using (var frm = new FrmBomFiches(niv)) frm.ShowDialog(this);
                         ChargerFiches(niv);
                     }
                 };

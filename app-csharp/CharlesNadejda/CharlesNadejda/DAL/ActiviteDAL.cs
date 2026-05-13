@@ -106,8 +106,13 @@ namespace CharlesNadejda.DAL
                     throw new InvalidOperationException(
                         $"Impossible de désactiver : {nbContextes} contexte(s) actif(s) rattaché(s) à cette activité.");
 
-                // Vérifier aussi les ingrédients
-                cmd.CommandText = "SELECT COUNT(*) FROM fiches_ingredients WHERE id_activite = @id AND actif = 1";
+                // Vérifier les ingrédients liés via activites_stocks (v10 : id_activite → id_stock + jonction)
+                cmd.CommandText = @"
+                    SELECT COUNT(*)
+                    FROM fiches_ingredients fi
+                    JOIN stocks s            ON s.id = fi.id_stock
+                    JOIN activites_stocks ast ON ast.id_stock = s.id
+                    WHERE ast.id_activite = @id AND fi.actif = 1";
                 cmd.Parameters.Clear();
                 cmd.Parameters.AddWithValue("@id", id);
                 int nbIngredients = Convert.ToInt32(cmd.ExecuteScalar());

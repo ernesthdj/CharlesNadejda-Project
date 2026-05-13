@@ -77,8 +77,8 @@ namespace CharlesNadejda.Forms
             var panel = (Panel)sender;
             using (var brush = new LinearGradientBrush(
                 panel.ClientRectangle,
-                Color.FromArgb(61,  40, 23),   // #3D2817 CHOCOLAT_FONCE
-                Color.FromArgb(111, 78, 55),   // #6F4E37 CHOCOLAT_MOYEN
+                AppColors.ChocoBrand,          // #3D2817 CHOCOLAT_FONCE
+                AppColors.ChocoMed,            // #6F4E37 CHOCOLAT_MOYEN
                 LinearGradientMode.Horizontal))
             {
                 e.Graphics.FillRectangle(brush, panel.ClientRectangle);

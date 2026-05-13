@@ -52,6 +52,9 @@ namespace CharlesNadejda.Forms
         /// <summary>#9E7B5C — brun clair, métadonnées / infos sidebar.</summary>
         public static readonly Color SidebarMeta = Color.FromArgb(158, 123,  92);
 
+        /// <summary>#C8AF8C — beige clair, texte hint/note sur fond sombre.</summary>
+        public static readonly Color HintOnDark  = Color.FromArgb(200, 175, 140);
+
         // ── Statuts ──────────────────────────────────────────────────────
         /// <summary>#3EA23E — vert, stock disponible / état OK.</summary>
         public static readonly Color GreenOk     = Color.FromArgb(62,  162,  62);

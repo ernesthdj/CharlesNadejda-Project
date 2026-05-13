@@ -30,9 +30,9 @@ namespace CharlesNadejda.Forms
         // Garde un verrou pour éviter les faux événements ItemCheck pendant le chargement
         private bool _chargeantLiaisons = false;
 
-        private static readonly Color CHOCOLAT_FONCE = Color.FromArgb(61,  40, 23);
-        private static readonly Color CREME          = Color.FromArgb(245, 230, 211);
-        private static readonly Color OR             = Color.FromArgb(212, 175, 55);
+        private static readonly Color CHOCOLAT_FONCE = AppColors.ChocoBrand;
+        private static readonly Color CREME          = AppColors.Creme;
+        private static readonly Color OR             = AppColors.Or;
 
         public FrmStocks()
         {
@@ -74,7 +74,7 @@ namespace CharlesNadejda.Forms
             {
                 Text      = "Contenants physiques ou logiques — liez-les à des activités à droite",
                 Font      = new Font("Segoe UI", 8F, FontStyle.Italic),
-                ForeColor = Color.FromArgb(200, 175, 140),
+                ForeColor = AppColors.HintOnDark,
                 Dock      = DockStyle.Fill,
                 TextAlign = ContentAlignment.MiddleLeft
             });

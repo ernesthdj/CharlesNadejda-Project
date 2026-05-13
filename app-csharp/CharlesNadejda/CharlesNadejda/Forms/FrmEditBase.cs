@@ -24,11 +24,11 @@ namespace CharlesNadejda.Forms
         protected readonly Button        btnEnregistrer;
         protected readonly Button        btnAnnuler;
 
-        // ── Palette Charles & Nadejda Design System ──────────────────
-        private static readonly Color CHOCOLAT_FONCE = Color.FromArgb(61,  40,  23);   // #3D2817
-        private static readonly Color CHOCO_ABYSS    = Color.FromArgb(30,  15,   8);   // #1E0F08
-        private static readonly Color GREY_BTN       = Color.FromArgb(239, 234, 225);  // #EFEAE1
-        private static readonly Color BORDER         = Color.FromArgb(195, 185, 168);  // #C3B9A8
+        // ── Palette — alias vers AppColors (source de vérité unique) ──
+        private static readonly Color CHOCOLAT_FONCE = AppColors.ChocoBrand;
+        private static readonly Color CHOCO_ABYSS    = AppColors.ChocoAbyss;
+        private static readonly Color GREY_BTN       = AppColors.GreyBtn;
+        private static readonly Color BORDER         = AppColors.Border;
 
         protected FrmEditBase()
         {
@@ -75,7 +75,7 @@ namespace CharlesNadejda.Forms
             MaximizeBox         = false;
             MinimizeBox         = false;
             StartPosition       = FormStartPosition.CenterParent;
-            BackColor           = Color.FromArgb(253, 251, 246);
+            BackColor           = AppColors.CremeWarm;
         }
 
         // ── Positionnement ────────────────────────────────────────────────

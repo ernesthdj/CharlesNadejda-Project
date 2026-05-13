@@ -78,7 +78,7 @@ namespace CharlesNadejda.Forms
             {
                 Text      = "Lots ingrédients + produits fabriqués — lecture seule",
                 Font      = new Font("Segoe UI", 8F, FontStyle.Italic),
-                ForeColor = Color.FromArgb(200, 175, 140),
+                ForeColor = AppColors.HintOnDark,
                 Dock      = DockStyle.Fill,
                 TextAlign = ContentAlignment.MiddleLeft
             });
