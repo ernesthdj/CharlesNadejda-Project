@@ -14,8 +14,6 @@ namespace CharlesNadejda.Forms
         private void InitializeComponent()
         {
             this.menuStrip      = new System.Windows.Forms.MenuStrip();
-            this.statusStrip    = new System.Windows.Forms.StatusStrip();
-            this.lblUtilisateur = new System.Windows.Forms.ToolStripStatusLabel();
 
             // Menu items
             this.menuFournisseurs    = new System.Windows.Forms.ToolStripMenuItem();
@@ -28,7 +26,6 @@ namespace CharlesNadejda.Forms
             this.menuDeconnexion     = new System.Windows.Forms.ToolStripMenuItem();
 
             this.menuStrip.SuspendLayout();
-            this.statusStrip.SuspendLayout();
             this.SuspendLayout();
 
             // ── menuStrip ────────────────────────────────────────────
@@ -44,6 +41,7 @@ namespace CharlesNadejda.Forms
             this.menuStrip.Location = new System.Drawing.Point(0, 0);
             this.menuStrip.Size     = new System.Drawing.Size(1200, 24);
             this.menuStrip.Renderer = new CharlesNadejda.Forms.FrmPrincipal.DarkMenuRenderer();
+            this.menuStrip.Visible  = false;
 
             // Catalogue web — placeholder (à développer après ERP)
             this.menuCatalogueWeb.Text      = "Catalogue web  [à venir]";
@@ -76,20 +74,12 @@ namespace CharlesNadejda.Forms
             this.menuDeconnexion.Text   = "Se déconnecter";
             this.menuDeconnexion.Click += new System.EventHandler(this.menuDeconnexion_Click);
 
-            // ── statusStrip ───────────────────────────────────────────
-            this.statusStrip.BackColor = System.Drawing.Color.FromArgb(30, 15, 8);
-            this.statusStrip.ForeColor = System.Drawing.Color.FromArgb(200, 180, 160);
-            this.statusStrip.Items.Add(this.lblUtilisateur);
-            this.lblUtilisateur.Name = "lblUtilisateur";
-            this.lblUtilisateur.Text = "";
-
             // ── FrmPrincipal ──────────────────────────────────────────
-            // Le contenu (split + cards) est construit programmatiquement dans Load
+            // Le contenu (shell + panels) est construit programmatiquement dans Load
             this.AutoScaleDimensions = new System.Drawing.SizeF(7F, 15F);
             this.AutoScaleMode       = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize          = new System.Drawing.Size(1200, 700);
             this.MinimumSize         = new System.Drawing.Size(900, 580);
-            this.Controls.Add(this.statusStrip);
             this.Controls.Add(this.menuStrip);
             this.MainMenuStrip   = this.menuStrip;
             this.Name            = "FrmPrincipal";
@@ -100,15 +90,11 @@ namespace CharlesNadejda.Forms
 
             this.menuStrip.ResumeLayout(false);
             this.menuStrip.PerformLayout();
-            this.statusStrip.ResumeLayout(false);
-            this.statusStrip.PerformLayout();
             this.ResumeLayout(false);
             this.PerformLayout();
         }
 
         private System.Windows.Forms.MenuStrip            menuStrip;
-        private System.Windows.Forms.StatusStrip          statusStrip;
-        private System.Windows.Forms.ToolStripStatusLabel lblUtilisateur;
         private System.Windows.Forms.ToolStripMenuItem    menuCatalogueWeb;
         private System.Windows.Forms.ToolStripMenuItem    menuCatCategories;
         private System.Windows.Forms.ToolStripMenuItem    menuCatParfums;
