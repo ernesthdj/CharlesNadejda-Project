@@ -20,7 +20,7 @@ namespace CharlesNadejda.DAL
                 cmd.CommandText = @"
                     SELECT fi.id, fi.nom, fi.marque, fi.unite_mesure, fi.type_physique, fi.densite,
                            fi.conditionnement_label, fi.qte_par_conditionnement,
-                           fi.prix_achat_reference, fi.seuil_alerte_stock,
+                           fi.prix_achat_reference, fi.seuil_alerte_stock, fi.stock_cible,
                            fi.id_fournisseur_defaut, fi.id_stock, fi.actif,
                            f.nom  AS nom_fournisseur,
                            s.nom  AS nom_stock,
@@ -72,11 +72,11 @@ namespace CharlesNadejda.DAL
                     INSERT INTO fiches_ingredients
                         (nom, marque, unite_mesure, type_physique, densite,
                          conditionnement_label, qte_par_conditionnement,
-                         prix_achat_reference, seuil_alerte_stock,
+                         prix_achat_reference, seuil_alerte_stock, stock_cible,
                          id_fournisseur_defaut, id_stock, actif)
                     VALUES (@nom, @marque, @unite, @type_physique, @densite,
                             @condLabel, @condQte,
-                            @prix, @seuil, @fournisseur, @idStock, 1)";
+                            @prix, @seuil, @stockCible, @fournisseur, @idStock, 1)";
                 Bind(cmd, i);
                 cmd.ExecuteNonQuery();
             }
@@ -93,6 +93,7 @@ namespace CharlesNadejda.DAL
                         type_physique=@type_physique, densite=@densite,
                         conditionnement_label=@condLabel, qte_par_conditionnement=@condQte,
                         prix_achat_reference=@prix, seuil_alerte_stock=@seuil,
+                        stock_cible=@stockCible,
                         id_fournisseur_defaut=@fournisseur, id_stock=@idStock
                     WHERE id=@id";
                 Bind(cmd, i);
@@ -123,6 +124,7 @@ namespace CharlesNadejda.DAL
             cmd.Parameters.AddWithValue("@condQte",      i.QteParConditionnement);
             cmd.Parameters.AddWithValue("@prix",         i.PrixAchatReference);
             cmd.Parameters.AddWithValue("@seuil",        i.SeuilAlerteStock.HasValue ? (object)i.SeuilAlerteStock.Value : DBNull.Value);
+            cmd.Parameters.AddWithValue("@stockCible",   i.StockCible.HasValue ? (object)i.StockCible.Value : DBNull.Value);
             cmd.Parameters.AddWithValue("@fournisseur",  i.IdFournisseurDefaut.HasValue ? (object)i.IdFournisseurDefaut.Value : DBNull.Value);
             cmd.Parameters.AddWithValue("@idStock",       i.IdStock);
         }
@@ -139,6 +141,7 @@ namespace CharlesNadejda.DAL
             QteParConditionnement = (decimal)r["qte_par_conditionnement"],
             PrixAchatReference    = (decimal)r["prix_achat_reference"],
             SeuilAlerteStock      = r["seuil_alerte_stock"]   == DBNull.Value ? (decimal?)null : (decimal)r["seuil_alerte_stock"],
+            StockCible            = r["stock_cible"]           == DBNull.Value ? (decimal?)null : (decimal)r["stock_cible"],
             IdFournisseurDefaut   = r["id_fournisseur_defaut"] == DBNull.Value ? (int?)null : (int)r["id_fournisseur_defaut"],
             NomFournisseur        = r["nom_fournisseur"]      == DBNull.Value ? null : r["nom_fournisseur"].ToString(),
             IdStock               = (int)r["id_stock"],

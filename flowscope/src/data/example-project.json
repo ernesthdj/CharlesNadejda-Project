@@ -1,0 +1,246 @@
+{
+  "name": "Charles & Nadejda",
+  "version": "1.0.0",
+  "lastParsed": "2026-05-14T12:00:00Z",
+  "systems": [
+    {
+      "id": "overview",
+      "label": "Vue d'ensemble",
+      "icon": "LayoutDashboard",
+      "description": "Architecture globale du projet",
+      "nodes": [
+        {
+          "id": "overview:db",
+          "type": "table",
+          "label": "Base de données MySQL",
+          "description": "~50 tables — catalogue, BOM, ventes, auth",
+          "metadata": { "info": ["50 tables", "13 migrations"] },
+          "tags": ["core"]
+        },
+        {
+          "id": "overview:csharp",
+          "type": "form",
+          "label": "Application C# WinForms",
+          "description": "~40 classes — Forms, DAL, Models",
+          "metadata": { "info": ["40 classes", "8 modules"] },
+          "tags": ["core"]
+        },
+        {
+          "id": "overview:bom",
+          "type": "process",
+          "label": "Pipeline BOM",
+          "description": "Production multi-niveaux générique",
+          "metadata": { "info": ["7 étapes", "FIFO"] },
+          "tags": ["métier"]
+        },
+        {
+          "id": "overview:laravel",
+          "type": "controller",
+          "label": "Site Laravel",
+          "description": "Vitrine + boutique (scaffold)",
+          "metadata": { "info": ["scaffold", "à implémenter"] },
+          "tags": ["futur"]
+        }
+      ],
+      "edges": []
+    },
+    {
+      "id": "db",
+      "label": "Base de données",
+      "icon": "Database",
+      "description": "Schéma relationnel MySQL — ~50 tables",
+      "layoutDirection": "TB",
+      "nodes": [
+        {
+          "id": "db:utilisateurs",
+          "type": "table",
+          "label": "utilisateurs",
+          "metadata": { "columns": ["id: INT PK", "nom: VARCHAR", "email: VARCHAR", "mot_de_passe: VARCHAR", "role: ENUM"] },
+          "tags": ["auth"],
+          "group": "Auth"
+        },
+        {
+          "id": "db:categories",
+          "type": "table",
+          "label": "categories",
+          "metadata": { "columns": ["id: INT PK", "nom: VARCHAR", "description: TEXT", "id_activite: INT FK"] },
+          "tags": ["catalogue"],
+          "group": "Catalogue"
+        },
+        {
+          "id": "db:produits",
+          "type": "table",
+          "label": "produits",
+          "metadata": { "columns": ["id: INT PK", "nom: VARCHAR", "prix: DECIMAL", "id_categorie: INT FK", "description: TEXT"] },
+          "tags": ["catalogue"],
+          "group": "Catalogue"
+        },
+        {
+          "id": "db:fiches_ingredients",
+          "type": "table",
+          "label": "fiches_ingredients",
+          "metadata": { "columns": ["id: INT PK", "nom: VARCHAR", "unite: VARCHAR", "prix_unitaire: DECIMAL", "id_fournisseur_defaut: INT FK"] },
+          "tags": ["bom"],
+          "group": "BOM"
+        },
+        {
+          "id": "db:fournisseurs",
+          "type": "table",
+          "label": "fournisseurs",
+          "metadata": { "columns": ["id: INT PK", "nom: VARCHAR", "contact: VARCHAR", "email: VARCHAR", "telephone: VARCHAR"] },
+          "tags": ["catalogue"],
+          "group": "Catalogue"
+        }
+      ],
+      "edges": [
+        {
+          "id": "db:produits--fk--db:categories",
+          "source": "db:produits",
+          "target": "db:categories",
+          "label": "id_categorie",
+          "type": "fk"
+        },
+        {
+          "id": "db:fiches_ingredients--fk--db:fournisseurs",
+          "source": "db:fiches_ingredients",
+          "target": "db:fournisseurs",
+          "label": "id_fournisseur_defaut",
+          "type": "fk"
+        }
+      ]
+    },
+    {
+      "id": "csharp",
+      "label": "Application C#",
+      "icon": "Monitor",
+      "description": "WinForms — Forms, DAL, Models",
+      "layoutDirection": "TB",
+      "nodes": [
+        {
+          "id": "csharp:FrmPrincipal",
+          "type": "form",
+          "label": "FrmPrincipal",
+          "description": "Shell ERP principal — sidebar, titlebar, navigation",
+          "filePath": "app-csharp/CharlesNadejda/CharlesNadejda/Forms/FrmPrincipal.cs",
+          "metadata": { "methods": ["BuildShell()", "OnSidebarNavigation()", "OnActivityChanged()"] },
+          "group": "Forms"
+        },
+        {
+          "id": "csharp:FrmListeBase",
+          "type": "form",
+          "label": "FrmListeBase<T>",
+          "description": "Formulaire liste générique avec DGV",
+          "filePath": "app-csharp/CharlesNadejda/CharlesNadejda/Forms/Base/FrmListeBase.cs",
+          "metadata": { "methods": ["ChargerDonnees()", "ConfigurerColonnes()", "Filtrer()"] },
+          "group": "Forms"
+        },
+        {
+          "id": "csharp:IngredientDAL",
+          "type": "dal",
+          "label": "IngredientDAL",
+          "description": "Accès données ingrédients",
+          "filePath": "app-csharp/CharlesNadejda/CharlesNadejda/DAL/IngredientDAL.cs",
+          "metadata": { "methods": ["GetAll()", "GetById()", "Insert()", "Update()", "Delete()"] },
+          "group": "DAL"
+        },
+        {
+          "id": "csharp:Ingredient",
+          "type": "model",
+          "label": "Ingredient",
+          "filePath": "app-csharp/CharlesNadejda/CharlesNadejda/Models/Ingredient.cs",
+          "metadata": { "properties": ["Id", "Nom", "Unite", "PrixUnitaire", "TypePhysique", "Densite"] },
+          "group": "Models"
+        }
+      ],
+      "edges": [
+        {
+          "id": "csharp:FrmListeBase--inheritance--csharp:FrmPrincipal",
+          "source": "csharp:FrmListeBase",
+          "target": "csharp:FrmPrincipal",
+          "label": "hérite",
+          "type": "inheritance"
+        },
+        {
+          "id": "csharp:FrmPrincipal--dep--csharp:IngredientDAL",
+          "source": "csharp:FrmPrincipal",
+          "target": "csharp:IngredientDAL",
+          "label": "utilise",
+          "type": "dependency"
+        },
+        {
+          "id": "csharp:IngredientDAL--dep--csharp:Ingredient",
+          "source": "csharp:IngredientDAL",
+          "target": "csharp:Ingredient",
+          "label": "retourne",
+          "type": "data"
+        }
+      ]
+    },
+    {
+      "id": "bom",
+      "label": "Pipeline BOM",
+      "icon": "GitBranch",
+      "description": "Flux de production multi-niveaux",
+      "layoutDirection": "LR",
+      "nodes": [
+        {
+          "id": "bom:ingredients",
+          "type": "stock",
+          "label": "Ingrédients",
+          "description": "Stock global niveau 0",
+          "metadata": { "info": ["Fournisseurs", "Lots FIFO"] }
+        },
+        {
+          "id": "bom:contextes",
+          "type": "process",
+          "label": "Contextes",
+          "description": "Configs de production nommées",
+          "metadata": { "info": ["Par activité", "Stock propre"] }
+        },
+        {
+          "id": "bom:niveaux",
+          "type": "process",
+          "label": "Niveaux",
+          "description": "Profondeur de transformation",
+          "metadata": { "info": ["N consomme N-1", "Variable"] }
+        },
+        {
+          "id": "bom:fiches",
+          "type": "custom",
+          "label": "Fiches Recettes",
+          "description": "Recettes globales réutilisables",
+          "metadata": { "info": ["Multi-contextes", "Conversion unités"] }
+        },
+        {
+          "id": "bom:productions",
+          "type": "process",
+          "label": "Productions",
+          "description": "Exécution de production",
+          "metadata": { "info": ["Validation stock", "Consommation FIFO"] }
+        },
+        {
+          "id": "bom:stocks",
+          "type": "stock",
+          "label": "Stocks",
+          "description": "Stock produit par niveau",
+          "metadata": { "info": ["Par contexte", "Discriminants"] }
+        },
+        {
+          "id": "bom:reservations",
+          "type": "stock",
+          "label": "Réservations",
+          "description": "Réservations de stock",
+          "metadata": { "info": ["Dispo réelle", "Libération auto"] }
+        }
+      ],
+      "edges": [
+        { "id": "bom:e1", "source": "bom:ingredients", "target": "bom:niveaux", "label": "alimente", "type": "flow", "animated": true },
+        { "id": "bom:e2", "source": "bom:contextes", "target": "bom:niveaux", "label": "configure", "type": "flow", "animated": true },
+        { "id": "bom:e3", "source": "bom:niveaux", "target": "bom:fiches", "label": "utilise", "type": "data" },
+        { "id": "bom:e4", "source": "bom:fiches", "target": "bom:productions", "label": "déclenche", "type": "flow", "animated": true },
+        { "id": "bom:e5", "source": "bom:productions", "target": "bom:stocks", "label": "produit", "type": "flow", "animated": true },
+        { "id": "bom:e6", "source": "bom:stocks", "target": "bom:reservations", "label": "réserve", "type": "data" }
+      ]
+    }
+  ]
+}

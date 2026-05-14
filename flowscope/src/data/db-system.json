@@ -1,0 +1,538 @@
+{
+  "id": "db",
+  "label": "Base de données",
+  "icon": "Database",
+  "description": "Schéma MySQL — 15 tables, 23 relations FK",
+  "layoutDirection": "TB",
+  "nodes": [
+    {
+      "id": "db:fournisseurs",
+      "type": "table",
+      "label": "fournisseurs",
+      "metadata": {
+        "columns": [
+          "id: INT: PK",
+          "nom: VARCHAR(200): NOT NULL",
+          "contact: VARCHAR(200)",
+          "email: VARCHAR(255)",
+          "telephone: VARCHAR(20)",
+          "adresse: VARCHAR(255)",
+          "notes: TEXT"
+        ],
+        "primaryKeys": [
+          "id"
+        ]
+      },
+      "group": "Catalogue"
+    },
+    {
+      "id": "db:fiches_ingredients",
+      "type": "table",
+      "label": "fiches_ingredients",
+      "metadata": {
+        "columns": [
+          "id: INT: PK",
+          "nom: VARCHAR(200): NOT NULL UNIQUE",
+          "marque: VARCHAR(200)",
+          "description: TEXT",
+          "unite_mesure: ENUM('KG','G','L','ML','CL','PIECE'): NOT NULL",
+          "type_physique: ENUM('SOLIDE','LIQUIDE','POUDRE','PIECE'): NOT NULL DEFAULT",
+          "densite: DECIMAL(8,4): DEFAULT",
+          "prix_achat_reference: DECIMAL(10,4): NOT NULL DEFAULT",
+          "dlc_jours_reference: INT: DEFAULT",
+          "qualite_label: VARCHAR(100): DEFAULT",
+          "id_fournisseur_defaut: INT: DEFAULT",
+          "seuil_alerte_stock: DECIMAL(10,4): DEFAULT",
+          "actif: TINYINT(1): NOT NULL DEFAULT",
+          "date_creation: DATETIME: DEFAULT",
+          "conditionnement_label: VARCHAR(100): NOT NULL DEFAULT",
+          "qte_par_conditionnement: DECIMAL(12,4): NOT NULL DEFAULT",
+          "id_stock: INT: NOT NULL"
+        ],
+        "primaryKeys": [
+          "id"
+        ],
+        "foreignKeys": [
+          "id_fournisseur_defaut → fournisseurs.id",
+          "id_stock → stocks.id"
+        ]
+      },
+      "group": "Production"
+    },
+    {
+      "id": "db:lots_ingredients",
+      "type": "table",
+      "label": "lots_ingredients",
+      "metadata": {
+        "columns": [
+          "id: INT: PK",
+          "id_fiche_ingredient: INT: NOT NULL",
+          "numero_lot: VARCHAR(100): DEFAULT",
+          "id_fournisseur: INT: DEFAULT",
+          "date_achat: DATE: NOT NULL",
+          "date_peremption: DATE: DEFAULT",
+          "quantite_initiale: DECIMAL(10,4): NOT NULL",
+          "quantite_disponible: DECIMAL(10,4): NOT NULL",
+          "prix_unitaire: DECIMAL(10,4): NOT NULL DEFAULT",
+          "prix_achat_reel: DECIMAL(10,4): NOT NULL DEFAULT",
+          "reference_facture: VARCHAR(100): DEFAULT",
+          "notes: TEXT",
+          "date_creation: DATETIME: DEFAULT",
+          "tva_pct: DECIMAL(5,2): NOT NULL DEFAULT",
+          "nb_conditionnements: DECIMAL(10,3): NOT NULL DEFAULT"
+        ],
+        "primaryKeys": [
+          "id"
+        ],
+        "foreignKeys": [
+          "id_fournisseur → fournisseurs.id",
+          "id_fiche_ingredient → fiches_ingredients.id"
+        ]
+      },
+      "group": "Production"
+    },
+    {
+      "id": "db:utilisateurs",
+      "type": "table",
+      "label": "utilisateurs",
+      "metadata": {
+        "columns": [
+          "id: INT: PK",
+          "nom: VARCHAR(100): NOT NULL",
+          "prenom: VARCHAR(100): NOT NULL",
+          "email: VARCHAR(255): NOT NULL UNIQUE",
+          "mot_de_passe: VARCHAR(255): NOT NULL",
+          "role: ENUM('CLIENT','ADMIN'): NOT NULL DEFAULT",
+          "telephone: VARCHAR(20)",
+          "adresse: VARCHAR(255)",
+          "code_postal: VARCHAR(10)",
+          "ville: VARCHAR(100)",
+          "date_inscription: DATETIME: DEFAULT",
+          "actif: TINYINT(1): NOT NULL DEFAULT"
+        ],
+        "primaryKeys": [
+          "id"
+        ]
+      },
+      "group": "Auth"
+    },
+    {
+      "id": "db:bom_contextes",
+      "type": "table",
+      "label": "bom_contextes",
+      "metadata": {
+        "columns": [
+          "id: INT: PK",
+          "nom: VARCHAR(200): NOT NULL",
+          "description: TEXT",
+          "actif: TINYINT(1): NOT NULL DEFAULT",
+          "date_creation: DATETIME: DEFAULT",
+          "id_activite: INT: NOT NULL"
+        ],
+        "primaryKeys": [
+          "id"
+        ],
+        "foreignKeys": [
+          "id_activite → activites.id"
+        ]
+      },
+      "group": "BOM"
+    },
+    {
+      "id": "db:bom_niveaux",
+      "type": "table",
+      "label": "bom_niveaux",
+      "metadata": {
+        "columns": [
+          "id: INT: PK",
+          "id_contexte: INT: NOT NULL",
+          "ordre: TINYINT: NOT NULL",
+          "nom: VARCHAR(200): NOT NULL",
+          "description: TEXT",
+          "date_creation: DATETIME: DEFAULT"
+        ],
+        "primaryKeys": [
+          "id"
+        ],
+        "foreignKeys": [
+          "id_contexte → bom_contextes.id"
+        ]
+      },
+      "group": "BOM"
+    },
+    {
+      "id": "db:bom_fiches",
+      "type": "table",
+      "label": "bom_fiches",
+      "metadata": {
+        "columns": [
+          "id: INT: PK",
+          "nom: VARCHAR(200): NOT NULL UNIQUE",
+          "description: TEXT",
+          "unite_output: ENUM('KG','G','L','ML','CL','PIECE'): NOT NULL DEFAULT",
+          "quantite_output: DECIMAL(10,4): NOT NULL DEFAULT",
+          "temps_preparation: INT: DEFAULT",
+          "actif: TINYINT(1): NOT NULL DEFAULT",
+          "date_creation: DATETIME: DEFAULT",
+          "id_niveau: INT: NOT NULL DEFAULT"
+        ],
+        "primaryKeys": [
+          "id"
+        ],
+        "foreignKeys": [
+          "id_niveau → bom_niveaux.id"
+        ]
+      },
+      "group": "BOM"
+    },
+    {
+      "id": "db:bom_fiches_lignes",
+      "type": "table",
+      "label": "bom_fiches_lignes",
+      "metadata": {
+        "columns": [
+          "id: INT: PK",
+          "id_fiche: INT: NOT NULL",
+          "type_input: ENUM('INGREDIENT','FICHE'): NOT NULL",
+          "id_input_ingredient: INT: DEFAULT",
+          "id_input_fiche: INT: DEFAULT",
+          "quantite: DECIMAL(12,4): NOT NULL",
+          "unite_mesure: ENUM('KG','G','L','ML','CL','PIECE'): NOT NULL"
+        ],
+        "primaryKeys": [
+          "id"
+        ],
+        "foreignKeys": [
+          "id_fiche → bom_fiches.id",
+          "id_input_ingredient → fiches_ingredients.id",
+          "id_input_fiche → bom_fiches.id"
+        ]
+      },
+      "group": "BOM"
+    },
+    {
+      "id": "db:bom_productions",
+      "type": "table",
+      "label": "bom_productions",
+      "metadata": {
+        "columns": [
+          "id: INT: PK",
+          "id_niveau: INT: NOT NULL",
+          "id_fiche: INT: NOT NULL",
+          "quantite_produite: DECIMAL(10,4): NOT NULL",
+          "cout_ingredients: DECIMAL(10,2): NOT NULL DEFAULT",
+          "cout_unitaire: DECIMAL(10,4): NOT NULL DEFAULT",
+          "date_production: DATETIME: DEFAULT",
+          "notes: TEXT"
+        ],
+        "primaryKeys": [
+          "id"
+        ],
+        "foreignKeys": [
+          "id_niveau → bom_niveaux.id",
+          "id_fiche → bom_fiches.id"
+        ]
+      },
+      "group": "BOM"
+    },
+    {
+      "id": "db:bom_stocks",
+      "type": "table",
+      "label": "bom_stocks",
+      "metadata": {
+        "columns": [
+          "id: INT: PK",
+          "id_niveau: INT: NOT NULL",
+          "id_fiche: INT: NOT NULL",
+          "id_production: INT: NOT NULL",
+          "quantite_disponible: DECIMAL(12,4): NOT NULL",
+          "cout_unitaire: DECIMAL(10,4): NOT NULL",
+          "date_production: DATE: NOT NULL",
+          "date_dlc: DATE: DEFAULT",
+          "date_creation: DATETIME: DEFAULT",
+          "id_contexte: INT: NOT NULL",
+          "id_activite: INT: NOT NULL"
+        ],
+        "primaryKeys": [
+          "id"
+        ],
+        "foreignKeys": [
+          "id_niveau → bom_niveaux.id",
+          "id_fiche → bom_fiches.id",
+          "id_production → bom_productions.id",
+          "id_contexte → bom_contextes.id",
+          "id_activite → activites.id"
+        ]
+      },
+      "group": "BOM"
+    },
+    {
+      "id": "db:bom_productions_lignes",
+      "type": "table",
+      "label": "bom_productions_lignes",
+      "metadata": {
+        "columns": [
+          "id: INT: PK",
+          "id_production: INT: NOT NULL",
+          "type_source: ENUM('LOT_INGREDIENT','BOM_STOCK'): NOT NULL",
+          "id_lot_ingredient: INT: DEFAULT",
+          "id_bom_stock: INT: DEFAULT",
+          "quantite_consommee: DECIMAL(12,4): NOT NULL",
+          "cout_unitaire_moment: DECIMAL(10,4): NOT NULL"
+        ],
+        "primaryKeys": [
+          "id"
+        ],
+        "foreignKeys": [
+          "id_production → bom_productions.id",
+          "id_lot_ingredient → lots_ingredients.id",
+          "id_bom_stock → bom_stocks.id"
+        ]
+      },
+      "group": "BOM"
+    },
+    {
+      "id": "db:bom_reservations",
+      "type": "table",
+      "label": "bom_reservations",
+      "metadata": {
+        "columns": [
+          "id: INT: PK",
+          "id_lot: INT: NOT NULL",
+          "id_contexte: INT: NOT NULL",
+          "quantite_reservee: DECIMAL(12,4): NOT NULL",
+          "date_reservation: DATETIME: DEFAULT",
+          "notes: TEXT",
+          "actif: TINYINT(1): NOT NULL DEFAULT"
+        ],
+        "primaryKeys": [
+          "id"
+        ],
+        "foreignKeys": [
+          "id_contexte → bom_contextes.id",
+          "id_lot → lots_ingredients.id"
+        ]
+      },
+      "group": "BOM"
+    },
+    {
+      "id": "db:activites",
+      "type": "table",
+      "label": "activites",
+      "metadata": {
+        "columns": [
+          "id: INT: PK",
+          "nom: VARCHAR(100): NOT NULL UNIQUE",
+          "description: TEXT",
+          "actif: TINYINT(1): NOT NULL DEFAULT",
+          "date_creation: DATETIME: NOT NULL DEFAULT"
+        ],
+        "primaryKeys": [
+          "id"
+        ]
+      },
+      "group": "Activites"
+    },
+    {
+      "id": "db:stocks",
+      "type": "table",
+      "label": "stocks",
+      "metadata": {
+        "columns": [
+          "id: INT: PK",
+          "nom: VARCHAR(200): NOT NULL UNIQUE",
+          "description: TEXT",
+          "actif: TINYINT(1): NOT NULL DEFAULT",
+          "date_creation: DATETIME: NOT NULL DEFAULT"
+        ],
+        "primaryKeys": [
+          "id"
+        ]
+      },
+      "group": "BOM"
+    },
+    {
+      "id": "db:activites_stocks",
+      "type": "table",
+      "label": "activites_stocks",
+      "metadata": {
+        "columns": [
+          "id_activite: INT: NOT NULL",
+          "id_stock: INT: NOT NULL"
+        ],
+        "primaryKeys": [
+          "id_activite",
+          "id_stock"
+        ],
+        "foreignKeys": [
+          "id_activite → activites.id",
+          "id_stock → stocks.id"
+        ]
+      },
+      "group": "BOM"
+    }
+  ],
+  "edges": [
+    {
+      "id": "db:fiches_ingredients--fk--db:fournisseurs",
+      "source": "db:fiches_ingredients",
+      "target": "db:fournisseurs",
+      "label": "id_fournisseur_defaut",
+      "type": "fk"
+    },
+    {
+      "id": "db:fiches_ingredients--fk--db:stocks",
+      "source": "db:fiches_ingredients",
+      "target": "db:stocks",
+      "label": "id_stock",
+      "type": "fk"
+    },
+    {
+      "id": "db:lots_ingredients--fk--db:fournisseurs",
+      "source": "db:lots_ingredients",
+      "target": "db:fournisseurs",
+      "label": "id_fournisseur",
+      "type": "fk"
+    },
+    {
+      "id": "db:lots_ingredients--fk--db:fiches_ingredients",
+      "source": "db:lots_ingredients",
+      "target": "db:fiches_ingredients",
+      "label": "id_fiche_ingredient",
+      "type": "fk"
+    },
+    {
+      "id": "db:bom_contextes--fk--db:activites",
+      "source": "db:bom_contextes",
+      "target": "db:activites",
+      "label": "id_activite",
+      "type": "fk"
+    },
+    {
+      "id": "db:bom_niveaux--fk--db:bom_contextes",
+      "source": "db:bom_niveaux",
+      "target": "db:bom_contextes",
+      "label": "id_contexte",
+      "type": "fk"
+    },
+    {
+      "id": "db:bom_fiches--fk--db:bom_niveaux",
+      "source": "db:bom_fiches",
+      "target": "db:bom_niveaux",
+      "label": "id_niveau",
+      "type": "fk"
+    },
+    {
+      "id": "db:bom_fiches_lignes--fk--db:bom_fiches",
+      "source": "db:bom_fiches_lignes",
+      "target": "db:bom_fiches",
+      "label": "id_fiche, id_input_fiche",
+      "type": "fk"
+    },
+    {
+      "id": "db:bom_fiches_lignes--fk--db:fiches_ingredients",
+      "source": "db:bom_fiches_lignes",
+      "target": "db:fiches_ingredients",
+      "label": "id_input_ingredient",
+      "type": "fk"
+    },
+    {
+      "id": "db:bom_productions--fk--db:bom_niveaux",
+      "source": "db:bom_productions",
+      "target": "db:bom_niveaux",
+      "label": "id_niveau",
+      "type": "fk"
+    },
+    {
+      "id": "db:bom_productions--fk--db:bom_fiches",
+      "source": "db:bom_productions",
+      "target": "db:bom_fiches",
+      "label": "id_fiche",
+      "type": "fk"
+    },
+    {
+      "id": "db:bom_stocks--fk--db:bom_niveaux",
+      "source": "db:bom_stocks",
+      "target": "db:bom_niveaux",
+      "label": "id_niveau",
+      "type": "fk"
+    },
+    {
+      "id": "db:bom_stocks--fk--db:bom_fiches",
+      "source": "db:bom_stocks",
+      "target": "db:bom_fiches",
+      "label": "id_fiche",
+      "type": "fk"
+    },
+    {
+      "id": "db:bom_stocks--fk--db:bom_productions",
+      "source": "db:bom_stocks",
+      "target": "db:bom_productions",
+      "label": "id_production",
+      "type": "fk"
+    },
+    {
+      "id": "db:bom_stocks--fk--db:bom_contextes",
+      "source": "db:bom_stocks",
+      "target": "db:bom_contextes",
+      "label": "id_contexte",
+      "type": "fk"
+    },
+    {
+      "id": "db:bom_stocks--fk--db:activites",
+      "source": "db:bom_stocks",
+      "target": "db:activites",
+      "label": "id_activite",
+      "type": "fk"
+    },
+    {
+      "id": "db:bom_productions_lignes--fk--db:bom_productions",
+      "source": "db:bom_productions_lignes",
+      "target": "db:bom_productions",
+      "label": "id_production",
+      "type": "fk"
+    },
+    {
+      "id": "db:bom_productions_lignes--fk--db:lots_ingredients",
+      "source": "db:bom_productions_lignes",
+      "target": "db:lots_ingredients",
+      "label": "id_lot_ingredient",
+      "type": "fk"
+    },
+    {
+      "id": "db:bom_productions_lignes--fk--db:bom_stocks",
+      "source": "db:bom_productions_lignes",
+      "target": "db:bom_stocks",
+      "label": "id_bom_stock",
+      "type": "fk"
+    },
+    {
+      "id": "db:bom_reservations--fk--db:bom_contextes",
+      "source": "db:bom_reservations",
+      "target": "db:bom_contextes",
+      "label": "id_contexte",
+      "type": "fk"
+    },
+    {
+      "id": "db:bom_reservations--fk--db:lots_ingredients",
+      "source": "db:bom_reservations",
+      "target": "db:lots_ingredients",
+      "label": "id_lot",
+      "type": "fk"
+    },
+    {
+      "id": "db:activites_stocks--fk--db:activites",
+      "source": "db:activites_stocks",
+      "target": "db:activites",
+      "label": "id_activite",
+      "type": "fk"
+    },
+    {
+      "id": "db:activites_stocks--fk--db:stocks",
+      "source": "db:activites_stocks",
+      "target": "db:stocks",
+      "label": "id_stock",
+      "type": "fk"
+    }
+  ]
+}

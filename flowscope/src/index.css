@@ -1,0 +1,146 @@
+@import "tailwindcss";
+
+/* ============================================
+   FlowScope — Design Tokens (Tailwind v4)
+   ============================================ */
+@theme {
+  /* Surfaces */
+  --color-fs-bg: #0d1117;
+  --color-fs-surface: #161b22;
+  --color-fs-surface-hover: #1c2129;
+  --color-fs-surface-active: #282e36;
+
+  /* Bordures */
+  --color-fs-border: #30363d;
+  --color-fs-border-focus: #58a6ff;
+
+  /* Texte */
+  --color-fs-text: #e6edf3;
+  --color-fs-text-secondary: #8b949e;
+  --color-fs-text-muted: #6e7681;
+
+  /* Accent & interaction */
+  --color-fs-accent: #58a6ff;
+  --color-fs-accent-hover: #79c0ff;
+
+  /* Sémantique */
+  --color-fs-danger: #f85149;
+  --color-fs-success: #3fb950;
+
+  /* NodeType colors */
+  --color-fs-node-table: #58a6ff;
+  --color-fs-node-form: #bc8cff;
+  --color-fs-node-dal: #f0883e;
+  --color-fs-node-model: #3fb950;
+  --color-fs-node-controller: #f85149;
+  --color-fs-node-route: #79c0ff;
+  --color-fs-node-view: #f778ba;
+  --color-fs-node-process: #d29922;
+  --color-fs-node-stock: #2ea043;
+  --color-fs-node-custom: #8b949e;
+
+  /* EdgeType colors */
+  --color-fs-edge-fk: #58a6ff;
+  --color-fs-edge-inheritance: #bc8cff;
+  --color-fs-edge-dependency: #8b949e;
+  --color-fs-edge-flow: #3fb950;
+  --color-fs-edge-data: #f0883e;
+
+  /* Canvas */
+  --color-fs-canvas-dot: #30363d;
+
+  /* Spacing */
+  --spacing-sidebar: 240px;
+  --spacing-inspector: 320px;
+
+  /* Animations */
+  --animate-slide-in: slide-in 250ms ease-out;
+  --animate-fade-in: fade-in 150ms ease-out;
+  --animate-modal-in: modal-in 200ms ease-out;
+
+  @keyframes slide-in {
+    from { transform: translateX(100%); }
+    to { transform: translateX(0); }
+  }
+  @keyframes fade-in {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+  @keyframes modal-in {
+    from { opacity: 0; transform: translateY(-8px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  @keyframes dashmove {
+    0% { stroke-dashoffset: 10; }
+    100% { stroke-dashoffset: -30; }
+  }
+}
+
+/* ============================================
+   Global
+   ============================================ */
+body {
+  margin: 0;
+  background-color: var(--color-fs-bg);
+  color: var(--color-fs-text);
+  font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+
+#root {
+  width: 100%;
+  height: 100vh;
+  overflow: hidden;
+}
+
+/* ============================================
+   React Flow overrides (dark theme)
+   ============================================ */
+.react-flow__background {
+  background-color: var(--color-fs-bg) !important;
+}
+
+.react-flow__minimap {
+  background-color: var(--color-fs-surface) !important;
+  border: 1px solid var(--color-fs-border) !important;
+  border-radius: 8px;
+}
+
+.react-flow__controls {
+  display: none;
+}
+
+.react-flow__edge.selected .react-flow__edge-path {
+  stroke-width: 2.5 !important;
+}
+
+/* ============================================
+   Scrollbar custom (dark)
+   ============================================ */
+::-webkit-scrollbar {
+  width: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--color-fs-border);
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--color-fs-text-muted);
+}
+
+/* ============================================
+   Accessibility — focus visible
+   ============================================ */
+:focus-visible {
+  outline: 2px solid var(--color-fs-border-focus);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}

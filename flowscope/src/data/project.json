@@ -1,0 +1,3542 @@
+{
+  "name": "Charles & Nadejda",
+  "version": "1.0.0",
+  "lastParsed": "2026-05-14T12:13:36.067Z",
+  "systems": [
+    {
+      "id": "overview",
+      "label": "Vue d'ensemble",
+      "icon": "LayoutDashboard",
+      "description": "Architecture globale du projet Charles & Nadejda",
+      "nodes": [
+        {
+          "id": "overview:csharp",
+          "type": "form",
+          "label": "Application C# WinForms",
+          "description": "71 classes — Models, DAL, Forms, Shell, Utils, Navigation, Services",
+          "metadata": {
+            "info": [
+              "71 éléments",
+              "183 relations"
+            ]
+          },
+          "tags": [
+            "système"
+          ],
+          "group": "Systèmes"
+        },
+        {
+          "id": "overview:db",
+          "type": "table",
+          "label": "Base de données",
+          "description": "Schéma MySQL — 15 tables, 23 relations FK",
+          "metadata": {
+            "info": [
+              "15 éléments",
+              "23 relations"
+            ]
+          },
+          "tags": [
+            "système"
+          ],
+          "group": "Systèmes"
+        }
+      ],
+      "edges": []
+    },
+    {
+      "id": "csharp",
+      "label": "Application C# WinForms",
+      "icon": "Monitor",
+      "description": "71 classes — Models, DAL, Forms, Shell, Utils, Navigation, Services",
+      "layoutDirection": "LR",
+      "nodes": [
+        {
+          "id": "cs:ActiviteDAL",
+          "type": "dal",
+          "label": "ActiviteDAL",
+          "filePath": "app-csharp/CharlesNadejda/CharlesNadejda/DAL/ActiviteDAL.cs",
+          "metadata": {
+            "methods": [
+              "GetAll(false)",
+              "GetById(id)",
+              "NomExiste(nom, 0)",
+              "Insert(a)",
+              "Update(a)",
+              "Delete(id)",
+              "Desactiver(id)"
+            ]
+          },
+          "group": "DAL",
+          "description": "Classe statique utilitaire",
+          "tags": [
+            "static"
+          ]
+        },
+        {
+          "id": "cs:BomContexteDAL",
+          "type": "dal",
+          "label": "BomContexteDAL",
+          "filePath": "app-csharp/CharlesNadejda/CharlesNadejda/DAL/BomContexteDAL.cs",
+          "metadata": {
+            "methods": [
+              "GetAll(0)",
+              "GetById(id)",
+              "NomExiste(nom, idActivite, 0)",
+              "InsertAvecNiveaux(c, nomsNiveaux)",
+              "Insert(c)",
+              "Update(c)",
+              "Delete(id)"
+            ]
+          },
+          "group": "DAL",
+          "description": "Classe statique utilitaire",
+          "tags": [
+            "static",
+            "bom"
+          ]
+        },
+        {
+          "id": "cs:BomCoutDAL",
+          "type": "dal",
+          "label": "BomCoutDAL",
+          "filePath": "app-csharp/CharlesNadejda/CharlesNadejda/DAL/BomCoutDAL.cs",
+          "metadata": {
+            "methods": [
+              "CalculerCout(idFiche, nBatches)"
+            ]
+          },
+          "group": "DAL",
+          "description": "Classe statique utilitaire",
+          "tags": [
+            "static",
+            "bom"
+          ]
+        },
+        {
+          "id": "cs:BomFicheDAL",
+          "type": "dal",
+          "label": "BomFicheDAL",
+          "filePath": "app-csharp/CharlesNadejda/CharlesNadejda/DAL/BomFicheDAL.cs",
+          "metadata": {
+            "methods": [
+              "GetByNiveau(idNiveau)",
+              "GetAll(0)",
+              "GetById(id, true)",
+              "NomExiste(nom, idNiveau, 0)",
+              "Insert(f)",
+              "Update(f)",
+              "Delete(id)",
+              "Duplicate(idFiche)"
+            ]
+          },
+          "group": "DAL",
+          "description": "Classe statique utilitaire",
+          "tags": [
+            "static",
+            "bom"
+          ]
+        },
+        {
+          "id": "cs:BomFicheLigneDAL",
+          "type": "dal",
+          "label": "BomFicheLigneDAL",
+          "filePath": "app-csharp/CharlesNadejda/CharlesNadejda/DAL/BomFicheLigneDAL.cs",
+          "metadata": {
+            "methods": [
+              "GetByFiche(idFiche)",
+              "GetFichesUtilisant(idIngredient)",
+              "GetFichesConsommant(idFiche)"
+            ]
+          },
+          "group": "DAL",
+          "description": "Classe statique utilitaire",
+          "tags": [
+            "static",
+            "bom"
+          ]
+        },
+        {
+          "id": "cs:BomNiveauDAL",
+          "type": "dal",
+          "label": "BomNiveauDAL",
+          "filePath": "app-csharp/CharlesNadejda/CharlesNadejda/DAL/BomNiveauDAL.cs",
+          "metadata": {
+            "methods": [
+              "GetByContexte(idContexte)",
+              "GetById(id)",
+              "GetOrdreMax(idContexte)",
+              "Insert(n)",
+              "Update(n)",
+              "Delete(id)",
+              "GetByContexteEtOrdre(idContexte, ordre)"
+            ]
+          },
+          "group": "DAL",
+          "description": "Classe statique utilitaire",
+          "tags": [
+            "static",
+            "bom"
+          ]
+        },
+        {
+          "id": "cs:BomProductionDAL",
+          "type": "dal",
+          "label": "BomProductionDAL",
+          "filePath": "app-csharp/CharlesNadejda/CharlesNadejda/DAL/BomProductionDAL.cs",
+          "metadata": {
+            "methods": [
+              "GetByNiveau(idNiveau)",
+              "GetRecentByActivite(idActivite, 10)",
+              "GetDuJourByActivite(idActivite)",
+              "VerifierDisponibilite(idNiveau, idFiche, quantiteCible)",
+              "Simuler(idNiveau, idFiche, quantiteCible)",
+              "Executer(idNiveau, idFiche, quantiteCible, null, 0)"
+            ]
+          },
+          "group": "DAL",
+          "description": "Classe statique utilitaire",
+          "tags": [
+            "static",
+            "bom"
+          ]
+        },
+        {
+          "id": "cs:BomReservationDAL",
+          "type": "dal",
+          "label": "BomReservationDAL",
+          "filePath": "app-csharp/CharlesNadejda/CharlesNadejda/DAL/BomReservationDAL.cs",
+          "metadata": {
+            "methods": [
+              "GetByContexte(idContexte)",
+              "GetTotalReservePourLot(idLot)",
+              "Insert(res)",
+              "Update(res)",
+              "Liberer(id)",
+              "LibererToutContexte(idContexte)"
+            ]
+          },
+          "group": "DAL",
+          "description": "Classe statique utilitaire",
+          "tags": [
+            "static",
+            "bom"
+          ]
+        },
+        {
+          "id": "cs:BomStockDAL",
+          "type": "dal",
+          "label": "BomStockDAL",
+          "filePath": "app-csharp/CharlesNadejda/CharlesNadejda/DAL/BomStockDAL.cs",
+          "metadata": {
+            "methods": [
+              "GetByNiveau(idNiveau)",
+              "GetDisponible(idNiveau, idFiche)",
+              "GetDisponibleIngredient(idFicheIngredient)"
+            ]
+          },
+          "group": "DAL",
+          "description": "Classe statique utilitaire",
+          "tags": [
+            "static",
+            "bom",
+            "stock"
+          ]
+        },
+        {
+          "id": "cs:DbHelper",
+          "type": "dal",
+          "label": "DbHelper",
+          "filePath": "app-csharp/CharlesNadejda/CharlesNadejda/DAL/DbHelper.cs",
+          "metadata": {
+            "methods": [
+              "GetConnection()"
+            ]
+          },
+          "group": "DAL",
+          "description": "Classe statique utilitaire",
+          "tags": [
+            "static"
+          ]
+        },
+        {
+          "id": "cs:FournisseurDAL",
+          "type": "dal",
+          "label": "FournisseurDAL",
+          "filePath": "app-csharp/CharlesNadejda/CharlesNadejda/DAL/FournisseurDAL.cs",
+          "metadata": {
+            "methods": [
+              "GetAll()",
+              "NomExiste(nom, 0)",
+              "Insert(f)",
+              "Update(f)",
+              "Delete(id)"
+            ]
+          },
+          "group": "DAL",
+          "description": "Classe statique utilitaire",
+          "tags": [
+            "static"
+          ]
+        },
+        {
+          "id": "cs:IngredientDAL",
+          "type": "dal",
+          "label": "IngredientDAL",
+          "filePath": "app-csharp/CharlesNadejda/CharlesNadejda/DAL/IngredientDAL.cs",
+          "metadata": {
+            "methods": [
+              "GetAll(0, 0)",
+              "NomExiste(nom, 0)",
+              "Insert(i)",
+              "Update(i)",
+              "Delete(id)"
+            ]
+          },
+          "group": "DAL",
+          "description": "Classe statique utilitaire",
+          "tags": [
+            "static"
+          ]
+        },
+        {
+          "id": "cs:LotDAL",
+          "type": "dal",
+          "label": "LotDAL",
+          "filePath": "app-csharp/CharlesNadejda/CharlesNadejda/DAL/LotDAL.cs",
+          "metadata": {
+            "methods": [
+              "GetAll(0)",
+              "GetById(id)",
+              "Insert(lot)",
+              "Update(lot)",
+              "Delete(id)"
+            ]
+          },
+          "group": "DAL",
+          "description": "Classe statique utilitaire",
+          "tags": [
+            "static"
+          ]
+        },
+        {
+          "id": "cs:StockDAL",
+          "type": "dal",
+          "label": "StockDAL",
+          "filePath": "app-csharp/CharlesNadejda/CharlesNadejda/DAL/StockDAL.cs",
+          "metadata": {
+            "methods": [
+              "GetAll(false)",
+              "GetById(id)",
+              "GetByActivite(idActivite)",
+              "NomExiste(nom, 0)",
+              "Insert(s)",
+              "Update(s)",
+              "Delete(id)",
+              "LierActivite(idActivite, idStock)",
+              "DelierActivite(idActivite, idStock)",
+              "GetActivitesLiees(idStock)"
+            ]
+          },
+          "group": "DAL",
+          "description": "Classe statique utilitaire",
+          "tags": [
+            "static",
+            "stock"
+          ]
+        },
+        {
+          "id": "cs:UtilisateurDAL",
+          "type": "dal",
+          "label": "UtilisateurDAL",
+          "filePath": "app-csharp/CharlesNadejda/CharlesNadejda/DAL/UtilisateurDAL.cs",
+          "metadata": {
+            "methods": [
+              "Authenticate(email, motDePasse)"
+            ]
+          },
+          "group": "DAL",
+          "description": "Classe statique utilitaire",
+          "tags": [
+            "static"
+          ]
+        },
+        {
+          "id": "cs:VueStockGlobalDAL",
+          "type": "dal",
+          "label": "VueStockGlobalDAL",
+          "filePath": "app-csharp/CharlesNadejda/CharlesNadejda/DAL/VueStockGlobalDAL.cs",
+          "metadata": {
+            "methods": [
+              "GetAll()",
+              "GetByActivite(idActivite)",
+              "GetByContexte(idContexte)",
+              "GetByNiveau(idNiveau)"
+            ]
+          },
+          "group": "DAL",
+          "description": "Classe statique utilitaire",
+          "tags": [
+            "static",
+            "stock"
+          ]
+        },
+        {
+          "id": "cs:AppColors",
+          "type": "custom",
+          "label": "AppColors",
+          "filePath": "app-csharp/CharlesNadejda/CharlesNadejda/Forms/AppColors.cs",
+          "metadata": {},
+          "group": "Utils",
+          "description": "Classe statique utilitaire",
+          "tags": [
+            "static"
+          ]
+        },
+        {
+          "id": "cs:FormHelper",
+          "type": "custom",
+          "label": "FormHelper",
+          "filePath": "app-csharp/CharlesNadejda/CharlesNadejda/Forms/FormHelper.cs",
+          "metadata": {},
+          "group": "Utils",
+          "description": "Classe statique utilitaire",
+          "tags": [
+            "static"
+          ]
+        },
+        {
+          "id": "cs:FrmAchatEdit",
+          "type": "form",
+          "label": "FrmAchatEdit",
+          "filePath": "app-csharp/CharlesNadejda/CharlesNadejda/Forms/FrmAchatEdit.cs",
+          "metadata": {
+            "methods": [
+              "Valider()",
+              "Sauvegarder()"
+            ],
+            "inherits": [
+              "FrmEditBase"
+            ]
+          },
+          "group": "Forms"
+        },
+        {
+          "id": "cs:FrmAchats",
+          "type": "form",
+          "label": "FrmAchats",
+          "filePath": "app-csharp/CharlesNadejda/CharlesNadejda/Forms/FrmAchats.cs",
+          "metadata": {
+            "methods": [
+              "ChargerDonnees()",
+              "ConfigurerColonnes()",
+              "OuvrirFormulaire(element)",
+              "Supprimer(element)",
+              "NomElement(element)"
+            ],
+            "inherits": [
+              "FrmListeBase<Lot>"
+            ]
+          },
+          "group": "Forms"
+        },
+        {
+          "id": "cs:FrmActiviteEdit",
+          "type": "form",
+          "label": "FrmActiviteEdit",
+          "filePath": "app-csharp/CharlesNadejda/CharlesNadejda/Forms/FrmActiviteEdit.cs",
+          "metadata": {
+            "methods": [
+              "Valider()",
+              "Sauvegarder()"
+            ],
+            "inherits": [
+              "FrmEditBase"
+            ]
+          },
+          "group": "Forms"
+        },
+        {
+          "id": "cs:FrmActivites",
+          "type": "form",
+          "label": "FrmActivites",
+          "filePath": "app-csharp/CharlesNadejda/CharlesNadejda/Forms/FrmActivites.cs",
+          "metadata": {
+            "inherits": [
+              "Form"
+            ]
+          },
+          "group": "Forms"
+        },
+        {
+          "id": "cs:FrmActiviteStocks",
+          "type": "form",
+          "label": "FrmActiviteStocks",
+          "filePath": "app-csharp/CharlesNadejda/CharlesNadejda/Forms/FrmActiviteStocks.cs",
+          "metadata": {
+            "inherits": [
+              "Form"
+            ]
+          },
+          "group": "Forms",
+          "tags": [
+            "stock"
+          ]
+        },
+        {
+          "id": "cs:FrmBomContexteEdit",
+          "type": "form",
+          "label": "FrmBomContexteEdit",
+          "filePath": "app-csharp/CharlesNadejda/CharlesNadejda/Forms/FrmBomContexteEdit.cs",
+          "metadata": {
+            "methods": [
+              "Valider()",
+              "Sauvegarder()"
+            ],
+            "inherits": [
+              "FrmEditBase"
+            ]
+          },
+          "group": "Forms",
+          "tags": [
+            "bom"
+          ]
+        },
+        {
+          "id": "cs:FrmBomContextes",
+          "type": "form",
+          "label": "FrmBomContextes",
+          "filePath": "app-csharp/CharlesNadejda/CharlesNadejda/Forms/FrmBomContextes.cs",
+          "metadata": {
+            "methods": [
+              "ChargerDonnees()",
+              "ConfigurerColonnes()",
+              "OuvrirFormulaire(element)",
+              "Supprimer(element)",
+              "NomElement(element)",
+              "OnLoad(e)"
+            ],
+            "inherits": [
+              "FrmListeBase<BomContexte>"
+            ]
+          },
+          "group": "Forms",
+          "tags": [
+            "bom"
+          ]
+        },
+        {
+          "id": "cs:FrmBomFicheEdit",
+          "type": "form",
+          "label": "FrmBomFicheEdit",
+          "filePath": "app-csharp/CharlesNadejda/CharlesNadejda/Forms/FrmBomFicheEdit.cs",
+          "metadata": {
+            "methods": [
+              "Valider()",
+              "Sauvegarder()",
+              "ToString()"
+            ],
+            "properties": [
+              "Id",
+              "Nom",
+              "Unite",
+              "TypeInput"
+            ],
+            "inherits": [
+              "FrmEditBase"
+            ]
+          },
+          "group": "Forms",
+          "tags": [
+            "bom"
+          ]
+        },
+        {
+          "id": "cs:FrmBomFiches",
+          "type": "form",
+          "label": "FrmBomFiches",
+          "filePath": "app-csharp/CharlesNadejda/CharlesNadejda/Forms/FrmBomFiches.cs",
+          "metadata": {
+            "methods": [
+              "ChargerDonnees()",
+              "ConfigurerColonnes()",
+              "OuvrirFormulaire(element)",
+              "Supprimer(element)",
+              "NomElement(element)",
+              "AppliquerStylesLignes()",
+              "OnLoad(e)"
+            ],
+            "inherits": [
+              "FrmListeBase<BomFiche>"
+            ]
+          },
+          "group": "Forms",
+          "tags": [
+            "bom"
+          ]
+        },
+        {
+          "id": "cs:FrmBomNiveauEdit",
+          "type": "form",
+          "label": "FrmBomNiveauEdit",
+          "filePath": "app-csharp/CharlesNadejda/CharlesNadejda/Forms/FrmBomNiveauEdit.cs",
+          "metadata": {
+            "methods": [
+              "Valider()",
+              "Sauvegarder()"
+            ],
+            "inherits": [
+              "FrmEditBase"
+            ]
+          },
+          "group": "Forms",
+          "tags": [
+            "bom"
+          ]
+        },
+        {
+          "id": "cs:FrmBomNiveaux",
+          "type": "form",
+          "label": "FrmBomNiveaux",
+          "filePath": "app-csharp/CharlesNadejda/CharlesNadejda/Forms/FrmBomNiveaux.cs",
+          "metadata": {
+            "methods": [
+              "ChargerDonnees()",
+              "ConfigurerColonnes()",
+              "OuvrirFormulaire(element)",
+              "Supprimer(element)",
+              "NomElement(element)"
+            ],
+            "inherits": [
+              "FrmListeBase<BomNiveau>"
+            ]
+          },
+          "group": "Forms",
+          "tags": [
+            "bom"
+          ]
+        },
+        {
+          "id": "cs:FrmBomProductionSimulation",
+          "type": "form",
+          "label": "FrmBomProductionSimulation",
+          "filePath": "app-csharp/CharlesNadejda/CharlesNadejda/Forms/FrmBomProductionSimulation.cs",
+          "metadata": {
+            "inherits": [
+              "Form"
+            ]
+          },
+          "group": "Forms",
+          "tags": [
+            "partial",
+            "bom"
+          ]
+        },
+        {
+          "id": "cs:FrmEditBase",
+          "type": "form",
+          "label": "FrmEditBase",
+          "filePath": "app-csharp/CharlesNadejda/CharlesNadejda/Forms/FrmEditBase.cs",
+          "metadata": {
+            "methods": [
+              "PositionnerBoutons(y)",
+              "Valider()",
+              "Sauvegarder()"
+            ],
+            "inherits": [
+              "Form"
+            ]
+          },
+          "group": "Forms",
+          "description": "Classe abstraite",
+          "tags": [
+            "abstract"
+          ]
+        },
+        {
+          "id": "cs:FrmFournisseurEdit",
+          "type": "form",
+          "label": "FrmFournisseurEdit",
+          "filePath": "app-csharp/CharlesNadejda/CharlesNadejda/Forms/FrmFournisseurEdit.cs",
+          "metadata": {
+            "methods": [
+              "Valider()",
+              "Sauvegarder()"
+            ],
+            "inherits": [
+              "FrmEditBase"
+            ]
+          },
+          "group": "Forms"
+        },
+        {
+          "id": "cs:FrmFournisseurs",
+          "type": "form",
+          "label": "FrmFournisseurs",
+          "filePath": "app-csharp/CharlesNadejda/CharlesNadejda/Forms/FrmFournisseurs.cs",
+          "metadata": {
+            "inherits": [
+              "Form"
+            ]
+          },
+          "group": "Forms",
+          "tags": [
+            "partial"
+          ]
+        },
+        {
+          "id": "cs:FrmIngredientEdit",
+          "type": "form",
+          "label": "FrmIngredientEdit",
+          "filePath": "app-csharp/CharlesNadejda/CharlesNadejda/Forms/FrmIngredientEdit.cs",
+          "metadata": {
+            "methods": [
+              "Valider()",
+              "Sauvegarder()"
+            ],
+            "inherits": [
+              "FrmEditBase"
+            ]
+          },
+          "group": "Forms"
+        },
+        {
+          "id": "cs:FrmIngredients",
+          "type": "form",
+          "label": "FrmIngredients",
+          "filePath": "app-csharp/CharlesNadejda/CharlesNadejda/Forms/FrmIngredients.cs",
+          "metadata": {
+            "methods": [
+              "ChargerDonnees()",
+              "ConfigurerColonnes()",
+              "OuvrirFormulaire(element)",
+              "Supprimer(element)",
+              "NomElement(element)",
+              "AppliquerStylesLignes()",
+              "OnLoad(e)"
+            ],
+            "inherits": [
+              "FrmListeBase<Ingredient>"
+            ]
+          },
+          "group": "Forms"
+        },
+        {
+          "id": "cs:FrmListeBase",
+          "type": "form",
+          "label": "FrmListeBase",
+          "filePath": "app-csharp/CharlesNadejda/CharlesNadejda/Forms/FrmListeBase.cs",
+          "metadata": {
+            "methods": [
+              "OnLoad(e)",
+              "Charger()",
+              "Selectionne()",
+              "ConfigCol(nom, header, largeur, minimum)",
+              "CacherColonnes(noms)",
+              "ChargerDonnees()",
+              "ConfigurerColonnes()",
+              "OuvrirFormulaire(element)",
+              "Supprimer(element)",
+              "NomElement(element)",
+              "AppliquerStylesLignes()"
+            ],
+            "inherits": [
+              "Form"
+            ]
+          },
+          "group": "Forms",
+          "description": "Classe abstraite",
+          "tags": [
+            "abstract"
+          ]
+        },
+        {
+          "id": "cs:FrmLogin",
+          "type": "form",
+          "label": "FrmLogin",
+          "filePath": "app-csharp/CharlesNadejda/CharlesNadejda/Forms/FrmLogin.cs",
+          "metadata": {
+            "properties": [
+              "Utilisateur"
+            ],
+            "inherits": [
+              "Form"
+            ]
+          },
+          "group": "Forms",
+          "tags": [
+            "partial"
+          ]
+        },
+        {
+          "id": "cs:FrmPrincipal",
+          "type": "form",
+          "label": "FrmPrincipal",
+          "filePath": "app-csharp/CharlesNadejda/CharlesNadejda/Forms/FrmPrincipal.cs",
+          "metadata": {
+            "methods": [
+              "OnFormClosed(e)",
+              "OnRenderMenuItemBackground(e)",
+              "OnRenderItemText(e)"
+            ],
+            "inherits": [
+              "Form"
+            ]
+          },
+          "group": "Forms",
+          "tags": [
+            "partial"
+          ]
+        },
+        {
+          "id": "cs:FrmStockEdit",
+          "type": "form",
+          "label": "FrmStockEdit",
+          "filePath": "app-csharp/CharlesNadejda/CharlesNadejda/Forms/FrmStockEdit.cs",
+          "metadata": {
+            "methods": [
+              "Valider()",
+              "Sauvegarder()"
+            ],
+            "inherits": [
+              "FrmEditBase"
+            ]
+          },
+          "group": "Forms",
+          "tags": [
+            "stock"
+          ]
+        },
+        {
+          "id": "cs:FrmStocks",
+          "type": "form",
+          "label": "FrmStocks",
+          "filePath": "app-csharp/CharlesNadejda/CharlesNadejda/Forms/FrmStocks.cs",
+          "metadata": {
+            "inherits": [
+              "Form"
+            ]
+          },
+          "group": "Forms",
+          "tags": [
+            "stock"
+          ]
+        },
+        {
+          "id": "cs:FrmVueStock",
+          "type": "form",
+          "label": "FrmVueStock",
+          "filePath": "app-csharp/CharlesNadejda/CharlesNadejda/Forms/FrmVueStock.cs",
+          "metadata": {
+            "inherits": [
+              "Form"
+            ]
+          },
+          "group": "Forms",
+          "tags": [
+            "stock"
+          ]
+        },
+        {
+          "id": "cs:SidebarPanel",
+          "type": "form",
+          "label": "SidebarPanel",
+          "filePath": "app-csharp/CharlesNadejda/CharlesNadejda/Forms/Shell/SidebarPanel.cs",
+          "metadata": {
+            "methods": [
+              "SetActivities(activities)",
+              "SetSelectedActivity(act)",
+              "SetActiveItem(id)",
+              "SetBadge(id, text)"
+            ],
+            "inherits": [
+              "Panel"
+            ]
+          },
+          "group": "Shell",
+          "tags": [
+            "shell-erp"
+          ]
+        },
+        {
+          "id": "cs:AppStatusBar",
+          "type": "form",
+          "label": "AppStatusBar",
+          "filePath": "app-csharp/CharlesNadejda/CharlesNadejda/Forms/Shell/StatusBarPanel.cs",
+          "metadata": {
+            "methods": [
+              "UpdateState(state)"
+            ],
+            "inherits": [
+              "Panel"
+            ]
+          },
+          "group": "Shell",
+          "tags": [
+            "shell-erp"
+          ]
+        },
+        {
+          "id": "cs:TitleBarPanel",
+          "type": "form",
+          "label": "TitleBarPanel",
+          "filePath": "app-csharp/CharlesNadejda/CharlesNadejda/Forms/Shell/TitleBarPanel.cs",
+          "metadata": {
+            "methods": [
+              "SetTitle(title)",
+              "OnPaint(e)"
+            ],
+            "inherits": [
+              "Panel"
+            ]
+          },
+          "group": "Shell",
+          "tags": [
+            "shell-erp"
+          ]
+        },
+        {
+          "id": "cs:StringExtensions",
+          "type": "custom",
+          "label": "StringExtensions",
+          "filePath": "app-csharp/CharlesNadejda/CharlesNadejda/Forms/StringExtensions.cs",
+          "metadata": {
+            "methods": [
+              "NullIfEmpty(s)"
+            ]
+          },
+          "group": "Utils",
+          "description": "Classe statique utilitaire",
+          "tags": [
+            "static"
+          ]
+        },
+        {
+          "id": "cs:UnitConvertisseur",
+          "type": "custom",
+          "label": "UnitConvertisseur",
+          "filePath": "app-csharp/CharlesNadejda/CharlesNadejda/Forms/UnitConvertisseur.cs",
+          "metadata": {
+            "methods": [
+              "UnitesCompatibles(unite)",
+              "SontCompatibles(u1, u2)",
+              "UniteBase(unite)",
+              "VersUniteBase(valeur, unite)",
+              "FormatQte(valeur, unite)",
+              "FormatPrix(prix)",
+              "Convertir(valeur, uniteSource, uniteCible)"
+            ]
+          },
+          "group": "Utils",
+          "description": "Classe statique utilitaire",
+          "tags": [
+            "static"
+          ]
+        },
+        {
+          "id": "cs:Activite",
+          "type": "model",
+          "label": "Activite",
+          "filePath": "app-csharp/CharlesNadejda/CharlesNadejda/Models/Activite.cs",
+          "metadata": {
+            "methods": [
+              "ToString()"
+            ],
+            "properties": [
+              "Activite",
+              "Nom",
+              "Description",
+              "Actif",
+              "DateCreation"
+            ]
+          },
+          "group": "Models"
+        },
+        {
+          "id": "cs:BomContexte",
+          "type": "model",
+          "label": "BomContexte",
+          "filePath": "app-csharp/CharlesNadejda/CharlesNadejda/Models/BomContexte.cs",
+          "metadata": {
+            "methods": [
+              "ToString()"
+            ],
+            "properties": [
+              "BomContexte",
+              "Nom",
+              "Description",
+              "IdActivite",
+              "Actif",
+              "DateCreation",
+              "ActiviteNom",
+              "Niveaux"
+            ]
+          },
+          "group": "Models",
+          "tags": [
+            "bom"
+          ]
+        },
+        {
+          "id": "cs:BomFiche",
+          "type": "model",
+          "label": "BomFiche",
+          "filePath": "app-csharp/CharlesNadejda/CharlesNadejda/Models/BomFiche.cs",
+          "metadata": {
+            "methods": [
+              "ToString()"
+            ],
+            "properties": [
+              "BomFiche",
+              "IdNiveau",
+              "Nom",
+              "Description",
+              "UniteOutput",
+              "QuantiteOutput",
+              "TempsPreparation",
+              "Actif",
+              "DateCreation",
+              "NomNiveau",
+              "OrdreNiveau",
+              "IdContexte",
+              "NomContexte",
+              "IdActivite",
+              "ActiviteNom",
+              "Lignes"
+            ]
+          },
+          "group": "Models",
+          "tags": [
+            "bom"
+          ]
+        },
+        {
+          "id": "cs:BomFicheLigne",
+          "type": "model",
+          "label": "BomFicheLigne",
+          "filePath": "app-csharp/CharlesNadejda/CharlesNadejda/Models/BomFicheLigne.cs",
+          "metadata": {
+            "methods": [
+              "ToString()"
+            ],
+            "properties": [
+              "BomFicheLigne",
+              "IdFiche",
+              "TypeInput",
+              "IdInputIngredient",
+              "IdInputFiche",
+              "Quantite",
+              "UniteMesure",
+              "NomInput",
+              "UniteMesureInput",
+              "PrixUnitaireRef"
+            ]
+          },
+          "group": "Models",
+          "tags": [
+            "bom"
+          ]
+        },
+        {
+          "id": "cs:BomManque",
+          "type": "model",
+          "label": "BomManque",
+          "filePath": "app-csharp/CharlesNadejda/CharlesNadejda/Models/BomManque.cs",
+          "metadata": {
+            "methods": [
+              "ToString()"
+            ],
+            "properties": [
+              "BomManque",
+              "Unite",
+              "QuantiteNecessaire",
+              "QuantiteDisponible"
+            ]
+          },
+          "group": "Models",
+          "tags": [
+            "bom"
+          ]
+        },
+        {
+          "id": "cs:BomNiveau",
+          "type": "model",
+          "label": "BomNiveau",
+          "filePath": "app-csharp/CharlesNadejda/CharlesNadejda/Models/BomNiveau.cs",
+          "metadata": {
+            "methods": [
+              "ToString()"
+            ],
+            "properties": [
+              "BomNiveau",
+              "IdContexte",
+              "Ordre",
+              "Nom",
+              "Description",
+              "DateCreation",
+              "NomContexte",
+              "IdActivite",
+              "ActiviteNom"
+            ]
+          },
+          "group": "Models",
+          "tags": [
+            "bom"
+          ]
+        },
+        {
+          "id": "cs:BomProduction",
+          "type": "model",
+          "label": "BomProduction",
+          "filePath": "app-csharp/CharlesNadejda/CharlesNadejda/Models/BomProduction.cs",
+          "metadata": {
+            "methods": [
+              "ToString()"
+            ],
+            "properties": [
+              "BomProduction",
+              "IdNiveau",
+              "IdFiche",
+              "QuantiteProduite",
+              "CoutIngredients",
+              "CoutUnitaire",
+              "DateProduction",
+              "Notes",
+              "NomFiche",
+              "NomNiveau",
+              "OrdreNiveau",
+              "NomContexte",
+              "Lignes"
+            ]
+          },
+          "group": "Models",
+          "tags": [
+            "bom"
+          ]
+        },
+        {
+          "id": "cs:BomProductionLigne",
+          "type": "model",
+          "label": "BomProductionLigne",
+          "filePath": "app-csharp/CharlesNadejda/CharlesNadejda/Models/BomProductionLigne.cs",
+          "metadata": {
+            "methods": [
+              "ToString()"
+            ],
+            "properties": [
+              "BomProductionLigne",
+              "IdProduction",
+              "TypeSource",
+              "IdLotIngredient",
+              "IdBomStock",
+              "QuantiteConsommee",
+              "CoutUnitaireMoment",
+              "NomSource",
+              "UniteSource"
+            ]
+          },
+          "group": "Models",
+          "tags": [
+            "bom"
+          ]
+        },
+        {
+          "id": "cs:BomReservation",
+          "type": "model",
+          "label": "BomReservation",
+          "filePath": "app-csharp/CharlesNadejda/CharlesNadejda/Models/BomReservation.cs",
+          "metadata": {
+            "methods": [
+              "ToString()"
+            ],
+            "properties": [
+              "BomReservation",
+              "IdLot",
+              "IdContexte",
+              "QuantiteReservee",
+              "DateReservation",
+              "Notes",
+              "Actif",
+              "NomIngredient",
+              "UniteMesure",
+              "NomContexte"
+            ]
+          },
+          "group": "Models",
+          "tags": [
+            "bom"
+          ]
+        },
+        {
+          "id": "cs:BomStock",
+          "type": "model",
+          "label": "BomStock",
+          "filePath": "app-csharp/CharlesNadejda/CharlesNadejda/Models/BomStock.cs",
+          "metadata": {
+            "methods": [
+              "ToString()"
+            ],
+            "properties": [
+              "BomStock",
+              "IdNiveau",
+              "IdFiche",
+              "IdProduction",
+              "QuantiteDisponible",
+              "CoutUnitaire",
+              "DateProduction",
+              "DateDlc",
+              "DateCreation",
+              "IdContexte",
+              "IdActivite",
+              "NomFiche",
+              "UniteOutput",
+              "NomNiveau",
+              "OrdreNiveau",
+              "NomContexte",
+              "NomActivite"
+            ]
+          },
+          "group": "Models",
+          "tags": [
+            "bom",
+            "stock"
+          ]
+        },
+        {
+          "id": "cs:Fournisseur",
+          "type": "model",
+          "label": "Fournisseur",
+          "filePath": "app-csharp/CharlesNadejda/CharlesNadejda/Models/Fournisseur.cs",
+          "metadata": {
+            "methods": [
+              "ToString()"
+            ],
+            "properties": [
+              "Fournisseur",
+              "Nom",
+              "Contact",
+              "Email",
+              "Telephone",
+              "Adresse",
+              "Notes"
+            ]
+          },
+          "group": "Models"
+        },
+        {
+          "id": "cs:Ingredient",
+          "type": "model",
+          "label": "Ingredient",
+          "filePath": "app-csharp/CharlesNadejda/CharlesNadejda/Models/Ingredient.cs",
+          "metadata": {
+            "methods": [
+              "ToString()"
+            ],
+            "properties": [
+              "Ingredient",
+              "Nom",
+              "Marque",
+              "Description",
+              "UniteMesure",
+              "TypePhysique",
+              "Densite",
+              "ConditionnementLabel",
+              "QteParConditionnement",
+              "PrixAchatReference",
+              "SeuilAlerteStock",
+              "IdFournisseurDefaut",
+              "NomFournisseur",
+              "IdStock",
+              "StockNom",
+              "Actif",
+              "StockActuel"
+            ]
+          },
+          "group": "Models"
+        },
+        {
+          "id": "cs:Lot",
+          "type": "model",
+          "label": "Lot",
+          "filePath": "app-csharp/CharlesNadejda/CharlesNadejda/Models/Lot.cs",
+          "metadata": {
+            "properties": [
+              "Lot",
+              "IdFicheIngredient",
+              "NomIngredient",
+              "UniteMesure",
+              "ConditionnementLabel",
+              "QteParConditionnement",
+              "NbConditionnements",
+              "NumeroLot",
+              "IdFournisseur",
+              "NomFournisseur",
+              "DateAchat",
+              "DatePeremption",
+              "QuantiteInitiale",
+              "QuantiteDisponible",
+              "PrixUnitaire",
+              "PrixAchatReel",
+              "TvaPct",
+              "ReferenceFacture",
+              "Notes"
+            ]
+          },
+          "group": "Models"
+        },
+        {
+          "id": "cs:RapportCout",
+          "type": "model",
+          "label": "RapportCout",
+          "filePath": "app-csharp/CharlesNadejda/CharlesNadejda/Models/RapportCout.cs",
+          "metadata": {
+            "properties": [
+              "RapportCout",
+              "NbBatches",
+              "QuantiteOutput",
+              "UniteOutput",
+              "CoutTotal",
+              "CoutUnitaire",
+              "Lignes",
+              "LigneCout",
+              "TypeInput",
+              "Quantite",
+              "Unite",
+              "PrixUnit",
+              "SousTotal",
+              "DetailFiche"
+            ]
+          },
+          "group": "Models"
+        },
+        {
+          "id": "cs:Stock",
+          "type": "model",
+          "label": "Stock",
+          "filePath": "app-csharp/CharlesNadejda/CharlesNadejda/Models/Stock.cs",
+          "metadata": {
+            "methods": [
+              "ToString()"
+            ],
+            "properties": [
+              "Stock",
+              "Nom",
+              "Description",
+              "Actif",
+              "DateCreation"
+            ]
+          },
+          "group": "Models",
+          "tags": [
+            "stock"
+          ]
+        },
+        {
+          "id": "cs:Utilisateur",
+          "type": "model",
+          "label": "Utilisateur",
+          "filePath": "app-csharp/CharlesNadejda/CharlesNadejda/Models/Utilisateur.cs",
+          "metadata": {
+            "methods": [
+              "ToString()"
+            ],
+            "properties": [
+              "Utilisateur",
+              "Nom",
+              "Prenom",
+              "Email",
+              "Role"
+            ]
+          },
+          "group": "Models"
+        },
+        {
+          "id": "cs:VueStockGlobal",
+          "type": "model",
+          "label": "VueStockGlobal",
+          "filePath": "app-csharp/CharlesNadejda/CharlesNadejda/Models/VueStockGlobal.cs",
+          "metadata": {
+            "properties": [
+              "VueStockGlobal",
+              "IdEntree",
+              "Nom",
+              "Unite",
+              "QuantiteTotale",
+              "QuantiteReservee",
+              "QuantiteDispoReelle",
+              "CoutUnitaire",
+              "PrixConditionnement",
+              "QteParConditionnement",
+              "ConditionnementLabel",
+              "DateDlc",
+              "IdStock",
+              "StockNom",
+              "IdActivite",
+              "NomActivite",
+              "IdContexte",
+              "IdNiveau",
+              "IdFicheBom"
+            ]
+          },
+          "group": "Models",
+          "tags": [
+            "stock"
+          ]
+        },
+        {
+          "id": "cs:AppState",
+          "type": "custom",
+          "label": "AppState",
+          "filePath": "app-csharp/CharlesNadejda/CharlesNadejda/Navigation/AppState.cs",
+          "metadata": {
+            "methods": [
+              "SetActivite(a)",
+              "SetContexte(c)",
+              "SetNiveau(n)",
+              "SetRessource(type)",
+              "SetFiltreAlertes(alertesSeulement)"
+            ],
+            "properties": [
+              "AppState",
+              "ActiveContexte",
+              "ActiveNiveau",
+              "ActiveScreen",
+              "RessourceActive",
+              "DgvFichesRowIndex",
+              "DgvRessourceRowIndex",
+              "FiltreAlertesSeulement"
+            ]
+          },
+          "group": "Navigation"
+        },
+        {
+          "id": "cs:NavigationParams",
+          "type": "custom",
+          "label": "NavigationParams",
+          "filePath": "app-csharp/CharlesNadejda/CharlesNadejda/Navigation/NavigationParams.cs",
+          "metadata": {
+            "properties": [
+              "NavigationParams",
+              "Entity",
+              "IsEdit",
+              "RessourceType",
+              "FiltreAlertesSeulement"
+            ]
+          },
+          "group": "Navigation"
+        },
+        {
+          "id": "cs:NavItemId",
+          "type": "custom",
+          "label": "NavItemId",
+          "filePath": "app-csharp/CharlesNadejda/CharlesNadejda/Navigation/NavItemId.cs",
+          "metadata": {
+            "properties": [
+              "Hub",
+              "Production",
+              "Planning",
+              "DevisPatisserie",
+              "StocksLiaisons",
+              "VueStockGlobal",
+              "Mouvements",
+              "AchatsLots",
+              "Fournisseurs",
+              "FichesBom",
+              "Ingredients",
+              "NiveauxContextes",
+              "Parametres"
+            ]
+          },
+          "group": "Navigation",
+          "description": "Enum — 13 valeurs",
+          "tags": [
+            "enum"
+          ]
+        },
+        {
+          "id": "cs:RessourceType",
+          "type": "custom",
+          "label": "RessourceType",
+          "filePath": "app-csharp/CharlesNadejda/CharlesNadejda/Navigation/RessourceType.cs",
+          "metadata": {
+            "properties": [
+              "Stocks",
+              "Ingredients",
+              "Fournisseurs",
+              "Achats",
+              "VueStock"
+            ]
+          },
+          "group": "Navigation",
+          "description": "Enum — 5 valeurs",
+          "tags": [
+            "enum"
+          ]
+        },
+        {
+          "id": "cs:ScreenId",
+          "type": "custom",
+          "label": "ScreenId",
+          "filePath": "app-csharp/CharlesNadejda/CharlesNadejda/Navigation/ScreenId.cs",
+          "metadata": {
+            "properties": [
+              "Onboarding",
+              "Hub",
+              "ContexteNiveaux",
+              "Ressources",
+              "Production",
+              "Planning",
+              "DevisPatisserie",
+              "Mouvements",
+              "Parametres"
+            ]
+          },
+          "group": "Navigation",
+          "description": "Enum — 9 valeurs",
+          "tags": [
+            "enum"
+          ]
+        },
+        {
+          "id": "cs:ScreenRouter",
+          "type": "custom",
+          "label": "ScreenRouter",
+          "filePath": "app-csharp/CharlesNadejda/CharlesNadejda/Navigation/ScreenRouter.cs",
+          "metadata": {
+            "methods": [
+              "Invalidate()",
+              "Navigate(screen, null)"
+            ],
+            "properties": [
+              "ScreenRouter",
+              "OnHub",
+              "OnContexteNiveaux",
+              "OnRessources",
+              "OnProduction",
+              "OnPlaceholder"
+            ]
+          },
+          "group": "Navigation"
+        },
+        {
+          "id": "cs:SimulationResultat",
+          "type": "custom",
+          "label": "SimulationResultat",
+          "filePath": "app-csharp/CharlesNadejda/CharlesNadejda/Services/SimulationResultat.cs",
+          "metadata": {
+            "properties": [
+              "SimulationResultat",
+              "Unite",
+              "QuantiteNecessaire",
+              "QuantiteDisponible",
+              "Manque"
+            ]
+          },
+          "group": "Services"
+        },
+        {
+          "id": "cs:SimulationService",
+          "type": "custom",
+          "label": "SimulationService",
+          "filePath": "app-csharp/CharlesNadejda/CharlesNadejda/Services/SimulationService.cs",
+          "metadata": {},
+          "group": "Services",
+          "description": "Classe statique utilitaire",
+          "tags": [
+            "static"
+          ]
+        }
+      ],
+      "edges": [
+        {
+          "id": "edge:ActiviteDAL:DbHelper:dependency",
+          "source": "cs:ActiviteDAL",
+          "target": "cs:DbHelper",
+          "label": "utilise",
+          "type": "dependency"
+        },
+        {
+          "id": "edge:ActiviteDAL:Activite:data",
+          "source": "cs:ActiviteDAL",
+          "target": "cs:Activite",
+          "label": "manipule",
+          "type": "data"
+        },
+        {
+          "id": "edge:BomContexteDAL:DbHelper:dependency",
+          "source": "cs:BomContexteDAL",
+          "target": "cs:DbHelper",
+          "label": "utilise",
+          "type": "dependency"
+        },
+        {
+          "id": "edge:BomContexteDAL:BomContexte:data",
+          "source": "cs:BomContexteDAL",
+          "target": "cs:BomContexte",
+          "label": "manipule",
+          "type": "data"
+        },
+        {
+          "id": "edge:BomContexteDAL:Activite:data",
+          "source": "cs:BomContexteDAL",
+          "target": "cs:Activite",
+          "label": "manipule",
+          "type": "data"
+        },
+        {
+          "id": "edge:BomCoutDAL:BomFicheDAL:dependency",
+          "source": "cs:BomCoutDAL",
+          "target": "cs:BomFicheDAL",
+          "label": "utilise",
+          "type": "dependency"
+        },
+        {
+          "id": "edge:BomCoutDAL:UnitConvertisseur:dependency",
+          "source": "cs:BomCoutDAL",
+          "target": "cs:UnitConvertisseur",
+          "label": "utilise",
+          "type": "dependency"
+        },
+        {
+          "id": "edge:BomCoutDAL:DbHelper:dependency",
+          "source": "cs:BomCoutDAL",
+          "target": "cs:DbHelper",
+          "label": "utilise",
+          "type": "dependency"
+        },
+        {
+          "id": "edge:BomCoutDAL:RapportCout:data",
+          "source": "cs:BomCoutDAL",
+          "target": "cs:RapportCout",
+          "label": "manipule",
+          "type": "data"
+        },
+        {
+          "id": "edge:BomCoutDAL:BomFiche:data",
+          "source": "cs:BomCoutDAL",
+          "target": "cs:BomFiche",
+          "label": "manipule",
+          "type": "data"
+        },
+        {
+          "id": "edge:BomCoutDAL:BomFicheLigne:data",
+          "source": "cs:BomCoutDAL",
+          "target": "cs:BomFicheLigne",
+          "label": "manipule",
+          "type": "data"
+        },
+        {
+          "id": "edge:BomCoutDAL:Stock:data",
+          "source": "cs:BomCoutDAL",
+          "target": "cs:Stock",
+          "label": "manipule",
+          "type": "data"
+        },
+        {
+          "id": "edge:BomCoutDAL:Ingredient:data",
+          "source": "cs:BomCoutDAL",
+          "target": "cs:Ingredient",
+          "label": "manipule",
+          "type": "data"
+        },
+        {
+          "id": "edge:BomFicheDAL:BomFicheLigneDAL:dependency",
+          "source": "cs:BomFicheDAL",
+          "target": "cs:BomFicheLigneDAL",
+          "label": "utilise",
+          "type": "dependency"
+        },
+        {
+          "id": "edge:BomFicheDAL:DbHelper:dependency",
+          "source": "cs:BomFicheDAL",
+          "target": "cs:DbHelper",
+          "label": "utilise",
+          "type": "dependency"
+        },
+        {
+          "id": "edge:BomFicheDAL:BomFiche:data",
+          "source": "cs:BomFicheDAL",
+          "target": "cs:BomFiche",
+          "label": "manipule",
+          "type": "data"
+        },
+        {
+          "id": "edge:BomFicheDAL:BomFicheLigne:data",
+          "source": "cs:BomFicheDAL",
+          "target": "cs:BomFicheLigne",
+          "label": "manipule",
+          "type": "data"
+        },
+        {
+          "id": "edge:BomFicheLigneDAL:DbHelper:dependency",
+          "source": "cs:BomFicheLigneDAL",
+          "target": "cs:DbHelper",
+          "label": "utilise",
+          "type": "dependency"
+        },
+        {
+          "id": "edge:BomFicheLigneDAL:BomFicheLigne:data",
+          "source": "cs:BomFicheLigneDAL",
+          "target": "cs:BomFicheLigne",
+          "label": "manipule",
+          "type": "data"
+        },
+        {
+          "id": "edge:BomNiveauDAL:DbHelper:dependency",
+          "source": "cs:BomNiveauDAL",
+          "target": "cs:DbHelper",
+          "label": "utilise",
+          "type": "dependency"
+        },
+        {
+          "id": "edge:BomNiveauDAL:BomNiveau:data",
+          "source": "cs:BomNiveauDAL",
+          "target": "cs:BomNiveau",
+          "label": "manipule",
+          "type": "data"
+        },
+        {
+          "id": "edge:BomProductionDAL:BomNiveauDAL:dependency",
+          "source": "cs:BomProductionDAL",
+          "target": "cs:BomNiveauDAL",
+          "label": "utilise",
+          "type": "dependency"
+        },
+        {
+          "id": "edge:BomProductionDAL:BomFicheDAL:dependency",
+          "source": "cs:BomProductionDAL",
+          "target": "cs:BomFicheDAL",
+          "label": "utilise",
+          "type": "dependency"
+        },
+        {
+          "id": "edge:BomProductionDAL:BomStockDAL:dependency",
+          "source": "cs:BomProductionDAL",
+          "target": "cs:BomStockDAL",
+          "label": "utilise",
+          "type": "dependency"
+        },
+        {
+          "id": "edge:BomProductionDAL:DbHelper:dependency",
+          "source": "cs:BomProductionDAL",
+          "target": "cs:DbHelper",
+          "label": "utilise",
+          "type": "dependency"
+        },
+        {
+          "id": "edge:BomProductionDAL:UnitConvertisseur:dependency",
+          "source": "cs:BomProductionDAL",
+          "target": "cs:UnitConvertisseur",
+          "label": "utilise",
+          "type": "dependency"
+        },
+        {
+          "id": "edge:BomProductionDAL:BomManque:data",
+          "source": "cs:BomProductionDAL",
+          "target": "cs:BomManque",
+          "label": "manipule",
+          "type": "data"
+        },
+        {
+          "id": "edge:BomProductionDAL:BomProduction:data",
+          "source": "cs:BomProductionDAL",
+          "target": "cs:BomProduction",
+          "label": "manipule",
+          "type": "data"
+        },
+        {
+          "id": "edge:BomProductionDAL:BomFiche:data",
+          "source": "cs:BomProductionDAL",
+          "target": "cs:BomFiche",
+          "label": "manipule",
+          "type": "data"
+        },
+        {
+          "id": "edge:BomProductionDAL:BomFicheLigne:data",
+          "source": "cs:BomProductionDAL",
+          "target": "cs:BomFicheLigne",
+          "label": "manipule",
+          "type": "data"
+        },
+        {
+          "id": "edge:BomProductionDAL:BomNiveau:data",
+          "source": "cs:BomProductionDAL",
+          "target": "cs:BomNiveau",
+          "label": "manipule",
+          "type": "data"
+        },
+        {
+          "id": "edge:BomProductionDAL:Lot:data",
+          "source": "cs:BomProductionDAL",
+          "target": "cs:Lot",
+          "label": "manipule",
+          "type": "data"
+        },
+        {
+          "id": "edge:BomProductionDAL:Stock:data",
+          "source": "cs:BomProductionDAL",
+          "target": "cs:Stock",
+          "label": "manipule",
+          "type": "data"
+        },
+        {
+          "id": "edge:BomReservationDAL:DbHelper:dependency",
+          "source": "cs:BomReservationDAL",
+          "target": "cs:DbHelper",
+          "label": "utilise",
+          "type": "dependency"
+        },
+        {
+          "id": "edge:BomReservationDAL:BomReservation:data",
+          "source": "cs:BomReservationDAL",
+          "target": "cs:BomReservation",
+          "label": "manipule",
+          "type": "data"
+        },
+        {
+          "id": "edge:BomReservationDAL:Lot:data",
+          "source": "cs:BomReservationDAL",
+          "target": "cs:Lot",
+          "label": "manipule",
+          "type": "data"
+        },
+        {
+          "id": "edge:BomStockDAL:DbHelper:dependency",
+          "source": "cs:BomStockDAL",
+          "target": "cs:DbHelper",
+          "label": "utilise",
+          "type": "dependency"
+        },
+        {
+          "id": "edge:BomStockDAL:BomStock:data",
+          "source": "cs:BomStockDAL",
+          "target": "cs:BomStock",
+          "label": "manipule",
+          "type": "data"
+        },
+        {
+          "id": "edge:BomStockDAL:Ingredient:data",
+          "source": "cs:BomStockDAL",
+          "target": "cs:Ingredient",
+          "label": "manipule",
+          "type": "data"
+        },
+        {
+          "id": "edge:FournisseurDAL:DbHelper:dependency",
+          "source": "cs:FournisseurDAL",
+          "target": "cs:DbHelper",
+          "label": "utilise",
+          "type": "dependency"
+        },
+        {
+          "id": "edge:FournisseurDAL:Fournisseur:data",
+          "source": "cs:FournisseurDAL",
+          "target": "cs:Fournisseur",
+          "label": "manipule",
+          "type": "data"
+        },
+        {
+          "id": "edge:IngredientDAL:DbHelper:dependency",
+          "source": "cs:IngredientDAL",
+          "target": "cs:DbHelper",
+          "label": "utilise",
+          "type": "dependency"
+        },
+        {
+          "id": "edge:IngredientDAL:Ingredient:data",
+          "source": "cs:IngredientDAL",
+          "target": "cs:Ingredient",
+          "label": "manipule",
+          "type": "data"
+        },
+        {
+          "id": "edge:LotDAL:DbHelper:dependency",
+          "source": "cs:LotDAL",
+          "target": "cs:DbHelper",
+          "label": "utilise",
+          "type": "dependency"
+        },
+        {
+          "id": "edge:LotDAL:Lot:data",
+          "source": "cs:LotDAL",
+          "target": "cs:Lot",
+          "label": "manipule",
+          "type": "data"
+        },
+        {
+          "id": "edge:StockDAL:DbHelper:dependency",
+          "source": "cs:StockDAL",
+          "target": "cs:DbHelper",
+          "label": "utilise",
+          "type": "dependency"
+        },
+        {
+          "id": "edge:StockDAL:Stock:data",
+          "source": "cs:StockDAL",
+          "target": "cs:Stock",
+          "label": "manipule",
+          "type": "data"
+        },
+        {
+          "id": "edge:StockDAL:Activite:data",
+          "source": "cs:StockDAL",
+          "target": "cs:Activite",
+          "label": "manipule",
+          "type": "data"
+        },
+        {
+          "id": "edge:UtilisateurDAL:DbHelper:dependency",
+          "source": "cs:UtilisateurDAL",
+          "target": "cs:DbHelper",
+          "label": "utilise",
+          "type": "dependency"
+        },
+        {
+          "id": "edge:UtilisateurDAL:Utilisateur:data",
+          "source": "cs:UtilisateurDAL",
+          "target": "cs:Utilisateur",
+          "label": "manipule",
+          "type": "data"
+        },
+        {
+          "id": "edge:VueStockGlobalDAL:DbHelper:dependency",
+          "source": "cs:VueStockGlobalDAL",
+          "target": "cs:DbHelper",
+          "label": "utilise",
+          "type": "dependency"
+        },
+        {
+          "id": "edge:VueStockGlobalDAL:VueStockGlobal:data",
+          "source": "cs:VueStockGlobalDAL",
+          "target": "cs:VueStockGlobal",
+          "label": "manipule",
+          "type": "data"
+        },
+        {
+          "id": "edge:FrmAchatEdit:FrmEditBase:inheritance",
+          "source": "cs:FrmAchatEdit",
+          "target": "cs:FrmEditBase",
+          "label": "hérite",
+          "type": "inheritance"
+        },
+        {
+          "id": "edge:FrmAchatEdit:Lot:dependency",
+          "source": "cs:FrmAchatEdit",
+          "target": "cs:Lot",
+          "label": "utilise",
+          "type": "dependency"
+        },
+        {
+          "id": "edge:FrmAchatEdit:FournisseurDAL:dependency",
+          "source": "cs:FrmAchatEdit",
+          "target": "cs:FournisseurDAL",
+          "label": "utilise",
+          "type": "dependency"
+        },
+        {
+          "id": "edge:FrmAchatEdit:IngredientDAL:dependency",
+          "source": "cs:FrmAchatEdit",
+          "target": "cs:IngredientDAL",
+          "label": "utilise",
+          "type": "dependency"
+        },
+        {
+          "id": "edge:FrmAchatEdit:LotDAL:dependency",
+          "source": "cs:FrmAchatEdit",
+          "target": "cs:LotDAL",
+          "label": "utilise",
+          "type": "dependency"
+        },
+        {
+          "id": "edge:FrmAchatEdit:FormHelper:dependency",
+          "source": "cs:FrmAchatEdit",
+          "target": "cs:FormHelper",
+          "label": "utilise",
+          "type": "dependency"
+        },
+        {
+          "id": "edge:FrmAchatEdit:Fournisseur:dependency",
+          "source": "cs:FrmAchatEdit",
+          "target": "cs:Fournisseur",
+          "label": "utilise",
+          "type": "dependency"
+        },
+        {
+          "id": "edge:FrmAchatEdit:Ingredient:dependency",
+          "source": "cs:FrmAchatEdit",
+          "target": "cs:Ingredient",
+          "label": "utilise",
+          "type": "dependency"
+        },
+        {
+          "id": "edge:FrmAchats:FrmListeBase:inheritance",
+          "source": "cs:FrmAchats",
+          "target": "cs:FrmListeBase",
+          "label": "hérite",
+          "type": "inheritance"
+        },
+        {
+          "id": "edge:FrmAchats:Lot:dependency",
+          "source": "cs:FrmAchats",
+          "target": "cs:Lot",
+          "label": "utilise",
+          "type": "dependency"
+        },
+        {
+          "id": "edge:FrmAchats:FrmAchatEdit:dependency",
+          "source": "cs:FrmAchats",
+          "target": "cs:FrmAchatEdit",
+          "label": "utilise",
+          "type": "dependency"
+        },
+        {
+          "id": "edge:FrmAchats:LotDAL:dependency",
+          "source": "cs:FrmAchats",
+          "target": "cs:LotDAL",
+          "label": "utilise",
+          "type": "dependency"
+        },
+        {
+          "id": "edge:FrmAchats:UnitConvertisseur:dependency",
+          "source": "cs:FrmAchats",
+          "target": "cs:UnitConvertisseur",
+          "label": "utilise",
+          "type": "dependency"
+        },
+        {
+          "id": "edge:FrmActiviteEdit:FrmEditBase:inheritance",
+          "source": "cs:FrmActiviteEdit",
+          "target": "cs:FrmEditBase",
+          "label": "hérite",
+          "type": "inheritance"
+        },
+        {
+          "id": "edge:FrmActiviteEdit:ActiviteDAL:dependency",
+          "source": "cs:FrmActiviteEdit",
+          "target": "cs:ActiviteDAL",
+          "label": "utilise",
+          "type": "dependency"
+        },
+        {
+          "id": "edge:FrmActivites:FrmActiviteEdit:dependency",
+          "source": "cs:FrmActivites",
+          "target": "cs:FrmActiviteEdit",
+          "label": "utilise",
+          "type": "dependency"
+        },
+        {
+          "id": "edge:FrmActivites:FrmActiviteStocks:dependency",
+          "source": "cs:FrmActivites",
+          "target": "cs:FrmActiviteStocks",
+          "label": "utilise",
+          "type": "dependency"
+        },
+        {
+          "id": "edge:FrmActivites:ActiviteDAL:dependency",
+          "source": "cs:FrmActivites",
+          "target": "cs:ActiviteDAL",
+          "label": "utilise",
+          "type": "dependency"
+        },
+        {
+          "id": "edge:FrmActivites:AppColors:dependency",
+          "source": "cs:FrmActivites",
+          "target": "cs:AppColors",
+          "label": "utilise",
+          "type": "dependency"
+        },
+        {
+          "id": "edge:FrmActiviteStocks:StockDAL:dependency",
+          "source": "cs:FrmActiviteStocks",
+          "target": "cs:StockDAL",
+          "label": "utilise",
+          "type": "dependency"
+        },
+        {
+          "id": "edge:FrmBomContexteEdit:FrmEditBase:inheritance",
+          "source": "cs:FrmBomContexteEdit",
+          "target": "cs:FrmEditBase",
+          "label": "hérite",
+          "type": "inheritance"
+        },
+        {
+          "id": "edge:FrmBomContexteEdit:BomContexte:dependency",
+          "source": "cs:FrmBomContexteEdit",
+          "target": "cs:BomContexte",
+          "label": "utilise",
+          "type": "dependency"
+        },
+        {
+          "id": "edge:FrmBomContexteEdit:ActiviteDAL:dependency",
+          "source": "cs:FrmBomContexteEdit",
+          "target": "cs:ActiviteDAL",
+          "label": "utilise",
+          "type": "dependency"
+        },
+        {
+          "id": "edge:FrmBomContexteEdit:BomContexteDAL:dependency",
+          "source": "cs:FrmBomContexteEdit",
+          "target": "cs:BomContexteDAL",
+          "label": "utilise",
+          "type": "dependency"
+        },
+        {
+          "id": "edge:FrmBomContexteEdit:Activite:dependency",
+          "source": "cs:FrmBomContexteEdit",
+          "target": "cs:Activite",
+          "label": "utilise",
+          "type": "dependency"
+        },
+        {
+          "id": "edge:FrmBomContextes:FrmListeBase:inheritance",
+          "source": "cs:FrmBomContextes",
+          "target": "cs:FrmListeBase",
+          "label": "hérite",
+          "type": "inheritance"
+        },
+        {
+          "id": "edge:FrmBomContextes:BomContexte:dependency",
+          "source": "cs:FrmBomContextes",
+          "target": "cs:BomContexte",
+          "label": "utilise",
+          "type": "dependency"
+        },
+        {
+          "id": "edge:FrmBomContextes:FrmBomContexteEdit:dependency",
+          "source": "cs:FrmBomContextes",
+          "target": "cs:FrmBomContexteEdit",
+          "label": "utilise",
+          "type": "dependency"
+        },
+        {
+          "id": "edge:FrmBomContextes:FrmBomNiveaux:dependency",
+          "source": "cs:FrmBomContextes",
+          "target": "cs:FrmBomNiveaux",
+          "label": "utilise",
+          "type": "dependency"
+        },
+        {
+          "id": "edge:FrmBomContextes:BomContexteDAL:dependency",
+          "source": "cs:FrmBomContextes",
+          "target": "cs:BomContexteDAL",
+          "label": "utilise",
+          "type": "dependency"
+        },
+        {
+          "id": "edge:FrmBomFicheEdit:FrmEditBase:inheritance",
+          "source": "cs:FrmBomFicheEdit",
+          "target": "cs:FrmEditBase",
+          "label": "hérite",
+          "type": "inheritance"
+        },
+        {
+          "id": "edge:FrmBomFicheEdit:IngredientDAL:dependency",
+          "source": "cs:FrmBomFicheEdit",
+          "target": "cs:IngredientDAL",
+          "label": "utilise",
+          "type": "dependency"
+        },
+        {
+          "id": "edge:FrmBomFicheEdit:BomNiveauDAL:dependency",
+          "source": "cs:FrmBomFicheEdit",
+          "target": "cs:BomNiveauDAL",
+          "label": "utilise",
+          "type": "dependency"
+        },
+        {
+          "id": "edge:FrmBomFicheEdit:BomFicheDAL:dependency",
+          "source": "cs:FrmBomFicheEdit",
+          "target": "cs:BomFicheDAL",
+          "label": "utilise",
+          "type": "dependency"
+        },
+        {
+          "id": "edge:FrmBomFicheEdit:UnitConvertisseur:dependency",
+          "source": "cs:FrmBomFicheEdit",
+          "target": "cs:UnitConvertisseur",
+          "label": "utilise",
+          "type": "dependency"
+        },
+        {
+          "id": "edge:FrmBomFiches:FrmListeBase:inheritance",
+          "source": "cs:FrmBomFiches",
+          "target": "cs:FrmListeBase",
+          "label": "hérite",
+          "type": "inheritance"
+        },
+        {
+          "id": "edge:FrmBomFiches:BomFiche:dependency",
+          "source": "cs:FrmBomFiches",
+          "target": "cs:BomFiche",
+          "label": "utilise",
+          "type": "dependency"
+        },
+        {
+          "id": "edge:FrmBomFiches:FrmBomFicheEdit:dependency",
+          "source": "cs:FrmBomFiches",
+          "target": "cs:FrmBomFicheEdit",
+          "label": "utilise",
+          "type": "dependency"
+        },
+        {
+          "id": "edge:FrmBomFiches:BomFicheDAL:dependency",
+          "source": "cs:FrmBomFiches",
+          "target": "cs:BomFicheDAL",
+          "label": "utilise",
+          "type": "dependency"
+        },
+        {
+          "id": "edge:FrmBomFiches:UnitConvertisseur:dependency",
+          "source": "cs:FrmBomFiches",
+          "target": "cs:UnitConvertisseur",
+          "label": "utilise",
+          "type": "dependency"
+        },
+        {
+          "id": "edge:FrmBomNiveauEdit:FrmEditBase:inheritance",
+          "source": "cs:FrmBomNiveauEdit",
+          "target": "cs:FrmEditBase",
+          "label": "hérite",
+          "type": "inheritance"
+        },
+        {
+          "id": "edge:FrmBomNiveauEdit:BomNiveauDAL:dependency",
+          "source": "cs:FrmBomNiveauEdit",
+          "target": "cs:BomNiveauDAL",
+          "label": "utilise",
+          "type": "dependency"
+        },
+        {
+          "id": "edge:FrmBomNiveaux:FrmListeBase:inheritance",
+          "source": "cs:FrmBomNiveaux",
+          "target": "cs:FrmListeBase",
+          "label": "hérite",
+          "type": "inheritance"
+        },
+        {
+          "id": "edge:FrmBomNiveaux:BomNiveau:dependency",
+          "source": "cs:FrmBomNiveaux",
+          "target": "cs:BomNiveau",
+          "label": "utilise",
+          "type": "dependency"
+        },
+        {
+          "id": "edge:FrmBomNiveaux:FrmBomNiveauEdit:dependency",
+          "source": "cs:FrmBomNiveaux",
+          "target": "cs:FrmBomNiveauEdit",
+          "label": "utilise",
+          "type": "dependency"
+        },
+        {
+          "id": "edge:FrmBomNiveaux:BomNiveauDAL:dependency",
+          "source": "cs:FrmBomNiveaux",
+          "target": "cs:BomNiveauDAL",
+          "label": "utilise",
+          "type": "dependency"
+        },
+        {
+          "id": "edge:FrmBomProductionSimulation:BomProductionDAL:dependency",
+          "source": "cs:FrmBomProductionSimulation",
+          "target": "cs:BomProductionDAL",
+          "label": "utilise",
+          "type": "dependency"
+        },
+        {
+          "id": "edge:FrmBomProductionSimulation:BomContexteDAL:dependency",
+          "source": "cs:FrmBomProductionSimulation",
+          "target": "cs:BomContexteDAL",
+          "label": "utilise",
+          "type": "dependency"
+        },
+        {
+          "id": "edge:FrmBomProductionSimulation:BomNiveauDAL:dependency",
+          "source": "cs:FrmBomProductionSimulation",
+          "target": "cs:BomNiveauDAL",
+          "label": "utilise",
+          "type": "dependency"
+        },
+        {
+          "id": "edge:FrmBomProductionSimulation:BomFicheDAL:dependency",
+          "source": "cs:FrmBomProductionSimulation",
+          "target": "cs:BomFicheDAL",
+          "label": "utilise",
+          "type": "dependency"
+        },
+        {
+          "id": "edge:FrmBomProductionSimulation:BomCoutDAL:dependency",
+          "source": "cs:FrmBomProductionSimulation",
+          "target": "cs:BomCoutDAL",
+          "label": "utilise",
+          "type": "dependency"
+        },
+        {
+          "id": "edge:FrmBomProductionSimulation:AppColors:dependency",
+          "source": "cs:FrmBomProductionSimulation",
+          "target": "cs:AppColors",
+          "label": "utilise",
+          "type": "dependency"
+        },
+        {
+          "id": "edge:FrmBomProductionSimulation:UnitConvertisseur:dependency",
+          "source": "cs:FrmBomProductionSimulation",
+          "target": "cs:UnitConvertisseur",
+          "label": "utilise",
+          "type": "dependency"
+        },
+        {
+          "id": "edge:FrmBomProductionSimulation:BomContexte:dependency",
+          "source": "cs:FrmBomProductionSimulation",
+          "target": "cs:BomContexte",
+          "label": "utilise",
+          "type": "dependency"
+        },
+        {
+          "id": "edge:FrmBomProductionSimulation:BomNiveau:dependency",
+          "source": "cs:FrmBomProductionSimulation",
+          "target": "cs:BomNiveau",
+          "label": "utilise",
+          "type": "dependency"
+        },
+        {
+          "id": "edge:FrmEditBase:AppColors:dependency",
+          "source": "cs:FrmEditBase",
+          "target": "cs:AppColors",
+          "label": "utilise",
+          "type": "dependency"
+        },
+        {
+          "id": "edge:FrmFournisseurEdit:FrmEditBase:inheritance",
+          "source": "cs:FrmFournisseurEdit",
+          "target": "cs:FrmEditBase",
+          "label": "hérite",
+          "type": "inheritance"
+        },
+        {
+          "id": "edge:FrmFournisseurEdit:Fournisseur:dependency",
+          "source": "cs:FrmFournisseurEdit",
+          "target": "cs:Fournisseur",
+          "label": "utilise",
+          "type": "dependency"
+        },
+        {
+          "id": "edge:FrmFournisseurEdit:FournisseurDAL:dependency",
+          "source": "cs:FrmFournisseurEdit",
+          "target": "cs:FournisseurDAL",
+          "label": "utilise",
+          "type": "dependency"
+        },
+        {
+          "id": "edge:FrmFournisseurs:FrmFournisseurEdit:dependency",
+          "source": "cs:FrmFournisseurs",
+          "target": "cs:FrmFournisseurEdit",
+          "label": "utilise",
+          "type": "dependency"
+        },
+        {
+          "id": "edge:FrmFournisseurs:FournisseurDAL:dependency",
+          "source": "cs:FrmFournisseurs",
+          "target": "cs:FournisseurDAL",
+          "label": "utilise",
+          "type": "dependency"
+        },
+        {
+          "id": "edge:FrmIngredientEdit:FrmEditBase:inheritance",
+          "source": "cs:FrmIngredientEdit",
+          "target": "cs:FrmEditBase",
+          "label": "hérite",
+          "type": "inheritance"
+        },
+        {
+          "id": "edge:FrmIngredientEdit:StockDAL:dependency",
+          "source": "cs:FrmIngredientEdit",
+          "target": "cs:StockDAL",
+          "label": "utilise",
+          "type": "dependency"
+        },
+        {
+          "id": "edge:FrmIngredientEdit:FournisseurDAL:dependency",
+          "source": "cs:FrmIngredientEdit",
+          "target": "cs:FournisseurDAL",
+          "label": "utilise",
+          "type": "dependency"
+        },
+        {
+          "id": "edge:FrmIngredientEdit:IngredientDAL:dependency",
+          "source": "cs:FrmIngredientEdit",
+          "target": "cs:IngredientDAL",
+          "label": "utilise",
+          "type": "dependency"
+        },
+        {
+          "id": "edge:FrmIngredientEdit:FormHelper:dependency",
+          "source": "cs:FrmIngredientEdit",
+          "target": "cs:FormHelper",
+          "label": "utilise",
+          "type": "dependency"
+        },
+        {
+          "id": "edge:FrmIngredientEdit:Fournisseur:dependency",
+          "source": "cs:FrmIngredientEdit",
+          "target": "cs:Fournisseur",
+          "label": "utilise",
+          "type": "dependency"
+        },
+        {
+          "id": "edge:FrmIngredients:FrmListeBase:inheritance",
+          "source": "cs:FrmIngredients",
+          "target": "cs:FrmListeBase",
+          "label": "hérite",
+          "type": "inheritance"
+        },
+        {
+          "id": "edge:FrmIngredients:Ingredient:dependency",
+          "source": "cs:FrmIngredients",
+          "target": "cs:Ingredient",
+          "label": "utilise",
+          "type": "dependency"
+        },
+        {
+          "id": "edge:FrmIngredients:FrmIngredientEdit:dependency",
+          "source": "cs:FrmIngredients",
+          "target": "cs:FrmIngredientEdit",
+          "label": "utilise",
+          "type": "dependency"
+        },
+        {
+          "id": "edge:FrmIngredients:IngredientDAL:dependency",
+          "source": "cs:FrmIngredients",
+          "target": "cs:IngredientDAL",
+          "label": "utilise",
+          "type": "dependency"
+        },
+        {
+          "id": "edge:FrmIngredients:StockDAL:dependency",
+          "source": "cs:FrmIngredients",
+          "target": "cs:StockDAL",
+          "label": "utilise",
+          "type": "dependency"
+        },
+        {
+          "id": "edge:FrmIngredients:UnitConvertisseur:dependency",
+          "source": "cs:FrmIngredients",
+          "target": "cs:UnitConvertisseur",
+          "label": "utilise",
+          "type": "dependency"
+        },
+        {
+          "id": "edge:FrmIngredients:AppColors:dependency",
+          "source": "cs:FrmIngredients",
+          "target": "cs:AppColors",
+          "label": "utilise",
+          "type": "dependency"
+        },
+        {
+          "id": "edge:FrmListeBase:AppColors:dependency",
+          "source": "cs:FrmListeBase",
+          "target": "cs:AppColors",
+          "label": "utilise",
+          "type": "dependency"
+        },
+        {
+          "id": "edge:FrmLogin:UtilisateurDAL:dependency",
+          "source": "cs:FrmLogin",
+          "target": "cs:UtilisateurDAL",
+          "label": "utilise",
+          "type": "dependency"
+        },
+        {
+          "id": "edge:FrmLogin:AppColors:dependency",
+          "source": "cs:FrmLogin",
+          "target": "cs:AppColors",
+          "label": "utilise",
+          "type": "dependency"
+        },
+        {
+          "id": "edge:FrmPrincipal:AppState:dependency",
+          "source": "cs:FrmPrincipal",
+          "target": "cs:AppState",
+          "label": "utilise",
+          "type": "dependency"
+        },
+        {
+          "id": "edge:FrmPrincipal:ScreenRouter:dependency",
+          "source": "cs:FrmPrincipal",
+          "target": "cs:ScreenRouter",
+          "label": "utilise",
+          "type": "dependency"
+        },
+        {
+          "id": "edge:FrmPrincipal:TitleBarPanel:dependency",
+          "source": "cs:FrmPrincipal",
+          "target": "cs:TitleBarPanel",
+          "label": "utilise",
+          "type": "dependency"
+        },
+        {
+          "id": "edge:FrmPrincipal:AppStatusBar:dependency",
+          "source": "cs:FrmPrincipal",
+          "target": "cs:AppStatusBar",
+          "label": "utilise",
+          "type": "dependency"
+        },
+        {
+          "id": "edge:FrmPrincipal:SidebarPanel:dependency",
+          "source": "cs:FrmPrincipal",
+          "target": "cs:SidebarPanel",
+          "label": "utilise",
+          "type": "dependency"
+        },
+        {
+          "id": "edge:FrmPrincipal:FrmActivites:dependency",
+          "source": "cs:FrmPrincipal",
+          "target": "cs:FrmActivites",
+          "label": "utilise",
+          "type": "dependency"
+        },
+        {
+          "id": "edge:FrmPrincipal:FrmBomContexteEdit:dependency",
+          "source": "cs:FrmPrincipal",
+          "target": "cs:FrmBomContexteEdit",
+          "label": "utilise",
+          "type": "dependency"
+        },
+        {
+          "id": "edge:FrmPrincipal:FrmBomNiveauEdit:dependency",
+          "source": "cs:FrmPrincipal",
+          "target": "cs:FrmBomNiveauEdit",
+          "label": "utilise",
+          "type": "dependency"
+        },
+        {
+          "id": "edge:FrmPrincipal:FrmBomFicheEdit:dependency",
+          "source": "cs:FrmPrincipal",
+          "target": "cs:FrmBomFicheEdit",
+          "label": "utilise",
+          "type": "dependency"
+        },
+        {
+          "id": "edge:FrmPrincipal:FrmIngredients:dependency",
+          "source": "cs:FrmPrincipal",
+          "target": "cs:FrmIngredients",
+          "label": "utilise",
+          "type": "dependency"
+        },
+        {
+          "id": "edge:FrmPrincipal:FrmBomFiches:dependency",
+          "source": "cs:FrmPrincipal",
+          "target": "cs:FrmBomFiches",
+          "label": "utilise",
+          "type": "dependency"
+        },
+        {
+          "id": "edge:FrmPrincipal:FrmFournisseurs:dependency",
+          "source": "cs:FrmPrincipal",
+          "target": "cs:FrmFournisseurs",
+          "label": "utilise",
+          "type": "dependency"
+        },
+        {
+          "id": "edge:FrmPrincipal:FrmStocks:dependency",
+          "source": "cs:FrmPrincipal",
+          "target": "cs:FrmStocks",
+          "label": "utilise",
+          "type": "dependency"
+        },
+        {
+          "id": "edge:FrmPrincipal:FrmAchats:dependency",
+          "source": "cs:FrmPrincipal",
+          "target": "cs:FrmAchats",
+          "label": "utilise",
+          "type": "dependency"
+        },
+        {
+          "id": "edge:FrmPrincipal:FrmVueStock:dependency",
+          "source": "cs:FrmPrincipal",
+          "target": "cs:FrmVueStock",
+          "label": "utilise",
+          "type": "dependency"
+        },
+        {
+          "id": "edge:FrmPrincipal:ActiviteDAL:dependency",
+          "source": "cs:FrmPrincipal",
+          "target": "cs:ActiviteDAL",
+          "label": "utilise",
+          "type": "dependency"
+        },
+        {
+          "id": "edge:FrmPrincipal:BomContexteDAL:dependency",
+          "source": "cs:FrmPrincipal",
+          "target": "cs:BomContexteDAL",
+          "label": "utilise",
+          "type": "dependency"
+        },
+        {
+          "id": "edge:FrmPrincipal:BomNiveauDAL:dependency",
+          "source": "cs:FrmPrincipal",
+          "target": "cs:BomNiveauDAL",
+          "label": "utilise",
+          "type": "dependency"
+        },
+        {
+          "id": "edge:FrmPrincipal:IngredientDAL:dependency",
+          "source": "cs:FrmPrincipal",
+          "target": "cs:IngredientDAL",
+          "label": "utilise",
+          "type": "dependency"
+        },
+        {
+          "id": "edge:FrmPrincipal:BomFicheDAL:dependency",
+          "source": "cs:FrmPrincipal",
+          "target": "cs:BomFicheDAL",
+          "label": "utilise",
+          "type": "dependency"
+        },
+        {
+          "id": "edge:FrmPrincipal:BomProductionDAL:dependency",
+          "source": "cs:FrmPrincipal",
+          "target": "cs:BomProductionDAL",
+          "label": "utilise",
+          "type": "dependency"
+        },
+        {
+          "id": "edge:FrmPrincipal:BomStockDAL:dependency",
+          "source": "cs:FrmPrincipal",
+          "target": "cs:BomStockDAL",
+          "label": "utilise",
+          "type": "dependency"
+        },
+        {
+          "id": "edge:FrmPrincipal:BomCoutDAL:dependency",
+          "source": "cs:FrmPrincipal",
+          "target": "cs:BomCoutDAL",
+          "label": "utilise",
+          "type": "dependency"
+        },
+        {
+          "id": "edge:FrmPrincipal:AppColors:dependency",
+          "source": "cs:FrmPrincipal",
+          "target": "cs:AppColors",
+          "label": "utilise",
+          "type": "dependency"
+        },
+        {
+          "id": "edge:FrmPrincipal:UnitConvertisseur:dependency",
+          "source": "cs:FrmPrincipal",
+          "target": "cs:UnitConvertisseur",
+          "label": "utilise",
+          "type": "dependency"
+        },
+        {
+          "id": "edge:FrmPrincipal:BomFiche:dependency",
+          "source": "cs:FrmPrincipal",
+          "target": "cs:BomFiche",
+          "label": "utilise",
+          "type": "dependency"
+        },
+        {
+          "id": "edge:FrmPrincipal:Ingredient:dependency",
+          "source": "cs:FrmPrincipal",
+          "target": "cs:Ingredient",
+          "label": "utilise",
+          "type": "dependency"
+        },
+        {
+          "id": "edge:FrmPrincipal:BomStock:dependency",
+          "source": "cs:FrmPrincipal",
+          "target": "cs:BomStock",
+          "label": "utilise",
+          "type": "dependency"
+        },
+        {
+          "id": "edge:FrmPrincipal:BomContexte:dependency",
+          "source": "cs:FrmPrincipal",
+          "target": "cs:BomContexte",
+          "label": "utilise",
+          "type": "dependency"
+        },
+        {
+          "id": "edge:FrmPrincipal:BomNiveau:dependency",
+          "source": "cs:FrmPrincipal",
+          "target": "cs:BomNiveau",
+          "label": "utilise",
+          "type": "dependency"
+        },
+        {
+          "id": "edge:FrmStockEdit:FrmEditBase:inheritance",
+          "source": "cs:FrmStockEdit",
+          "target": "cs:FrmEditBase",
+          "label": "hérite",
+          "type": "inheritance"
+        },
+        {
+          "id": "edge:FrmStockEdit:Stock:dependency",
+          "source": "cs:FrmStockEdit",
+          "target": "cs:Stock",
+          "label": "utilise",
+          "type": "dependency"
+        },
+        {
+          "id": "edge:FrmStockEdit:StockDAL:dependency",
+          "source": "cs:FrmStockEdit",
+          "target": "cs:StockDAL",
+          "label": "utilise",
+          "type": "dependency"
+        },
+        {
+          "id": "edge:FrmStocks:FrmStockEdit:dependency",
+          "source": "cs:FrmStocks",
+          "target": "cs:FrmStockEdit",
+          "label": "utilise",
+          "type": "dependency"
+        },
+        {
+          "id": "edge:FrmStocks:StockDAL:dependency",
+          "source": "cs:FrmStocks",
+          "target": "cs:StockDAL",
+          "label": "utilise",
+          "type": "dependency"
+        },
+        {
+          "id": "edge:FrmStocks:ActiviteDAL:dependency",
+          "source": "cs:FrmStocks",
+          "target": "cs:ActiviteDAL",
+          "label": "utilise",
+          "type": "dependency"
+        },
+        {
+          "id": "edge:FrmStocks:AppColors:dependency",
+          "source": "cs:FrmStocks",
+          "target": "cs:AppColors",
+          "label": "utilise",
+          "type": "dependency"
+        },
+        {
+          "id": "edge:FrmStocks:Activite:dependency",
+          "source": "cs:FrmStocks",
+          "target": "cs:Activite",
+          "label": "utilise",
+          "type": "dependency"
+        },
+        {
+          "id": "edge:FrmVueStock:ActiviteDAL:dependency",
+          "source": "cs:FrmVueStock",
+          "target": "cs:ActiviteDAL",
+          "label": "utilise",
+          "type": "dependency"
+        },
+        {
+          "id": "edge:FrmVueStock:VueStockGlobalDAL:dependency",
+          "source": "cs:FrmVueStock",
+          "target": "cs:VueStockGlobalDAL",
+          "label": "utilise",
+          "type": "dependency"
+        },
+        {
+          "id": "edge:FrmVueStock:BomNiveauDAL:dependency",
+          "source": "cs:FrmVueStock",
+          "target": "cs:BomNiveauDAL",
+          "label": "utilise",
+          "type": "dependency"
+        },
+        {
+          "id": "edge:FrmVueStock:AppColors:dependency",
+          "source": "cs:FrmVueStock",
+          "target": "cs:AppColors",
+          "label": "utilise",
+          "type": "dependency"
+        },
+        {
+          "id": "edge:FrmVueStock:UnitConvertisseur:dependency",
+          "source": "cs:FrmVueStock",
+          "target": "cs:UnitConvertisseur",
+          "label": "utilise",
+          "type": "dependency"
+        },
+        {
+          "id": "edge:FrmVueStock:VueStockGlobal:dependency",
+          "source": "cs:FrmVueStock",
+          "target": "cs:VueStockGlobal",
+          "label": "utilise",
+          "type": "dependency"
+        },
+        {
+          "id": "edge:SidebarPanel:AppColors:dependency",
+          "source": "cs:SidebarPanel",
+          "target": "cs:AppColors",
+          "label": "utilise",
+          "type": "dependency"
+        },
+        {
+          "id": "edge:SidebarPanel:Activite:dependency",
+          "source": "cs:SidebarPanel",
+          "target": "cs:Activite",
+          "label": "utilise",
+          "type": "dependency"
+        },
+        {
+          "id": "edge:AppStatusBar:AppColors:dependency",
+          "source": "cs:AppStatusBar",
+          "target": "cs:AppColors",
+          "label": "utilise",
+          "type": "dependency"
+        },
+        {
+          "id": "edge:TitleBarPanel:AppColors:dependency",
+          "source": "cs:TitleBarPanel",
+          "target": "cs:AppColors",
+          "label": "utilise",
+          "type": "dependency"
+        },
+        {
+          "id": "edge:UnitConvertisseur:BomProductionDAL:dependency",
+          "source": "cs:UnitConvertisseur",
+          "target": "cs:BomProductionDAL",
+          "label": "utilise",
+          "type": "dependency"
+        },
+        {
+          "id": "edge:BomManque:BomProductionDAL:dependency",
+          "source": "cs:BomManque",
+          "target": "cs:BomProductionDAL",
+          "label": "utilise",
+          "type": "dependency"
+        },
+        {
+          "id": "edge:RapportCout:BomCoutDAL:dependency",
+          "source": "cs:RapportCout",
+          "target": "cs:BomCoutDAL",
+          "label": "utilise",
+          "type": "dependency"
+        },
+        {
+          "id": "edge:ScreenRouter:NavigationParams:dependency",
+          "source": "cs:ScreenRouter",
+          "target": "cs:NavigationParams",
+          "label": "utilise",
+          "type": "dependency"
+        },
+        {
+          "id": "edge:SimulationService:BomProductionDAL:dependency",
+          "source": "cs:SimulationService",
+          "target": "cs:BomProductionDAL",
+          "label": "utilise",
+          "type": "dependency"
+        },
+        {
+          "id": "edge:SimulationService:VueStockGlobalDAL:dependency",
+          "source": "cs:SimulationService",
+          "target": "cs:VueStockGlobalDAL",
+          "label": "utilise",
+          "type": "dependency"
+        }
+      ]
+    },
+    {
+      "id": "db",
+      "label": "Base de données",
+      "icon": "Database",
+      "description": "Schéma MySQL — 15 tables, 23 relations FK",
+      "layoutDirection": "TB",
+      "nodes": [
+        {
+          "id": "db:fournisseurs",
+          "type": "table",
+          "label": "fournisseurs",
+          "metadata": {
+            "columns": [
+              "id: INT: PK",
+              "nom: VARCHAR(200): NOT NULL",
+              "contact: VARCHAR(200)",
+              "email: VARCHAR(255)",
+              "telephone: VARCHAR(20)",
+              "adresse: VARCHAR(255)",
+              "notes: TEXT"
+            ],
+            "primaryKeys": [
+              "id"
+            ]
+          },
+          "group": "Catalogue"
+        },
+        {
+          "id": "db:fiches_ingredients",
+          "type": "table",
+          "label": "fiches_ingredients",
+          "metadata": {
+            "columns": [
+              "id: INT: PK",
+              "nom: VARCHAR(200): NOT NULL UNIQUE",
+              "marque: VARCHAR(200)",
+              "description: TEXT",
+              "unite_mesure: ENUM('KG','G','L','ML','CL','PIECE'): NOT NULL",
+              "type_physique: ENUM('SOLIDE','LIQUIDE','POUDRE','PIECE'): NOT NULL DEFAULT",
+              "densite: DECIMAL(8,4): DEFAULT",
+              "prix_achat_reference: DECIMAL(10,4): NOT NULL DEFAULT",
+              "dlc_jours_reference: INT: DEFAULT",
+              "qualite_label: VARCHAR(100): DEFAULT",
+              "id_fournisseur_defaut: INT: DEFAULT",
+              "seuil_alerte_stock: DECIMAL(10,4): DEFAULT",
+              "actif: TINYINT(1): NOT NULL DEFAULT",
+              "date_creation: DATETIME: DEFAULT",
+              "conditionnement_label: VARCHAR(100): NOT NULL DEFAULT",
+              "qte_par_conditionnement: DECIMAL(12,4): NOT NULL DEFAULT",
+              "id_stock: INT: NOT NULL"
+            ],
+            "primaryKeys": [
+              "id"
+            ],
+            "foreignKeys": [
+              "id_fournisseur_defaut → fournisseurs.id",
+              "id_stock → stocks.id"
+            ]
+          },
+          "group": "Production"
+        },
+        {
+          "id": "db:lots_ingredients",
+          "type": "table",
+          "label": "lots_ingredients",
+          "metadata": {
+            "columns": [
+              "id: INT: PK",
+              "id_fiche_ingredient: INT: NOT NULL",
+              "numero_lot: VARCHAR(100): DEFAULT",
+              "id_fournisseur: INT: DEFAULT",
+              "date_achat: DATE: NOT NULL",
+              "date_peremption: DATE: DEFAULT",
+              "quantite_initiale: DECIMAL(10,4): NOT NULL",
+              "quantite_disponible: DECIMAL(10,4): NOT NULL",
+              "prix_unitaire: DECIMAL(10,4): NOT NULL DEFAULT",
+              "prix_achat_reel: DECIMAL(10,4): NOT NULL DEFAULT",
+              "reference_facture: VARCHAR(100): DEFAULT",
+              "notes: TEXT",
+              "date_creation: DATETIME: DEFAULT",
+              "tva_pct: DECIMAL(5,2): NOT NULL DEFAULT",
+              "nb_conditionnements: DECIMAL(10,3): NOT NULL DEFAULT"
+            ],
+            "primaryKeys": [
+              "id"
+            ],
+            "foreignKeys": [
+              "id_fournisseur → fournisseurs.id",
+              "id_fiche_ingredient → fiches_ingredients.id"
+            ]
+          },
+          "group": "Production"
+        },
+        {
+          "id": "db:utilisateurs",
+          "type": "table",
+          "label": "utilisateurs",
+          "metadata": {
+            "columns": [
+              "id: INT: PK",
+              "nom: VARCHAR(100): NOT NULL",
+              "prenom: VARCHAR(100): NOT NULL",
+              "email: VARCHAR(255): NOT NULL UNIQUE",
+              "mot_de_passe: VARCHAR(255): NOT NULL",
+              "role: ENUM('CLIENT','ADMIN'): NOT NULL DEFAULT",
+              "telephone: VARCHAR(20)",
+              "adresse: VARCHAR(255)",
+              "code_postal: VARCHAR(10)",
+              "ville: VARCHAR(100)",
+              "date_inscription: DATETIME: DEFAULT",
+              "actif: TINYINT(1): NOT NULL DEFAULT"
+            ],
+            "primaryKeys": [
+              "id"
+            ]
+          },
+          "group": "Auth"
+        },
+        {
+          "id": "db:bom_contextes",
+          "type": "table",
+          "label": "bom_contextes",
+          "metadata": {
+            "columns": [
+              "id: INT: PK",
+              "nom: VARCHAR(200): NOT NULL",
+              "description: TEXT",
+              "actif: TINYINT(1): NOT NULL DEFAULT",
+              "date_creation: DATETIME: DEFAULT",
+              "id_activite: INT: NOT NULL"
+            ],
+            "primaryKeys": [
+              "id"
+            ],
+            "foreignKeys": [
+              "id_activite → activites.id"
+            ]
+          },
+          "group": "BOM"
+        },
+        {
+          "id": "db:bom_niveaux",
+          "type": "table",
+          "label": "bom_niveaux",
+          "metadata": {
+            "columns": [
+              "id: INT: PK",
+              "id_contexte: INT: NOT NULL",
+              "ordre: TINYINT: NOT NULL",
+              "nom: VARCHAR(200): NOT NULL",
+              "description: TEXT",
+              "date_creation: DATETIME: DEFAULT"
+            ],
+            "primaryKeys": [
+              "id"
+            ],
+            "foreignKeys": [
+              "id_contexte → bom_contextes.id"
+            ]
+          },
+          "group": "BOM"
+        },
+        {
+          "id": "db:bom_fiches",
+          "type": "table",
+          "label": "bom_fiches",
+          "metadata": {
+            "columns": [
+              "id: INT: PK",
+              "nom: VARCHAR(200): NOT NULL UNIQUE",
+              "description: TEXT",
+              "unite_output: ENUM('KG','G','L','ML','CL','PIECE'): NOT NULL DEFAULT",
+              "quantite_output: DECIMAL(10,4): NOT NULL DEFAULT",
+              "temps_preparation: INT: DEFAULT",
+              "actif: TINYINT(1): NOT NULL DEFAULT",
+              "date_creation: DATETIME: DEFAULT",
+              "id_niveau: INT: NOT NULL DEFAULT"
+            ],
+            "primaryKeys": [
+              "id"
+            ],
+            "foreignKeys": [
+              "id_niveau → bom_niveaux.id"
+            ]
+          },
+          "group": "BOM"
+        },
+        {
+          "id": "db:bom_fiches_lignes",
+          "type": "table",
+          "label": "bom_fiches_lignes",
+          "metadata": {
+            "columns": [
+              "id: INT: PK",
+              "id_fiche: INT: NOT NULL",
+              "type_input: ENUM('INGREDIENT','FICHE'): NOT NULL",
+              "id_input_ingredient: INT: DEFAULT",
+              "id_input_fiche: INT: DEFAULT",
+              "quantite: DECIMAL(12,4): NOT NULL",
+              "unite_mesure: ENUM('KG','G','L','ML','CL','PIECE'): NOT NULL"
+            ],
+            "primaryKeys": [
+              "id"
+            ],
+            "foreignKeys": [
+              "id_fiche → bom_fiches.id",
+              "id_input_ingredient → fiches_ingredients.id",
+              "id_input_fiche → bom_fiches.id"
+            ]
+          },
+          "group": "BOM"
+        },
+        {
+          "id": "db:bom_productions",
+          "type": "table",
+          "label": "bom_productions",
+          "metadata": {
+            "columns": [
+              "id: INT: PK",
+              "id_niveau: INT: NOT NULL",
+              "id_fiche: INT: NOT NULL",
+              "quantite_produite: DECIMAL(10,4): NOT NULL",
+              "cout_ingredients: DECIMAL(10,2): NOT NULL DEFAULT",
+              "cout_unitaire: DECIMAL(10,4): NOT NULL DEFAULT",
+              "date_production: DATETIME: DEFAULT",
+              "notes: TEXT"
+            ],
+            "primaryKeys": [
+              "id"
+            ],
+            "foreignKeys": [
+              "id_niveau → bom_niveaux.id",
+              "id_fiche → bom_fiches.id"
+            ]
+          },
+          "group": "BOM"
+        },
+        {
+          "id": "db:bom_stocks",
+          "type": "table",
+          "label": "bom_stocks",
+          "metadata": {
+            "columns": [
+              "id: INT: PK",
+              "id_niveau: INT: NOT NULL",
+              "id_fiche: INT: NOT NULL",
+              "id_production: INT: NOT NULL",
+              "quantite_disponible: DECIMAL(12,4): NOT NULL",
+              "cout_unitaire: DECIMAL(10,4): NOT NULL",
+              "date_production: DATE: NOT NULL",
+              "date_dlc: DATE: DEFAULT",
+              "date_creation: DATETIME: DEFAULT",
+              "id_contexte: INT: NOT NULL",
+              "id_activite: INT: NOT NULL"
+            ],
+            "primaryKeys": [
+              "id"
+            ],
+            "foreignKeys": [
+              "id_niveau → bom_niveaux.id",
+              "id_fiche → bom_fiches.id",
+              "id_production → bom_productions.id",
+              "id_contexte → bom_contextes.id",
+              "id_activite → activites.id"
+            ]
+          },
+          "group": "BOM"
+        },
+        {
+          "id": "db:bom_productions_lignes",
+          "type": "table",
+          "label": "bom_productions_lignes",
+          "metadata": {
+            "columns": [
+              "id: INT: PK",
+              "id_production: INT: NOT NULL",
+              "type_source: ENUM('LOT_INGREDIENT','BOM_STOCK'): NOT NULL",
+              "id_lot_ingredient: INT: DEFAULT",
+              "id_bom_stock: INT: DEFAULT",
+              "quantite_consommee: DECIMAL(12,4): NOT NULL",
+              "cout_unitaire_moment: DECIMAL(10,4): NOT NULL"
+            ],
+            "primaryKeys": [
+              "id"
+            ],
+            "foreignKeys": [
+              "id_production → bom_productions.id",
+              "id_lot_ingredient → lots_ingredients.id",
+              "id_bom_stock → bom_stocks.id"
+            ]
+          },
+          "group": "BOM"
+        },
+        {
+          "id": "db:bom_reservations",
+          "type": "table",
+          "label": "bom_reservations",
+          "metadata": {
+            "columns": [
+              "id: INT: PK",
+              "id_lot: INT: NOT NULL",
+              "id_contexte: INT: NOT NULL",
+              "quantite_reservee: DECIMAL(12,4): NOT NULL",
+              "date_reservation: DATETIME: DEFAULT",
+              "notes: TEXT",
+              "actif: TINYINT(1): NOT NULL DEFAULT"
+            ],
+            "primaryKeys": [
+              "id"
+            ],
+            "foreignKeys": [
+              "id_contexte → bom_contextes.id",
+              "id_lot → lots_ingredients.id"
+            ]
+          },
+          "group": "BOM"
+        },
+        {
+          "id": "db:activites",
+          "type": "table",
+          "label": "activites",
+          "metadata": {
+            "columns": [
+              "id: INT: PK",
+              "nom: VARCHAR(100): NOT NULL UNIQUE",
+              "description: TEXT",
+              "actif: TINYINT(1): NOT NULL DEFAULT",
+              "date_creation: DATETIME: NOT NULL DEFAULT"
+            ],
+            "primaryKeys": [
+              "id"
+            ]
+          },
+          "group": "Activites"
+        },
+        {
+          "id": "db:stocks",
+          "type": "table",
+          "label": "stocks",
+          "metadata": {
+            "columns": [
+              "id: INT: PK",
+              "nom: VARCHAR(200): NOT NULL UNIQUE",
+              "description: TEXT",
+              "actif: TINYINT(1): NOT NULL DEFAULT",
+              "date_creation: DATETIME: NOT NULL DEFAULT"
+            ],
+            "primaryKeys": [
+              "id"
+            ]
+          },
+          "group": "BOM"
+        },
+        {
+          "id": "db:activites_stocks",
+          "type": "table",
+          "label": "activites_stocks",
+          "metadata": {
+            "columns": [
+              "id_activite: INT: NOT NULL",
+              "id_stock: INT: NOT NULL"
+            ],
+            "primaryKeys": [
+              "id_activite",
+              "id_stock"
+            ],
+            "foreignKeys": [
+              "id_activite → activites.id",
+              "id_stock → stocks.id"
+            ]
+          },
+          "group": "BOM"
+        }
+      ],
+      "edges": [
+        {
+          "id": "db:fiches_ingredients--fk--db:fournisseurs",
+          "source": "db:fiches_ingredients",
+          "target": "db:fournisseurs",
+          "label": "id_fournisseur_defaut",
+          "type": "fk"
+        },
+        {
+          "id": "db:fiches_ingredients--fk--db:stocks",
+          "source": "db:fiches_ingredients",
+          "target": "db:stocks",
+          "label": "id_stock",
+          "type": "fk"
+        },
+        {
+          "id": "db:lots_ingredients--fk--db:fournisseurs",
+          "source": "db:lots_ingredients",
+          "target": "db:fournisseurs",
+          "label": "id_fournisseur",
+          "type": "fk"
+        },
+        {
+          "id": "db:lots_ingredients--fk--db:fiches_ingredients",
+          "source": "db:lots_ingredients",
+          "target": "db:fiches_ingredients",
+          "label": "id_fiche_ingredient",
+          "type": "fk"
+        },
+        {
+          "id": "db:bom_contextes--fk--db:activites",
+          "source": "db:bom_contextes",
+          "target": "db:activites",
+          "label": "id_activite",
+          "type": "fk"
+        },
+        {
+          "id": "db:bom_niveaux--fk--db:bom_contextes",
+          "source": "db:bom_niveaux",
+          "target": "db:bom_contextes",
+          "label": "id_contexte",
+          "type": "fk"
+        },
+        {
+          "id": "db:bom_fiches--fk--db:bom_niveaux",
+          "source": "db:bom_fiches",
+          "target": "db:bom_niveaux",
+          "label": "id_niveau",
+          "type": "fk"
+        },
+        {
+          "id": "db:bom_fiches_lignes--fk--db:bom_fiches",
+          "source": "db:bom_fiches_lignes",
+          "target": "db:bom_fiches",
+          "label": "id_fiche, id_input_fiche",
+          "type": "fk"
+        },
+        {
+          "id": "db:bom_fiches_lignes--fk--db:fiches_ingredients",
+          "source": "db:bom_fiches_lignes",
+          "target": "db:fiches_ingredients",
+          "label": "id_input_ingredient",
+          "type": "fk"
+        },
+        {
+          "id": "db:bom_productions--fk--db:bom_niveaux",
+          "source": "db:bom_productions",
+          "target": "db:bom_niveaux",
+          "label": "id_niveau",
+          "type": "fk"
+        },
+        {
+          "id": "db:bom_productions--fk--db:bom_fiches",
+          "source": "db:bom_productions",
+          "target": "db:bom_fiches",
+          "label": "id_fiche",
+          "type": "fk"
+        },
+        {
+          "id": "db:bom_stocks--fk--db:bom_niveaux",
+          "source": "db:bom_stocks",
+          "target": "db:bom_niveaux",
+          "label": "id_niveau",
+          "type": "fk"
+        },
+        {
+          "id": "db:bom_stocks--fk--db:bom_fiches",
+          "source": "db:bom_stocks",
+          "target": "db:bom_fiches",
+          "label": "id_fiche",
+          "type": "fk"
+        },
+        {
+          "id": "db:bom_stocks--fk--db:bom_productions",
+          "source": "db:bom_stocks",
+          "target": "db:bom_productions",
+          "label": "id_production",
+          "type": "fk"
+        },
+        {
+          "id": "db:bom_stocks--fk--db:bom_contextes",
+          "source": "db:bom_stocks",
+          "target": "db:bom_contextes",
+          "label": "id_contexte",
+          "type": "fk"
+        },
+        {
+          "id": "db:bom_stocks--fk--db:activites",
+          "source": "db:bom_stocks",
+          "target": "db:activites",
+          "label": "id_activite",
+          "type": "fk"
+        },
+        {
+          "id": "db:bom_productions_lignes--fk--db:bom_productions",
+          "source": "db:bom_productions_lignes",
+          "target": "db:bom_productions",
+          "label": "id_production",
+          "type": "fk"
+        },
+        {
+          "id": "db:bom_productions_lignes--fk--db:lots_ingredients",
+          "source": "db:bom_productions_lignes",
+          "target": "db:lots_ingredients",
+          "label": "id_lot_ingredient",
+          "type": "fk"
+        },
+        {
+          "id": "db:bom_productions_lignes--fk--db:bom_stocks",
+          "source": "db:bom_productions_lignes",
+          "target": "db:bom_stocks",
+          "label": "id_bom_stock",
+          "type": "fk"
+        },
+        {
+          "id": "db:bom_reservations--fk--db:bom_contextes",
+          "source": "db:bom_reservations",
+          "target": "db:bom_contextes",
+          "label": "id_contexte",
+          "type": "fk"
+        },
+        {
+          "id": "db:bom_reservations--fk--db:lots_ingredients",
+          "source": "db:bom_reservations",
+          "target": "db:lots_ingredients",
+          "label": "id_lot",
+          "type": "fk"
+        },
+        {
+          "id": "db:activites_stocks--fk--db:activites",
+          "source": "db:activites_stocks",
+          "target": "db:activites",
+          "label": "id_activite",
+          "type": "fk"
+        },
+        {
+          "id": "db:activites_stocks--fk--db:stocks",
+          "source": "db:activites_stocks",
+          "target": "db:stocks",
+          "label": "id_stock",
+          "type": "fk"
+        }
+      ]
+    },
+    {
+      "id": "bom",
+      "label": "Pipeline BOM",
+      "icon": "GitBranch",
+      "description": "Flux de production multi-niveaux — Ingrédients → Stocks",
+      "layoutDirection": "LR",
+      "nodes": [
+        {
+          "id": "bom:ingredients",
+          "type": "stock",
+          "label": "Ingrédients",
+          "description": "Stock global niveau 0 — lots FIFO",
+          "metadata": {
+            "info": [
+              "Fournisseurs",
+              "Lots FIFO",
+              "Unités + densité"
+            ]
+          },
+          "tags": [
+            "entrée"
+          ]
+        },
+        {
+          "id": "bom:contextes",
+          "type": "process",
+          "label": "Contextes",
+          "description": "Configs de production nommées par activité",
+          "metadata": {
+            "info": [
+              "Par activité",
+              "Stock propre",
+              "Niveaux configurables"
+            ]
+          },
+          "tags": [
+            "config"
+          ]
+        },
+        {
+          "id": "bom:niveaux",
+          "type": "process",
+          "label": "Niveaux",
+          "description": "Profondeur de transformation variable",
+          "metadata": {
+            "info": [
+              "N consomme N-1",
+              "Ordre topologique",
+              "Suppression par le haut"
+            ]
+          },
+          "tags": [
+            "structure"
+          ]
+        },
+        {
+          "id": "bom:fiches",
+          "type": "custom",
+          "label": "Fiches Recettes",
+          "description": "Recettes globales réutilisables entre contextes",
+          "metadata": {
+            "info": [
+              "Multi-contextes",
+              "Conversion unités auto",
+              "Lignes avec quantités"
+            ]
+          },
+          "tags": [
+            "recette"
+          ]
+        },
+        {
+          "id": "bom:productions",
+          "type": "process",
+          "label": "Productions",
+          "description": "Exécution réelle — validation → consommation → création stock",
+          "metadata": {
+            "info": [
+              "Validation stock N-1",
+              "Consommation FIFO",
+              "Lignes détaillées"
+            ]
+          },
+          "tags": [
+            "exécution"
+          ]
+        },
+        {
+          "id": "bom:stocks",
+          "type": "stock",
+          "label": "Stocks",
+          "description": "Stock produit par niveau dans chaque contexte",
+          "metadata": {
+            "info": [
+              "Par contexte",
+              "Discriminants activité",
+              "Quantité disponible"
+            ]
+          },
+          "tags": [
+            "stock"
+          ]
+        },
+        {
+          "id": "bom:reservations",
+          "type": "stock",
+          "label": "Réservations",
+          "description": "Réservations de stock pour simulations",
+          "metadata": {
+            "info": [
+              "Dispo réelle = qté - réservations",
+              "Libération auto à production",
+              "Par lot + contexte"
+            ]
+          },
+          "tags": [
+            "réservation"
+          ]
+        }
+      ],
+      "edges": [
+        {
+          "id": "bom:e1",
+          "source": "bom:ingredients",
+          "target": "bom:niveaux",
+          "label": "alimente N-1",
+          "type": "flow",
+          "animated": true
+        },
+        {
+          "id": "bom:e2",
+          "source": "bom:contextes",
+          "target": "bom:niveaux",
+          "label": "configure",
+          "type": "flow",
+          "animated": true
+        },
+        {
+          "id": "bom:e3",
+          "source": "bom:niveaux",
+          "target": "bom:fiches",
+          "label": "rattachées à",
+          "type": "data"
+        },
+        {
+          "id": "bom:e4",
+          "source": "bom:fiches",
+          "target": "bom:productions",
+          "label": "déclenche",
+          "type": "flow",
+          "animated": true
+        },
+        {
+          "id": "bom:e5",
+          "source": "bom:productions",
+          "target": "bom:stocks",
+          "label": "produit",
+          "type": "flow",
+          "animated": true
+        },
+        {
+          "id": "bom:e6",
+          "source": "bom:stocks",
+          "target": "bom:reservations",
+          "label": "réserve",
+          "type": "data"
+        }
+      ]
+    }
+  ]
+}

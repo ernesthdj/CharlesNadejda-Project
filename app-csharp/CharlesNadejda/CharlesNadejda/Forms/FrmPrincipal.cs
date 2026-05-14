@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Drawing;
+using System.Drawing.Drawing2D;
 using System.Linq;
 using System.Windows.Forms;
 using CharlesNadejda.DAL;
@@ -57,6 +58,9 @@ namespace CharlesNadejda.Forms
         private Button                 _btnModFiche;
         private Button                 _btnSupFiche;
         private Button                 _btnDupFiche;
+        private Button                 _btnNivProd;
+        private Panel                  _pnlKanbanDetail;
+        private Panel                  _pnlKanbanDetailContent;
 
         // ════════════════════════════════════════════════════════════════
         //  Constructeur / Load
@@ -641,6 +645,9 @@ namespace CharlesNadejda.Forms
             _btnModFiche      = null;
             _btnSupFiche      = null;
             _btnDupFiche      = null;
+            _btnNivProd              = null;
+            _pnlKanbanDetail        = null;
+            _pnlKanbanDetailContent = null;
 
             _pnlDroit.SuspendLayout();
             ClearAndDisposePanel();
@@ -677,69 +684,58 @@ namespace CharlesNadejda.Forms
             pnlHdr.Controls.Add(btnModCtx);
             pnlHdr.Controls.Add(btnSupCtx);
 
-            var pnlNivLabel = new Panel { Dock = DockStyle.Top, Height = 28, BackColor = CREME_WARM };
-            pnlNivLabel.Controls.Add(new Label
-            {
-                Text = "NIVEAUX DU CONTEXTE", Font = new Font("Segoe UI", 7.5F, FontStyle.Bold),
-                ForeColor = SIDEBAR_META, Dock = DockStyle.Fill,
-                TextAlign = ContentAlignment.MiddleLeft, Padding = new Padding(20, 0, 0, 0)
-            });
+            // ══════════════════════════════════════════════════════════
+            //  KANBAN — 3 colonnes : Niveaux | Fiches | Stock
+            // ══════════════════════════════════════════════════════════
 
-            var niveaux    = BomNiveauDAL.GetByContexte(_state.ActiveContexte.Id);
-            _niveauxListe  = niveaux;
-            int ordreMax   = niveaux.Count > 0 ? niveaux.Max(n => n.Ordre) : 0;
-            // Une seule requête pour tous les comptages — remplace N requêtes GetByNiveau(id).Count
+            var niveaux     = BomNiveauDAL.GetByContexte(_state.ActiveContexte.Id);
+            _niveauxListe   = niveaux;
+            int ordreMax    = niveaux.Count > 0 ? niveaux.Max(n => n.Ordre) : 0;
             var ficheCounts = BomFicheDAL.GetCountsByContexte(_state.ActiveContexte.Id);
-            var pnlNivRows = new Panel { Dock = DockStyle.Top, BackColor = CREME_WARM, Padding = new Padding(16, 4, 16, 4) };
-            int rowY = 4;
+
+            // ── Colonne 1 : Niveaux (gauche, fixe 220px) ──────────────
+            var colNiveaux = new Panel { Dock = DockStyle.Left, Width = 220, BackColor = CREME_WARM };
+            var lblColNiv = MakeKanbanHeader("NIVEAUX", CHOCO_BRAND);
+            var flowNiveaux = new FlowLayoutPanel
+            {
+                Dock = DockStyle.Fill, FlowDirection = FlowDirection.TopDown,
+                WrapContents = false, AutoScroll = true, BackColor = Color.Transparent,
+                Padding = new Padding(8, 4, 8, 4)
+            };
             foreach (var niv in niveaux.OrderByDescending(n => n.Ordre))
             {
-                ficheCounts.TryGetValue(niv.Id, out int ficheCount);
-                var row = MakeNiveauRow(niv, ficheCount, ordreMax);
-                row.Location = new Point(16, rowY);
-                pnlNivRows.Controls.Add(row);
-                rowY += row.Height + 4;
+                ficheCounts.TryGetValue(niv.Id, out int fc);
+                var card = MakeNiveauCard(niv, fc, ordreMax);
+                flowNiveaux.Controls.Add(card);
             }
-            pnlNivRows.Height = rowY + 4;
-
             _btnNouveauNiveau = new Button
             {
-                Text = "＋  Nouveau niveau", Font = new Font("Segoe UI", 9F, FontStyle.Bold),
-                FlatStyle = FlatStyle.Flat, BackColor = CHOCO_BRAND, ForeColor = Color.White,
-                Size = new Size(156, 28), Location = new Point(16, rowY), Cursor = Cursors.Hand
+                Text = "＋  Nouveau niveau", Font = new Font("Segoe UI", 8.5F, FontStyle.Bold),
+                FlatStyle = FlatStyle.Flat, BackColor = Color.White, ForeColor = CHOCO_MED,
+                Size = new Size(196, 32), Cursor = Cursors.Hand,
+                Margin = new Padding(0, 4, 0, 0)
             };
-            _btnNouveauNiveau.FlatAppearance.BorderColor = CHOCO_ABYSS;
+            _btnNouveauNiveau.FlatAppearance.BorderColor = BORDER_CLR;
             _btnNouveauNiveau.Click += BtnAjouterNiveau_Click;
-            pnlNivRows.Controls.Add(_btnNouveauNiveau);
-            pnlNivRows.Height += 36;
-            pnlNivRows.Resize += (s, ev) =>
-            {
-                int w = pnlNivRows.ClientSize.Width - 32;
-                foreach (Control c in pnlNivRows.Controls.OfType<Panel>())
-                    c.Width = Math.Max(300, w);
-            };
+            flowNiveaux.Controls.Add(_btnNouveauNiveau);
+            colNiveaux.Controls.Add(flowNiveaux);
+            colNiveaux.Controls.Add(lblColNiv);
 
-            var pnlFiches = new Panel { Dock = DockStyle.Fill, BackColor = CREME_WARM };
+            // ── Colonne 2 : Fiches (Dock Left, taille auto) ──────────
+            var pnlFiches = new Panel { Dock = DockStyle.Left, Width = 420, BackColor = CREME_WARM };
+            var lblColFiches = MakeKanbanHeader("FICHES", OR);
+            _lblFichesHeader = lblColFiches.Controls[0] as Label;
 
-            var pnlFichesTop = new Panel { Dock = DockStyle.Top, Height = 44, BackColor = CREME_WARM, Padding = new Padding(16, 0, 16, 0) };
-            pnlFichesTop.Paint += (s, ev) =>
-            {
-                using (var pen = new Pen(BORDER_CLR, 1))
-                    ev.Graphics.DrawLine(pen, 0, 0, pnlFichesTop.Width, 0);
-            };
-            _lblFichesHeader = new Label
-            {
-                Text = "Sélectionnez un niveau pour voir ses fiches BOM",
-                Font = new Font("Segoe UI", 9F, FontStyle.Italic),
-                ForeColor = CHOCO_MED, Location = new Point(16, 13), AutoSize = true
-            };
-            pnlFichesTop.Controls.Add(_lblFichesHeader);
+            var pnlFichesActions = new Panel { Dock = DockStyle.Top, Height = 36, BackColor = CREME_WARM };
 
-            _btnNouvFiche = MakeActionButton("＋  Nouvelle fiche", CHOCO_BRAND, Color.White);
-            _btnModFiche  = MakeActionButton("✎  Modifier",        CHOCO_MED,   Color.White);
-            _btnSupFiche  = MakeActionButton("✕  Supprimer",       RED_CRIT,    Color.White);
-            // US-07 : bouton Dupliquer — désactivé par défaut, activé sur sélection
-            _btnDupFiche  = MakeActionButton("📋 Dupliquer",        CHOCO_MED,   Color.White);
+            _btnNivProd   = MakeSmallButton("▶ Produire", AppColors.Success, Color.White);
+            _btnNivProd.Enabled = false;
+            _btnNivProd.Click += (s, ev) => { if (_state.ActiveNiveau != null) NavigateTo(ScreenId.Production); };
+
+            _btnNouvFiche = MakeSmallButton("＋ Nouvelle", CHOCO_BRAND, Color.White);
+            _btnDupFiche  = MakeSmallButton("📋 Dupliquer", CHOCO_MED, Color.White);
+            _btnModFiche  = MakeSmallButton("✎ Modifier",  CHOCO_MED, Color.White);
+            _btnSupFiche  = MakeSmallButton("✕ Suppr.",     RED_CRIT,  Color.White);
             _btnDupFiche.Enabled = false;
             var btnNouvFiche = _btnNouvFiche;
             var btnModFiche  = _btnModFiche;
@@ -751,32 +747,34 @@ namespace CharlesNadejda.Forms
             btnSupFiche.Click  += (s, ev) => SupprimerFiche(_dgvFiches?.CurrentRow?.DataBoundItem as BomFiche);
             btnDupFiche.Click  += (s, ev) => DupliquerFiche(_dgvFiches?.CurrentRow?.DataBoundItem as BomFiche);
 
-            pnlFichesTop.Resize += (s, ev) =>
+            var flowActions = new FlowLayoutPanel
             {
-                btnSupFiche.Location  = new Point(pnlFichesTop.Width - 110, 8);
-                btnModFiche.Location  = new Point(pnlFichesTop.Width - 220, 8);
-                btnDupFiche.Location  = new Point(pnlFichesTop.Width - 330, 8);
-                btnNouvFiche.Location = new Point(pnlFichesTop.Width - 448, 8);
+                Dock = DockStyle.Fill, FlowDirection = FlowDirection.LeftToRight,
+                WrapContents = false, BackColor = Color.Transparent,
+                Padding = new Padding(8, 4, 8, 0)
             };
-            pnlFichesTop.Controls.Add(btnNouvFiche);
-            pnlFichesTop.Controls.Add(btnDupFiche);
-            pnlFichesTop.Controls.Add(btnModFiche);
-            pnlFichesTop.Controls.Add(btnSupFiche);
+            flowActions.Controls.Add(_btnNivProd);
+            flowActions.Controls.Add(btnNouvFiche);
+            flowActions.Controls.Add(btnDupFiche);
+            flowActions.Controls.Add(btnModFiche);
+            flowActions.Controls.Add(btnSupFiche);
+            pnlFichesActions.Controls.Add(flowActions);
 
             _dgvFiches = new DataGridView
             {
                 Dock = DockStyle.Fill, Font = new Font("Segoe UI", 9.5F),
-                BackgroundColor = Color.White, BorderStyle = BorderStyle.None,
+                BackgroundColor = CREME_WARM, BorderStyle = BorderStyle.None,
                 GridColor = BORDER_CLR, RowHeadersVisible = false,
                 AllowUserToAddRows = false, AllowUserToDeleteRows = false,
-                AllowUserToResizeRows = false, MultiSelect = false, ReadOnly = true,
+                AllowUserToResizeRows = false, AllowUserToResizeColumns = false,
+                MultiSelect = false, ReadOnly = true,
                 SelectionMode = DataGridViewSelectionMode.FullRowSelect,
-                AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.None,
-                ScrollBars = ScrollBars.Both,
+                AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.AllCells,
+                ScrollBars = ScrollBars.Vertical,
                 ColumnHeadersHeightSizeMode = DataGridViewColumnHeadersHeightSizeMode.DisableResizing,
                 ColumnHeadersHeight = 30
             };
-            _dgvFiches.ColumnHeadersDefaultCellStyle.BackColor  = CREME; 
+            _dgvFiches.ColumnHeadersDefaultCellStyle.BackColor  = CREME;
             _dgvFiches.ColumnHeadersDefaultCellStyle.ForeColor  = CHOCO_BRAND;
             _dgvFiches.ColumnHeadersDefaultCellStyle.Font       = new Font("Segoe UI", 9F, FontStyle.Bold);
             _dgvFiches.DefaultCellStyle.SelectionBackColor       = CHOCO_BRAND;
@@ -787,72 +785,103 @@ namespace CharlesNadejda.Forms
                 if (ev.RowIndex >= 0) OuvrirFiche(_dgvFiches.CurrentRow?.DataBoundItem as BomFiche);
             };
             _dgvFiches.CellFormatting += DgvFiches_CellFormatting;
-            // US-07 : activer/désactiver le bouton Dupliquer selon la sélection
-            // ⚠ Capturer l'instance locale (pas le champ) — le champ est nullé lors d'une re-navigation
-            // ce qui déclencherait une NRE via SelectionChanged sur l'ancien DGV encore en mémoire.
             var dgvFichesCapture = _dgvFiches;
             dgvFichesCapture.SelectionChanged += (s, ev) =>
             {
                 if (btnDupFiche.IsDisposed) return;
                 btnDupFiche.Enabled = dgvFichesCapture.CurrentRow?.DataBoundItem is BomFiche;
+                ShowKanbanDetail();
             };
 
-            // ── Volet stock de production ─────────────────────────────────────
-            var lblStockHeader = new Label
-            {
-                Text = "STOCK DISPONIBLE", Font = new Font("Segoe UI", 7.5F, FontStyle.Bold),
-                ForeColor = SIDEBAR_META, Dock = DockStyle.Top, Height = 24,
-                TextAlign = ContentAlignment.MiddleLeft, Padding = new Padding(8, 0, 0, 0),
-                BackColor = CREME_WARM
-            };
+            pnlFiches.Controls.Add(_dgvFiches);
+            pnlFiches.Controls.Add(pnlFichesActions);
+            pnlFiches.Controls.Add(lblColFiches);
 
+            // ── Colonne 3 : Stock (Dock Left, taille auto) ────────────
+            var pnlStock = new Panel { Dock = DockStyle.Left, Width = 380, BackColor = CREME_WARM };
+            var lblColStock = MakeKanbanHeader("STOCK", AppColors.Success);
             _dgvStock = new DataGridView
             {
                 Dock = DockStyle.Fill, Font = new Font("Segoe UI", 9F),
-                BackgroundColor = Color.White, BorderStyle = BorderStyle.None,
+                BackgroundColor = CREME_WARM, BorderStyle = BorderStyle.None,
                 GridColor = BORDER_CLR, RowHeadersVisible = false,
                 AllowUserToAddRows = false, AllowUserToDeleteRows = false,
-                AllowUserToResizeRows = false, MultiSelect = false, ReadOnly = true,
+                AllowUserToResizeRows = false, AllowUserToResizeColumns = false,
+                MultiSelect = false, ReadOnly = true,
                 SelectionMode = DataGridViewSelectionMode.FullRowSelect,
-                AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.None,
-                ScrollBars = ScrollBars.Both,
+                AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.AllCells,
+                ScrollBars = ScrollBars.Vertical,
                 ColumnHeadersHeightSizeMode = DataGridViewColumnHeadersHeightSizeMode.DisableResizing,
                 ColumnHeadersHeight = 30
             };
             _dgvStock.ColumnHeadersDefaultCellStyle.BackColor   = CREME;
             _dgvStock.ColumnHeadersDefaultCellStyle.ForeColor   = CHOCO_BRAND;
-            _dgvStock.ColumnHeadersDefaultCellStyle.Font        = new Font("Segoe UI", 9F, FontStyle.Bold);
+            _dgvStock.ColumnHeadersDefaultCellStyle.Font        = new Font("Segoe UI", 8.5F, FontStyle.Bold);
             _dgvStock.DefaultCellStyle.SelectionBackColor        = CHOCO_BRAND;
             _dgvStock.DefaultCellStyle.SelectionForeColor        = Color.White;
             _dgvStock.AlternatingRowsDefaultCellStyle.BackColor  = Color.FromArgb(250, 246, 238);
             _dgvStock.CellFormatting += DgvStock_CellFormatting;
+            _dgvStock.CellPainting   += DgvStock_CellPainting;
+            _dgvStock.SelectionChanged += (s, ev) => ShowKanbanDetail();
+            pnlStock.Controls.Add(_dgvStock);
+            pnlStock.Controls.Add(lblColStock);
 
-            // ── SplitContainer fiches | stock — splitter fixe à 50% ───────
-            var splitFichesStock = new SplitContainer
+            // ── Colonne 4 : Volet détail (Fill = prend l'espace restant) ──
+            _pnlKanbanDetail = new Panel
             {
-                Dock = DockStyle.Fill, Orientation = Orientation.Vertical,
-                SplitterWidth = 4, BackColor = BORDER_CLR,
-                IsSplitterFixed = true
+                Dock = DockStyle.Fill, BackColor = Color.FromArgb(252, 250, 246),
+                Padding = new Padding(0)
             };
-            splitFichesStock.Panel1.Controls.Add(_dgvFiches);
-            splitFichesStock.Panel2.Controls.Add(_dgvStock);
-            splitFichesStock.Panel2.Controls.Add(lblStockHeader);
-
-            // Maintenir le splitter exactement à 50% lors de chaque redimensionnement
-            splitFichesStock.Resize += (s, ev) =>
+            var lblColDetail = MakeKanbanHeader("DÉTAIL", CHOCO_MED);
+            _pnlKanbanDetailContent = new Panel
             {
-                var sc = (SplitContainer)s;
-                if (sc.Width > sc.SplitterWidth)
-                    sc.SplitterDistance = (sc.Width - sc.SplitterWidth) / 2;
+                Dock = DockStyle.Fill, AutoScroll = true,
+                BackColor = Color.Transparent, Padding = new Padding(16, 12, 16, 12)
             };
+            // Message par défaut
+            _pnlKanbanDetailContent.Controls.Add(new Label
+            {
+                Text = "Sélectionnez un élément\npour voir ses détails",
+                Font = new Font("Segoe UI", 9F, FontStyle.Italic),
+                ForeColor = CHOCO_MED, Dock = DockStyle.Fill,
+                TextAlign = ContentAlignment.TopCenter,
+                Padding = new Padding(0, 40, 0, 0)
+            });
+            _pnlKanbanDetail.Controls.Add(_pnlKanbanDetailContent);
+            _pnlKanbanDetail.Controls.Add(lblColDetail);
 
-            pnlFiches.Controls.Add(splitFichesStock);
-            pnlFiches.Controls.Add(pnlFichesTop);
+            // ── Séparateurs verticaux concrets entre colonnes ─────────
+            var sep1 = MakeColumnSeparator();  // entre Niveaux et Fiches
+            var sep2 = MakeColumnSeparator();  // entre Fiches et Stock
+            var sep3 = MakeColumnSeparator();  // entre Stock et Détail
 
+            // ── Assemblage (WinForms : Fill en 1er, puis Left de droite à gauche) ──
+            _pnlDroit.Controls.Add(_pnlKanbanDetail);
+            _pnlDroit.Controls.Add(sep3);
+            _pnlDroit.Controls.Add(pnlStock);
+            _pnlDroit.Controls.Add(sep2);
             _pnlDroit.Controls.Add(pnlFiches);
-            _pnlDroit.Controls.Add(pnlNivRows);
-            _pnlDroit.Controls.Add(pnlNivLabel);
+            _pnlDroit.Controls.Add(sep1);
+            _pnlDroit.Controls.Add(colNiveaux);
             _pnlDroit.Controls.Add(pnlHdr);
+
+            // Auto-dimensionner les colonnes après le 1er chargement
+            var pnlFichesRef = pnlFiches;
+            var pnlStockRef  = pnlStock;
+            _dgvFiches.DataBindingComplete += (s, ev) =>
+            {
+                int w = 20; // scrollbar margin
+                foreach (DataGridViewColumn c in _dgvFiches.Columns)
+                    if (c.Visible) w += c.GetPreferredWidth(DataGridViewAutoSizeColumnMode.AllCells, true);
+                pnlFichesRef.Width = Math.Max(300, Math.Min(w, 600));
+            };
+            _dgvStock.DataBindingComplete += (s, ev) =>
+            {
+                int w = 20;
+                foreach (DataGridViewColumn c in _dgvStock.Columns)
+                    if (c.Visible) w += c.GetPreferredWidth(DataGridViewAutoSizeColumnMode.AllCells, true);
+                pnlStockRef.Width = Math.Max(280, Math.Min(w, 550));
+            };
 
             if (_state.ActiveNiveau != null && _niveauPanels.ContainsKey(_state.ActiveNiveau.Id))
                 SelectNiveauRow(_state.ActiveNiveau);
@@ -877,15 +906,264 @@ namespace CharlesNadejda.Forms
         {
             _state.SetNiveau(niv);
             foreach (var kvp in _niveauPanels)
-            {
-                bool sel = kvp.Key == niv.Id;
-                kvp.Value.BackColor = sel ? Color.FromArgb(255, 250, 229) : Color.White;
                 kvp.Value.Invalidate();
-            }
 
             if (_lblFichesHeader != null)
-                _lblFichesHeader.Text = $"Fiches BOM du niveau N{niv.Ordre} — {niv.Nom}";
+                _lblFichesHeader.Text = $"FICHES — N{niv.Ordre} {niv.Nom}";
+            if (_btnNivProd != null)
+                _btnNivProd.Enabled = niv.Ordre > 1;
             ChargerFiches(niv);
+        }
+
+        // ════════════════════════════════════════════════════════════════
+        //  Volet détail Kanban (colonne droite)
+        // ════════════════════════════════════════════════════════════════
+
+        private void ShowKanbanDetail()
+        {
+            if (_pnlKanbanDetailContent == null) return;
+            _pnlKanbanDetailContent.SuspendLayout();
+            _pnlKanbanDetailContent.Controls.Clear();
+
+            // Priorité : sélection Stock > sélection Fiches
+            if (_dgvStock != null && _dgvStock.Focused && _dgvStock.CurrentRow != null)
+            {
+                if (_dgvStock.CurrentRow.DataBoundItem is BomStock bs)
+                    RenderStockDetail(bs);
+                else if (_dgvStock.CurrentRow.DataBoundItem is Ingredient ingS)
+                    RenderIngredientDetail(ingS);
+            }
+            else if (_dgvFiches != null && _dgvFiches.CurrentRow != null)
+            {
+                if (_dgvFiches.CurrentRow.DataBoundItem is BomFiche bf)
+                    RenderFicheDetail(bf);
+                else if (_dgvFiches.CurrentRow.DataBoundItem is Ingredient ing)
+                    RenderIngredientDetail(ing);
+            }
+
+            _pnlKanbanDetailContent.ResumeLayout();
+        }
+
+        private void RenderIngredientDetail(Ingredient ing)
+        {
+            int y = 0;
+            y = KDetailHeader(ing.Nom, "Ingrédient", y);
+
+            y = KDetailSection("IDENTITÉ", y);
+            if (!string.IsNullOrEmpty(ing.Marque))
+                y = KDetailRow("Marque", ing.Marque, y);
+            y = KDetailRow("Type", ing.TypePhysique, y);
+            y = KDetailRow("Unité", ing.UniteMesure, y);
+            if (ing.Densite.HasValue)
+                y = KDetailRow("Densité", $"{ing.Densite.Value:F3} g/ml", y);
+            if (!string.IsNullOrEmpty(ing.ConditionnementLabel))
+                y = KDetailRow("Cond.", ing.ConditionnementLabel, y);
+            y = KDetailRow("Qté/cond.", UnitConvertisseur.FormatQte(ing.QteParConditionnement, ing.UniteMesure), y);
+
+            y = KDetailSection("STOCK & PRIX", y);
+            y = KDetailRow("En stock", UnitConvertisseur.FormatQte(ing.StockActuel, ing.UniteMesure), y,
+                ing.EstEnAlerte ? RED_CRIT : AppColors.Success);
+            if (ing.StockPieces > 0)
+                y = KDetailRow("Pièces", $"{ing.StockPieces:0} cond.", y);
+            if (ing.StockCible.HasValue)
+            {
+                int pct = (int)(ing.StockRatio.Value * 100);
+                y = KDetailRow("Cible", UnitConvertisseur.FormatQte(ing.StockCible.Value, ing.UniteMesure), y);
+                y = KDetailRow("Niveau", $"{pct}%", y,
+                    pct < 20 ? RED_CRIT : pct < 50 ? AppColors.OrgWarn : AppColors.Success);
+            }
+            if (ing.SeuilAlerteStock.HasValue)
+            {
+                y = KDetailRow("Seuil alerte", UnitConvertisseur.FormatQte(ing.SeuilAlerteStock.Value, ing.UniteMesure), y);
+                y = KDetailRow("État", ing.EstEnAlerte ? "⚠ EN ALERTE" : "✓ OK", y,
+                    ing.EstEnAlerte ? RED_CRIT : AppColors.Success);
+            }
+            y = KDetailRow("Prix/cond.", UnitConvertisseur.FormatPrix(ing.PrixAchatReference), y);
+            if (!string.IsNullOrEmpty(ing.StockNom))
+                y = KDetailRow("Emplacement", ing.StockNom, y);
+            if (!string.IsNullOrEmpty(ing.NomFournisseur))
+                y = KDetailRow("Fournisseur", ing.NomFournisseur, y);
+
+            // Utilisé dans quelles fiches
+            try
+            {
+                var recettes = BomFicheLigneDAL.GetFichesUtilisant(ing.Id);
+                if (recettes.Count > 0)
+                {
+                    y = KDetailSection("UTILISÉ DANS", y);
+                    foreach (var r in recettes)
+                        y = KDetailTag(r, y);
+                }
+            }
+            catch { }
+        }
+
+        private void RenderFicheDetail(BomFiche fiche)
+        {
+            int y = 0;
+            y = KDetailHeader(fiche.Nom, $"Fiche recette — N{fiche.OrdreNiveau}", y);
+
+            y = KDetailSection("IDENTITÉ", y);
+            if (!string.IsNullOrEmpty(fiche.Description))
+                y = KDetailRow("Description", fiche.Description, y);
+            y = KDetailRow("Output", UnitConvertisseur.FormatQte(fiche.QuantiteOutput, fiche.UniteOutput), y);
+            if (fiche.TempsPreparation.HasValue)
+                y = KDetailRow("Temps prép.", $"{fiche.TempsPreparation.Value} min", y);
+            y = KDetailRow("Créée le", fiche.DateCreation.ToString("dd/MM/yyyy"), y);
+            y = KDetailRow("Statut", fiche.Actif ? "✓ Active" : "✕ Inactive", y,
+                fiche.Actif ? AppColors.Success : RED_CRIT);
+
+            // Composition (lignes de la fiche)
+            try
+            {
+                var ficheComplete = BomFicheDAL.GetById(fiche.Id, avecLignes: true);
+                if (ficheComplete?.Lignes != null && ficheComplete.Lignes.Count > 0)
+                {
+                    y = KDetailSection("COMPOSITION", y);
+                    foreach (var ligne in ficheComplete.Lignes)
+                    {
+                        string qte = UnitConvertisseur.FormatQte(ligne.Quantite, ligne.UniteMesure);
+                        y = KDetailRow(ligne.NomInput, qte, y);
+                    }
+                }
+            }
+            catch { }
+
+            // Consommé par quelles fiches de niveau supérieur
+            try
+            {
+                var consommePar = BomFicheLigneDAL.GetFichesConsommant(fiche.Id);
+                if (consommePar.Count > 0)
+                {
+                    y = KDetailSection("CONSOMMÉ PAR", y);
+                    foreach (var r in consommePar)
+                        y = KDetailTag(r, y);
+                }
+            }
+            catch { }
+        }
+
+        private void RenderStockDetail(BomStock stock)
+        {
+            int y = 0;
+            y = KDetailHeader(stock.NomFiche, "Produit en stock", y);
+
+            y = KDetailSection("STOCK", y);
+            y = KDetailRow("Quantité", UnitConvertisseur.FormatQte(stock.QuantiteDisponible, stock.UniteOutput), y);
+            y = KDetailRow("Coût unit.", UnitConvertisseur.FormatPrix(stock.CoutUnitaire), y);
+            y = KDetailRow("Valeur", UnitConvertisseur.FormatPrix(stock.CoutTotal), y, CHOCO_BRAND);
+
+            y = KDetailSection("PRODUCTION", y);
+            y = KDetailRow("Produit le", stock.DateProduction.ToString("dd/MM/yyyy HH:mm"), y);
+            y = KDetailRow("ID prod.", $"#{stock.IdProduction}", y);
+            if (stock.DateDlc.HasValue)
+            {
+                bool expire = stock.DateDlc.Value < DateTime.Today;
+                bool proche = !expire && (stock.DateDlc.Value - DateTime.Today).TotalDays < 7;
+                y = KDetailRow("DLC", stock.DateDlc.Value.ToString("dd/MM/yyyy"), y,
+                    expire ? RED_CRIT : proche ? AppColors.OrgWarn : CHOCO_MED);
+            }
+
+            y = KDetailSection("CONTEXTE", y);
+            if (!string.IsNullOrEmpty(stock.NomNiveau))
+                y = KDetailRow("Niveau", $"N{stock.OrdreNiveau} {stock.NomNiveau}", y);
+            if (!string.IsNullOrEmpty(stock.NomContexte))
+                y = KDetailRow("Contexte", stock.NomContexte, y);
+
+            // Composition de la fiche source
+            try
+            {
+                var fiche = BomFicheDAL.GetById(stock.IdFiche, avecLignes: true);
+                if (fiche?.Lignes != null && fiche.Lignes.Count > 0)
+                {
+                    y = KDetailSection("COMPOSITION", y);
+                    foreach (var ligne in fiche.Lignes)
+                    {
+                        string qte = UnitConvertisseur.FormatQte(ligne.Quantite, ligne.UniteMesure);
+                        y = KDetailRow(ligne.NomInput, qte, y);
+                    }
+                }
+            }
+            catch { }
+        }
+
+        // ── Helpers rendu détail Kanban ───────────────────────────────
+
+        private int KDetailHeader(string nom, string type, int y)
+        {
+            var accent = new Panel
+            {
+                Location = new Point(0, y), Size = new Size(300, 4),
+                BackColor = CHOCO_BRAND
+            };
+            _pnlKanbanDetailContent.Controls.Add(accent);
+            y += 8;
+            _pnlKanbanDetailContent.Controls.Add(new Label
+            {
+                Text = nom, Font = new Font("Segoe UI", 12F, FontStyle.Bold),
+                ForeColor = CHOCO_BRAND, Location = new Point(0, y),
+                AutoSize = true, MaximumSize = new Size(280, 0)
+            });
+            y += 28;
+            _pnlKanbanDetailContent.Controls.Add(new Label
+            {
+                Text = type, Font = new Font("Segoe UI", 7.5F, FontStyle.Bold),
+                ForeColor = CHOCO_MED, BackColor = Color.FromArgb(240, 235, 225),
+                AutoSize = true, Padding = new Padding(6, 2, 6, 2),
+                Location = new Point(0, y)
+            });
+            return y + 24;
+        }
+
+        private int KDetailSection(string title, int y)
+        {
+            y += 6;
+            _pnlKanbanDetailContent.Controls.Add(new Label
+            {
+                Text = title, Font = new Font("Segoe UI", 7.5F, FontStyle.Bold),
+                ForeColor = SIDEBAR_META, Location = new Point(0, y), AutoSize = true
+            });
+            y += 18;
+            _pnlKanbanDetailContent.Controls.Add(new Panel
+            {
+                Location = new Point(0, y - 2), Size = new Size(280, 1),
+                BackColor = BORDER_CLR
+            });
+            return y;
+        }
+
+        private int KDetailRow(string label, string value, int y, Color? valColor = null)
+        {
+            _pnlKanbanDetailContent.Controls.Add(new Label
+            {
+                Text = label, Font = new Font("Segoe UI", 8.5F),
+                ForeColor = CHOCO_MED, Location = new Point(0, y), AutoSize = true
+            });
+            _pnlKanbanDetailContent.Controls.Add(new Label
+            {
+                Text = value ?? "—", Font = new Font("Segoe UI", 8.5F, FontStyle.Bold),
+                ForeColor = valColor ?? CHOCO_BRAND,
+                Location = new Point(110, y), AutoSize = true, MaximumSize = new Size(180, 0)
+            });
+            return y + 20;
+        }
+
+        private int KDetailTag(string text, int y)
+        {
+            var tag = new Label
+            {
+                Text = text, Font = new Font("Segoe UI", 8F),
+                ForeColor = CHOCO_BRAND, BackColor = Color.FromArgb(245, 240, 232),
+                AutoSize = true, Padding = new Padding(6, 2, 6, 2),
+                Location = new Point(0, y)
+            };
+            tag.Paint += (s, ev) =>
+            {
+                using (var pen = new Pen(BORDER_CLR, 1))
+                    ev.Graphics.DrawRectangle(pen, 0, 0, tag.Width - 1, tag.Height - 1);
+            };
+            _pnlKanbanDetailContent.Controls.Add(tag);
+            return y + 24;
         }
 
         private void DgvFiches_CellFormatting(object sender, DataGridViewCellFormattingEventArgs e)
@@ -918,6 +1196,97 @@ namespace CharlesNadejda.Forms
                 e.Value = UnitConvertisseur.FormatPrix(bs3.CoutTotal);
             else if (col.Name == "PrixAchatReference" && row.DataBoundItem is Ingredient ing4)
                 e.Value = UnitConvertisseur.FormatPrix(ing4.PrixAchatReference);
+            else if (col.Name == "StockPieces" && row.DataBoundItem is Ingredient ing5)
+                e.Value = ing5.StockPieces == 0 ? "—" : $"{ing5.StockPieces:0}";
+        }
+
+        /// <summary>Peint la barre jauge dans la colonne "Jauge" du DGV Stock.</summary>
+        private void DgvStock_CellPainting(object sender, DataGridViewCellPaintingEventArgs e)
+        {
+            if (e.RowIndex < 0 || _dgvStock == null) return;
+            if (_dgvStock.Columns[e.ColumnIndex].Name != "Jauge") return;
+            if (!(_dgvStock.Rows[e.RowIndex].DataBoundItem is Ingredient ing)) return;
+
+            e.Handled = true;
+            var g = e.Graphics;
+            g.SmoothingMode = SmoothingMode.AntiAlias;
+
+            // Fond de la cellule
+            bool sel = (e.State & DataGridViewElementStates.Selected) != 0;
+            Color bgColor = sel ? _dgvStock.DefaultCellStyle.SelectionBackColor
+                : (e.RowIndex % 2 == 1 ? Color.FromArgb(250, 246, 238) : Color.White);
+            using (var br = new SolidBrush(bgColor))
+                g.FillRectangle(br, e.CellBounds);
+
+            double? ratio = ing.StockRatio;
+            if (!ratio.HasValue)
+            {
+                // Pas de cible → tiret centré
+                using (var f = new Font("Segoe UI", 8F))
+                using (var br = new SolidBrush(CHOCO_MED))
+                {
+                    var sz = g.MeasureString("—", f);
+                    g.DrawString("—", f, br,
+                        e.CellBounds.X + (e.CellBounds.Width - sz.Width) / 2,
+                        e.CellBounds.Y + (e.CellBounds.Height - sz.Height) / 2);
+                }
+                return;
+            }
+
+            // Dimensions de la barre
+            int pad = 6, barH = 14;
+            int barX = e.CellBounds.X + pad;
+            int barW = e.CellBounds.Width - pad * 2;
+            int barY = e.CellBounds.Y + (e.CellBounds.Height - barH) / 2;
+            int fillW = (int)(Math.Min(ratio.Value, 1.0) * barW);
+
+            // Couleur selon le ratio (seuil alerte pris en compte)
+            double r = ratio.Value;
+            Color barColor;
+            if (r < 0.20)      barColor = Color.FromArgb(220, 60, 50);   // rouge
+            else if (r < 0.50) barColor = Color.FromArgb(230, 160, 40);  // orange
+            else if (r <= 1.0) barColor = Color.FromArgb(80, 165, 80);   // vert
+            else               barColor = Color.FromArgb(50, 130, 200);  // bleu (surplus)
+
+            // Fond gris de la barre
+            using (var path = RoundedRect(new Rectangle(barX, barY, barW, barH), 3))
+            using (var br = new SolidBrush(Color.FromArgb(230, 225, 218)))
+                g.FillPath(br, path);
+
+            // Remplissage
+            if (fillW > 2)
+            {
+                using (var path = RoundedRect(new Rectangle(barX, barY, fillW, barH), 3))
+                using (var br = new SolidBrush(barColor))
+                    g.FillPath(br, path);
+            }
+
+            // Marque du seuil d'alerte
+            if (ing.SeuilAlerteStock.HasValue && ing.StockCible.HasValue && ing.StockCible.Value > 0)
+            {
+                double seuilRatio = (double)(ing.SeuilAlerteStock.Value / ing.StockCible.Value);
+                if (seuilRatio > 0 && seuilRatio < 1)
+                {
+                    int sx = barX + (int)(seuilRatio * barW);
+                    using (var pen = new Pen(Color.FromArgb(180, 220, 60, 50), 1.5f))
+                        g.DrawLine(pen, sx, barY - 1, sx, barY + barH + 1);
+                }
+            }
+
+            // Label pourcentage
+            string pct = r > 9.99 ? ">999%" : $"{(int)(r * 100)}%";
+            using (var f = new Font("Segoe UI", 7F, FontStyle.Bold))
+            using (var br = new SolidBrush(sel ? Color.White : CHOCO_BRAND))
+            {
+                var sz = g.MeasureString(pct, f);
+                float tx = barX + barW + 2;
+                if (tx + sz.Width > e.CellBounds.Right - 2)
+                    tx = barX + fillW / 2f - sz.Width / 2f; // inside bar
+                g.DrawString(pct, f, br, tx, e.CellBounds.Y + (e.CellBounds.Height - sz.Height) / 2);
+            }
+
+            // Bordure cellule
+            e.PaintContent(e.CellBounds);
         }
 
         private void ChargerFiches(BomNiveau niv)
@@ -1033,11 +1402,21 @@ namespace CharlesNadejda.Forms
                             col.Width        = width;
                             col.DisplayIndex = di++;
                         }
-                        ShowCol("Nom",                 "Ingrédient",     160);
-                        ShowCol("StockActuel",         "Dispo",           90);
-                        ShowCol("PrixAchatReference",  "€/cond.",         70);
-                        ShowCol("StockNom",            "Stock (lieu)",   110);
-                        ShowCol("ConditionnementLabel","Conditionnement", 110);
+                        ShowCol("Nom",                 "Ingrédient",     140);
+                        ShowCol("StockActuel",         "Dispo",           80);
+                        ShowCol("StockPieces",         "Pièces",          50);
+                        ShowCol("PrixAchatReference",  "€/cond.",         65);
+                        ShowCol("StockNom",            "Lieu",            90);
+
+                        // Colonne jauge custom-drawn
+                        var colJauge = new DataGridViewTextBoxColumn
+                        {
+                            Name = "Jauge", HeaderText = "Niveau", Width = 80,
+                            ReadOnly = true, SortMode = DataGridViewColumnSortMode.NotSortable
+                        };
+                        colJauge.DefaultCellStyle.NullValue = "";
+                        _dgvStock.Columns.Add(colJauge);
+                        colJauge.DisplayIndex = di++;
                     }
                 }
                 else
@@ -1378,26 +1757,47 @@ namespace CharlesNadejda.Forms
             return row;
         }
 
-        private Panel MakeNiveauRow(BomNiveau niv, int ficheCount, int ordreMax)
+        /// <summary>Carte niveau pour la colonne Kanban gauche.</summary>
+        private Panel MakeNiveauCard(BomNiveau niv, int ficheCount, int ordreMax)
         {
             bool locked = niv.Ordre == 0;
             bool estTop = niv.Ordre == ordreMax && ordreMax > 0;
-            var row = new Panel { Height = 52, BackColor = Color.White, Width = 600 };
-            row.Paint += (s, ev) =>
+            string subtitle = locked ? "Stock global partagé"
+                : $"{ficheCount} fiche{(ficheCount != 1 ? "s" : "")}";
+
+            var card = new Panel
+            {
+                Size   = new Size(196, 64),
+                Margin = new Padding(0, 0, 0, 4),
+                Cursor = Cursors.Hand
+            };
+            typeof(Panel).InvokeMember("DoubleBuffered",
+                System.Reflection.BindingFlags.SetProperty | System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic,
+                null, card, new object[] { true });
+
+            card.Paint += (s, ev) =>
             {
                 var g = ev.Graphics;
-                bool sel = _state.ActiveNiveau?.Id == niv.Id;
+                g.SmoothingMode = SmoothingMode.AntiAlias;
+                bool sel     = _state.ActiveNiveau?.Id == niv.Id;
                 Color accent = locked ? Color.FromArgb(195, 165, 135) : sel ? OR : CHOCO_MED;
+                Color bg     = sel ? Color.FromArgb(255, 250, 229) : Color.White;
                 Color brd    = sel ? OR : BORDER_CLR;
-                row.BackColor = sel ? Color.FromArgb(255, 250, 229) : Color.White;
 
-                using (var pen = new Pen(brd, 1))
-                    g.DrawRectangle(pen, 0, 0, row.Width - 1, row.Height - 1);
+                using (var path = RoundedRect(new Rectangle(0, 0, card.Width - 1, card.Height - 1), 6))
+                {
+                    using (var br = new SolidBrush(bg))
+                        g.FillPath(br, path);
+                    using (var pen = new Pen(brd, sel ? 2f : 1f))
+                        g.DrawPath(pen, path);
+                }
+
+                // Barre accent gauche
                 using (var br = new SolidBrush(accent))
-                    g.FillRectangle(br, 0, 0, 4, row.Height);
+                    g.FillRectangle(br, 0, 8, 4, card.Height - 16);
 
-                // Icône cercle avec numéro d'ordre
-                int cx = 24, cy = row.Height / 2, r = 14;
+                // Cercle numéro
+                int cx = 22, cy = card.Height / 2, r = 13;
                 using (var br = new SolidBrush(accent))
                     g.FillEllipse(br, cx - r, cy - r, r * 2, r * 2);
                 using (var f = new Font("Segoe UI", 9F, FontStyle.Bold))
@@ -1407,128 +1807,128 @@ namespace CharlesNadejda.Forms
                     var sz = g.MeasureString(num, f);
                     g.DrawString(num, f, br, cx - sz.Width / 2, cy - sz.Height / 2);
                 }
-            };
 
-            // ── Nom du niveau ────────────────────────────────────────
-            var lblNom = new Label
-            {
-                Text = niv.Nom, Font = new Font("Segoe UI", 10.5F, FontStyle.Bold),
-                ForeColor = CHOCO_BRAND, Location = new Point(48, 6), AutoSize = true
-            };
-            row.Controls.Add(lblNom);
+                // Nom
+                using (var f = new Font("Segoe UI", 9.5F, FontStyle.Bold))
+                using (var br = new SolidBrush(CHOCO_BRAND))
+                    g.DrawString(niv.Nom, f, br, 42, 10);
 
-            // ── Description / sous-titre ─────────────────────────────
-            string desc = string.IsNullOrWhiteSpace(niv.Description)
-                ? (locked ? "Stock global partagé" : $"{ficheCount} fiche{(ficheCount != 1 ? "s" : "")} recette")
-                : niv.Description;
-            var lblDesc = new Label
-            {
-                Text = desc, Font = new Font("Segoe UI", 8.5F),
-                ForeColor = CHOCO_MED, Location = new Point(48, 28), AutoSize = true,
-                MaximumSize = new Size(400, 0)
-            };
-            row.Controls.Add(lblDesc);
+                // Sous-titre
+                using (var f = new Font("Segoe UI", 8F))
+                using (var br = new SolidBrush(CHOCO_MED))
+                    g.DrawString(subtitle, f, br, 42, 32);
 
-            // ── Badge statut (droite) ────────────────────────────────
-            if (estTop || locked)
-            {
-                var badge = new Label
+                // Badge produit final
+                if (estTop)
                 {
-                    Text      = estTop ? "Produit final" : "Base",
-                    Font      = new Font("Segoe UI", 7.5F, FontStyle.Bold),
-                    BackColor = estTop ? Color.FromArgb(240, 248, 240) : Color.FromArgb(245, 240, 232),
-                    ForeColor = estTop ? AppColors.Success : CHOCO_MED,
-                    AutoSize  = true,
-                    Padding   = new Padding(6, 2, 6, 2)
-                };
-                badge.Paint += (s2, ev2) =>
-                {
-                    using (var pen = new Pen(estTop ? AppColors.Success : BORDER_CLR, 1))
-                        ev2.Graphics.DrawRectangle(pen, 0, 0, badge.Width - 1, badge.Height - 1);
-                };
-                row.Controls.Add(badge);
-                row.Resize += (s, ev) => badge.Location = new Point(row.Width - badge.Width - 44, 6);
-                badge.Location = new Point(row.Width - badge.Width - 44, 6);
-            }
+                    string badge = "★ Final";
+                    using (var f = new Font("Segoe UI", 7F, FontStyle.Bold))
+                    {
+                        var sz = g.MeasureString(badge, f);
+                        int bx = card.Width - (int)sz.Width - 10, by = 8;
+                        using (var br = new SolidBrush(Color.FromArgb(240, 248, 240)))
+                            g.FillRectangle(br, bx - 2, by - 1, sz.Width + 4, sz.Height + 2);
+                        using (var br = new SolidBrush(AppColors.Success))
+                            g.DrawString(badge, f, br, bx, by);
+                    }
+                }
+            };
 
-            // ── Boutons action (droite) ──────────────────────────────
+            card.Click += (s, ev) => SelectNiveauRow(niv);
+
+            // Menu contextuel
             if (!locked)
             {
-                var btnFiches = new Button
-                {
-                    Text = "📋", Font = new Font("Segoe UI", 10F),
-                    FlatStyle = FlatStyle.Flat, BackColor = Color.Transparent,
-                    ForeColor = CHOCO_BRAND, Size = new Size(32, 32), Cursor = Cursors.Hand
-                };
-                btnFiches.FlatAppearance.BorderSize = 0;
-                var tipFiches = new ToolTip();
-                tipFiches.SetToolTip(btnFiches, "Voir les fiches recettes");
-                btnFiches.Click += (s, ev) =>
+                var menu = new ContextMenuStrip();
+                menu.Items.Add("📋  Gérer les fiches").Click += (s2, ev2) =>
                 {
                     SelectNiveauRow(niv);
                     if (niv.Ordre == 1)
-                    {
-                        using (var frm = new FrmIngredients(new Activite { Id = niv.IdActivite })) frm.ShowDialog(this);
-                    }
+                    { using (var frm = new FrmIngredients(new Activite { Id = niv.IdActivite })) frm.ShowDialog(this); }
                     else
-                    {
-                        using (var frm = new FrmBomFiches(niv)) frm.ShowDialog(this);
-                        ChargerFiches(niv);
-                    }
+                    { using (var frm = new FrmBomFiches(niv)) frm.ShowDialog(this); ChargerFiches(niv); }
                 };
-
-                var btnProd = new Button
-                {
-                    Text = "▶", Font = new Font("Segoe UI", 10F),
-                    FlatStyle = FlatStyle.Flat, BackColor = Color.Transparent,
-                    ForeColor = AppColors.Success, Size = new Size(32, 32), Cursor = Cursors.Hand,
-                    Enabled = niv.Ordre > 1
-                };
-                btnProd.FlatAppearance.BorderSize = 0;
-                var tipProd = new ToolTip();
-                tipProd.SetToolTip(btnProd, "Lancer une production");
-                btnProd.Click += (s, ev) => { SelectNiveauRow(niv); NavigateTo(ScreenId.Production); };
-
-                var btnDel = new Button
-                {
-                    Text = "✕", Font = new Font("Segoe UI", 9F),
-                    FlatStyle = FlatStyle.Flat, BackColor = Color.Transparent,
-                    ForeColor = estTop ? Color.FromArgb(160, 120, 100) : Color.FromArgb(210, 200, 190),
-                    Size = new Size(32, 32), Cursor = estTop ? Cursors.Hand : Cursors.Default,
-                    Enabled = estTop
-                };
-                btnDel.FlatAppearance.BorderSize = 0;
-                if (!estTop)
-                {
-                    var tip = new ToolTip();
-                    tip.SetToolTip(btnDel, "Seul le niveau le plus haut est supprimable");
-                }
-                btnDel.Click += (s, ev) => SupprimerNiveau(niv);
-
-                row.Controls.Add(btnFiches);
-                row.Controls.Add(btnProd);
-                row.Controls.Add(btnDel);
-
-                row.Resize += (s, ev) =>
-                {
-                    int bx = row.Width - 14;
-                    btnDel.Location    = new Point(bx - 32, 10);
-                    btnProd.Location   = new Point(bx - 64, 10);
-                    btnFiches.Location = new Point(bx - 96, 10);
-                };
-                int initBx = row.Width - 14;
-                btnDel.Location    = new Point(initBx - 32, 10);
-                btnProd.Location   = new Point(initBx - 64, 10);
-                btnFiches.Location = new Point(initBx - 96, 10);
+                var miProd = menu.Items.Add("▶  Lancer une production");
+                miProd.Enabled = niv.Ordre > 1;
+                miProd.Click += (s2, ev2) => { SelectNiveauRow(niv); NavigateTo(ScreenId.Production); };
+                menu.Items.Add(new ToolStripSeparator());
+                var miDel = menu.Items.Add("✕  Supprimer ce niveau");
+                miDel.Enabled = estTop;
+                if (!estTop) miDel.ToolTipText = "Seul le niveau le plus haut est supprimable";
+                miDel.Click += (s2, ev2) => SupprimerNiveau(niv);
+                card.ContextMenuStrip = menu;
             }
 
-            row.Click += (s, ev) => SelectNiveauRow(niv);
-            foreach (Control c in row.Controls)
-                if (!(c is Button)) c.Click += (s, ev) => SelectNiveauRow(niv);
+            _niveauPanels[niv.Id] = card;
+            return card;
+        }
 
-            _niveauPanels[niv.Id] = row;
-            row.Anchor = AnchorStyles.Left | AnchorStyles.Top | AnchorStyles.Right;
-            return row;
+        /// <summary>Crée un en-tête de colonne Kanban (32px) avec accent en bas.</summary>
+        private static Panel MakeKanbanHeader(string title, Color accentColor)
+        {
+            var pnl = new Panel { Dock = DockStyle.Top, Height = 32, BackColor = AppColors.CremeWarm };
+            pnl.Paint += (s, ev) =>
+            {
+                var g = ev.Graphics;
+                // Ligne accent fine (2px) en bas
+                using (var br = new SolidBrush(accentColor))
+                    g.FillRectangle(br, 0, pnl.Height - 2, pnl.Width, 2);
+            };
+            var lbl = new Label
+            {
+                Text = title, Font = new Font("Segoe UI", 8F, FontStyle.Bold, GraphicsUnit.Point),
+                ForeColor = Color.FromArgb(120, 100, 80), Dock = DockStyle.Fill,
+                TextAlign = ContentAlignment.MiddleLeft, Padding = new Padding(12, 0, 0, 2),
+                BackColor = Color.Transparent
+            };
+            pnl.Controls.Add(lbl);
+            return pnl;
+        }
+
+        /// <summary>Crée un panneau séparateur vertical 3px entre colonnes Kanban.</summary>
+        private static Panel MakeColumnSeparator()
+        {
+            var sep = new Panel { Dock = DockStyle.Left, Width = 3, BackColor = Color.Transparent };
+            sep.Paint += (s, ev) =>
+            {
+                var g = ev.Graphics;
+                int h = sep.Height;
+                // Ombre gauche (foncée) → trait central → reflet droit (clair)
+                using (var pen = new Pen(Color.FromArgb(40, 80, 60, 40)))
+                    g.DrawLine(pen, 0, 0, 0, h);
+                using (var pen = new Pen(Color.FromArgb(200, 180, 160)))
+                    g.DrawLine(pen, 1, 0, 1, h);
+                using (var pen = new Pen(Color.FromArgb(20, 255, 255, 255)))
+                    g.DrawLine(pen, 2, 0, 2, h);
+            };
+            return sep;
+        }
+
+        /// <summary>Petit bouton pour la barre d'actions Kanban.</summary>
+        private static Button MakeSmallButton(string text, Color bg, Color fg)
+        {
+            var btn = new Button
+            {
+                Text = text, Font = new Font("Segoe UI", 7.5F, FontStyle.Bold),
+                FlatStyle = FlatStyle.Flat, BackColor = bg, ForeColor = fg,
+                Size = new Size(text.Length * 7 + 20, 28), Cursor = Cursors.Hand,
+                Margin = new Padding(0, 0, 4, 0)
+            };
+            btn.FlatAppearance.BorderColor = bg;
+            return btn;
+        }
+
+        /// <summary>Crée un GraphicsPath rectangulaire à coins arrondis.</summary>
+        private static GraphicsPath RoundedRect(Rectangle bounds, int radius)
+        {
+            int d = radius * 2;
+            var gp = new GraphicsPath();
+            gp.AddArc(bounds.X, bounds.Y, d, d, 180, 90);
+            gp.AddArc(bounds.Right - d, bounds.Y, d, d, 270, 90);
+            gp.AddArc(bounds.Right - d, bounds.Bottom - d, d, d, 0, 90);
+            gp.AddArc(bounds.X, bounds.Bottom - d, d, d, 90, 90);
+            gp.CloseFigure();
+            return gp;
         }
 
         private static Button MakeActionButton(string text, Color bg, Color fg)

@@ -1,3 +1,5 @@
+using System;
+
 namespace CharlesNadejda.Models
 {
     public class Ingredient
@@ -17,6 +19,8 @@ namespace CharlesNadejda.Models
         /// <summary>Prix de référence par conditionnement (€/sac, €/bouteille…).</summary>
         public decimal  PrixAchatReference      { get; set; }
         public decimal? SeuilAlerteStock        { get; set; }
+        /// <summary>Stock cible (100% de la jauge) en unité de base. Paramétré par l'utilisateur.</summary>
+        public decimal? StockCible              { get; set; }
         public int?     IdFournisseurDefaut      { get; set; }
         public string   NomFournisseur          { get; set; }   // jointure fournisseurs
         public int      IdStock                 { get; set; }
@@ -32,6 +36,16 @@ namespace CharlesNadejda.Models
 
         // Calculé depuis les lots — rempli par le DAL si besoin
         public decimal StockActuel { get; set; }
+
+        /// <summary>Nombre de pièces (conditionnements) en stock, arrondi vers le bas.</summary>
+        public decimal StockPieces =>
+            QteParConditionnement > 0 ? Math.Floor(StockActuel / QteParConditionnement) : 0;
+
+        /// <summary>Ratio stock actuel / stock cible (0..N). Null si pas de cible définie.</summary>
+        public double? StockRatio =>
+            StockCible.HasValue && StockCible.Value > 0
+                ? (double)(StockActuel / StockCible.Value)
+                : (double?)null;
 
         public override string ToString() => $"{Nom} — {ConditionnementLabel} ({UniteMesure})";
     }

@@ -19,6 +19,7 @@ namespace CharlesNadejda.Forms
         private readonly TextBox       txtNom;
         private readonly TextBox       txtMarque;
         private readonly TextBox       txtSeuil;
+        private readonly NumericUpDown nudStockCible;
         private readonly ComboBox      cmbUnite;
         private readonly ComboBox      cmbTypePhysique;
         private readonly ComboBox      cmbFournisseur;
@@ -129,7 +130,14 @@ namespace CharlesNadejda.Forms
 
             // ── Ligne 6 — Seuil alerte ────────────────────────────────────
             txtSeuil = new TextBox();
-            AddField("Seuil alerte stock", txtSeuil, lx, 262, 175);
+            AddField("Seuil alerte stock", txtSeuil, lx, 262, wL);
+            nudStockCible = new NumericUpDown
+            {
+                DecimalPlaces = 0, Minimum = 0,
+                Maximum = new decimal(new[] { 99999, 0, 0, 0 }),
+                Increment = 1m, Value = 0
+            };
+            AddField("Stock cible (pièces)", nudStockCible, lx2, 262, wR);
 
             // ── Ligne 7 — Fournisseur ─────────────────────────────────────
             cmbFournisseur = new ComboBox { DropDownStyle = ComboBoxStyle.DropDownList };
@@ -146,8 +154,8 @@ namespace CharlesNadejda.Forms
 
         private void FrmIngredientEdit_Load(object sender, EventArgs e)
         {
-            FormHelper.ActiverPointDecimal(nudPrix, nudQteConditionnement, nudDensite);
-            FormHelper.ActiverSelectionAuFocus(nudPrix, nudQteConditionnement, nudDensite);
+            FormHelper.ActiverPointDecimal(nudPrix, nudQteConditionnement, nudDensite, nudStockCible);
+            FormHelper.ActiverSelectionAuFocus(nudPrix, nudQteConditionnement, nudDensite, nudStockCible);
             Text = _isEdit ? "Modifier la fiche ingrédient" : "Nouvelle fiche ingrédient";
 
             cmbTypePhysique.Items.AddRange(new object[] { "solide", "liquide", "poudre", "piece" });
@@ -180,6 +188,10 @@ namespace CharlesNadejda.Forms
                 nudQteConditionnement.Value  = _ing.QteParConditionnement > 0 ? _ing.QteParConditionnement : 1m;
                 txtSeuil.Text = _ing.SeuilAlerteStock.HasValue
                     ? _ing.SeuilAlerteStock.Value.ToString("F4") : "";
+                if (_ing.StockCible.HasValue && _ing.QteParConditionnement > 0)
+                    nudStockCible.Value = Math.Round(_ing.StockCible.Value / _ing.QteParConditionnement);
+                else
+                    nudStockCible.Value = 0;
 
                 foreach (var item in cmbStock.Items)
                     if (((Stock)item).Id == _ing.IdStock) { cmbStock.SelectedItem = item; break; }
@@ -259,6 +271,10 @@ namespace CharlesNadejda.Forms
                     NumberStyles.Any, CultureInfo.InvariantCulture, out decimal s))
                 seuil = s;
 
+            decimal? stockCible = null;
+            if (nudStockCible.Value > 0)
+                stockCible = nudStockCible.Value * nudQteConditionnement.Value;
+
             string typeSel = cmbTypePhysique.SelectedItem.ToString();
             var stockSel   = (Stock)cmbStock.SelectedItem;
 
@@ -272,6 +288,7 @@ namespace CharlesNadejda.Forms
             _ing.QteParConditionnement = nudQteConditionnement.Value;
             _ing.PrixAchatReference    = nudPrix.Value;
             _ing.SeuilAlerteStock      = seuil;
+            _ing.StockCible            = stockCible;
             _ing.IdStock               = stockSel.Id;
             _ing.StockNom              = stockSel.Nom;
             _ing.IdFournisseurDefaut   = cmbFournisseur.SelectedItem is Fournisseur f ? (int?)f.Id : null;
