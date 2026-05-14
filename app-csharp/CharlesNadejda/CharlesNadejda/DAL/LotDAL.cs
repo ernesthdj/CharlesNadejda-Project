@@ -42,6 +42,29 @@ namespace CharlesNadejda.DAL
             return list;
         }
 
+        public static Lot GetById(int id)
+        {
+            using (var conn = DbHelper.GetConnection())
+            using (var cmd = conn.CreateCommand())
+            {
+                cmd.CommandText = @"
+                    SELECT l.id, l.id_fiche_ingredient, fi.nom AS nom_ingredient,
+                           fi.unite_mesure, fi.conditionnement_label, fi.qte_par_conditionnement,
+                           l.nb_conditionnements,
+                           l.numero_lot, l.id_fournisseur, f.nom AS nom_fournisseur,
+                           l.date_achat, l.date_peremption, l.quantite_initiale,
+                           l.quantite_disponible, l.prix_unitaire, l.prix_achat_reel,
+                           l.tva_pct, l.reference_facture, l.notes
+                    FROM lots_ingredients l
+                    INNER JOIN fiches_ingredients fi ON fi.id = l.id_fiche_ingredient
+                    LEFT JOIN fournisseurs f ON f.id = l.id_fournisseur
+                    WHERE l.id = @id";
+                cmd.Parameters.AddWithValue("@id", id);
+                using (var r = cmd.ExecuteReader())
+                    return r.Read() ? Map(r) : null;
+            }
+        }
+
         public static void Insert(Lot lot)
         {
             using (var conn = DbHelper.GetConnection())

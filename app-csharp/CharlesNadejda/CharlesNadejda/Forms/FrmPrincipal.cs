@@ -164,6 +164,7 @@ namespace CharlesNadejda.Forms
                     NavigateTo(ScreenId.ContexteNiveaux);
                     break;
                 case NavItemId.FichesBom:
+                    // Redirige vers le même écran que NiveauxContextes (rétrocompat)
                     NavigateTo(ScreenId.ContexteNiveaux);
                     break;
                 case NavItemId.Planning:
@@ -1380,110 +1381,93 @@ namespace CharlesNadejda.Forms
         private Panel MakeNiveauRow(BomNiveau niv, int ficheCount, int ordreMax)
         {
             bool locked = niv.Ordre == 0;
-            var row = new Panel { Height = 64, BackColor = Color.White, Width = 600 };
+            bool estTop = niv.Ordre == ordreMax && ordreMax > 0;
+            var row = new Panel { Height = 52, BackColor = Color.White, Width = 600 };
             row.Paint += (s, ev) =>
             {
-                bool sel  = _state.ActiveNiveau?.Id == niv.Id;
-                Color leftC = locked ? Color.FromArgb(195, 165, 135) : sel ? OR : CHOCO_MED;
-                Color brdC  = sel ? OR : BORDER_CLR;
+                var g = ev.Graphics;
+                bool sel = _state.ActiveNiveau?.Id == niv.Id;
+                Color accent = locked ? Color.FromArgb(195, 165, 135) : sel ? OR : CHOCO_MED;
+                Color brd    = sel ? OR : BORDER_CLR;
                 row.BackColor = sel ? Color.FromArgb(255, 250, 229) : Color.White;
-                using (var pen = new Pen(brdC, 1))
-                    ev.Graphics.DrawRectangle(pen, 0, 0, row.Width - 1, row.Height - 1);
-                using (var br = new SolidBrush(leftC))
-                    ev.Graphics.FillRectangle(br, 0, 0, 4, row.Height);
+
+                using (var pen = new Pen(brd, 1))
+                    g.DrawRectangle(pen, 0, 0, row.Width - 1, row.Height - 1);
+                using (var br = new SolidBrush(accent))
+                    g.FillRectangle(br, 0, 0, 4, row.Height);
+
+                // Icône cercle avec numéro d'ordre
+                int cx = 24, cy = row.Height / 2, r = 14;
+                using (var br = new SolidBrush(accent))
+                    g.FillEllipse(br, cx - r, cy - r, r * 2, r * 2);
+                using (var f = new Font("Segoe UI", 9F, FontStyle.Bold))
+                using (var br = new SolidBrush(Color.White))
+                {
+                    string num = niv.Ordre.ToString();
+                    var sz = g.MeasureString(num, f);
+                    g.DrawString(num, f, br, cx - sz.Width / 2, cy - sz.Height / 2);
+                }
             };
 
-            var lblOrdre = new Label
-            {
-                Text = $"N{niv.Ordre}", Font = new Font("Segoe UI", 20F, FontStyle.Bold),
-                ForeColor = CHOCO_BRAND, Location = new Point(12, 10), Size = new Size(52, 40),
-                TextAlign = ContentAlignment.MiddleCenter
-            };
+            // ── Nom du niveau ────────────────────────────────────────
             var lblNom = new Label
             {
-                Text = niv.Nom, Font = new Font("Segoe UI", 11F, FontStyle.Bold),
-                ForeColor = CHOCO_BRAND, Location = new Point(68, 8), AutoSize = true
+                Text = niv.Nom, Font = new Font("Segoe UI", 10.5F, FontStyle.Bold),
+                ForeColor = CHOCO_BRAND, Location = new Point(48, 6), AutoSize = true
             };
-            // US-11 : badge pill selon le statut du niveau
-            Label pillBadge = null;
-            if (niv.Ordre == ordreMax && ordreMax > 0)
-            {
-                pillBadge = new Label
-                {
-                    Text      = "top \u00b7 supprimable",
-                    Font      = new Font("Segoe UI", 7.5F, FontStyle.Bold),
-                    BackColor = OR,
-                    ForeColor = CHOCO_BRAND,
-                    AutoSize  = true,
-                    Padding   = new Padding(6, 2, 6, 2),
-                    Location  = new Point(68, 8)
-                };
-            }
-            else if (niv.Ordre == 0)
-            {
-                pillBadge = new Label
-                {
-                    Text      = "verrouill\u00e9",
-                    Font      = new Font("Segoe UI", 7.5F, FontStyle.Bold),
-                    BackColor = CHOCO_MED,
-                    ForeColor = Color.White,
-                    AutoSize  = true,
-                    Padding   = new Padding(6, 2, 6, 2),
-                    Location  = new Point(68, 8)
-                };
-            }
+            row.Controls.Add(lblNom);
 
+            // ── Description / sous-titre ─────────────────────────────
+            string desc = string.IsNullOrWhiteSpace(niv.Description)
+                ? (locked ? "Stock global partagé" : $"{ficheCount} fiche{(ficheCount != 1 ? "s" : "")} recette")
+                : niv.Description;
             var lblDesc = new Label
             {
-                Text = string.IsNullOrWhiteSpace(niv.Description)
-                    ? (niv.Ordre == 0 ? "Stock global partagé — consommé par N1" : "")
-                    : niv.Description,
-                Font = new Font("Segoe UI", 8F, FontStyle.Italic),
-                ForeColor = CHOCO_MED, Location = new Point(68, 30), AutoSize = true, MaximumSize = new Size(400, 0)
+                Text = desc, Font = new Font("Segoe UI", 8.5F),
+                ForeColor = CHOCO_MED, Location = new Point(48, 28), AutoSize = true,
+                MaximumSize = new Size(400, 0)
             };
-            var lblFiches = new Label
-            {
-                Text = ficheCount > 0 ? $"{ficheCount} fiches" : "—",
-                Font = new Font("Segoe UI", 9F, FontStyle.Bold),
-                ForeColor = CHOCO_BRAND, TextAlign = ContentAlignment.MiddleRight,
-                Anchor = AnchorStyles.Top | AnchorStyles.Right
-            };
-
-            row.Controls.Add(lblOrdre);
-            row.Controls.Add(lblNom);
-            if (pillBadge != null)
-            {
-                // Positionner le badge à droite du nom une fois la taille connue
-                lblNom.SizeChanged += (s, ev) =>
-                    pillBadge.Location = new Point(68 + lblNom.Width + 8, lblNom.Location.Y + 2);
-                row.Controls.Add(pillBadge);
-                pillBadge.BringToFront();
-            }
             row.Controls.Add(lblDesc);
-            row.Controls.Add(lblFiches);
 
-            row.Resize += (s, ev) =>
+            // ── Badge statut (droite) ────────────────────────────────
+            if (estTop || locked)
             {
-                lblFiches.SetBounds(row.Width - 100, 10, 88, 20);
-                foreach (Control c in row.Controls.OfType<Label>())
-                    if (c != lblOrdre && c != lblFiches) c.MaximumSize = new Size(row.Width - 200, 0);
-            };
+                var badge = new Label
+                {
+                    Text      = estTop ? "Produit final" : "Base",
+                    Font      = new Font("Segoe UI", 7.5F, FontStyle.Bold),
+                    BackColor = estTop ? Color.FromArgb(240, 248, 240) : Color.FromArgb(245, 240, 232),
+                    ForeColor = estTop ? AppColors.Success : CHOCO_MED,
+                    AutoSize  = true,
+                    Padding   = new Padding(6, 2, 6, 2)
+                };
+                badge.Paint += (s2, ev2) =>
+                {
+                    using (var pen = new Pen(estTop ? AppColors.Success : BORDER_CLR, 1))
+                        ev2.Graphics.DrawRectangle(pen, 0, 0, badge.Width - 1, badge.Height - 1);
+                };
+                row.Controls.Add(badge);
+                row.Resize += (s, ev) => badge.Location = new Point(row.Width - badge.Width - 44, 6);
+                badge.Location = new Point(row.Width - badge.Width - 44, 6);
+            }
 
+            // ── Boutons action (droite) ──────────────────────────────
             if (!locked)
             {
                 var btnFiches = new Button
                 {
-                    Text = "Fiches", Font = new Font("Segoe UI", 8F),
-                    FlatStyle = FlatStyle.Flat, BackColor = CHOCO_BRAND, ForeColor = Color.White,
-                    Size = new Size(64, 28), Location = new Point(68, 32), Cursor = Cursors.Hand
+                    Text = "📋", Font = new Font("Segoe UI", 10F),
+                    FlatStyle = FlatStyle.Flat, BackColor = Color.Transparent,
+                    ForeColor = CHOCO_BRAND, Size = new Size(32, 32), Cursor = Cursors.Hand
                 };
                 btnFiches.FlatAppearance.BorderSize = 0;
+                var tipFiches = new ToolTip();
+                tipFiches.SetToolTip(btnFiches, "Voir les fiches recettes");
                 btnFiches.Click += (s, ev) =>
                 {
                     SelectNiveauRow(niv);
                     if (niv.Ordre == 1)
                     {
-                        // N1 = ingrédients : raccourci vers FrmIngredients (fiches ingrédients)
                         using (var frm = new FrmIngredients(new Activite { Id = niv.IdActivite })) frm.ShowDialog(this);
                     }
                     else
@@ -1495,39 +1479,52 @@ namespace CharlesNadejda.Forms
 
                 var btnProd = new Button
                 {
-                    Text = "Produire", Font = new Font("Segoe UI", 8F),
-                    FlatStyle = FlatStyle.Flat, BackColor = GREEN_OK, ForeColor = Color.White,
-                    Size = new Size(64, 28), Location = new Point(138, 32), Cursor = Cursors.Hand
+                    Text = "▶", Font = new Font("Segoe UI", 10F),
+                    FlatStyle = FlatStyle.Flat, BackColor = Color.Transparent,
+                    ForeColor = AppColors.Success, Size = new Size(32, 32), Cursor = Cursors.Hand,
+                    Enabled = niv.Ordre > 1
                 };
                 btnProd.FlatAppearance.BorderSize = 0;
+                var tipProd = new ToolTip();
+                tipProd.SetToolTip(btnProd, "Lancer une production");
                 btnProd.Click += (s, ev) => { SelectNiveauRow(niv); NavigateTo(ScreenId.Production); };
 
-                bool estTop = niv.Ordre == ordreMax;
                 var btnDel = new Button
                 {
-                    Text    = "✕", Font = new Font("Segoe UI", 9F),
-                    FlatStyle = FlatStyle.Flat, BackColor = Color.White,
-                    ForeColor = estTop ? Color.FromArgb(160, 120, 100) : Color.FromArgb(200, 190, 180),
-                    Size    = new Size(36, 28), Cursor = estTop ? Cursors.Hand : Cursors.Default,
+                    Text = "✕", Font = new Font("Segoe UI", 9F),
+                    FlatStyle = FlatStyle.Flat, BackColor = Color.Transparent,
+                    ForeColor = estTop ? Color.FromArgb(160, 120, 100) : Color.FromArgb(210, 200, 190),
+                    Size = new Size(32, 32), Cursor = estTop ? Cursors.Hand : Cursors.Default,
                     Enabled = estTop
                 };
                 btnDel.FlatAppearance.BorderSize = 0;
                 if (!estTop)
                 {
                     var tip = new ToolTip();
-                    tip.SetToolTip(btnDel, "Seul le niveau le plus haut (ordre max) est supprimable");
+                    tip.SetToolTip(btnDel, "Seul le niveau le plus haut est supprimable");
                 }
-                row.Resize += (s, ev) => btnDel.Location = new Point(row.Width - 30, 36);
-                btnDel.Location = new Point(550, 36);
                 btnDel.Click += (s, ev) => SupprimerNiveau(niv);
 
                 row.Controls.Add(btnFiches);
                 row.Controls.Add(btnProd);
                 row.Controls.Add(btnDel);
+
+                row.Resize += (s, ev) =>
+                {
+                    int bx = row.Width - 14;
+                    btnDel.Location    = new Point(bx - 32, 10);
+                    btnProd.Location   = new Point(bx - 64, 10);
+                    btnFiches.Location = new Point(bx - 96, 10);
+                };
+                int initBx = row.Width - 14;
+                btnDel.Location    = new Point(initBx - 32, 10);
+                btnProd.Location   = new Point(initBx - 64, 10);
+                btnFiches.Location = new Point(initBx - 96, 10);
             }
 
             row.Click += (s, ev) => SelectNiveauRow(niv);
-            foreach (Control c in row.Controls) c.Click += (s, ev) => { };
+            foreach (Control c in row.Controls)
+                if (!(c is Button)) c.Click += (s, ev) => SelectNiveauRow(niv);
 
             _niveauPanels[niv.Id] = row;
             row.Anchor = AnchorStyles.Left | AnchorStyles.Top | AnchorStyles.Right;

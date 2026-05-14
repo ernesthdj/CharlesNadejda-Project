@@ -114,6 +114,7 @@ namespace CharlesNadejda.Forms.Shell
                 Font      = font,
                 ForeColor = fg,
                 AutoSize  = true,
+                Height    = BAR_HEIGHT,
                 BackColor = Color.Transparent,
                 TextAlign = ContentAlignment.MiddleLeft
             };
@@ -121,14 +122,14 @@ namespace CharlesNadejda.Forms.Shell
 
         private static Panel MakeSep()
         {
-            var sep = new Panel
+            return new Panel
             {
                 Width     = 1,
+                Height    = 14,
                 Dock      = DockStyle.Left,
                 BackColor = AppColors.Line2,
-                Margin    = new Padding(0, 5, 0, 5)
+                Margin    = new Padding(0, 6, 0, 6)
             };
-            return sep;
         }
     }
 }

@@ -42,6 +42,50 @@ namespace CharlesNadejda.DAL
             return list;
         }
 
+        /// <summary>
+        /// Retourne les noms des fiches qui consomment un ingrédient donné.
+        /// </summary>
+        public static List<string> GetFichesUtilisant(int idIngredient)
+        {
+            var list = new List<string>();
+            using (var conn = DbHelper.GetConnection())
+            using (var cmd = conn.CreateCommand())
+            {
+                cmd.CommandText = @"
+                    SELECT DISTINCT f.nom
+                    FROM bom_fiches_lignes l
+                    INNER JOIN bom_fiches f ON f.id = l.id_fiche
+                    WHERE l.id_input_ingredient = @id
+                    ORDER BY f.nom";
+                cmd.Parameters.AddWithValue("@id", idIngredient);
+                using (var r = cmd.ExecuteReader())
+                    while (r.Read()) list.Add(r["nom"].ToString());
+            }
+            return list;
+        }
+
+        /// <summary>
+        /// Retourne les noms des fiches qui consomment une fiche BOM donnée (niveau supérieur).
+        /// </summary>
+        public static List<string> GetFichesConsommant(int idFiche)
+        {
+            var list = new List<string>();
+            using (var conn = DbHelper.GetConnection())
+            using (var cmd = conn.CreateCommand())
+            {
+                cmd.CommandText = @"
+                    SELECT DISTINCT f.nom
+                    FROM bom_fiches_lignes l
+                    INNER JOIN bom_fiches f ON f.id = l.id_fiche
+                    WHERE l.id_input_fiche = @id
+                    ORDER BY f.nom";
+                cmd.Parameters.AddWithValue("@id", idFiche);
+                using (var r = cmd.ExecuteReader())
+                    while (r.Read()) list.Add(r["nom"].ToString());
+            }
+            return list;
+        }
+
         private static BomFicheLigne Map(MySqlDataReader r) => new BomFicheLigne
         {
             Id                 = (int)r["id"],

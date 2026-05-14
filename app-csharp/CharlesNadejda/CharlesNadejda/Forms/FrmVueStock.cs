@@ -1,6 +1,8 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Drawing;
+using System.Drawing.Drawing2D;
 using System.Linq;
 using System.Windows.Forms;
 using CharlesNadejda.DAL;
@@ -30,6 +32,8 @@ namespace CharlesNadejda.Forms
         private DataGridView    _dgv;
         private FlowLayoutPanel _flowChips;
         private Label           _lblTotal;
+        private Panel           _pnlDetail;
+        private Panel           _pnlDetailContent;
 
         // ── Données ──────────────────────────────────────────────────
         private List<Activite>      _activites;
@@ -142,6 +146,32 @@ namespace CharlesNadejda.Forms
                 col.SortMode = DataGridViewColumnSortMode.NotSortable;
 
             _dgv.CellFormatting += Dgv_CellFormatting;
+            _dgv.SelectionChanged += Dgv_SelectionChanged;
+
+            // ── Volet détail (droite) ─────────────────────────────────
+            _pnlDetail = new Panel
+            {
+                Dock      = DockStyle.Right,
+                Width     = 320,
+                BackColor = Color.FromArgb(252, 250, 246),
+                Visible   = false,
+                AutoScroll = true,
+                Padding   = new Padding(0)
+            };
+            _pnlDetail.Paint += (s, ev) =>
+            {
+                using (var pen = new Pen(AppColors.Border, 1))
+                    ev.Graphics.DrawLine(pen, 0, 0, 0, _pnlDetail.Height);
+            };
+
+            _pnlDetailContent = new Panel
+            {
+                Dock      = DockStyle.Fill,
+                AutoScroll = true,
+                BackColor = Color.Transparent,
+                Padding   = new Padding(16, 12, 16, 12)
+            };
+            _pnlDetail.Controls.Add(_pnlDetailContent);
 
             // ── Bas — légende + stats + fermer ────────────────────────
             var pnlBas = new Panel
@@ -199,8 +229,9 @@ namespace CharlesNadejda.Forms
                 btnFermer.Location = new Point(pnlBas.ClientSize.Width - 106, 10);
             btnFermer.Location = new Point(880 - 16, 10);   // sera recalculé au Resize
 
-            // Ordre d'ajout (WinForms docking) : Fill en 1er
+            // Ordre d'ajout (WinForms docking) : Fill en 1er, puis Right, Bottom, Top
             this.Controls.Add(_dgv);
+            this.Controls.Add(_pnlDetail);
             this.Controls.Add(pnlBas);
             this.Controls.Add(pnlChips);
             this.Controls.Add(pnlHeader);
@@ -417,6 +448,322 @@ namespace CharlesNadejda.Forms
         /// <summary>Échappe un champ CSV si il contient le séparateur ';'.</summary>
         private static string Escape(string s)
             => s != null && s.Contains(';') ? $"\"{s}\"" : (s ?? "");
+
+        // ════════════════════════════════════════════════════════════
+        //  VOLET DÉTAIL — sélection DGV
+        // ════════════════════════════════════════════════════════════
+
+        private void Dgv_SelectionChanged(object sender, EventArgs e)
+        {
+            if (_dgv.CurrentRow == null || !(_dgv.CurrentRow.Tag is VueStockGlobal item))
+            {
+                _pnlDetail.Visible = false;
+                return;
+            }
+            AfficherDetail(item);
+        }
+
+        private void AfficherDetail(VueStockGlobal item)
+        {
+            _pnlDetailContent.SuspendLayout();
+            _pnlDetailContent.Controls.Clear();
+
+            int y = 0;
+            if (item.EstLot)
+                y = RenderDetailIngredient(item, y);
+            else
+                y = RenderDetailProduit(item, y);
+
+            _pnlDetailContent.ResumeLayout();
+            _pnlDetail.Visible = true;
+        }
+
+        // ── Détail INGRÉDIENT (lot) ──────────────────────────────────
+
+        private int RenderDetailIngredient(VueStockGlobal item, int y)
+        {
+            Lot lot = null;
+            Ingredient fiche = null;
+            try
+            {
+                lot = LotDAL.GetById(item.IdEntree);
+                if (lot != null)
+                {
+                    var fiches = IngredientDAL.GetAll();
+                    fiche = fiches.FirstOrDefault(i => i.Id == lot.IdFicheIngredient);
+                }
+            }
+            catch (Exception ex) { Trace.TraceError("Detail lot: {0}", ex); }
+
+            // ── En-tête ──
+            y = AddDetailHeader(item.Nom, "Ingrédient", y);
+
+            // ── Identité ──
+            y = AddDetailSection("IDENTITÉ", y);
+            if (fiche != null)
+            {
+                if (!string.IsNullOrEmpty(fiche.Marque))
+                    y = AddDetailRow("Marque", fiche.Marque, y);
+                y = AddDetailRow("Type physique", fiche.TypePhysique, y);
+                if (fiche.Densite.HasValue)
+                    y = AddDetailRow("Densité", $"{fiche.Densite.Value:F3} g/ml", y);
+                y = AddDetailRow("Unité de base", fiche.UniteMesure, y);
+                string condLabel = !string.IsNullOrEmpty(fiche.ConditionnementLabel)
+                    ? fiche.ConditionnementLabel
+                    : UnitConvertisseur.FormatQte(fiche.QteParConditionnement, fiche.UniteMesure);
+                y = AddDetailRow("Conditionnement", condLabel, y);
+                y = AddDetailRow("Stock de rattach.", fiche.StockNom, y);
+            }
+
+            // ── Stock ──
+            y = AddDetailSection("STOCK", y);
+            string u = item.Unite ?? "";
+            y = AddDetailRow("Disponible", UnitConvertisseur.FormatQte(item.QuantiteDispoReelle, u), y);
+            if (item.QuantiteReservee > 0)
+                y = AddDetailRow("Réservé", UnitConvertisseur.FormatQte(item.QuantiteReservee, u), y, AppColors.OrgWarn);
+            y = AddDetailRow("Total", UnitConvertisseur.FormatQte(item.QuantiteTotale, u), y);
+
+            if (fiche != null && fiche.SeuilAlerteStock.HasValue)
+            {
+                y = AddDetailRow("Seuil alerte", UnitConvertisseur.FormatQte(fiche.SeuilAlerteStock.Value, u), y);
+                bool alert = fiche.EstEnAlerte;
+                y = AddDetailRow("État", alert ? "⚠ EN ALERTE" : "✓ OK",
+                    y, alert ? AppColors.RedCrit : AppColors.Success);
+            }
+
+            // ── Prix ──
+            y = AddDetailSection("PRIX", y);
+            if (lot != null)
+            {
+                y = AddDetailRow("Prix cond. HTVA", UnitConvertisseur.FormatPrix(lot.PrixUnitaire), y);
+                y = AddDetailRow("Prix unité base", UnitConvertisseur.FormatPrix(lot.PrixUnitaireBase), y);
+                y = AddDetailRow("Total achat HTVA", UnitConvertisseur.FormatPrix(lot.PrixAchatReel), y);
+            }
+            decimal valeur = item.CoutUnitaire * item.QuantiteTotale;
+            y = AddDetailRow("Valeur stock", UnitConvertisseur.FormatPrix(valeur), y, AppColors.ChocoBrand);
+
+            // ── Lot ──
+            if (lot != null)
+            {
+                y = AddDetailSection("LOT", y);
+                if (!string.IsNullOrEmpty(lot.NumeroLot))
+                    y = AddDetailRow("N° lot", lot.NumeroLot, y);
+                y = AddDetailRow("Date achat", lot.DateAchat.ToString("dd/MM/yyyy"), y);
+                if (lot.DatePeremption.HasValue)
+                {
+                    bool expire = lot.DatePeremption.Value < DateTime.Today;
+                    bool proche = !expire && (lot.DatePeremption.Value - DateTime.Today).TotalDays < 7;
+                    y = AddDetailRow("DLC", lot.DatePeremption.Value.ToString("dd/MM/yyyy"),
+                        y, expire ? AppColors.RedCrit : proche ? AppColors.OrgWarn : AppColors.ChocoMed);
+                }
+                if (!string.IsNullOrEmpty(lot.NomFournisseur))
+                    y = AddDetailRow("Fournisseur", lot.NomFournisseur, y);
+                if (!string.IsNullOrEmpty(lot.ReferenceFacture))
+                    y = AddDetailRow("Réf. facture", lot.ReferenceFacture, y);
+                if (!string.IsNullOrEmpty(lot.Notes))
+                    y = AddDetailRow("Notes", lot.Notes, y);
+            }
+
+            // ── Utilisé dans ──
+            if (lot != null)
+            {
+                try
+                {
+                    var recettes = BomFicheLigneDAL.GetFichesUtilisant(lot.IdFicheIngredient);
+                    if (recettes.Count > 0)
+                    {
+                        y = AddDetailSection("UTILISÉ DANS", y);
+                        foreach (var r in recettes)
+                            y = AddDetailTag(r, y);
+                    }
+                }
+                catch (Exception ex) { Trace.TraceError("Detail recettes: {0}", ex); }
+            }
+
+            return y;
+        }
+
+        // ── Détail PRODUIT FABRIQUÉ (bom_stock) ──────────────────────
+
+        private int RenderDetailProduit(VueStockGlobal item, int y)
+        {
+            BomFiche fiche = null;
+            BomStock stock = null;
+            try
+            {
+                if (item.IdFicheBom.HasValue)
+                    fiche = BomFicheDAL.GetById(item.IdFicheBom.Value, avecLignes: true);
+
+                // Charger le bom_stock pour les détails de production
+                if (item.IdNiveau.HasValue)
+                {
+                    var stocks = BomStockDAL.GetByNiveau(item.IdNiveau.Value);
+                    stock = stocks.FirstOrDefault(s => s.Id == item.IdEntree);
+                }
+            }
+            catch (Exception ex) { Trace.TraceError("Detail produit: {0}", ex); }
+
+            // ── En-tête ──
+            string typeLabel = "Produit fabriqué";
+            y = AddDetailHeader(item.Nom, typeLabel, y);
+
+            // ── Identité ──
+            y = AddDetailSection("IDENTITÉ", y);
+            y = AddDetailRow("Unité", item.Unite, y);
+            if (item.NomActivite != null)
+                y = AddDetailRow("Activité", item.NomActivite, y);
+            if (stock != null)
+            {
+                y = AddDetailRow("Contexte", stock.NomContexte, y);
+                y = AddDetailRow("Niveau", stock.NomNiveau, y);
+            }
+            if (fiche != null && fiche.TempsPreparation.HasValue)
+                y = AddDetailRow("Temps prép.", $"{fiche.TempsPreparation.Value} min", y);
+
+            // ── Stock ──
+            y = AddDetailSection("STOCK", y);
+            string u = item.Unite ?? "";
+            y = AddDetailRow("Disponible", UnitConvertisseur.FormatQte(item.QuantiteDispoReelle, u), y);
+            y = AddDetailRow("Coût unitaire", UnitConvertisseur.FormatPrix(item.CoutUnitaire), y);
+            decimal valeur = item.CoutUnitaire * item.QuantiteTotale;
+            y = AddDetailRow("Valeur stock", UnitConvertisseur.FormatPrix(valeur), y, AppColors.ChocoBrand);
+
+            if (item.DateDlc.HasValue)
+            {
+                bool expire = item.DateDlc.Value < DateTime.Today;
+                y = AddDetailRow("DLC", item.DateDlc.Value.ToString("dd/MM/yyyy"),
+                    y, expire ? AppColors.RedCrit : AppColors.ChocoMed);
+            }
+
+            // ── Production source ──
+            if (stock != null)
+            {
+                y = AddDetailSection("PRODUCTION", y);
+                y = AddDetailRow("Date prod.", stock.DateProduction.ToString("dd/MM/yyyy HH:mm"), y);
+                y = AddDetailRow("ID production", $"#{stock.IdProduction}", y);
+            }
+
+            // ── Composition (lignes de la fiche) ──
+            if (fiche != null && fiche.Lignes != null && fiche.Lignes.Count > 0)
+            {
+                y = AddDetailSection("COMPOSITION", y);
+                foreach (var ligne in fiche.Lignes)
+                {
+                    string qte = UnitConvertisseur.FormatQte(ligne.Quantite, ligne.UniteMesure);
+                    y = AddDetailRow(ligne.NomInput, qte, y);
+                }
+            }
+
+            // ── Consommé par ──
+            if (item.IdFicheBom.HasValue)
+            {
+                try
+                {
+                    var consommePar = BomFicheLigneDAL.GetFichesConsommant(item.IdFicheBom.Value);
+                    if (consommePar.Count > 0)
+                    {
+                        y = AddDetailSection("CONSOMMÉ PAR", y);
+                        foreach (var r in consommePar)
+                            y = AddDetailTag(r, y);
+                    }
+                }
+                catch (Exception ex) { Trace.TraceError("Detail consommePar: {0}", ex); }
+            }
+
+            return y;
+        }
+
+        // ── Helpers de rendu du volet ─────────────────────────────────
+
+        private int AddDetailHeader(string nom, string type, int y)
+        {
+            // Barre accent
+            var accent = new Panel
+            {
+                Location = new Point(0, y), Size = new Size(288, 4),
+                BackColor = AppColors.ChocoBrand
+            };
+            _pnlDetailContent.Controls.Add(accent);
+            y += 8;
+
+            _pnlDetailContent.Controls.Add(new Label
+            {
+                Text = nom, Font = new Font("Segoe UI", 12F, FontStyle.Bold),
+                ForeColor = AppColors.ChocoBrand, Location = new Point(0, y),
+                AutoSize = true, MaximumSize = new Size(280, 0)
+            });
+            y += 28;
+
+            var badge = new Label
+            {
+                Text = type, Font = new Font("Segoe UI", 7.5F, FontStyle.Bold),
+                ForeColor = AppColors.ChocoMed, BackColor = Color.FromArgb(240, 235, 225),
+                AutoSize = true, Padding = new Padding(6, 2, 6, 2),
+                Location = new Point(0, y)
+            };
+            _pnlDetailContent.Controls.Add(badge);
+            y += 24;
+
+            return y;
+        }
+
+        private int AddDetailSection(string title, int y)
+        {
+            y += 6;
+            _pnlDetailContent.Controls.Add(new Label
+            {
+                Text = title, Font = new Font("Segoe UI", 7.5F, FontStyle.Bold),
+                ForeColor = AppColors.SidebarMeta, Location = new Point(0, y),
+                AutoSize = true
+            });
+            y += 18;
+
+            // Ligne séparatrice
+            var line = new Panel
+            {
+                Location = new Point(0, y - 2), Size = new Size(280, 1),
+                BackColor = AppColors.Line1
+            };
+            _pnlDetailContent.Controls.Add(line);
+
+            return y;
+        }
+
+        private int AddDetailRow(string label, string value, int y, Color? valueColor = null)
+        {
+            _pnlDetailContent.Controls.Add(new Label
+            {
+                Text = label, Font = new Font("Segoe UI", 8.5F),
+                ForeColor = AppColors.ChocoMed, Location = new Point(0, y),
+                AutoSize = true
+            });
+            _pnlDetailContent.Controls.Add(new Label
+            {
+                Text = value ?? "—", Font = new Font("Segoe UI", 8.5F, FontStyle.Bold),
+                ForeColor = valueColor ?? AppColors.ChocoBrand,
+                Location = new Point(120, y), AutoSize = true,
+                MaximumSize = new Size(168, 0)
+            });
+            return y + 20;
+        }
+
+        private int AddDetailTag(string text, int y)
+        {
+            var tag = new Label
+            {
+                Text = text, Font = new Font("Segoe UI", 8F),
+                ForeColor = AppColors.ChocoBrand, BackColor = Color.FromArgb(245, 240, 232),
+                AutoSize = true, Padding = new Padding(6, 2, 6, 2),
+                Location = new Point(0, y)
+            };
+            tag.Paint += (s, ev) =>
+            {
+                using (var pen = new Pen(AppColors.Border, 1))
+                    ev.Graphics.DrawRectangle(pen, 0, 0, tag.Width - 1, tag.Height - 1);
+            };
+            _pnlDetailContent.Controls.Add(tag);
+            return y + 24;
+        }
 
         // ── Coloration des cellules ───────────────────────────────────
 

@@ -10,11 +10,12 @@ namespace CharlesNadejda.Forms.Shell
     /// Bandeau supérieur de l'application (38px).
     /// Gradient chocolat avec logo monogramme "C" doré, titre du document courant,
     /// indicateur de connexion MySQL et avatar utilisateur.
+    /// Tout est peint via OnPaint — aucun label enfant pour éviter les superpositions.
     /// </summary>
     internal sealed class TitleBarPanel : Panel
     {
-        private readonly Label _lblDocTitle;
-        private readonly Label _lblUser;
+        private string _docTitle = "Tableau de bord";
+        private readonly string _userName;
         private readonly string _initials;
 
         private const int BAR_HEIGHT = 38;
@@ -24,140 +25,119 @@ namespace CharlesNadejda.Forms.Shell
             Height    = BAR_HEIGHT;
             Dock      = DockStyle.Top;
             BackColor = AppColors.ChocoBrand;
-            Padding   = new Padding(10, 0, 10, 0);
             DoubleBuffered = true;
 
+            _userName = user != null ? $"{user.Prenom} {user.Nom}" : "";
             _initials = BuildInitials(user);
-
-            // ── Titre du document (centre) ──────────────────────────
-            _lblDocTitle = new Label
-            {
-                Text      = "Tableau de bord",
-                Font      = new Font("Segoe UI", 9.5F),
-                ForeColor = Color.FromArgb(140, 245, 230, 211),
-                AutoSize  = false,
-                TextAlign = ContentAlignment.MiddleLeft,
-                BackColor = Color.Transparent
-            };
-            Controls.Add(_lblDocTitle);
-
-            // ── Nom utilisateur ─────────────────────────────────────
-            _lblUser = new Label
-            {
-                Text      = user != null ? $"{user.Prenom} {user.Nom}" : "",
-                Font      = new Font("Segoe UI", 9F),
-                ForeColor = Color.FromArgb(180, 245, 230, 211),
-                AutoSize  = true,
-                BackColor = Color.Transparent
-            };
-            Controls.Add(_lblUser);
 
             SetStyle(ControlStyles.AllPaintingInWmPaint
                    | ControlStyles.UserPaint
                    | ControlStyles.OptimizedDoubleBuffer, true);
-
-            Resize += (s, e) => LayoutChildren();
         }
 
         public void SetTitle(string title)
         {
-            _lblDocTitle.Text = title ?? "Tableau de bord";
+            _docTitle = title ?? "Tableau de bord";
+            Invalidate();
         }
 
         protected override void OnPaint(PaintEventArgs e)
         {
             var g = e.Graphics;
-            g.SmoothingMode = SmoothingMode.HighQuality;
+            g.SmoothingMode    = SmoothingMode.HighQuality;
+            g.TextRenderingHint = System.Drawing.Text.TextRenderingHint.ClearTypeGridFit;
 
             // ── Fond gradient ───────────────────────────────────────
             using (var brush = new LinearGradientBrush(
-                ClientRectangle,
-                AppColors.ChocoBrand,
-                AppColors.ChocoDark,
+                ClientRectangle, AppColors.ChocoBrand, AppColors.ChocoDark,
                 LinearGradientMode.Vertical))
-            {
                 g.FillRectangle(brush, ClientRectangle);
-            }
 
             // ── Ligne séparatrice basse ─────────────────────────────
             using (var pen = new Pen(AppColors.ChocoAbyss))
                 g.DrawLine(pen, 0, Height - 1, Width, Height - 1);
 
             // ── Logo monogramme "C" ─────────────────────────────────
-            var logoRect = new Rectangle(10, 8, 22, 22);
+            var logoRect = new Rectangle(12, 8, 22, 22);
             using (var bgBrush = new SolidBrush(AppColors.Or))
-            {
                 FillRoundedRect(g, bgBrush, logoRect, 3);
-            }
+
             using (var sf = new StringFormat { Alignment = StringAlignment.Center, LineAlignment = StringAlignment.Center })
             using (var f = new Font("Georgia", 12F, FontStyle.Bold | FontStyle.Italic))
-            {
-                g.DrawString("C", f, new SolidBrush(AppColors.ChocoAbyss), logoRect, sf);
-            }
+            using (var br = new SolidBrush(AppColors.ChocoAbyss))
+                g.DrawString("C", f, br, logoRect, sf);
 
             // ── Texte "ArtisaStock" + sous-titre ────────────────────
-            int textX = 40;
+            int textX = 42;
             using (var fBrand = new Font("Segoe UI", 10F, FontStyle.Bold))
-            {
-                g.DrawString("ArtisaStock", fBrand,
-                    new SolidBrush(AppColors.SidebarTxt), textX, 5);
-            }
+            using (var br = new SolidBrush(AppColors.SidebarTxt))
+                g.DrawString("ArtisaStock", fBrand, br, textX, 5);
+
             using (var fSub = new Font("Segoe UI", 7F))
-            {
-                g.DrawString("CHARLES & NADEJDA", fSub,
-                    new SolidBrush(Color.FromArgb(160, AppColors.Or)), textX, 22);
-            }
+            using (var br = new SolidBrush(Color.FromArgb(160, AppColors.Or)))
+                g.DrawString("CHARLES & NADEJDA", fSub, br, textX, 22);
 
             // ── Séparateur après brand ──────────────────────────────
             int sepX = textX + 120;
             using (var pen = new Pen(Color.FromArgb(50, AppColors.Or)))
                 g.DrawLine(pen, sepX, 8, sepX, 30);
 
-            // ── Indicateur connexion MySQL (côté droit) ─────────────
-            int rightX = Width - 14;
+            // ── Titre du document (centre) ──────────────────────────
+            int docX = sepX + 12;
+            using (var fDoc = new Font("Segoe UI", 9.5F))
+            using (var br = new SolidBrush(Color.FromArgb(140, 245, 230, 211)))
+                g.DrawString(_docTitle, fDoc, br, docX, 10);
+
+            // ── Zone droite : MySQL · Nom user · Avatar ─────────────
+            int rightEdge = Width - 14;
 
             // Avatar cercle
-            int avSize = 22;
-            int avX = rightX - avSize;
-            int avY = 8;
+            int avSize = 24;
+            int avX = rightEdge - avSize;
+            int avY = (BAR_HEIGHT - avSize) / 2;
             using (var avBrush = new LinearGradientBrush(
                 new Rectangle(avX, avY, avSize, avSize),
                 AppColors.Or, AppColors.RedCrit, LinearGradientMode.ForwardDiagonal))
-            {
                 g.FillEllipse(avBrush, avX, avY, avSize, avSize);
-            }
+
             using (var sf = new StringFormat { Alignment = StringAlignment.Center, LineAlignment = StringAlignment.Center })
             using (var fInit = new Font("Segoe UI", 8F, FontStyle.Bold))
-            {
                 g.DrawString(_initials, fInit, Brushes.White,
                     new RectangleF(avX, avY, avSize, avSize), sf);
+
+            // Nom utilisateur
+            int nameX = avX - 8;
+            using (var fName = new Font("Segoe UI", 8.5F))
+            using (var br = new SolidBrush(Color.FromArgb(200, AppColors.SidebarTxt)))
+            {
+                var nameSz = g.MeasureString(_userName, fName);
+                nameX -= (int)nameSz.Width;
+                g.DrawString(_userName, fName, br, nameX, 11);
             }
 
-            // Nom user + indicateur MySQL
-            int connX = avX - 10;
-            using (var fConn = new Font("Segoe UI", 8.5F))
+            // Séparateur
+            int sep2X = nameX - 10;
+            using (var pen = new Pen(Color.FromArgb(50, AppColors.Or)))
+                g.DrawLine(pen, sep2X, 10, sep2X, 28);
+
+            // Indicateur MySQL
+            int mysqlX = sep2X - 8;
+            using (var fConn = new Font("Segoe UI", 8F))
+            using (var br = new SolidBrush(Color.FromArgb(150, AppColors.SidebarTxt)))
             {
-                var connText = "MySQL · charlesnadejda";
-                var connSize = g.MeasureString(connText, fConn);
-                int dotR = 5;
+                string connText = "MySQL";
+                var connSz = g.MeasureString(connText, fConn);
+                mysqlX -= (int)connSz.Width;
 
                 // Green dot
-                g.FillEllipse(new SolidBrush(Color.FromArgb(92, 184, 92)),
-                    connX - (int)connSize.Width - dotR - 10, 16, dotR, dotR);
+                int dotSize = 6;
+                int dotX = mysqlX - dotSize - 4;
+                int dotY = (BAR_HEIGHT - dotSize) / 2;
+                using (var dotBr = new SolidBrush(Color.FromArgb(92, 184, 92)))
+                    g.FillEllipse(dotBr, dotX, dotY, dotSize, dotSize);
 
-                g.DrawString(connText, fConn,
-                    new SolidBrush(Color.FromArgb(160, 245, 230, 211)),
-                    connX - (int)connSize.Width - 4, 12);
+                g.DrawString(connText, fConn, br, mysqlX, 12);
             }
-        }
-
-        private void LayoutChildren()
-        {
-            int docX = 170;
-            int docW = Math.Max(100, Width - 460);
-            _lblDocTitle.SetBounds(docX, 0, docW, BAR_HEIGHT);
-
-            _lblUser.Location = new Point(Width - 50 - _lblUser.Width, 12);
         }
 
         private static string BuildInitials(Utilisateur u)

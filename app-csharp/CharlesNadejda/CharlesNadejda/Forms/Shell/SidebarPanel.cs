@@ -215,7 +215,6 @@ namespace CharlesNadejda.Forms.Shell
             y = AddNavItem(y, NavItemId.Fournisseurs,    "◐", "Fournisseurs");
 
             y = AddSection(y, "RÉFÉRENTIELS");
-            y = AddNavItem(y, NavItemId.FichesBom,       "◇", "Fiches BOM");
             y = AddNavItem(y, NavItemId.Ingredients,      "○", "Ingrédients");
             y = AddNavItem(y, NavItemId.NiveauxContextes, "◫", "Niveaux & contextes");
             y = AddNavItem(y, NavItemId.Parametres,       "∷", "Paramètres");
