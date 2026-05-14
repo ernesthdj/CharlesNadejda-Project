@@ -35,10 +35,43 @@
 | 23  | Ne jamais nommer une classe `StatusBarPanel` dans un projet WinForms — `System.Windows.Forms.StatusBarPanel` existe déjà et crée une référence ambiguë même sans `using` explicite. Préférer un nom distinctif comme `AppStatusBar`. | `Forms/Shell/StatusBarPanel.cs` → `AppStatusBar` | 2026-05-13 |
 | 24  | Pour afficher des quantités avec unité dans un DGV lié par DataSource, utiliser `CellFormatting` plutôt que modifier le modèle — cacher la colonne Unité séparée et suffixer via `FormatQte()`. Ne jamais manipuler `e.Value` sur une colonne auto-générée en dehors de CellFormatting. | `Forms/FrmIngredients.cs`, `Forms/FrmAchats.cs` et 5 autres | 2026-05-13 |
 | 25  | Le tri natif du DGV (`SortMode.Automatic`) est incompatible avec les lignes de section header insérées manuellement — le tri mélange headers et données. Désactiver le tri (`SortMode.NotSortable`) dès qu'on utilise des groupes visuels. | `Forms/FrmVueStock.cs` | 2026-05-13 |
+| 26  | `Panel.Paint` est invisible quand un contrôle enfant `Dock=Fill` couvre toute la surface — le painting passe sous l'enfant. Pour des séparateurs entre colonnes, utiliser un `Panel` physique dédié (ex: `Width=3, Dock=Left`) inséré entre les colonnes dans l'ordre d'ajout WinForms. | `Forms/FrmPrincipal.cs` (MakeColumnSeparator) | 2026-05-14 |
+| 27  | Quand on ajoute un champ au Model + DAL, toujours exécuter la migration SQL AVANT de lancer l'app — sinon `Unknown column` au SELECT. Checklist : 1) migration SQL exécutée 2) SELECT mis à jour 3) INSERT mis à jour 4) UPDATE mis à jour 5) Bind() mis à jour 6) Map() mis à jour. | `DAL/IngredientDAL.cs`, `Models/Ingredient.cs` | 2026-05-14 |
+| 28  | Pour les champs de saisie qui représentent des quantités en unité de base (ml, g) mais dont l'utilisateur pense en pièces/conditionnements, convertir à l'affichage (`valeurBase / qteParConditionnement`) et à la sauvegarde (`pièces × qteParConditionnement`). Ne jamais exposer l'unité de base brute à l'utilisateur. | `Forms/FrmIngredientEdit.cs` (nudStockCible) | 2026-05-14 |
 
 ---
 
 ## Historique
+
+---
+
+### SESSION 19 — 2026-05-14
+> Vue Kanban 4 colonnes (Niveaux | Fiches | Stock | Détail), jauge stock cible custom-drawn, volet détail contextuel, migration v14.
+
+---
+
+#### [2026-05-14] FEAT — Layout Kanban 4 colonnes pour l'écran Niveaux & Contextes
+**Fichiers :** `Forms/FrmPrincipal.cs` (refonte complète de `ShowContexteScreen`)
+**Résumé :** Remplacement de l'ancien layout vertical (niveaux empilés 250px + 2 DGVs côte à côte 50/50) par un layout Kanban professionnel à 4 colonnes. Col 1 : cartes niveaux custom-drawn (220px, FlowLayoutPanel vertical, cercle numéroté + nom + badge ★ Final + menu contextuel clic droit). Col 2 : DGV Fiches (auto-fit AllCells + DataBindingComplete). Col 3 : DGV Stock (auto-fit). Col 4 : volet Détail dynamique (Fill). Séparateurs physiques 3px entre colonnes (Panel Dock.Left avec ombre peinte). Headers Kanban 32px avec accent coloré par colonne. Bouton [▶ Produire] intégré dans la barre d'actions fiches.
+
+---
+
+#### [2026-05-14] FEAT — Volet détail contextuel Kanban
+**Fichiers :** `Forms/FrmPrincipal.cs` (ShowKanbanDetail, RenderIngredientDetail, RenderFicheDetail, RenderStockDetail, KDetail*)
+**Résumé :** Panneau détail à droite (Dock Fill) qui affiche les informations complètes selon la sélection. Clic sur un ingrédient : identité (marque, type, densité, conditionnement), stock & prix (en stock, pièces, seuil alerte, état), prix/conditionnement, emplacement, fournisseur, fiches qui l'utilisent (tags). Clic sur une fiche BOM : description, output, temps prép., statut, composition (lignes), consommé par. Clic sur un produit en stock : quantité, coût unitaire/total, date production, DLC, contexte, composition source. Helpers KDetailHeader/Section/Row/Tag réutilisables.
+
+---
+
+#### [2026-05-14] FEAT — Jauge stock cible + migration v14
+**Fichiers :** `Models/Ingredient.cs`, `DAL/IngredientDAL.cs`, `Forms/FrmIngredientEdit.cs`, `Forms/FrmPrincipal.cs`, `sql/migration_v14_stock_cible.sql`
+**Résumé :** Nouveau champ `stock_cible` (DECIMAL nullable) sur `fiches_ingredients` — représente le stock idéal paramétré par l'utilisateur (100% de la jauge). Migration v14. Propriétés calculées `StockPieces` (conditionnements entiers en stock) et `StockRatio` (ratio actuel/cible). Colonne "Pièces" dans le DGV Stock. Colonne "Niveau" avec jauge custom-drawn via `CellPainting` : barre arrondie avec dégradé de couleur (rouge < 20%, orange 20-50%, vert 50-100%, bleu > 100% surplus), marque verticale rouge au niveau du seuil d'alerte, label pourcentage. Saisie en pièces (NUD) dans FrmIngredientEdit avec conversion auto vers unité de base.
+**Règle retenue :** Ne jamais exposer les unités de base brutes à l'utilisateur pour les seuils/cibles — convertir pièces ↔ unité de base automatiquement.
+
+---
+
+#### [2026-05-14] REFACTOR — Harmonisation visuelle crème + séparateurs
+**Fichiers :** `Forms/FrmPrincipal.cs` (MakeKanbanHeader, MakeColumnSeparator, MakeSmallButton, MakeNiveauCard, RoundedRect)
+**Résumé :** Suppression de tous les fonds blancs (BackgroundColor DGV, barre actions, headers) remplacés par CREME_WARM (253, 251, 246). Headers Kanban 32px avec accent 2px coloré par colonne. Séparateurs ombre physiques 3px (Panel dédié : ombre sombre → trait brun → reflet clair) entre les 4 colonnes. Méthodes helper factorisées : MakeSmallButton (boutons compacts FlowLayout), MakeColumnSeparator, MakeKanbanHeader.
 
 ---
 

@@ -1,6 +1,6 @@
 # Architecture ArtisaStock
 > Documentation d'architecture du projet · C# WinForms .NET 4.8 + MySQL 8 (Docker)
-> Dernière mise à jour : 2026-04-22
+> Dernière mise à jour : 2026-05-14
 
 ---
 
@@ -184,6 +184,42 @@ graph LR
 | BOM Niveaux | `FrmBomNiveaux` | `FrmBomNiveauEdit` | `FrmListeBase<BomNiveau>` | `FrmEditBase` |
 | BOM Fiches | `FrmBomFiches` | `FrmBomFicheEdit` | `FrmListeBase<BomFiche>` | `FrmEditBase` |
 | BOM Production | `FrmBomProductionSimulation` | — | Form | — |
+
+---
+
+## Écran Kanban — Niveaux & Contextes (2026-05-14)
+
+L'écran principal du module BOM utilise un layout **Kanban à 4 colonnes** :
+
+```
+┌──────────┬───────────────┬───────────────┬──────────────┐
+│ NIVEAUX  │    FICHES     │    STOCK      │   DÉTAIL     │
+│  220px   │  auto-fit     │  auto-fit     │    Fill      │
+│  Left    │  Left         │  Left         │   (reste)    │
+├──────────┼───────────────┼───────────────┼──────────────┤
+│ Cartes   │ Barre actions │ DGV Stock     │ Contextuel : │
+│ custom-  │ DGV Fiches    │ + col Pièces  │ - Ingrédient │
+│ drawn    │ (AllCells)    │ + col Jauge   │ - Fiche BOM  │
+│ + menu   │               │ (CellPainting)│ - Produit    │
+│ contexte │               │               │              │
+└──────────┴───────────────┴───────────────┴──────────────┘
+```
+
+**Composants clés :**
+
+| Composant | Rôle |
+|---|---|
+| `MakeNiveauCard()` | Carte niveau custom-drawn (cercle, nom, badge ★, menu contextuel) |
+| `MakeKanbanHeader()` | En-tête colonne 32px avec accent coloré |
+| `MakeColumnSeparator()` | Séparateur physique 3px (ombre/trait/reflet) |
+| `ShowKanbanDetail()` | Dispatcher détail selon type sélection (Ingredient/BomFiche/BomStock) |
+| `DgvStock_CellPainting` | Jauge stock cible custom-drawn (barre arrondie + seuil alerte + %) |
+
+**Jauge stock cible :**
+- Champ `stock_cible` (migration v14) paramétré par l'utilisateur en pièces (conditionnements)
+- Propriétés calculées : `StockPieces`, `StockRatio` sur `Ingredient`
+- Couleurs : rouge (< 20%) → orange (< 50%) → vert (≤ 100%) → bleu (surplus > 100%)
+- Marque verticale rouge au niveau du seuil d'alerte
 
 ---
 
