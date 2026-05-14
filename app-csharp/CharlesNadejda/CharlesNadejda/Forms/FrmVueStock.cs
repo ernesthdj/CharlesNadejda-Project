@@ -135,6 +135,7 @@ namespace CharlesNadejda.Forms
             _dgv.Columns.Add(new DataGridViewTextBoxColumn { Name = "DLC",         HeaderText = "DLC",           MinimumWidth = 90  });
             _dgv.Columns.Add(new DataGridViewTextBoxColumn { Name = "StockOuAct",  HeaderText = "Stock / Activité", MinimumWidth = 140 });
             _dgv.Columns.Add(new DataGridViewTextBoxColumn { Name = "CoutUnit",    HeaderText = "Coût unit.",    MinimumWidth = 90, DefaultCellStyle = { Alignment = DataGridViewContentAlignment.MiddleRight } });
+            _dgv.Columns.Add(new DataGridViewTextBoxColumn { Name = "CoutTotal",   HeaderText = "Valeur stock",    MinimumWidth = 100, DefaultCellStyle = { Alignment = DataGridViewContentAlignment.MiddleRight } });
 
             // Désactiver le tri natif — incompatible avec les headers de section groupés
             foreach (DataGridViewColumn col in _dgv.Columns)
@@ -320,7 +321,7 @@ namespace CharlesNadejda.Forms
 
         private void AjouterSectionHeader(string titre)
         {
-            int idx = _dgv.Rows.Add(titre, "", "", "", "", "", "", "");
+            int idx = _dgv.Rows.Add(titre, "", "", "", "", "", "", "", "");
             var row = _dgv.Rows[idx];
             row.DefaultCellStyle.BackColor = AppColors.ChocoBrand;
             row.DefaultCellStyle.ForeColor = AppColors.Or;
@@ -336,14 +337,22 @@ namespace CharlesNadejda.Forms
             string u       = l.Unite ?? "";
             string dlcText  = l.DateDlc.HasValue ? l.DateDlc.Value.ToString("dd/MM/yyyy") : "—";
             string lieuText = l.EstLot ? (l.StockNom ?? "—") : (l.NomActivite ?? "—");
-            string coutText = UnitConvertisseur.FormatPrix(l.CoutUnitaire);
+            // Ingrédients : afficher le prix du conditionnement (bouteille, sachet)
+            // Produits fabriqués : afficher le coût unitaire de production
+            string coutText = l.EstLot && l.PrixConditionnement.HasValue
+                ? UnitConvertisseur.FormatPrix(l.PrixConditionnement.Value)
+                : UnitConvertisseur.FormatPrix(l.CoutUnitaire);
+
+            // Valeur stock = qté dispo × prix par unité de base (toujours correct en €)
+            decimal valeurStock  = l.CoutUnitaire * l.QuantiteTotale;
+            string valeurText    = valeurStock > 0 ? UnitConvertisseur.FormatPrix(valeurStock) : "—";
 
             int idx = _dgv.Rows.Add(
                 typeLabel, l.Nom,
                 UnitConvertisseur.FormatQte(l.QuantiteDispoReelle, u),
                 l.QuantiteReservee > 0 ? UnitConvertisseur.FormatQte(l.QuantiteReservee, u) : "—",
                 UnitConvertisseur.FormatQte(l.QuantiteTotale, u),
-                dlcText, lieuText, coutText);
+                dlcText, lieuText, coutText, valeurText);
 
             _dgv.Rows[idx].Tag = l;
         }
@@ -376,7 +385,7 @@ namespace CharlesNadejda.Forms
                 using (var sw = new System.IO.StreamWriter(dlg.FileName, false, new System.Text.UTF8Encoding(true)))
                 {
                     // En-tête
-                    sw.WriteLine("Type;Nom;Disponible;Réservé;Total;DLC;Stock / Activité;Coût unit.");
+                    sw.WriteLine("Type;Nom;Disponible;Réservé;Total;DLC;Stock / Activité;Coût unit.;Valeur stock");
 
                     foreach (var l in _lignes)
                     {
@@ -385,6 +394,9 @@ namespace CharlesNadejda.Forms
                         string lieuText  = l.EstLot ? (l.StockNom ?? "") : (l.NomActivite ?? "");
                         string typeLabel = l.EstLot ? "Ingrédient" : "Produit BOM";
 
+                        decimal prixAffiche = l.EstLot && l.PrixConditionnement.HasValue
+                            ? l.PrixConditionnement.Value : l.CoutUnitaire;
+                        decimal valeurStock = l.CoutUnitaire * l.QuantiteTotale;
                         sw.WriteLine(string.Join(";",
                             Escape(typeLabel),
                             Escape(l.Nom),
@@ -393,7 +405,8 @@ namespace CharlesNadejda.Forms
                             $"{l.QuantiteTotale:F3} {u}",
                             dlcText,
                             Escape(lieuText),
-                            l.CoutUnitaire > 0 ? l.CoutUnitaire.ToString("F4") : ""));
+                            prixAffiche > 0 ? prixAffiche.ToString("F2") : "",
+                            valeurStock > 0 ? valeurStock.ToString("F2") : ""));
                     }
                 }
                 MessageBox.Show($"Fichier exporté :\n{dlg.FileName}", "Export réussi",

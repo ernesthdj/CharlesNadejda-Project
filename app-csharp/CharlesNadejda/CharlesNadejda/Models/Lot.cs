@@ -20,6 +20,8 @@ namespace CharlesNadejda.Models
         public decimal  QuantiteInitiale        { get; set; }
         public decimal  QuantiteDisponible      { get; set; }
         public decimal  PrixUnitaire            { get; set; }   // prix HTVA par conditionnement
+        /// <summary>Prix par unité de base (€/g, €/ml, €/pce) = PrixUnitaire / QteParConditionnement.</summary>
+        public decimal  PrixUnitaireBase        => QteParConditionnement > 0 ? PrixUnitaire / QteParConditionnement : 0;
         public decimal  PrixAchatReel           { get; set; }   // total HTVA = NbConditionnements × PrixUnitaire
         public decimal  TvaPct                  { get; set; }   // taux de TVA en % (0 = exonéré)
         public string   ReferenceFacture        { get; set; }

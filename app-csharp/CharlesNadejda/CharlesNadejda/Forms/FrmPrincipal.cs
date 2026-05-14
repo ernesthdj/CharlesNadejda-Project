@@ -1569,13 +1569,7 @@ namespace CharlesNadejda.Forms
             EmbedForm(frm);
         }
 
-        private void ShowProductionScreen(NavigationParams p)
-        {
-            var frm = (_state.ActiveContexte != null && _state.ActiveNiveau != null)
-                ? new FrmBomProductionSimulation(_state.ActiveContexte, _state.ActiveNiveau)
-                : new FrmBomProductionSimulation(_state.ActiveActivite?.Id ?? 0);
-            EmbedForm(frm);
-        }
+        // ShowProductionScreen → déplacé dans FrmPrincipal.Production.cs (partial class)
 
         /// <summary>
         /// Intègre un formulaire dans le panneau droit sans TopLevel (SFA).

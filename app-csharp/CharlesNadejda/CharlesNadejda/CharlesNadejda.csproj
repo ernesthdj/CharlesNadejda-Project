@@ -130,6 +130,10 @@
     <Compile Include="Forms\FrmPrincipal.cs">
       <SubType>Form</SubType>
     </Compile>
+    <Compile Include="Forms\FrmPrincipal.Production.cs">
+      <DependentUpon>FrmPrincipal.cs</DependentUpon>
+      <SubType>Form</SubType>
+    </Compile>
     <Compile Include="Forms\FrmPrincipal.Designer.cs">
       <DependentUpon>FrmPrincipal.cs</DependentUpon>
     </Compile>

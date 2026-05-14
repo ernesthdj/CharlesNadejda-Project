@@ -95,6 +95,12 @@ namespace CharlesNadejda.DAL
             QuantiteReservee    = Convert.ToDecimal(r["quantite_reservee"]),
             QuantiteDispoReelle = Convert.ToDecimal(r["quantite_dispo_reelle"]),
             CoutUnitaire        = Convert.ToDecimal(r["cout_unitaire"]),
+            PrixConditionnement = r["prix_conditionnement"] == DBNull.Value
+                                    ? (decimal?)null : Convert.ToDecimal(r["prix_conditionnement"]),
+            QteParConditionnement = r["qte_par_conditionnement"] == DBNull.Value
+                                    ? (decimal?)null : Convert.ToDecimal(r["qte_par_conditionnement"]),
+            ConditionnementLabel = r["conditionnement_label"] == DBNull.Value
+                                    ? null : r["conditionnement_label"].ToString(),
             DateDlc             = r["date_dlc"]      == DBNull.Value
                                     ? (DateTime?)null : (DateTime)r["date_dlc"],
             IdStock             = r["id_stock"]      == DBNull.Value

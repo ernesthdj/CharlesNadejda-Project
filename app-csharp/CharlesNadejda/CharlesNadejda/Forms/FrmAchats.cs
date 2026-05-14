@@ -33,7 +33,8 @@ namespace CharlesNadejda.Forms
             CacherColonnes("Id", "IdFicheIngredient", "IdFournisseur",
                            "QuantiteDisponible", "Notes", "TvaPct",
                            "UniteMesure", "ConditionnementLabel",
-                           "QteParConditionnement", "NbConditionnements");
+                           "QteParConditionnement", "NbConditionnements",
+                           "PrixUnitaireBase");
 
             ConfigCol("NomIngredient",    "Ingrédient",        180, 120);
             ConfigCol("NumeroLot",        "N° lot",             90,  70);
@@ -51,7 +52,9 @@ namespace CharlesNadejda.Forms
                 var col = dgv.Columns[ev.ColumnIndex];
                 var item = dgv.Rows[ev.RowIndex].DataBoundItem as Lot;
                 if (item == null) return;
-                if (col.Name == "QuantiteInitiale")
+                if (col.Name == "NomIngredient")
+                    ev.Value = $"{item.NomIngredient} {UnitConvertisseur.FormatQte(item.QteParConditionnement, item.UniteMesure)}";
+                else if (col.Name == "QuantiteInitiale")
                     ev.Value = UnitConvertisseur.FormatQte(item.QuantiteInitiale, item.UniteMesure);
                 else if (col.Name == "PrixUnitaire")
                     ev.Value = UnitConvertisseur.FormatPrix(item.PrixUnitaire);

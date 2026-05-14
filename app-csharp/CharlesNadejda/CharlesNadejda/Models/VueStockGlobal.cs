@@ -16,7 +16,10 @@ namespace CharlesNadejda.Models
         public decimal   QuantiteTotale      { get; set; }
         public decimal   QuantiteReservee    { get; set; }
         public decimal   QuantiteDispoReelle { get; set; }
-        public decimal   CoutUnitaire        { get; set; }
+        public decimal   CoutUnitaire        { get; set; }   // prix par unité de base (backend)
+        public decimal?  PrixConditionnement { get; set; }  // prix d'un conditionnement (lots uniquement)
+        public decimal?  QteParConditionnement { get; set; } // qté en base par conditionnement
+        public string    ConditionnementLabel { get; set; }
         public DateTime? DateDlc             { get; set; }
 
         // Lots uniquement (NULL pour produits fabriqués)

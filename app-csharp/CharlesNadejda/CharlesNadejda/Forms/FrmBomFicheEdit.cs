@@ -273,22 +273,14 @@ namespace CharlesNadejda.Forms
             if (cboUniteLigne.SelectedIndex < 0 && cboUniteLigne.Items.Count > 0)
                 cboUniteLigne.SelectedIndex = 0;
 
-            bool estPiece = string.Equals(item.Unite, "piece", StringComparison.OrdinalIgnoreCase);
             cboUniteLigne.Enabled = cboUniteLigne.Items.Count > 1;
 
-            if (estPiece)
-            {
-                nudQteLigne.Minimum = 1;
-                nudQteLigne.Maximum = 1;
-                nudQteLigne.Value   = 1;
-                nudQteLigne.Enabled = false;
-            }
-            else
-            {
-                nudQteLigne.Minimum = 0;
-                nudQteLigne.Maximum = 99999;
-                nudQteLigne.Enabled = true;
-            }
+            // Quantité toujours libre — un pack peut consommer N pièces
+            nudQteLigne.Minimum       = 0.001m;
+            nudQteLigne.Maximum       = 99999;
+            nudQteLigne.DecimalPlaces = string.Equals(item.Unite, "piece", StringComparison.OrdinalIgnoreCase) ? 0 : 3;
+            nudQteLigne.Value         = 1;
+            nudQteLigne.Enabled       = true;
         }
 
         private void BtnAjouterLigne_Click(object sender, EventArgs e)

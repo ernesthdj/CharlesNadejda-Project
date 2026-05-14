@@ -118,17 +118,21 @@ namespace CharlesNadejda
             decimal enBase = valeur * _versBase[unite];
 
             // Parcourir du plus grand au plus petit — choisir la première unité
-            // où la valeur convertie >= 1 (pour éviter 0,001 kg au lieu de 1 g)
+            // où la valeur convertie >= 1 (pour éviter 0,001 kg au lieu de 1 g).
+            // Sauter dl et cg : unités non courantes dans le métier artisanal.
             for (int i = groupe.Length - 1; i >= 0; i--)
             {
-                decimal converti = enBase / _versBase[groupe[i]];
+                string u = groupe[i];
+                if (u == "dl" || u == "cg") continue;
+
+                decimal converti = enBase / _versBase[u];
                 if (converti >= 1m || i == 0)
                 {
                     // Valeur ronde → pas de décimale. Sinon 2 décimales max.
                     string txt = converti == Math.Floor(converti)
                         ? converti.ToString("F0")
                         : converti.ToString("F2");
-                    return $"{txt} {groupe[i]}";
+                    return $"{txt} {u}";
                 }
             }
             return $"{valeur:F3} {unite}";

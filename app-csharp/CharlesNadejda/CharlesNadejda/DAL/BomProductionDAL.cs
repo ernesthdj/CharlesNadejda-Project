@@ -402,6 +402,13 @@ namespace CharlesNadejda.DAL
                     coutLigne += pris * prixUnit;
                     restant   -= pris;
                 }
+
+                // Guard : si tout le stock a été épuisé sans couvrir le besoin,
+                // la production est incohérente — on refuse.
+                if (restant > 0.0001m)
+                    throw new InvalidOperationException(
+                        $"Stock insuffisant pour « {ligne.NomInput} » : " +
+                        $"il manque {restant:F4} {ligne.UniteMesureInput} après épuisement FIFO.");
             }
             else
             {
@@ -430,6 +437,12 @@ namespace CharlesNadejda.DAL
                     coutLigne += pris * coutUnit;
                     restant   -= pris;
                 }
+
+                // Guard : idem pour les produits intermédiaires (bom_stocks)
+                if (restant > 0.0001m)
+                    throw new InvalidOperationException(
+                        $"Stock insuffisant pour « {ligne.NomInput} » : " +
+                        $"il manque {restant:F4} {ligne.UniteMesureInput} après épuisement FIFO.");
             }
             return coutLigne;
         }

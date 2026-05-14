@@ -55,7 +55,11 @@ CREATE OR REPLACE VIEW vue_stock_global AS
         li.quantite_disponible
             - COALESCE(SUM(br.quantite_reservee), 0)
                                 AS quantite_dispo_reelle,
-        li.prix_unitaire        AS cout_unitaire,
+        li.prix_unitaire / NULLIF(fi.qte_par_conditionnement, 0)
+                                AS cout_unitaire,
+        li.prix_unitaire        AS prix_conditionnement,
+        fi.qte_par_conditionnement AS qte_par_conditionnement,
+        fi.conditionnement_label AS conditionnement_label,
         li.date_peremption      AS date_dlc,
         fi.id_stock             AS id_stock,
         s.nom                   AS stock_nom,
@@ -71,7 +75,7 @@ CREATE OR REPLACE VIEW vue_stock_global AS
         AND br.actif  = 1
     GROUP BY
         li.id, fi.nom, fi.unite_mesure,
-        li.quantite_disponible, li.prix_unitaire,
+        li.quantite_disponible, li.prix_unitaire, fi.qte_par_conditionnement,
         li.date_peremption, fi.id_stock, s.nom
 
 UNION ALL
@@ -86,6 +90,9 @@ UNION ALL
         0                       AS quantite_reservee,
         bs.quantite_disponible  AS quantite_dispo_reelle,
         bs.cout_unitaire,
+        NULL                    AS prix_conditionnement,
+        NULL                    AS qte_par_conditionnement,
+        NULL                    AS conditionnement_label,
         bs.date_dlc,
         NULL                    AS id_stock,
         NULL                    AS stock_nom,
