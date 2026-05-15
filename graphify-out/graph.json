@@ -292,7 +292,11 @@
       "source_location": "L8",
       "id": "dal_activitedal_activitedal",
       "community": 16,
-      "norm_label": "activitedal"
+      "norm_label": "activitedal",
+      "doc": "CRUD des activites (domaines metier dynamiques). Desactiver verifie les cascades (stocks lies, productions). Jamais coder en dur un nom d activite dans le C#.",
+      "methods": "GetAll() -> List<Activite> | GetById(id) -> Activite | Insert(act) -> int | Update(act) | Delete(id) | Desactiver(id) | Bind(act,cmd)",
+      "rules": "#9 jamais hardcoder chocolaterie — toujours passer par objet Activite | #10 grepper tous call sites apres refactor signature",
+      "relations": "Appele par: FrmActivites, FrmActiviteEdit, SidebarPanel.ActivitySwitcher, AppState"
     },
     {
       "label": ".GetAll()",
@@ -400,7 +404,11 @@
       "source_location": "L8",
       "id": "dal_bomcontextedal_bomcontextedal",
       "community": 17,
-      "norm_label": "bomcontextedal"
+      "norm_label": "bomcontextedal",
+      "doc": "CRUD des contextes BOM. Un contexte = une ligne de production (ex: Chocolaterie Noel 2026). InsertAvecNiveaux cree le contexte + ses niveaux dans une seule TX. Lie a une activite.",
+      "methods": "GetAll() | GetById(id) -> BomContexte | Insert(ctx) -> int | InsertAvecNiveaux(ctx,niveaux) -> int | Update(ctx) | Delete(id)",
+      "rules": "#8 migration ENUM vers FK = supprimer ancienne colonne ET ajouter nouvelle dans meme ALTER TABLE",
+      "relations": "Appele par: FrmBomContextes, FrmBomContexteEdit, FrmPrincipal, BomProductionDAL"
     },
     {
       "label": "string",
@@ -517,7 +525,10 @@
       "source_location": "L28",
       "id": "dal_bomcoutdal_bomcoutdal",
       "community": 36,
-      "norm_label": "bomcoutdal"
+      "norm_label": "bomcoutdal",
+      "doc": "Calcul RECURSIF du cout de revient multi-niveaux. CalculerCout(fiche) appelle CalculerLigneFiche qui rappelle CalculerCout (descend les niveaux). Detection de cycle (TICKET-09). GetPrixMoyenIngredient = moyenne ponderee FIFO des lots.",
+      "methods": "CalculerCout(idFiche) -> RapportCout | CalculerLigneIngredient(ligne,multiplicateur) -> LigneCout | CalculerLigneFiche(ligne,multiplicateur) -> LigneCout | GetPrixMoyenIngredient(idIngredient) -> decimal",
+      "relations": "Appele par: FrmPrincipal.Production (estimation cout). Recursion: CalculerCout -> CalculerLigneFiche -> CalculerCout."
     },
     {
       "label": ".CalculerCout()",
@@ -580,7 +591,11 @@
       "source_location": "L8",
       "id": "dal_bomfichedal_bomfichedal",
       "community": 12,
-      "norm_label": "bomfichedal"
+      "norm_label": "bomfichedal",
+      "doc": "CRUD des fiches BOM (recettes). Insert/Update transactionnels (header + lignes dans la meme TX). Duplicate pour copier une fiche. GetByNiveau filtre par niveau. GetCountsByContexte pour les badges.",
+      "methods": "GetAll() | GetById(id) -> BomFiche (avec Lignes chargees) | GetByNiveau(idNiveau) | Insert(fiche) -> int | Update(fiche) | Delete(id) | Duplicate(id) -> int | GetCountsByContexte(idContexte) -> Dict | NomExiste(nom,excludeId) -> bool",
+      "rules": "#4 fiche liee a un niveau specifique (id_niveau) | #5 ajout champ = verifier SELECT+INSERT+UPDATE+Map()",
+      "relations": "Appele par: BomProductionDAL, FrmBomFiches, FrmBomFicheEdit, FrmPrincipal.ShowContexteScreen"
     },
     {
       "label": ".GetByNiveau()",
@@ -715,7 +730,11 @@
       "source_location": "L8",
       "id": "dal_bomfichelignedal_bomfichelignedal",
       "community": 37,
-      "norm_label": "bomfichelignedal"
+      "norm_label": "bomfichelignedal",
+      "doc": "Gestion des lignes de composition d une fiche. Chaque ligne = 1 input (ingredient OU sous-fiche). GetByFiche avec COALESCE pour NomInput. GetFichesUtilisant/Consommant pour la tracabilite inverse.",
+      "methods": "GetByFiche(idFiche) -> List<BomFicheLigne> | GetFichesUtilisant(idIngredient) -> List<string> | GetFichesConsommant(idFiche) -> List<string>",
+      "rules": "#7 unite de la ligne = unite de l ingredient/fiche source, ComboBox verrouille apres selection",
+      "relations": "Appele par: BomFicheDAL.GetById (charge les lignes), FrmBomFicheEdit, FrmVueStock (detail)"
     },
     {
       "label": ".GetByFiche()",
@@ -778,7 +797,10 @@
       "source_location": "L8",
       "id": "dal_bomniveaudal_bomniveaudal",
       "community": 18,
-      "norm_label": "bomniveaudal"
+      "norm_label": "bomniveaudal",
+      "doc": "CRUD des niveaux BOM dans un contexte. Ordre sequentiel (1,2,3...). Delete conditionnel (dernier niveau seulement). Insert avec MAX(ordre)+1 automatique.",
+      "methods": "GetByContexte(idContexte) -> List<BomNiveau> | GetById(id) -> BomNiveau | GetByContexteEtOrdre(idCtx,ordre) -> BomNiveau | GetOrdreMax(idContexte) -> int | Insert(niveau) -> int | Update(niveau) | Delete(id)",
+      "relations": "Appele par: BomProductionDAL, BomFicheDAL, FrmPrincipal, FrmBomNiveaux, FrmBomContexteEdit"
     },
     {
       "label": ".GetByContexte()",
@@ -886,7 +908,11 @@
       "source_location": "L13",
       "id": "dal_bomproductiondal_bomproductiondal",
       "community": 13,
-      "norm_label": "bomproductiondal"
+      "norm_label": "bomproductiondal",
+      "doc": "Moteur de production transactionnel. Flux : VerifierDisponibilite (dans TX anti-TOCTOU) > INSERT bom_productions > ConsumeStock FIFO par ligne > UPDATE couts > INSERT bom_stocks. Non-recursif : l utilisateur lance sequentiellement par niveau. Les couts se propagent vers le haut via le cout_unitaire stocke.",
+      "methods": "Executer(idNiveau,idFiche,quantiteCible,notes,delaiJours) -> int | VerifierDisponibilite(idNiveau,idFiche,quantiteCible) -> List<BomManque> | Simuler(idNiveau,idFiche,quantiteCible) -> List<BomManque> | ConsumeStock(conn,tx,ligne,aConommer,idProd,niveau) -> decimal | GetByNiveau(idNiveau) | GetDuJourByActivite(idActivite) | GetRecentByActivite(idActivite,limit) | GetIdNiveauDeFiche(idFiche) -> int",
+      "rules": "#15 quantiteCible = nombre de batches, qte reelle = batches * fiche.QuantiteOutput | #16 UnitConvertisseur.Convertir() OBLIGATOIRE avant toute comparaison/decrementation de stock (g vs kg = penurie fantome)",
+      "relations": "Appelle: BomStockDAL.GetLotsDispoFIFO/GetBomStocksFIFO/GetDisponible, BomNiveauDAL.GetById, BomFicheDAL.GetById, UnitConvertisseur.Convertir. Appele par: FrmPrincipal.Production, FrmBomProductionSimulation, SimulationService."
     },
     {
       "label": ".GetByNiveau()",
@@ -1012,7 +1038,10 @@
       "source_location": "L8",
       "id": "dal_bomreservationdal_bomreservationdal",
       "community": 21,
-      "norm_label": "bomreservationdal"
+      "norm_label": "bomreservationdal",
+      "doc": "Gestion des reservations de stock (soft-delete avec actif=0/1). Reserve du stock pendant la planification, libere a l execution ou expiration. GetTotalReservePourLot pour calcul disponibilite nette.",
+      "methods": "Insert(reservation) -> int | GetByContexte(idContexte) | GetTotalReservePourLot(idLot) -> decimal | Liberer(id) | LibererToutContexte(idContexte)",
+      "relations": "Appele par: BomProductionDAL.ConsumeStock (liberation), FrmBomProductionSimulation (creation)"
     },
     {
       "label": ".GetByContexte()",
@@ -1111,7 +1140,10 @@
       "source_location": "L8",
       "id": "dal_bomstockdal_bomstockdal",
       "community": 29,
-      "norm_label": "bomstockdal"
+      "norm_label": "bomstockdal",
+      "doc": "Acces aux stocks BOM intermediaires. FIFO Engine : trie par date_production ASC pour consommer le plus ancien en premier. Gere aussi la disponibilite nette (stock - reservations).",
+      "methods": "GetBomStocksFIFO(idNiveau,idFiche) -> List<(id,dispo,coutUnit)> | GetLotsDispoFIFO(idIngredient) -> List<(id,dispo,prixUnit)> | GetByNiveau(idNiveau) -> List<BomStock> | GetDisponible(idNiveau,idFiche) -> decimal | GetDisponibleIngredient(idIngredient) -> decimal",
+      "relations": "Appele par: BomProductionDAL.ConsumeStock, BomProductionDAL.VerifierDisponibilite. Source FIFO pour lots_ingredients ET bom_stocks."
     },
     {
       "label": ".GetByNiveau()",
@@ -1228,7 +1260,10 @@
       "source_location": "L8",
       "id": "dal_fournisseurdal_fournisseurdal",
       "community": 24,
-      "norm_label": "fournisseurdal"
+      "norm_label": "fournisseurdal",
+      "doc": "CRUD simple des fournisseurs. Champs: Nom, Contact, Telephone, Email, Adresse, Notes.",
+      "methods": "GetAll() -> List<Fournisseur> | GetById(id) -> Fournisseur | Insert(f) -> int | Update(f) | Delete(id) | Bind(f,cmd) | Map(reader) -> Fournisseur",
+      "relations": "Appele par: FrmFournisseurs, FrmFournisseurEdit, FrmIngredientEdit (ComboBox fournisseur)"
     },
     {
       "label": ".GetAll()",
@@ -1318,7 +1353,11 @@
       "source_location": "L8",
       "id": "dal_ingredientdal_ingredientdal",
       "community": 25,
-      "norm_label": "ingredientdal"
+      "norm_label": "ingredientdal",
+      "doc": "CRUD des ingredients avec agregat SUM stock actuel depuis lots_ingredients. Proprietes calculees: PrixParUniteBase, StockRatio (actuel/cible), StockPieces (conditionnements entiers).",
+      "methods": "GetAll(idActivite) -> List<Ingredient> | GetById(id) -> Ingredient | Insert(ingr) -> int | Update(ingr) | Delete(id) | Bind(ingr,cmd) | Map(reader) -> Ingredient",
+      "rules": "#5 ajout champ = 4 endroits (SELECT+INSERT+UPDATE+Map) | #27 migration SQL AVANT lancement app | #28 conversion pieces<->unite de base pour seuils",
+      "relations": "Appele par: FrmIngredients, FrmIngredientEdit, FrmAchatEdit, BomFicheEdit (liste inputs)"
     },
     {
       "label": ".GetAll()",
@@ -1408,7 +1447,10 @@
       "source_location": "L8",
       "id": "dal_lotdal_lotdal",
       "community": 26,
-      "norm_label": "lotdal"
+      "norm_label": "lotdal",
+      "doc": "CRUD des lots d achat (lots_ingredients). Un lot = une livraison d un ingredient avec quantite, prix, DLC. Consomme en FIFO par BomProductionDAL.",
+      "methods": "GetAll(idIngredient,idActivite) | GetById(id) -> Lot | Insert(lot) -> int | Update(lot) | Delete(id) | Bind(lot,cmd)",
+      "relations": "Appele par: FrmAchats, FrmAchatEdit, BomStockDAL.GetLotsDispoFIFO"
     },
     {
       "label": ".GetAll()",
@@ -1498,7 +1540,10 @@
       "source_location": "L8",
       "id": "dal_stockdal_stockdal",
       "community": 10,
-      "norm_label": "stockdal"
+      "norm_label": "stockdal",
+      "doc": "CRUD des stocks avec liaison M:N activites (table activites_stocks). LierActivite/DelierActivite gerent la jonction. GetActivitesLiees retourne les activites associees a un stock.",
+      "methods": "GetAll(idStock,idActivite) | GetById(id) -> Stock | Insert(stock) -> int | Update(stock) | Delete(id) | Bind(stock,cmd) | LierActivite(idStock,idActivite) | DelierActivite(idStock,idActivite) | GetActivitesLiees(idStock) -> List<Activite>",
+      "relations": "Appele par: FrmStocks, FrmActiviteStocks. Utilise la table activites_stocks (v10+v11 discriminants)."
     },
     {
       "label": ".GetAll()",
@@ -1669,7 +1714,11 @@
       "source_location": "L16",
       "id": "dal_vuestockglobaldal_vuestockglobaldal",
       "community": 30,
-      "norm_label": "vuestockglobaldal"
+      "norm_label": "vuestockglobaldal",
+      "doc": "Vue unifiee de TOUS les stocks (ingredients via lots_ingredients + intermediaires/finals via bom_stocks). Basee sur une VIEW MySQL. 3 sections : Ingredients, Intermediaires, Finals.",
+      "methods": "GetAll(idActivite) -> List<VueStockGlobal>",
+      "rules": "#14 date_peremption vs date_dlc (aliaser dans VIEW) | #17 JOIN pour label FK dans VIEW",
+      "relations": "Appele par: FrmVueStock. Consomme la VIEW vue_stock_global (migration v11)."
     },
     {
       "label": ".GetAll()",
@@ -2977,11 +3026,11 @@
       "norm_label": ".cbofiche_selectedindexchanged()"
     },
     {
-      "label": ".R\u00e9initialiserR\u00e9sultats()",
+      "label": ".RéinitialiserRésultats()",
       "file_type": "code",
       "source_file": "CharlesNadejda/Forms/FrmBomProductionSimulation.cs",
       "source_location": "L164",
-      "id": "forms_frmbomproductionsimulation_frmbomproductionsimulation_r\u00e9initialiserr\u00e9sultats",
+      "id": "forms_frmbomproductionsimulation_frmbomproductionsimulation_réinitialiserrésultats",
       "community": 5,
       "norm_label": ".reinitialiserresultats()"
     },
@@ -3031,11 +3080,11 @@
       "norm_label": ".btnlancerproduction_click()"
     },
     {
-      "label": ".S\u00e9lectionValide()",
+      "label": ".SélectionValide()",
       "file_type": "code",
       "source_file": "CharlesNadejda/Forms/FrmBomProductionSimulation.cs",
       "source_location": "L361",
-      "id": "forms_frmbomproductionsimulation_frmbomproductionsimulation_s\u00e9lectionvalide",
+      "id": "forms_frmbomproductionsimulation_frmbomproductionsimulation_sélectionvalide",
       "community": 5,
       "norm_label": ".selectionvalide()"
     },
@@ -3883,7 +3932,11 @@
       "source_location": "L20",
       "id": "forms_frmprincipal_frmprincipal",
       "community": 0,
-      "norm_label": "frmprincipal"
+      "norm_label": "frmprincipal",
+      "doc": "Shell ERP racine. Single-Form Architecture (SFA) : une seule fenetre heberge tous les ecrans via ScreenRouter + AppState. Construit le shell (TitleBar 38px + Sidebar 224px Odoo-style + StatusBar 26px + zone contenu Fill). Gere la navigation, le changement d activite, et l affichage des ecrans metier inline.",
+      "methods": "BuildShell() InitRouter() NavigateTo(ScreenId) OnSidebarNavigation(NavItemId) OnActivityChanged(Activite) UpdateTitleBar() UpdateStatusBar() ShowContexteScreen() ShowHubScreen() ShowOnboarding() ClearAndDisposePanel(Panel)",
+      "rules": "#11 docking order Fill>Bottom>Top | #18 Controls.Clear ne Dispose pas | #20 AutoResizeColumns couteux | #23 pas de nom StatusBarPanel | #26 Panel.Paint invisible sous enfant Fill",
+      "relations": "Appelle: tous les DAL, SimulationService, AppState, ScreenRouter. God node 76 edges, betweenness 0.18, ponte 8 communautes."
     },
     {
       "label": "Utilisateur",
@@ -4639,7 +4692,11 @@
       "source_location": "L14",
       "id": "forms_frmprincipal_production_frmprincipal",
       "community": 4,
-      "norm_label": "frmprincipal"
+      "norm_label": "frmprincipal",
+      "doc": "Partial class Production du shell. Ecran inline avec : header KPI, parametres (Contexte/Niveau/Fiche cascadants), simulation DGV avec code couleur stock, historique productions, journal activite (chatter). 26 methodes dediees.",
+      "methods": "ShowProductionScreen() BuildProdHeader() BuildProdKpiBar() BuildProdParams() BuildProdSimulation() BuildProdDgv() ProdBtnSimuler_Click() ProdBtnLancer_Click() ProdContexte_Changed() ProdNiveau_Changed() ProdFiche_Changed() ProdColoriserLignes() ProdRefreshHistorique() ProdAjouterJournalEntry()",
+      "rules": "#15 quantiteCible=batches pas quantite finale | #16 conversion unite OBLIGATOIRE avant comparaison stock",
+      "relations": "Appelle: BomProductionDAL.Executer/Simuler, BomFicheDAL, BomNiveauDAL, BomContexteDAL, SimulationService"
     },
     {
       "label": ".ShowProductionScreen()",
@@ -5098,7 +5155,11 @@
       "source_location": "L27",
       "id": "forms_frmvuestock_frmvuestock",
       "community": 6,
-      "norm_label": "frmvuestock"
+      "norm_label": "frmvuestock",
+      "doc": "Vue stock globale avec 3 sections groupees (Ingredients/Intermediaires/Finals). DGV avec tri desactive (sections manuelles). Volet detail contextuel a droite : clic ingredient -> identite+stock+fournisseur+fiches utilisatrices. Clic produit -> composition+cout+DLC.",
+      "methods": "ChargerDonnees() AfficherDetail(type,id) AddDetailHeader() AddDetailSection() AddDetailRow() AddDetailTag() RenderIngredientDetail() RenderStockDetail()",
+      "rules": "#25 tri desactive quand sections header manuelles | #6 DGV Sizable+AllCells+MinimumWidth+Anchor4bords",
+      "relations": "Appelle: VueStockGlobalDAL.GetAll, BomFicheLigneDAL.GetFichesUtilisant, IngredientDAL.GetById. God node 30 edges."
     },
     {
       "label": ".BuildUI()",
@@ -5350,7 +5411,11 @@
       "source_location": "L31",
       "id": "forms_unitconvertisseur_unitconvertisseur",
       "community": 2,
-      "norm_label": "unitconvertisseur"
+      "norm_label": "unitconvertisseur",
+      "doc": "Convertisseur d unites intelligent. 3 groupes : masse (mg/g/kg), volume (ml/cl/l), piece. FormatQte auto-convertit (652cl->6.52l). FormatPrix toujours F2+euro. Convertir() pour calculs inter-unites.",
+      "methods": "Convertir(qte,uniteSource,uniteCible) -> decimal | FormatQte(valeur,unite) -> string | FormatPrix(valeur) -> string | GetGroupeUnite(unite) -> string | EstConvertible(u1,u2) -> bool",
+      "rules": "#16 Convertir OBLIGATOIRE avant comparaison stock | #24 FormatQte/FormatPrix dans CellFormatting DGV",
+      "relations": "Appele par: TOUS les DAL de production + TOUS les formulaires avec DGV. Utilitaire transversal."
     },
     {
       "label": ".UnitesCompatibles()",
@@ -6268,7 +6333,10 @@
       "source_location": "L6",
       "id": "navigation_appstate_appstate",
       "community": 32,
-      "norm_label": "appstate"
+      "norm_label": "appstate",
+      "doc": "Singleton observable centralisant l etat global : activite courante, contexte selectionne, niveau actif, utilisateur connecte. Publie des evenements Changed pour que le shell reagisse.",
+      "methods": "SetActivite(Activite) SetContexte(BomContexte) SetNiveau(BomNiveau) RaiseChanged() [events: ActiviteChanged, ContexteChanged, NiveauChanged]",
+      "relations": "Consomme par: FrmPrincipal, SidebarPanel, StatusBar. Source de verite navigation."
     },
     {
       "label": ".SetActivite()",
@@ -6610,7 +6678,10 @@
       "source_location": "L14",
       "id": "services_simulationservice_simulationservice",
       "community": 43,
-      "norm_label": "simulationservice"
+      "norm_label": "simulationservice",
+      "doc": "Couche service async entre UI et DAL Production. Dry-run : appelle Simuler() sans effet de bord. Projette le resultat en SimulationResultat pour affichage DGV.",
+      "methods": "SimulerAsync(idNiveau,idFiche,quantiteCible) -> Task<SimulationResultat> | Project(List<BomManque>) -> SimulationResultat",
+      "relations": "Appelle: BomProductionDAL.Simuler. Appele par: FrmPrincipal.Production.ProdBtnSimuler_Click."
     },
     {
       "label": ".SimulerAsync()",
@@ -6657,7 +6728,7 @@
       "norm_label": "single-form application pattern (sfa)"
     },
     {
-      "label": "FrmPrincipal \u2014 Main Shell Form",
+      "label": "FrmPrincipal — Main Shell Form",
       "file_type": "code",
       "source_file": "CharlesNadejda/Forms/FrmPrincipal.cs",
       "source_location": null,
@@ -6667,10 +6738,10 @@
       "contributor": null,
       "id": "frmprincipal",
       "community": 7,
-      "norm_label": "frmprincipal \u2014 main shell form"
+      "norm_label": "frmprincipal — main shell form"
     },
     {
-      "label": "FrmLogin \u2014 Authentication Form",
+      "label": "FrmLogin — Authentication Form",
       "file_type": "code",
       "source_file": "CharlesNadejda/Forms/FrmLogin.cs",
       "source_location": null,
@@ -6680,10 +6751,10 @@
       "contributor": null,
       "id": "frmlogin",
       "community": 7,
-      "norm_label": "frmlogin \u2014 authentication form"
+      "norm_label": "frmlogin — authentication form"
     },
     {
-      "label": "FrmIngredients \u2014 Ingredients Screen",
+      "label": "FrmIngredients — Ingredients Screen",
       "file_type": "code",
       "source_file": "CharlesNadejda/Forms/FrmIngredients.cs",
       "source_location": null,
@@ -6693,10 +6764,10 @@
       "contributor": null,
       "id": "frmingredients",
       "community": 7,
-      "norm_label": "frmingredients \u2014 ingredients screen"
+      "norm_label": "frmingredients — ingredients screen"
     },
     {
-      "label": "FrmStocks \u2014 Stocks Screen",
+      "label": "FrmStocks — Stocks Screen",
       "file_type": "code",
       "source_file": "CharlesNadejda/Forms/FrmStocks.cs",
       "source_location": null,
@@ -6706,10 +6777,10 @@
       "contributor": null,
       "id": "frmstocks",
       "community": 7,
-      "norm_label": "frmstocks \u2014 stocks screen"
+      "norm_label": "frmstocks — stocks screen"
     },
     {
-      "label": "FrmVueStock \u2014 Global Stock View",
+      "label": "FrmVueStock — Global Stock View",
       "file_type": "code",
       "source_file": "CharlesNadejda/Forms/FrmVueStock.cs",
       "source_location": null,
@@ -6719,10 +6790,10 @@
       "contributor": null,
       "id": "frmvuestock",
       "community": 73,
-      "norm_label": "frmvuestock \u2014 global stock view"
+      "norm_label": "frmvuestock — global stock view"
     },
     {
-      "label": "FrmBomProductionSimulation \u2014 Production Simulation",
+      "label": "FrmBomProductionSimulation — Production Simulation",
       "file_type": "code",
       "source_file": "CharlesNadejda/Forms/FrmBomProductionSimulation.cs",
       "source_location": null,
@@ -6732,10 +6803,10 @@
       "contributor": null,
       "id": "frmbomproductionsimulation",
       "community": 7,
-      "norm_label": "frmbomproductionsimulation \u2014 production simulation"
+      "norm_label": "frmbomproductionsimulation — production simulation"
     },
     {
-      "label": "IngredientDAL \u2014 Ingredient Data Access Layer",
+      "label": "IngredientDAL — Ingredient Data Access Layer",
       "file_type": "code",
       "source_file": "CharlesNadejda/DAL/IngredientDAL.cs",
       "source_location": null,
@@ -6745,10 +6816,10 @@
       "contributor": null,
       "id": "ingredientdal",
       "community": 7,
-      "norm_label": "ingredientdal \u2014 ingredient data access layer"
+      "norm_label": "ingredientdal — ingredient data access layer"
     },
     {
-      "label": "StockDAL \u2014 Stock Data Access Layer",
+      "label": "StockDAL — Stock Data Access Layer",
       "file_type": "code",
       "source_file": "CharlesNadejda/DAL/StockDAL.cs",
       "source_location": null,
@@ -6758,10 +6829,10 @@
       "contributor": null,
       "id": "stockdal",
       "community": 7,
-      "norm_label": "stockdal \u2014 stock data access layer"
+      "norm_label": "stockdal — stock data access layer"
     },
     {
-      "label": "BomFicheDAL \u2014 BOM Recipe Data Access Layer",
+      "label": "BomFicheDAL — BOM Recipe Data Access Layer",
       "file_type": "code",
       "source_file": "CharlesNadejda/DAL/BomFicheDAL.cs",
       "source_location": null,
@@ -6771,10 +6842,10 @@
       "contributor": null,
       "id": "bomfichedal",
       "community": 7,
-      "norm_label": "bomfichedal \u2014 bom recipe data access layer"
+      "norm_label": "bomfichedal — bom recipe data access layer"
     },
     {
-      "label": "BomProductionDAL \u2014 Production Execution DAL",
+      "label": "BomProductionDAL — Production Execution DAL",
       "file_type": "code",
       "source_file": "CharlesNadejda/DAL/BomProductionDAL.cs",
       "source_location": null,
@@ -6784,10 +6855,10 @@
       "contributor": null,
       "id": "bomproductiondal",
       "community": 7,
-      "norm_label": "bomproductiondal \u2014 production execution dal"
+      "norm_label": "bomproductiondal — production execution dal"
     },
     {
-      "label": "BomStockDAL \u2014 BOM Stock Data Access Layer",
+      "label": "BomStockDAL — BOM Stock Data Access Layer",
       "file_type": "code",
       "source_file": "CharlesNadejda/DAL/BomStockDAL.cs",
       "source_location": null,
@@ -6797,10 +6868,10 @@
       "contributor": null,
       "id": "bomstockdal",
       "community": 7,
-      "norm_label": "bomstockdal \u2014 bom stock data access layer"
+      "norm_label": "bomstockdal — bom stock data access layer"
     },
     {
-      "label": "VueStockGlobalDAL \u2014 Global Stock View DAL",
+      "label": "VueStockGlobalDAL — Global Stock View DAL",
       "file_type": "code",
       "source_file": "CharlesNadejda/DAL/VueStockGlobalDAL.cs",
       "source_location": null,
@@ -6810,10 +6881,10 @@
       "contributor": null,
       "id": "vuestockglobaldal",
       "community": 73,
-      "norm_label": "vuestockglobaldal \u2014 global stock view dal"
+      "norm_label": "vuestockglobaldal — global stock view dal"
     },
     {
-      "label": "BomNiveauDAL \u2014 BOM Level Data Access Layer",
+      "label": "BomNiveauDAL — BOM Level Data Access Layer",
       "file_type": "code",
       "source_file": "CharlesNadejda/DAL/BomNiveauDAL.cs",
       "source_location": null,
@@ -6823,10 +6894,10 @@
       "contributor": null,
       "id": "bomniveaudal",
       "community": 7,
-      "norm_label": "bomniveaudal \u2014 bom level data access layer"
+      "norm_label": "bomniveaudal — bom level data access layer"
     },
     {
-      "label": "Architect Plan Technique \u2014 Refactoring",
+      "label": "Architect Plan Technique — Refactoring",
       "file_type": "document",
       "source_file": "app-csharp/CharlesNadejda/docs/ARCHITECT_PLAN_TECHNIQUE.md",
       "source_location": null,
@@ -6836,7 +6907,7 @@
       "contributor": null,
       "id": "architect_plan",
       "community": 7,
-      "norm_label": "architect plan technique \u2014 refactoring"
+      "norm_label": "architect plan technique — refactoring"
     },
     {
       "label": "PO User Stories Refactoring",
@@ -6865,7 +6936,7 @@
       "norm_label": "po audit fonctionnalites design"
     },
     {
-      "label": "Development Journal \u2014 ArtisaStock",
+      "label": "Development Journal — ArtisaStock",
       "file_type": "document",
       "source_file": "app-csharp/CharlesNadejda/docs/JOURNAL.md",
       "source_location": null,
@@ -6875,7 +6946,7 @@
       "contributor": null,
       "id": "journal",
       "community": 7,
-      "norm_label": "development journal \u2014 artisastock"
+      "norm_label": "development journal — artisastock"
     },
     {
       "label": "BOM Multi-Level Production System",
@@ -6904,7 +6975,7 @@
       "norm_label": "fifo transaction engine for production"
     },
     {
-      "label": "ArtisaStock Design System \u2014 Chocolate Palette",
+      "label": "ArtisaStock Design System — Chocolate Palette",
       "file_type": "rationale",
       "source_file": "app-csharp/CharlesNadejda/docs/PO_AUDIT_FONCTIONNALITES_DESIGN.md",
       "source_location": "line 249-262",
@@ -6914,7 +6985,7 @@
       "contributor": null,
       "id": "design_system_palette",
       "community": 7,
-      "norm_label": "artisastock design system \u2014 chocolate palette"
+      "norm_label": "artisastock design system — chocolate palette"
     },
     {
       "label": "M:N Relationship Stock-Activity Liaison",
@@ -6930,7 +7001,7 @@
       "norm_label": "m:n relationship stock-activity liaison"
     },
     {
-      "label": "FormHelper \u2014 WinForms UX Utilities",
+      "label": "FormHelper — WinForms UX Utilities",
       "file_type": "code",
       "source_file": "CharlesNadejda/Forms/FormHelper.cs",
       "source_location": null,
@@ -6940,10 +7011,10 @@
       "contributor": null,
       "id": "formhelper",
       "community": 7,
-      "norm_label": "formhelper \u2014 winforms ux utilities"
+      "norm_label": "formhelper — winforms ux utilities"
     },
     {
-      "label": "NavigationParams \u2014 Screen Navigation Parameters",
+      "label": "NavigationParams — Screen Navigation Parameters",
       "file_type": "code",
       "source_file": "CharlesNadejda/Navigation/NavigationParams.cs",
       "source_location": null,
@@ -6953,10 +7024,10 @@
       "contributor": null,
       "id": "navigationparams",
       "community": 2,
-      "norm_label": "navigationparams \u2014 screen navigation parameters"
+      "norm_label": "navigationparams — screen navigation parameters"
     },
     {
-      "label": "Program.cs \u2014 Application Entry Point",
+      "label": "Program.cs — Application Entry Point",
       "file_type": "code",
       "source_file": "CharlesNadejda/Program.cs",
       "source_location": null,
@@ -6966,7 +7037,7 @@
       "contributor": null,
       "id": "program_cs",
       "community": 7,
-      "norm_label": "program.cs \u2014 application entry point"
+      "norm_label": "program.cs — application entry point"
     },
     {
       "label": "OWASP Security Constraints",
@@ -6982,7 +7053,7 @@
       "norm_label": "owasp security constraints"
     },
     {
-      "label": "Copilot Instructions \u2014 Azure Rules",
+      "label": "Copilot Instructions — Azure Rules",
       "file_type": "document",
       "source_file": "app-csharp/CharlesNadejda/.github/copilot-instructions.md",
       "source_location": null,
@@ -6992,7 +7063,7 @@
       "contributor": null,
       "id": "copilot_instructions",
       "community": 77,
-      "norm_label": "copilot instructions \u2014 azure rules"
+      "norm_label": "copilot instructions — azure rules"
     },
     {
       "label": "BCrypt.Net-Next 4.1.0",
@@ -7149,6 +7220,69 @@
       "id": "mysql_connectivity_rationale",
       "community": 20,
       "norm_label": "mysql database connectivity via connector/net"
+    },
+    {
+      "id": "_module_shell_navigation",
+      "label": "MODULE: Shell & Navigation",
+      "file_type": "rationale",
+      "doc": "Architecture SFA. FrmPrincipal = shell unique (TitleBar+Sidebar+StatusBar+ContentFill). Navigation via ScreenRouter/AppState. 13 NavItemId mappes vers ScreenId. Activites dynamiques switchables. MenuStrip invisible (escape hatch).",
+      "source_file": "app-csharp/CharlesNadejda/CharlesNadejda/Forms/FrmPrincipal.cs",
+      "community": 0,
+      "community_label": "Shell ERP Principal"
+    },
+    {
+      "id": "_module_bom_production",
+      "label": "MODULE: Production BOM",
+      "file_type": "rationale",
+      "doc": "Flux: UI selectionne Contexte>Niveau>Fiche > Simuler (dry-run) > Lancer (TX atomique). Executer: verif TOCTOU > INSERT production > ConsumeStock FIFO par ligne > couts > INSERT bom_stocks. Multi-niveaux SEQUENTIEL (pas recursif). Couts RECURSIFS via BomCoutDAL. FIFO strict (date ASC).",
+      "source_file": "app-csharp/CharlesNadejda/CharlesNadejda/DAL/BomProductionDAL.cs",
+      "community": 13,
+      "community_label": "Production DAL"
+    },
+    {
+      "id": "_module_bom_fiches_niveaux",
+      "label": "MODULE: Fiches & Niveaux BOM",
+      "file_type": "rationale",
+      "doc": "Fiche = recette avec lignes. Ligne.TypeInput = ingredient (matiere premiere) ou fiche (produit intermediaire). Niveaux = hierarchie dans un contexte (N1 matieres, N2 intermediaires, N3 finals). Un niveau N peut referencer tout niveau inferieur (pas seulement N-1). Insert/Update transactionnels.",
+      "source_file": "app-csharp/CharlesNadejda/CharlesNadejda/DAL/BomFicheDAL.cs",
+      "community": 12,
+      "community_label": "BOM Fiche DAL"
+    },
+    {
+      "id": "_module_stock_achats",
+      "label": "MODULE: Stock & Achats",
+      "file_type": "rationale",
+      "doc": "Deux types de stock: lots_ingredients (achats matieres) + bom_stocks (produits par production). Vue unifiee via VIEW MySQL. FIFO sur les deux. Reservations soft-delete. Liaison M:N stock<->activite. Jauge stock_cible avec ratio couleur. 3 sections DGV (Ingredients/Intermediaires/Finals).",
+      "source_file": "app-csharp/CharlesNadejda/CharlesNadejda/DAL/StockDAL.cs",
+      "community": 10,
+      "community_label": "Stock DAL"
+    },
+    {
+      "id": "_module_catalogue",
+      "label": "MODULE: Catalogue (Ingredients & Fournisseurs)",
+      "file_type": "rationale",
+      "doc": "Ingredients avec: unite de base (g/ml/piece), conditionnement, stock_cible, seuil_alerte, fournisseur FK. Proprietes calculees: StockPieces, StockRatio, PrixParUniteBase. Fournisseurs CRUD simple. Filtrage par chips (type, fournisseur). Affichage conditionnel densite/conditionnement.",
+      "source_file": "app-csharp/CharlesNadejda/CharlesNadejda/DAL/IngredientDAL.cs",
+      "community": 25,
+      "community_label": "Ingredient DAL"
+    },
+    {
+      "id": "_module_activites",
+      "label": "MODULE: Activites",
+      "file_type": "rationale",
+      "doc": "Activite = domaine metier dynamique (Chocolaterie, Patisserie...). JAMAIS hardcode. Chaque activite a des stocks lies (M:N). Desactiver verifie les cascades. ActivitySwitcher dans la sidebar. AppState.SetActivite() propage le changement a tout le shell.",
+      "source_file": "app-csharp/CharlesNadejda/CharlesNadejda/DAL/ActiviteDAL.cs",
+      "community": 16,
+      "community_label": "Activite DAL"
+    },
+    {
+      "id": "_module_forms_base",
+      "label": "MODULE: Forms Base & Utilitaires",
+      "file_type": "rationale",
+      "doc": "FrmEditBase (Template Method: Valider+Sauvegarder). FrmListeBase<T> (generique DGV+CRUD). AppColors (30+ tokens palette chocolat). UnitConvertisseur (auto-conversion g/kg/ml/l + FormatQte/FormatPrix). FormHelper (decimal NUD). FrmLogin (BCrypt interop PHP).",
+      "source_file": "app-csharp/CharlesNadejda/CharlesNadejda/Forms/FrmEditBase.cs",
+      "community": 1,
+      "community_label": "Forms Base & Login"
     }
   ],
   "links": [
@@ -12404,7 +12538,7 @@
       "source_location": "L164",
       "weight": 1.0,
       "source": "forms_frmbomproductionsimulation_frmbomproductionsimulation",
-      "target": "forms_frmbomproductionsimulation_frmbomproductionsimulation_r\u00e9initialiserr\u00e9sultats",
+      "target": "forms_frmbomproductionsimulation_frmbomproductionsimulation_réinitialiserrésultats",
       "confidence_score": 1.0
     },
     {
@@ -12464,7 +12598,7 @@
       "source_location": "L361",
       "weight": 1.0,
       "source": "forms_frmbomproductionsimulation_frmbomproductionsimulation",
-      "target": "forms_frmbomproductionsimulation_frmbomproductionsimulation_s\u00e9lectionvalide",
+      "target": "forms_frmbomproductionsimulation_frmbomproductionsimulation_sélectionvalide",
       "confidence_score": 1.0
     },
     {
@@ -12496,7 +12630,7 @@
       "source_location": "L127",
       "weight": 1.0,
       "source": "forms_frmbomproductionsimulation_frmbomproductionsimulation_cbocontexte_selectedindexchanged",
-      "target": "forms_frmbomproductionsimulation_frmbomproductionsimulation_r\u00e9initialiserr\u00e9sultats",
+      "target": "forms_frmbomproductionsimulation_frmbomproductionsimulation_réinitialiserrésultats",
       "confidence_score": 1.0
     },
     {
@@ -12507,7 +12641,7 @@
       "source_location": "L142",
       "weight": 1.0,
       "source": "forms_frmbomproductionsimulation_frmbomproductionsimulation_cboniveau_selectedindexchanged",
-      "target": "forms_frmbomproductionsimulation_frmbomproductionsimulation_r\u00e9initialiserr\u00e9sultats",
+      "target": "forms_frmbomproductionsimulation_frmbomproductionsimulation_réinitialiserrésultats",
       "confidence_score": 1.0
     },
     {
@@ -12518,7 +12652,7 @@
       "source_location": "L156",
       "weight": 1.0,
       "source": "forms_frmbomproductionsimulation_frmbomproductionsimulation_cbofiche_selectedindexchanged",
-      "target": "forms_frmbomproductionsimulation_frmbomproductionsimulation_r\u00e9initialiserr\u00e9sultats",
+      "target": "forms_frmbomproductionsimulation_frmbomproductionsimulation_réinitialiserrésultats",
       "confidence_score": 1.0
     },
     {
@@ -12529,7 +12663,7 @@
       "source_location": "L341",
       "weight": 1.0,
       "source": "forms_frmbomproductionsimulation_frmbomproductionsimulation_btnlancerproduction_click",
-      "target": "forms_frmbomproductionsimulation_frmbomproductionsimulation_r\u00e9initialiserr\u00e9sultats",
+      "target": "forms_frmbomproductionsimulation_frmbomproductionsimulation_réinitialiserrésultats",
       "confidence_score": 1.0
     },
     {
@@ -12540,7 +12674,7 @@
       "source_location": "L178",
       "weight": 1.0,
       "source": "forms_frmbomproductionsimulation_frmbomproductionsimulation_btnsimuler_click",
-      "target": "forms_frmbomproductionsimulation_frmbomproductionsimulation_s\u00e9lectionvalide",
+      "target": "forms_frmbomproductionsimulation_frmbomproductionsimulation_sélectionvalide",
       "confidence_score": 1.0
     },
     {
@@ -12584,7 +12718,7 @@
       "source_location": "L294",
       "weight": 1.0,
       "source": "forms_frmbomproductionsimulation_frmbomproductionsimulation_btnlancerproduction_click",
-      "target": "forms_frmbomproductionsimulation_frmbomproductionsimulation_s\u00e9lectionvalide",
+      "target": "forms_frmbomproductionsimulation_frmbomproductionsimulation_sélectionvalide",
       "confidence_score": 1.0
     },
     {
@@ -19043,6 +19177,134 @@
       "weight": 1.0,
       "source": "charlesnadejda_csharp_app",
       "target": "system_runtime_compilerservices_unsafe"
+    },
+    {
+      "source": "_module_shell_navigation",
+      "target": "forms_frmprincipal_frmprincipal",
+      "relation": "documents",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "weight": 1.0
+    },
+    {
+      "source": "_module_shell_navigation",
+      "target": "navigation_appstate_appstate",
+      "relation": "documents",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "weight": 1.0
+    },
+    {
+      "source": "_module_bom_production",
+      "target": "dal_bomproductiondal_bomproductiondal",
+      "relation": "documents",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "weight": 1.0
+    },
+    {
+      "source": "_module_bom_production",
+      "target": "dal_bomstockdal_bomstockdal",
+      "relation": "documents",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "weight": 1.0
+    },
+    {
+      "source": "_module_bom_production",
+      "target": "dal_bomcoutdal_bomcoutdal",
+      "relation": "documents",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "weight": 1.0
+    },
+    {
+      "source": "_module_bom_production",
+      "target": "services_simulationservice_simulationservice",
+      "relation": "documents",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "weight": 1.0
+    },
+    {
+      "source": "_module_bom_fiches_niveaux",
+      "target": "dal_bomfichedal_bomfichedal",
+      "relation": "documents",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "weight": 1.0
+    },
+    {
+      "source": "_module_bom_fiches_niveaux",
+      "target": "dal_bomfichelignedal_bomfichelignedal",
+      "relation": "documents",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "weight": 1.0
+    },
+    {
+      "source": "_module_bom_fiches_niveaux",
+      "target": "dal_bomniveaudal_bomniveaudal",
+      "relation": "documents",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "weight": 1.0
+    },
+    {
+      "source": "_module_stock_achats",
+      "target": "dal_stockdal_stockdal",
+      "relation": "documents",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "weight": 1.0
+    },
+    {
+      "source": "_module_stock_achats",
+      "target": "dal_vuestockglobaldal_vuestockglobaldal",
+      "relation": "documents",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "weight": 1.0
+    },
+    {
+      "source": "_module_stock_achats",
+      "target": "dal_bomreservationdal_bomreservationdal",
+      "relation": "documents",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "weight": 1.0
+    },
+    {
+      "source": "_module_catalogue",
+      "target": "dal_ingredientdal_ingredientdal",
+      "relation": "documents",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "weight": 1.0
+    },
+    {
+      "source": "_module_catalogue",
+      "target": "dal_fournisseurdal_fournisseurdal",
+      "relation": "documents",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "weight": 1.0
+    },
+    {
+      "source": "_module_activites",
+      "target": "dal_activitedal_activitedal",
+      "relation": "documents",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "weight": 1.0
+    },
+    {
+      "source": "_module_forms_base",
+      "target": "forms_unitconvertisseur_unitconvertisseur",
+      "relation": "documents",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "weight": 1.0
     }
   ],
   "hyperedges": [
