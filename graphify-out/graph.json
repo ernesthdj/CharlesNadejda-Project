@@ -1880,7 +1880,11 @@
       "source_location": "L16",
       "id": "forms_frmachatedit_frmachatedit",
       "community": 11,
-      "norm_label": "frmachatedit"
+      "norm_label": "frmachatedit",
+      "doc": "Editeur de lot d achat (herite FrmEditBase). Champs : ingredient (ComboBox), fournisseur, numero lot, quantite, prix HT/TTC (calcul auto TVA), reference facture, date achat, DLC optionnelle, notes. MajInfoConditionnement affiche unite/prix conditionne dynamiquement selon ingredient selectionne.",
+      "methods": "ChargerIngredients() ChargerFournisseurs() MajInfoConditionnement() Valider()->bool Sauvegarder() FrmAchatEdit_Load()",
+      "rules": "#13 apres refactor signature avec params optionnels reordonnes, grepper tous call sites | #28 conversion pieces<->unite de base",
+      "relations": "Appelle: LotDAL.Insert/Update, IngredientDAL.GetAll, FournisseurDAL.GetAll. Herite: FrmEditBase."
     },
     {
       "label": "FrmEditBase",
@@ -2222,7 +2226,11 @@
       "source_location": "L14",
       "id": "forms_frmactivites_frmactivites",
       "community": 19,
-      "norm_label": "frmactivites"
+      "norm_label": "frmactivites",
+      "doc": "Liste des activites construite programmatiquement (pas FrmListeBase — pattern different car boutons specifiques). DGV + 5 boutons (Nouveau/Modifier/Desactiver/Supprimer/Gerer Stocks). Desactiver verifie les cascades. Gerer Stocks ouvre FrmActiviteStocks.",
+      "methods": "BuildUI() Charger() Nouveau() Modifier() Desactiver() Supprimer() GererStocks() CreerBouton() ActiviteSelectionnee()->Activite",
+      "rules": "#9 jamais hardcoder nom activite | #10 grepper tous call sites apres refactor",
+      "relations": "Appelle: ActiviteDAL.GetAll/Insert/Update/Delete/Desactiver, FrmActiviteEdit, FrmActiviteStocks. Appele par: FrmPrincipal via navigation."
     },
     {
       "label": "Form",
@@ -2429,7 +2437,11 @@
       "source_location": "L17",
       "id": "forms_frmbomcontexteedit_frmbomcontexteedit",
       "community": 27,
-      "norm_label": "frmbomcontexteedit"
+      "norm_label": "frmbomcontexteedit",
+      "doc": "Editeur de contexte BOM (herite FrmEditBase). Header: nom, description, activite (ComboBox ou forcee). Section niveaux dynamique : N1 obligatoire (TextBox), niveaux supplementaires (ListBox + boutons Ajouter/Supprimer dernier). InsertAvecNiveaux en une seule TX.",
+      "methods": "FrmBomContexteEdit_Load() AjouterSectionNiveaux() BtnAjouterNiveau_Click() BtnSupprimerDernierNiveau_Click() Valider()->bool Sauvegarder()",
+      "rules": "#8 migration ENUM vers FK dans meme ALTER TABLE",
+      "relations": "Appelle: BomContexteDAL.InsertAvecNiveaux/Update, ActiviteDAL.GetAll. Herite: FrmEditBase."
     },
     {
       "label": "BomContexte",
@@ -2537,7 +2549,10 @@
       "source_location": "L16",
       "id": "forms_frmbomcontextes_frmbomcontextes",
       "community": 3,
-      "norm_label": "frmbomcontextes"
+      "norm_label": "frmbomcontextes",
+      "doc": "Liste des contextes BOM pour une activite (herite FrmListeBase<BomContexte>). Bouton supplementaire Niveaux pour ouvrir FrmBomNiveaux sur le contexte selectionne.",
+      "methods": "ConfigurerColonnes() ChargerDonnees()->List<BomContexte> Supprimer(BomContexte) OuvrirNiveaux() OuvrirFormulaire(BomContexte)->Form",
+      "relations": "Appelle: BomContexteDAL.GetAll/Delete, FrmBomContexteEdit, FrmBomNiveaux. Herite: FrmListeBase<BomContexte>."
     },
     {
       "label": ".ChargerDonnees()",
@@ -2627,7 +2642,11 @@
       "source_location": "L22",
       "id": "forms_frmbomficheedit_frmbomficheedit",
       "community": 9,
-      "norm_label": "frmbomficheedit"
+      "norm_label": "frmbomficheedit",
+      "doc": "Editeur de fiche BOM (recette). Header: nom, description, unite output, quantite output, temps prep. Corps: ajout/retrait de lignes (ingredient ou sous-fiche). ComboBox input dynamique selon type (ingredients ou fiches du niveau inferieur). Unite verrouillee apres selection input. DGV lignes en bas.",
+      "methods": "FrmBomFicheEdit_Load() AfficherInfoInput() ChargerInputsDisponibles() SynchroniserUniteInput() BtnAjouterLigne_Click() BtnRetirerLigne_Click() RafraichirGrilleLignes() Valider()->bool Sauvegarder()",
+      "rules": "#7 unite de la ligne = unite input source, ComboBox verrouille apres selection | #4 fiche liee a un niveau specifique",
+      "relations": "Appelle: BomFicheDAL.Insert/Update, BomFicheLigneDAL.GetByFiche, IngredientDAL.GetAll, BomFicheDAL.GetByNiveau. Herite: FrmEditBase."
     },
     {
       "label": "BomFiche",
@@ -2771,7 +2790,10 @@
       "source_location": "L16",
       "id": "forms_frmbomfiches_frmbomfiches",
       "community": 5,
-      "norm_label": "frmbomfiches"
+      "norm_label": "frmbomfiches",
+      "doc": "Liste des fiches BOM pour un niveau donne (herite FrmListeBase<BomFiche>). Message etat vide si aucune fiche. Styles lignes personnalises. Ouvre FrmBomFicheEdit en mode creation/edition.",
+      "methods": "ConfigurerColonnes() ChargerDonnees()->List<BomFiche> Supprimer(BomFiche) AppliquerStylesLignes() OuvrirFormulaire(BomFiche)->Form",
+      "relations": "Appelle: BomFicheDAL.GetByNiveau/Delete, FrmBomFicheEdit. Herite: FrmListeBase<BomFiche>."
     },
     {
       "label": ".ChargerDonnees()",
@@ -2978,7 +3000,10 @@
       "source_location": "L23",
       "id": "forms_frmbomproductionsimulation_frmbomproductionsimulation",
       "community": 5,
-      "norm_label": "frmbomproductionsimulation"
+      "norm_label": "frmbomproductionsimulation",
+      "doc": "Formulaire modal legacy (ShowDialog) pour simulation + lancement production. Cascade ComboBox : Contexte > Niveau > Fiche. Simule via BomProductionDAL.Simuler() puis colorie les lignes DGV (vert=OK, rouge=manque). Lancement async via btnLancerProduction_Click avec confirmation MessageBox.",
+      "methods": "ChargerContextes() cboContexte_SelectedIndexChanged() cboNiveau_SelectedIndexChanged() ReinitialiserResultats() btnSimuler_Click() ConfigurerGrille() ColoriserLignes() btnLancerProduction_Click()[async] SelectionValide()->bool",
+      "relations": "Appelle: BomProductionDAL.Simuler/Executer, BomContexteDAL.GetAll, BomNiveauDAL.GetByContexte, BomFicheDAL.GetByNiveau. Appele par: FrmPrincipal (ancien flux, remplace progressivement par Production inline)."
     },
     {
       "label": ".FrmBomProductionSimulation_Load()",
@@ -3455,7 +3480,11 @@
       "source_location": "L14",
       "id": "forms_frmingredientedit_frmingredientedit",
       "community": 28,
-      "norm_label": "frmingredientedit"
+      "norm_label": "frmingredientedit",
+      "doc": "Editeur ingredient (herite FrmEditBase). Champs : nom, marque, unite base, type physique, fournisseur, stock lie, densite (si liquide), prix, qte conditionnement, seuil alerte, stock cible (en pieces). Affichage conditionnel densite/conditionnement selon type physique. Stock cible saisi en pieces, converti en unite de base a la sauvegarde.",
+      "methods": "FrmIngredientEdit_Load() Valider()->bool Sauvegarder()",
+      "rules": "#28 conversion pieces<->unite de base pour stock_cible | #27 migration SQL AVANT lancement app si nouveau champ | #5 nouveau champ = verifier 4 endroits DAL",
+      "relations": "Appelle: IngredientDAL.Insert/Update, FournisseurDAL.GetAll, StockDAL.GetAll. Herite: FrmEditBase."
     },
     {
       "label": ".FrmIngredientEdit_Load()",
@@ -3527,7 +3556,11 @@
       "source_location": "L19",
       "id": "forms_frmingredients_frmingredients",
       "community": 14,
-      "norm_label": "frmingredients"
+      "norm_label": "frmingredients",
+      "doc": "Liste ingredients (herite FrmListeBase<Ingredient>). Filtrage par chips (stock lie) via FlowLayoutPanel en haut. Filtre alertes seulement (US-08). Styles lignes : rouge si stock < seuil alerte. Colonnes avec FormatQte/FormatPrix via CellFormatting.",
+      "methods": "ConfigurerColonnes() Supprimer(Ingredient) AppliquerStylesLignes() BuildChipPanel() CreerChip(texte,stock,actif) AppliquerFiltre(stock,chipClique)",
+      "rules": "#24 CellFormatting pour unites fusionnees | #6 DGV sizing | #28 StockPieces = conditionnements entiers",
+      "relations": "Appelle: IngredientDAL.GetAll, FrmIngredientEdit (OuvrirFormulaire). Herite: FrmListeBase<Ingredient>."
     },
     {
       "label": "Stock",
@@ -3653,7 +3686,11 @@
       "source_location": "L6",
       "id": "forms_frmlistebase_charlesnadejda_forms",
       "community": 3,
-      "norm_label": "charlesnadejda.forms"
+      "norm_label": "charlesnadejda.forms",
+      "doc": "Classe abstraite generique FrmListeBase<T> : template pour toutes les listes CRUD. Fournit DGV + 4 boutons (Ajouter/Modifier/Supprimer/Fermer) + titre. 5 membres abstraits : Titre, ChargerDonnees(), ConfigurerColonnes(), OuvrirFormulaire(T), Supprimer(T). Helpers : Selectionne(), ConfigCol(), CacherColonnes(). Double-clic = modifier.",
+      "methods": "[abstract] Titre -> string | [abstract] ChargerDonnees() -> List<T> | [abstract] ConfigurerColonnes() | [abstract] OuvrirFormulaire(T) -> Form | [abstract] Supprimer(T) | [virtual] NomElement(T) -> string | [virtual] AppliquerStylesLignes() | Selectionne() -> T | ConfigCol(nom,header,largeur,min) | CacherColonnes(params)",
+      "rules": "#6 DGV Sizable+AllCells+MinimumWidth+Anchor4bords | #22 ne jamais redeclarer btnEnregistrer dans les sous-classes",
+      "relations": "Herite par: FrmIngredients, FrmBomFiches, FrmBomContextes, FrmFournisseurs, FrmAchats. Base du pattern liste CRUD."
     },
     {
       "label": "FrmListeBase",
@@ -4993,7 +5030,10 @@
       "source_location": "L8",
       "id": "forms_frmstocks_charlesnadejda_forms",
       "community": 1,
-      "norm_label": "charlesnadejda.forms"
+      "norm_label": "charlesnadejda.forms",
+      "doc": "Liste des stocks avec SplitContainer : DGV a gauche (tous les stocks) + CheckedListBox a droite (activites liees M:N). Synchronisation differentielle des liaisons via ItemCheck. Boutons Nouveau/Modifier/Supprimer. Verification cascade avant suppression (StockContientDonnees).",
+      "methods": "BuildUI() Charger() ChargerLiaisons(idStock) ActualiserBoutonSupprimer(idStock) StockContientDonnees(idStock)->bool ClbActivites_ItemCheck() Nouveau() Modifier() Supprimer()",
+      "relations": "Appelle: StockDAL.GetAll/Insert/Update/Delete/LierActivite/DelierActivite, ActiviteDAL.GetAll. Appele par: FrmPrincipal via navigation."
     },
     {
       "label": "FrmStocks",
@@ -5487,7 +5527,10 @@
       "source_location": "L1",
       "id": "charlesnadejda_forms_shell_sidebarpanel_cs",
       "community": 2,
-      "norm_label": "sidebarpanel.cs"
+      "norm_label": "sidebarpanel.cs",
+      "doc": "Sidebar 224px style Odoo. ActivitySwitcher (ComboBox OwnerDraw) en haut. 3 groupes navigation : Workflow (Hub/Production/Planning/Devis), Stock & Achats (Stocks/VueGlobal/Mouvements/Achats/Fournisseurs), Referentiels (Fiches/Ingredients/Niveaux/Parametres). Items avec hover/active + badges dores. Events: NavigationRequested, ActivityChanged, ManageActivitiesRequested.",
+      "methods": "SidebarPanel() SetActivities(List<Activite>) SetSelectedActivity(Activite) SetBadge(NavItemId,int) SetActiveItem(NavItemId)",
+      "relations": "Appele par: FrmPrincipal.BuildShell(). Emet: NavigationRequested->FrmPrincipal.OnSidebarNavigation, ActivityChanged->FrmPrincipal.OnActivityChanged."
     },
     {
       "label": "CharlesNadejda.Forms.Shell",
@@ -6907,7 +6950,10 @@
       "contributor": null,
       "id": "architect_plan",
       "community": 7,
-      "norm_label": "architect plan technique — refactoring"
+      "norm_label": "architect plan technique — refactoring",
+      "doc": "Document d architecture technique du refactoring. Definit : SFA (Single-Form Architecture), pattern FrmListeBase/FrmEditBase, ScreenRouter, AppState, structure DAL sans ORM, transactions MySQL, palette chocolat, regles de docking WinForms, audit P1/P2. Reference centrale pour toutes les decisions architecturales.",
+      "methods": "N/A (document)",
+      "relations": "Reference par: tous les modules. Definit les patterns implementes dans FrmPrincipal, FrmListeBase, FrmEditBase, AppState, ScreenRouter."
     },
     {
       "label": "PO User Stories Refactoring",
