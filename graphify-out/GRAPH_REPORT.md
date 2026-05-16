@@ -244,3 +244,52 @@ _Questions this graph is uniquely positioned to answer:_
   _Cohesion score 0.07 - nodes in this community are weakly interconnected._
 - **Should `Shell Navigation & Utils` be split into smaller, more focused modules?**
   _Cohesion score 0.06 - nodes in this community are weakly interconnected._
+---
+
+## Documentation des noeuds enrichis
+
+| Noeud | Fichier doc | Source |
+|-------|-------------|--------|
+| [ActiviteDAL](ActiviteDAL.md) | `ActiviteDAL.md` | `CharlesNadejda/DAL/ActiviteDAL.cs` |
+| [AppState](AppState.md) | `AppState.md` | `CharlesNadejda/Navigation/AppState.cs` |
+| [Architect Plan Technique — Refactoring](Architect_Plan_Technique_—_Refactoring.md) | `Architect_Plan_Technique_—_Refactoring.md` | `app-csharp/CharlesNadejda/docs/ARCHITECT_PLAN_TECHNIQUE.md` |
+| [BomContexteDAL](BomContexteDAL.md) | `BomContexteDAL.md` | `CharlesNadejda/DAL/BomContexteDAL.cs` |
+| [BomCoutDAL](BomCoutDAL.md) | `BomCoutDAL.md` | `CharlesNadejda/DAL/BomCoutDAL.cs` |
+| [BomFicheDAL](BomFicheDAL.md) | `BomFicheDAL.md` | `CharlesNadejda/DAL/BomFicheDAL.cs` |
+| [BomFicheLigneDAL](BomFicheLigneDAL.md) | `BomFicheLigneDAL.md` | `CharlesNadejda/DAL/BomFicheLigneDAL.cs` |
+| [BomNiveauDAL](BomNiveauDAL.md) | `BomNiveauDAL.md` | `CharlesNadejda/DAL/BomNiveauDAL.cs` |
+| [BomProductionDAL](BomProductionDAL.md) | `BomProductionDAL.md` | `CharlesNadejda/DAL/BomProductionDAL.cs` |
+| [BomReservationDAL](BomReservationDAL.md) | `BomReservationDAL.md` | `CharlesNadejda/DAL/BomReservationDAL.cs` |
+| [BomStockDAL](BomStockDAL.md) | `BomStockDAL.md` | `CharlesNadejda/DAL/BomStockDAL.cs` |
+| [CharlesNadejda.Forms](CharlesNadejda.Forms.md) | `CharlesNadejda.Forms.md` | `CharlesNadejda/Forms/FrmListeBase.cs` |
+| [CharlesNadejda.Forms](CharlesNadejda.Forms.md) | `CharlesNadejda.Forms.md` | `CharlesNadejda/Forms/FrmListeBase.cs` |
+| [FournisseurDAL](FournisseurDAL.md) | `FournisseurDAL.md` | `CharlesNadejda/DAL/FournisseurDAL.cs` |
+| [FrmAchatEdit](FrmAchatEdit.md) | `FrmAchatEdit.md` | `CharlesNadejda/Forms/FrmAchatEdit.cs` |
+| [FrmActivites](FrmActivites.md) | `FrmActivites.md` | `CharlesNadejda/Forms/FrmActivites.cs` |
+| [FrmBomContexteEdit](FrmBomContexteEdit.md) | `FrmBomContexteEdit.md` | `CharlesNadejda/Forms/FrmBomContexteEdit.cs` |
+| [FrmBomContextes](FrmBomContextes.md) | `FrmBomContextes.md` | `CharlesNadejda/Forms/FrmBomContextes.cs` |
+| [FrmBomFicheEdit](FrmBomFicheEdit.md) | `FrmBomFicheEdit.md` | `CharlesNadejda/Forms/FrmBomFicheEdit.cs` |
+| [FrmBomFiches](FrmBomFiches.md) | `FrmBomFiches.md` | `CharlesNadejda/Forms/FrmBomFiches.cs` |
+| [FrmBomProductionSimulation](FrmBomProductionSimulation.md) | `FrmBomProductionSimulation.md` | `CharlesNadejda/Forms/FrmBomProductionSimulation.cs` |
+| [FrmIngredientEdit](FrmIngredientEdit.md) | `FrmIngredientEdit.md` | `CharlesNadejda/Forms/FrmIngredientEdit.cs` |
+| [FrmIngredients](FrmIngredients.md) | `FrmIngredients.md` | `CharlesNadejda/Forms/FrmIngredients.cs` |
+| [FrmPrincipal](FrmPrincipal.md) | `FrmPrincipal.md` | `CharlesNadejda/Forms/FrmPrincipal.cs` |
+| [FrmPrincipal](FrmPrincipal.md) | `FrmPrincipal.md` | `CharlesNadejda/Forms/FrmPrincipal.cs` |
+| [FrmVueStock](FrmVueStock.md) | `FrmVueStock.md` | `CharlesNadejda/Forms/FrmVueStock.cs` |
+| [IngredientDAL](IngredientDAL.md) | `IngredientDAL.md` | `CharlesNadejda/DAL/IngredientDAL.cs` |
+| [LotDAL](LotDAL.md) | `LotDAL.md` | `CharlesNadejda/DAL/LotDAL.cs` |
+| [MODULE: Activites](MODULE_Activites.md) | `MODULE_Activites.md` | `app-csharp/CharlesNadejda/CharlesNadejda/DAL/ActiviteDAL.cs` |
+| [MODULE: Catalogue (Ingredients & Fournisseurs)](MODULE_Catalogue_(Ingredients_&_Fournisseurs).md) | `MODULE_Catalogue_(Ingredients_&_Fournisseurs).md` | `app-csharp/CharlesNadejda/CharlesNadejda/DAL/IngredientDAL.cs` |
+| [MODULE: Fiches & Niveaux BOM](MODULE_Fiches_&_Niveaux_BOM.md) | `MODULE_Fiches_&_Niveaux_BOM.md` | `app-csharp/CharlesNadejda/CharlesNadejda/DAL/BomFicheDAL.cs` |
+| [MODULE: Forms Base & Utilitaires](MODULE_Forms_Base_&_Utilitaires.md) | `MODULE_Forms_Base_&_Utilitaires.md` | `app-csharp/CharlesNadejda/CharlesNadejda/Forms/FrmEditBase.cs` |
+| [MODULE: Production BOM](MODULE_Production_BOM.md) | `MODULE_Production_BOM.md` | `app-csharp/CharlesNadejda/CharlesNadejda/DAL/BomProductionDAL.cs` |
+| [MODULE: Shell & Navigation](MODULE_Shell_&_Navigation.md) | `MODULE_Shell_&_Navigation.md` | `app-csharp/CharlesNadejda/CharlesNadejda/Forms/FrmPrincipal.cs` |
+| [MODULE: Stock & Achats](MODULE_Stock_&_Achats.md) | `MODULE_Stock_&_Achats.md` | `app-csharp/CharlesNadejda/CharlesNadejda/DAL/StockDAL.cs` |
+| [SidebarPanel.cs](SidebarPanel.cs.md) | `SidebarPanel.cs.md` | `CharlesNadejda/Forms/Shell/SidebarPanel.cs` |
+| [SimulationService](SimulationService.md) | `SimulationService.md` | `CharlesNadejda/Services/SimulationService.cs` |
+| [StockDAL](StockDAL.md) | `StockDAL.md` | `CharlesNadejda/DAL/StockDAL.cs` |
+| [UnitConvertisseur](UnitConvertisseur.md) | `UnitConvertisseur.md` | `CharlesNadejda/Forms/UnitConvertisseur.cs` |
+| [VueStockGlobalDAL](VueStockGlobalDAL.md) | `VueStockGlobalDAL.md` | `CharlesNadejda/DAL/VueStockGlobalDAL.cs` |
+
+> Chaque fichier .md ci-dessus contient : description, methodes, regles, relations avec backlinks.
+> Source de verite : `graph.json`. Regenerer avec `/graphify --update` apres modification du code.
