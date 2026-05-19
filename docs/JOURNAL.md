@@ -38,10 +38,38 @@
 | 26  | `Panel.Paint` est invisible quand un contrôle enfant `Dock=Fill` couvre toute la surface — le painting passe sous l'enfant. Pour des séparateurs entre colonnes, utiliser un `Panel` physique dédié (ex: `Width=3, Dock=Left`) inséré entre les colonnes dans l'ordre d'ajout WinForms. | `Forms/FrmPrincipal.cs` (MakeColumnSeparator) | 2026-05-14 |
 | 27  | Quand on ajoute un champ au Model + DAL, toujours exécuter la migration SQL AVANT de lancer l'app — sinon `Unknown column` au SELECT. Checklist : 1) migration SQL exécutée 2) SELECT mis à jour 3) INSERT mis à jour 4) UPDATE mis à jour 5) Bind() mis à jour 6) Map() mis à jour. | `DAL/IngredientDAL.cs`, `Models/Ingredient.cs` | 2026-05-14 |
 | 28  | Pour les champs de saisie qui représentent des quantités en unité de base (ml, g) mais dont l'utilisateur pense en pièces/conditionnements, convertir à l'affichage (`valeurBase / qteParConditionnement`) et à la sauvegarde (`pièces × qteParConditionnement`). Ne jamais exposer l'unité de base brute à l'utilisateur. | `Forms/FrmIngredientEdit.cs` (nudStockCible) | 2026-05-14 |
+| 29  | Le symlink `storage:link` dans Docker pointe vers le chemin container (`/var/www/storage/app/public`). Les images uploadées depuis C# natif Windows doivent écrire au même emplacement physique (`site-laravel/storage/app/public/`). Configurer le chemin absolu dans `App.config` (`LaravelStoragePath`), jamais un chemin relatif fragile. | `App.config`, `Forms/FrmProduitWebEdit.cs` | 2026-05-19 |
+| 30  | `Path.Combine` sur Windows convertit les `/` en `\`. En DB, stocker les chemins d'image avec des slashes `/` (compatibles URL). Convertir en `\` uniquement pour les opérations filesystem Windows (`File.Copy`, `File.Move`, `File.Exists`). | `Forms/FrmProduitWebEdit.cs` | 2026-05-19 |
 
 ---
 
 ## Historique
+
+---
+
+### SESSION 20 — 2026-05-19
+> Module Boutique Web complet : brainstorm PDWEB, pipeline 6 agents, migration v15, Models+DAL+Forms C# (mini CMS), Laravel full-stack (7 models, 6 controllers, 11 vues Blade, AJAX panier).
+
+### [2026-05-19 22:50] FEAT — Boutique Web Laravel (full-stack)
+**Fichiers :** `site-laravel/app/Models/*.php` (7), `Controllers/*.php` (6), `Middleware/ClientAuth.php`, `Requests/*.php` (2), `resources/views/**/*.blade.php` (11), `public/js/panier.js`, `routes/web.php`, `resources/css/app.css`
+**Résumé :** Implémentation complète du site boutique Laravel : inscription/login client (BCrypt), catalogue produits avec filtre catégorie et tri, page détail produit avec stock dynamique, panier AJAX (ajout/modifier/supprimer sans reload), passage de commande avec décrémentation FIFO transactionnelle, historique commandes, profil client. 21 routes, middleware ClientAuth, View Composer compteur panier (QA-01), ownership check (QA-04).
+
+### [2026-05-19 21:30] FEAT — Mini CMS Boutique (ArtisaStock C#)
+**Fichiers :** `Forms/FrmPrincipal.BoutiqueWeb.cs`, `Forms/FrmCategorieWebEdit.cs`, `Forms/FrmProduitWebEdit.cs`, `Models/CategorieWeb.cs`, `Models/ProduitWeb.cs`, `Models/CommandeWeb.cs`, `Models/CommandeWebLigne.cs`, `DAL/CategorieWebDAL.cs`, `DAL/ProduitWebDAL.cs`, `DAL/CommandeWebDAL.cs`, `Navigation/NavItemId.cs`, `Navigation/ScreenId.cs`, `Navigation/ScreenRouter.cs`, `Forms/Shell/SidebarPanel.cs`, `Forms/FrmPrincipal.cs`
+**Résumé :** Nouvel écran "Boutique en ligne" dans l'ERP avec 3 onglets (Catégories, Produits, Commandes). CRUD catégories, publication/dépublication de fiches BOM en boutique avec image, stock dynamique calculé depuis bom_stocks, consultation commandes clients. 4 Models, 3 DAL, 3 Forms, navigation câblée (sidebar + router).
+
+### [2026-05-19 20:00] DB — Migration v15 Boutique Web
+**Fichiers :** `sql/migration_v15_boutique_web.sql`
+**Résumé :** 5 nouvelles tables (categories_web, clients, produits_web, commandes_web, commandes_web_lignes) avec FK, UNIQUE, CHECK, GENERATED ALWAYS AS, 6 index de performance. Colonne sous_total calculée automatiquement.
+
+### [2026-05-19 19:00] DOCS — Brainstorm PDWEB + Pipeline 6 agents + BA/FA
+**Fichiers :** `docs/BRAINSTORM_PDWEB_Boutique.md`, `docs/BA_FA_ArtisaStock.md`, `docs/agents-pdweb/01_PO_UserStories.md` à `06_QA_Validation.md`
+**Résumé :** Brainstorm complet pour la fusion PDWEB+PDSGBD : boutique client Laravel connectée à l'ERP. Pipeline 6 agents (PO→Architect→UI/UX→Backend→Frontend→QA) avec 12 User Stories, architecture, wireframes, plan d'implémentation, audit QA (6 corrections). Document BA/FA consolidé (67 fonctionnalités, ERD complet, use cases, règles métier).
+
+### [2026-05-19 22:55] FIX — Partage images C# → Laravel
+**Fichiers :** `App.config` (+ LaravelStoragePath), `Forms/FrmProduitWebEdit.cs`
+**Résumé :** Fix du chemin d'images partagé : ajout clé LaravelStoragePath dans App.config (chemin absolu), correction Path.Combine avec Replace('/','\\') pour les opérations filesystem Windows, symlink storage:link créé dans Docker.
+**Erreur corrigée :** Symptôme : images produits non affichées sur le site web / Cause : symlink manquant + chemin C# incorrect (fallback relatif depuis bin/Debug) + séparateurs / vs \ / Fix : chemin absolu en config + conversion séparateurs + storage:link / Règles retenues : #29, #30
 
 ---
 
