@@ -218,6 +218,9 @@ namespace CharlesNadejda.Forms.Shell
             y = AddNavItem(y, NavItemId.Ingredients,      "○", "Ingrédients");
             y = AddNavItem(y, NavItemId.NiveauxContextes, "◫", "Niveaux & contextes");
             y = AddNavItem(y, NavItemId.Parametres,       "∷", "Paramètres");
+
+            y = AddSection(y, "BOUTIQUE EN LIGNE");
+            y = AddNavItem(y, NavItemId.BoutiqueWeb,      "\U0001f6d2", "Boutique web");
         }
 
         private int AddSection(int y, string title, string actionText = null, Action actionClick = null)

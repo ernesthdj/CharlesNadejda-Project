@@ -12,6 +12,7 @@ namespace CharlesNadejda.Navigation
         public Action<NavigationParams> OnRessources      { get; set; }
         public Action<NavigationParams> OnProduction      { get; set; }
         public Action<NavigationParams> OnPlaceholder     { get; set; }
+        public Action<NavigationParams> OnBoutiqueWeb     { get; set; }
 
         // Guard de re-navigation : mémorise le dernier écran instancié
         private ScreenId?      _lastScreen;
@@ -59,6 +60,7 @@ namespace CharlesNadejda.Navigation
                 case ScreenId.ContexteNiveaux: OnContexteNiveaux?.Invoke(p); break;
                 case ScreenId.Ressources:      OnRessources?.Invoke(p);      break;
                 case ScreenId.Production:      OnProduction?.Invoke(p);      break;
+                case ScreenId.BoutiqueWeb:     OnBoutiqueWeb?.Invoke(p);     break;
                 case ScreenId.Planning:
                 case ScreenId.DevisPatisserie:
                 case ScreenId.Mouvements:

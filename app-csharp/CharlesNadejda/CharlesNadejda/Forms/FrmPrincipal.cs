@@ -92,6 +92,7 @@ namespace CharlesNadejda.Forms
             _router.OnRessources      = p => ShowRessourceScreen(_state.RessourceActive, p);
             _router.OnProduction      = p => ShowProductionScreen(p);
             _router.OnPlaceholder     = p => ShowPlaceholder(null);
+            _router.OnBoutiqueWeb     = p => ShowBoutiqueWebScreen();
         }
 
         /// <summary>
@@ -182,6 +183,9 @@ namespace CharlesNadejda.Forms
                     break;
                 case NavItemId.Parametres:
                     NavigateTo(ScreenId.Parametres);
+                    break;
+                case NavItemId.BoutiqueWeb:
+                    NavigateTo(ScreenId.BoutiqueWeb);
                     break;
             }
             UpdateTitleBar();

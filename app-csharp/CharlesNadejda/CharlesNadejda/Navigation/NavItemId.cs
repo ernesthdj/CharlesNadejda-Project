@@ -24,6 +24,9 @@ namespace CharlesNadejda.Navigation
         FichesBom,
         Ingredients,
         NiveauxContextes,
-        Parametres
+        Parametres,
+
+        // ── Boutique en ligne ────────────────────────────────────
+        BoutiqueWeb
     }
 }

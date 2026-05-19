@@ -12,6 +12,9 @@ namespace CharlesNadejda.Navigation
         Planning,
         DevisPatisserie,
         Mouvements,
-        Parametres
+        Parametres,
+
+        // Boutique en ligne (mini CMS)
+        BoutiqueWeb
     }
 }
