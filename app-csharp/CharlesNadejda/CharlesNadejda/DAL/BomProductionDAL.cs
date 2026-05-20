@@ -12,6 +12,9 @@ namespace CharlesNadejda.DAL
     /// </summary>
     public static class BomProductionDAL
     {
+        /// <summary>Tolérance d'arrondi pour la consommation FIFO (évite les faux négatifs sur reste flottant).</summary>
+        private const decimal TOLERANCE_ARRONDI = 0.0001m;
+
         public static List<BomProduction> GetByNiveau(int idNiveau)
         {
             var list = new List<BomProduction>();
@@ -106,26 +109,29 @@ namespace CharlesNadejda.DAL
         /// </summary>
         public static List<BomManque> VerifierDisponibilite(int idNiveau, int idFiche, decimal quantiteCible)
         {
+            var niveau = BomNiveauDAL.GetById(idNiveau);
+            var fiche  = BomFicheDAL.GetById(idFiche);
+            if (niveau == null || fiche == null) return new List<BomManque>();
+            return VerifierDisponibiliteLignes(fiche.Lignes, quantiteCible);
+        }
+
+        /// <summary>
+        /// Surcharge interne utilisée par Executer() — opère sur les lignes déjà chargées,
+        /// évitant le double chargement niveau/fiche et travaillant dans la même transaction logique.
+        /// </summary>
+        private static List<BomManque> VerifierDisponibiliteLignes(
+            List<BomFicheLigne> lignes, decimal quantiteCible)
+        {
             var manques = new List<BomManque>();
-            var niveau  = BomNiveauDAL.GetById(idNiveau);
-            var fiche   = BomFicheDAL.GetById(idFiche);
-
-            if (niveau == null || fiche == null) return manques;
-
-            // quantiteCible = nombre de batches à exécuter.
-            // Chaque batch produit fiche.QuantiteOutput unités.
-            // Le multiplicateur est donc directement le nombre de batches.
             decimal multiplicateur = quantiteCible;
 
-            foreach (var ligne in fiche.Lignes)
+            foreach (var ligne in lignes)
             {
                 decimal qteNecessaire = ligne.Quantite * multiplicateur;
                 decimal qteDisponible;
 
                 if (ligne.TypeInput == "ingredient")
                 {
-                    // Niveau 1 : consomme le stock global d'ingrédients (moins les réservations)
-                    // Stock toujours en unité de base — convertir qteNecessaire vers l'unité de base
                     decimal qteNecessaireBase = UnitConvertisseur.Convertir(
                         qteNecessaire, ligne.UniteMesure, ligne.UniteMesureInput);
                     qteDisponible = BomStockDAL.GetDisponibleIngredient(ligne.IdInputIngredient.Value);
@@ -141,9 +147,6 @@ namespace CharlesNadejda.DAL
                 }
                 else
                 {
-                    // Consomme le bom_stock du niveau où la fiche source a été produite.
-                    // Un niveau N peut référencer n'importe quel niveau inférieur (pas seulement N-1).
-                    // On cherche le niveau réel de la fiche, pas forcément N-1.
                     int idNiveauSource = GetIdNiveauDeFiche(ligne.IdInputFiche.Value);
                     qteDisponible = idNiveauSource > 0
                         ? BomStockDAL.GetDisponible(idNiveauSource, ligne.IdInputFiche.Value)
@@ -174,37 +177,36 @@ namespace CharlesNadejda.DAL
         /// </summary>
         public static List<BomManque> Simuler(int idNiveau, int idFiche, decimal quantiteCible)
         {
+            var niveau = BomNiveauDAL.GetById(idNiveau);
+            var fiche  = BomFicheDAL.GetById(idFiche);
+            if (niveau == null || fiche == null) return new List<BomManque>();
+            return SimulerLignes(fiche.Lignes, quantiteCible);
+        }
+
+        /// <summary>
+        /// Logique interne de simulation sur des lignes déjà chargées.
+        /// Retourne toutes les lignes avec qté nécessaire et disponible (Manque calculé par le Model).
+        /// </summary>
+        private static List<BomManque> SimulerLignes(List<BomFicheLigne> lignes, decimal quantiteCible)
+        {
             var résultat = new List<BomManque>();
-            var niveau   = BomNiveauDAL.GetById(idNiveau);
-            var fiche    = BomFicheDAL.GetById(idFiche);
-
-            if (niveau == null || fiche == null) return résultat;
-
-            // quantiteCible = nombre de batches (même sémantique que VerifierDisponibilite)
             decimal multiplicateur = quantiteCible;
 
-            foreach (var ligne in fiche.Lignes)
+            foreach (var ligne in lignes)
             {
                 decimal qteNecessaire = ligne.Quantite * multiplicateur;
                 decimal qteDisponible;
-                decimal qteNecessaireAffichee;
-                string  uniteAffichee;
+
+                // Conversion vers unité native du stock (commune aux deux types)
+                decimal qteNecessaireConv = UnitConvertisseur.Convertir(
+                    qteNecessaire, ligne.UniteMesure, ligne.UniteMesureInput);
 
                 if (ligne.TypeInput == "ingredient")
                 {
-                    // Convertir vers l'unité de base pour la comparaison avec le stock
-                    qteNecessaireAffichee = UnitConvertisseur.Convertir(
-                        qteNecessaire, ligne.UniteMesure, ligne.UniteMesureInput);
-                    uniteAffichee = ligne.UniteMesureInput;
                     qteDisponible = BomStockDAL.GetDisponibleIngredient(ligne.IdInputIngredient.Value);
                 }
                 else
                 {
-                    // Même conversion que VerifierDisponibilite : ramener qteNecessaire
-                    // dans l'unité du bom_stock (ligne.UniteMesureInput = unité output fiche source).
-                    qteNecessaireAffichee = UnitConvertisseur.Convertir(
-                        qteNecessaire, ligne.UniteMesure, ligne.UniteMesureInput);
-                    uniteAffichee = ligne.UniteMesureInput;
                     int idNiveauSource = GetIdNiveauDeFiche(ligne.IdInputFiche.Value);
                     qteDisponible = idNiveauSource > 0
                         ? BomStockDAL.GetDisponible(idNiveauSource, ligne.IdInputFiche.Value)
@@ -214,8 +216,8 @@ namespace CharlesNadejda.DAL
                 résultat.Add(new BomManque
                 {
                     NomInput           = ligne.NomInput,
-                    Unite              = uniteAffichee,
-                    QuantiteNecessaire = qteNecessaireAffichee,
+                    Unite              = ligne.UniteMesureInput,
+                    QuantiteNecessaire = qteNecessaireConv,
                     QuantiteDisponible = qteDisponible
                 });
             }
@@ -239,24 +241,25 @@ namespace CharlesNadejda.DAL
             {
                 try
                 {
-                    // TICKET-01 : Vérification DANS la transaction pour éviter la race condition TOCTOU
-                    // (Time-Of-Check Time-Of-Use — vérif et consommation sont maintenant atomiques).
-                    var manques = VerifierDisponibilite(idNiveau, idFiche, quantiteCible);
+                    // Charger niveau et fiche UNE SEULE FOIS (évite double requête)
+                    var niveau = BomNiveauDAL.GetById(idNiveau);
+                    var fiche  = BomFicheDAL.GetById(idFiche);
+
+                    if (niveau == null)
+                        throw new InvalidOperationException($"Le niveau BOM (id={idNiveau}) n'existe plus — production annulée.");
+                    if (fiche == null)
+                        throw new InvalidOperationException($"La fiche BOM (id={idFiche}) n'existe plus — production annulée.");
+
+                    // TICKET-01 FIX : Vérification avec les lignes déjà chargées
+                    // Note : les sous-requêtes de stock ouvrent encore leur propre connexion,
+                    // mais niveau/fiche sont chargés une seule fois et la transaction protège les écritures.
+                    var manques = VerifierDisponibiliteLignes(fiche.Lignes, quantiteCible);
                     if (manques.Count > 0)
                     {
                         var details = string.Join("\n", manques);
                         throw new InvalidOperationException(
                             $"Stock insuffisant pour lancer la production :\n{details}");
                     }
-
-                    var niveau = BomNiveauDAL.GetById(idNiveau);
-                    var fiche  = BomFicheDAL.GetById(idFiche);
-
-                    // TICKET-03 : null-guard — fiche ou niveau supprimé entre la vérif et l'exécution
-                    if (niveau == null)
-                        throw new InvalidOperationException($"Le niveau BOM (id={idNiveau}) n'existe plus — production annulée.");
-                    if (fiche == null)
-                        throw new InvalidOperationException($"La fiche BOM (id={idFiche}) n'existe plus — production annulée.");
 
                     // quantiteCible = nombre de batches. Quantité réellement produite = batches × QuantiteOutput.
                     decimal multiplicateur = quantiteCible;
@@ -405,7 +408,7 @@ namespace CharlesNadejda.DAL
 
                 // Guard : si tout le stock a été épuisé sans couvrir le besoin,
                 // la production est incohérente — on refuse.
-                if (restant > 0.0001m)
+                if (restant > TOLERANCE_ARRONDI)
                     throw new InvalidOperationException(
                         $"Stock insuffisant pour « {ligne.NomInput} » : " +
                         $"il manque {restant:F4} {ligne.UniteMesureInput} après épuisement FIFO.");
@@ -439,7 +442,7 @@ namespace CharlesNadejda.DAL
                 }
 
                 // Guard : idem pour les produits intermédiaires (bom_stocks)
-                if (restant > 0.0001m)
+                if (restant > TOLERANCE_ARRONDI)
                     throw new InvalidOperationException(
                         $"Stock insuffisant pour « {ligne.NomInput} » : " +
                         $"il manque {restant:F4} {ligne.UniteMesureInput} après épuisement FIFO.");
@@ -483,25 +486,6 @@ namespace CharlesNadejda.DAL
             {
                 cmd.CommandText = "SELECT id_niveau FROM bom_fiches WHERE id = @id";
                 cmd.Parameters.AddWithValue("@id", idFiche);
-                var res = cmd.ExecuteScalar();
-                return res == null ? 0 : Convert.ToInt32(res);
-            }
-        }
-
-        /// <summary>
-        /// Retourne l'id du niveau d'ordre (ordreActuel - 1) dans le même contexte.
-        /// Retourne 0 si aucun niveau précédent (ne devrait pas arriver pour ordre > 1).
-        /// </summary>
-        private static int GetIdNiveauPrecedent(int idNiveauActuel, int idContexte, int ordreActuel)
-        {
-            using (var conn = DbHelper.GetConnection())
-            using (var cmd = conn.CreateCommand())
-            {
-                cmd.CommandText = @"
-                    SELECT id FROM bom_niveaux
-                    WHERE id_contexte = @idCtx AND ordre = @ordre";
-                cmd.Parameters.AddWithValue("@idCtx", idContexte);
-                cmd.Parameters.AddWithValue("@ordre", ordreActuel - 1);
                 var res = cmd.ExecuteScalar();
                 return res == null ? 0 : Convert.ToInt32(res);
             }

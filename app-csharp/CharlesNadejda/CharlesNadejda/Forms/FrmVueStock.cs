@@ -122,13 +122,13 @@ namespace CharlesNadejda.Forms
                 BorderStyle             = BorderStyle.None,
                 ColumnHeadersHeight     = 32,
                 Font                    = new Font("Segoe UI", 9.5F),
-                GridColor               = Color.FromArgb(230, 220, 210)
+                GridColor               = AppColors.GridLine
             };
             _dgv.ColumnHeadersDefaultCellStyle.BackColor           = AppColors.Creme;
             _dgv.ColumnHeadersDefaultCellStyle.ForeColor           = AppColors.ChocoBrand;
             _dgv.ColumnHeadersDefaultCellStyle.Font                = new Font("Segoe UI", 8.5F, FontStyle.Bold);
             _dgv.ColumnHeadersDefaultCellStyle.SelectionBackColor  = AppColors.Creme;
-            _dgv.DefaultCellStyle.SelectionBackColor               = Color.FromArgb(111, 78, 55);
+            _dgv.DefaultCellStyle.SelectionBackColor               = AppColors.ChocoMed;
             _dgv.DefaultCellStyle.SelectionForeColor               = Color.White;
 
             _dgv.Columns.Add(new DataGridViewTextBoxColumn { Name = "TypeStock",   HeaderText = "Type",          MinimumWidth = 80  });
@@ -283,7 +283,7 @@ namespace CharlesNadejda.Forms
             {
                 Text      = texte,
                 Font      = new Font("Segoe UI", 9F, selected ? FontStyle.Bold : FontStyle.Regular),
-                BackColor = selected ? AppColors.ChocoBrand : Color.FromArgb(220, 208, 192),
+                BackColor = selected ? AppColors.ChocoBrand : AppColors.ChipInactive,
                 ForeColor = selected ? Color.White     : AppColors.ChocoBrand,
                 FlatStyle = FlatStyle.Flat,
                 AutoSize  = false,
@@ -308,6 +308,8 @@ namespace CharlesNadejda.Forms
             _lignes = _idActiviteFiltre == 0
                 ? VueStockGlobalDAL.GetAll()
                 : VueStockGlobalDAL.GetByActivite(_idActiviteFiltre);
+
+            _lignes = VueStockGlobalDAL.AgregerParFiche(_lignes);
 
             RemplirGrille();
         }
@@ -482,18 +484,20 @@ namespace CharlesNadejda.Forms
 
         private int RenderDetailIngredient(VueStockGlobal item, int y)
         {
-            Lot lot = null;
             Ingredient fiche = null;
+            List<Lot> lots = null;
+            int idFiche = item.IdFicheIngredient ?? 0;
+
             try
             {
-                lot = LotDAL.GetById(item.IdEntree);
-                if (lot != null)
+                if (idFiche > 0)
                 {
                     var fiches = IngredientDAL.GetAll();
-                    fiche = fiches.FirstOrDefault(i => i.Id == lot.IdFicheIngredient);
+                    fiche = fiches.FirstOrDefault(i => i.Id == idFiche);
+                    lots = LotDAL.GetByFicheIngredient(idFiche);
                 }
             }
-            catch (Exception ex) { Trace.TraceError("Detail lot: {0}", ex); }
+            catch (Exception ex) { Trace.TraceError("Detail ingredient agrege: {0}", ex); }
 
             // ── En-tête ──
             y = AddDetailHeader(item.Nom, "Ingrédient", y);
@@ -515,7 +519,7 @@ namespace CharlesNadejda.Forms
                 y = AddDetailRow("Stock de rattach.", fiche.StockNom, y);
             }
 
-            // ── Stock ──
+            // ── Stock (valeurs agrégées) ──
             y = AddDetailSection("STOCK", y);
             string u = item.Unite ?? "";
             y = AddDetailRow("Disponible", UnitConvertisseur.FormatQte(item.QuantiteDispoReelle, u), y);
@@ -531,45 +535,45 @@ namespace CharlesNadejda.Forms
                     y, alert ? AppColors.RedCrit : AppColors.Success);
             }
 
-            // ── Prix ──
+            // ── Prix (agrégé) ──
             y = AddDetailSection("PRIX", y);
-            if (lot != null)
-            {
-                y = AddDetailRow("Prix cond. HTVA", UnitConvertisseur.FormatPrix(lot.PrixUnitaire), y);
-                y = AddDetailRow("Prix unité base", UnitConvertisseur.FormatPrix(lot.PrixUnitaireBase), y);
-                y = AddDetailRow("Total achat HTVA", UnitConvertisseur.FormatPrix(lot.PrixAchatReel), y);
-            }
+            y = AddDetailRow("Coût moyen/unité", UnitConvertisseur.FormatPrix(item.CoutUnitaire), y);
             decimal valeur = item.CoutUnitaire * item.QuantiteTotale;
             y = AddDetailRow("Valeur stock", UnitConvertisseur.FormatPrix(valeur), y, AppColors.ChocoBrand);
 
-            // ── Lot ──
-            if (lot != null)
+            // ── Lots (liste compacte) ──
+            if (lots != null && lots.Count > 0)
             {
-                y = AddDetailSection("LOT", y);
-                if (!string.IsNullOrEmpty(lot.NumeroLot))
-                    y = AddDetailRow("N° lot", lot.NumeroLot, y);
-                y = AddDetailRow("Date achat", lot.DateAchat.ToString("dd/MM/yyyy"), y);
-                if (lot.DatePeremption.HasValue)
+                y = AddDetailSection($"LOTS ({lots.Count})", y);
+                foreach (var lot in lots)
                 {
-                    bool expire = lot.DatePeremption.Value < DateTime.Today;
-                    bool proche = !expire && (lot.DatePeremption.Value - DateTime.Today).TotalDays < 7;
-                    y = AddDetailRow("DLC", lot.DatePeremption.Value.ToString("dd/MM/yyyy"),
-                        y, expire ? AppColors.RedCrit : proche ? AppColors.OrgWarn : AppColors.ChocoMed);
+                    string dlcStr = lot.DatePeremption.HasValue
+                        ? lot.DatePeremption.Value.ToString("dd/MM")
+                        : "—";
+                    string lotLabel = !string.IsNullOrEmpty(lot.NumeroLot)
+                        ? $"#{lot.NumeroLot}" : $"Lot #{lot.Id}";
+                    string qteStr = UnitConvertisseur.FormatQte(lot.QuantiteDisponible, u);
+
+                    // Couleur DLC pour chaque lot
+                    Color? couleur = null;
+                    if (lot.DatePeremption.HasValue)
+                    {
+                        if (lot.DatePeremption.Value < DateTime.Today)
+                            couleur = AppColors.RedCrit;
+                        else if ((lot.DatePeremption.Value - DateTime.Today).TotalDays < 7)
+                            couleur = AppColors.OrgWarn;
+                    }
+
+                    y = AddDetailRow(lotLabel, $"{qteStr}  DLC {dlcStr}", y, couleur);
                 }
-                if (!string.IsNullOrEmpty(lot.NomFournisseur))
-                    y = AddDetailRow("Fournisseur", lot.NomFournisseur, y);
-                if (!string.IsNullOrEmpty(lot.ReferenceFacture))
-                    y = AddDetailRow("Réf. facture", lot.ReferenceFacture, y);
-                if (!string.IsNullOrEmpty(lot.Notes))
-                    y = AddDetailRow("Notes", lot.Notes, y);
             }
 
             // ── Utilisé dans ──
-            if (lot != null)
+            if (idFiche > 0)
             {
                 try
                 {
-                    var recettes = BomFicheLigneDAL.GetFichesUtilisant(lot.IdFicheIngredient);
+                    var recettes = BomFicheLigneDAL.GetFichesUtilisant(idFiche);
                     if (recettes.Count > 0)
                     {
                         y = AddDetailSection("UTILISÉ DANS", y);

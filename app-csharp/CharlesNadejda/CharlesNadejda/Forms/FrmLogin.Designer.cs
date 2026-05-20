@@ -26,11 +26,11 @@ namespace CharlesNadejda.Forms
             this.SuspendLayout();
 
             // ── Palette Charles & Nadejda — design system v2 ────────────────
-            System.Drawing.Color chocolatFonce = System.Drawing.Color.FromArgb(61,  40,  23);  // #3D2817
-            System.Drawing.Color chocolatMoyen = System.Drawing.Color.FromArgb(111, 78,  55);  // #6F4E37
+            System.Drawing.Color chocolatFonce = CharlesNadejda.Forms.AppColors.ChocoBrand;
+            System.Drawing.Color chocolatMoyen = CharlesNadejda.Forms.AppColors.ChocoMed;
             System.Drawing.Color chocoAbyss    = System.Drawing.Color.FromArgb(30,  15,   8);  // #1E0F08
             System.Drawing.Color creameWarm    = System.Drawing.Color.FromArgb(236, 233, 216); // #ECE9D8
-            System.Drawing.Color or            = System.Drawing.Color.FromArgb(212, 175,  55); // #D4AF37
+            System.Drawing.Color or = CharlesNadejda.Forms.AppColors.Or;
 
             // ── Bandeau supérieur (gradient chocolat foncé → moyen, identité marque) ──
             this.pnlHeader.Dock      = System.Windows.Forms.DockStyle.Top;

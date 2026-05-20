@@ -97,33 +97,46 @@ namespace CharlesNadejda.DAL
         public static void Desactiver(int id)
         {
             using (var conn = DbHelper.GetConnection())
-            using (var cmd = conn.CreateCommand())
+            using (var tx = conn.BeginTransaction())
             {
-                cmd.CommandText = "SELECT COUNT(*) FROM bom_contextes WHERE id_activite = @id AND actif = 1";
-                cmd.Parameters.AddWithValue("@id", id);
-                int nbContextes = Convert.ToInt32(cmd.ExecuteScalar());
-                if (nbContextes > 0)
-                    throw new InvalidOperationException(
-                        $"Impossible de désactiver : {nbContextes} contexte(s) actif(s) rattaché(s) à cette activité.");
+                try
+                {
+                    using (var cmd = conn.CreateCommand())
+                    {
+                        cmd.Transaction = tx;
 
-                // Vérifier les ingrédients liés via activites_stocks (v10 : id_activite → id_stock + jonction)
-                cmd.CommandText = @"
-                    SELECT COUNT(*)
-                    FROM fiches_ingredients fi
-                    JOIN stocks s            ON s.id = fi.id_stock
-                    JOIN activites_stocks ast ON ast.id_stock = s.id
-                    WHERE ast.id_activite = @id AND fi.actif = 1";
-                cmd.Parameters.Clear();
-                cmd.Parameters.AddWithValue("@id", id);
-                int nbIngredients = Convert.ToInt32(cmd.ExecuteScalar());
-                if (nbIngredients > 0)
-                    throw new InvalidOperationException(
-                        $"Impossible de désactiver : {nbIngredients} ingrédient(s) actif(s) rattaché(s) à cette activité.");
+                        cmd.CommandText = "SELECT COUNT(*) FROM bom_contextes WHERE id_activite = @id AND actif = 1";
+                        cmd.Parameters.AddWithValue("@id", id);
+                        int nbContextes = Convert.ToInt32(cmd.ExecuteScalar());
+                        if (nbContextes > 0)
+                            throw new InvalidOperationException(
+                                $"Impossible de désactiver : {nbContextes} contexte(s) actif(s) rattaché(s) à cette activité.");
 
-                cmd.CommandText = "UPDATE activites SET actif = 0 WHERE id = @id";
-                cmd.Parameters.Clear();
-                cmd.Parameters.AddWithValue("@id", id);
-                cmd.ExecuteNonQuery();
+                        cmd.CommandText = @"
+                            SELECT COUNT(*)
+                            FROM fiches_ingredients fi
+                            JOIN stocks s            ON s.id = fi.id_stock
+                            JOIN activites_stocks ast ON ast.id_stock = s.id
+                            WHERE ast.id_activite = @id AND fi.actif = 1";
+                        cmd.Parameters.Clear();
+                        cmd.Parameters.AddWithValue("@id", id);
+                        int nbIngredients = Convert.ToInt32(cmd.ExecuteScalar());
+                        if (nbIngredients > 0)
+                            throw new InvalidOperationException(
+                                $"Impossible de désactiver : {nbIngredients} ingrédient(s) actif(s) rattaché(s) à cette activité.");
+
+                        cmd.CommandText = "UPDATE activites SET actif = 0 WHERE id = @id";
+                        cmd.Parameters.Clear();
+                        cmd.Parameters.AddWithValue("@id", id);
+                        cmd.ExecuteNonQuery();
+                    }
+                    tx.Commit();
+                }
+                catch
+                {
+                    tx.Rollback();
+                    throw;
+                }
             }
         }
 

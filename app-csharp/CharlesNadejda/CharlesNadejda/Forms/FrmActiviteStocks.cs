@@ -18,8 +18,8 @@ namespace CharlesNadejda.Forms
         private CheckedListBox          _clb;
         private HashSet<int>            _idsLies;
 
-        private static readonly Color CHOCOLAT_FONCE = Color.FromArgb(61, 40, 23);
-        private static readonly Color OR             = Color.FromArgb(212, 175, 55);
+        private static readonly Color CHOCOLAT_FONCE = AppColors.ChocoBrand;
+        private static readonly Color OR             = AppColors.Or;
 
         public FrmActiviteStocks(Activite activite)
         {

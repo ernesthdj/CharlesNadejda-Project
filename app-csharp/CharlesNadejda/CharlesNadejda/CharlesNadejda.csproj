@@ -117,7 +117,7 @@
     <Compile Include="DAL\ProduitWebDAL.cs" />
     <Compile Include="DAL\CommandeWebDAL.cs" />
     <Compile Include="Forms\FormHelper.cs" />
-    <Compile Include="Forms\UnitConvertisseur.cs" />
+    <Compile Include="Helpers\UnitConvertisseur.cs" />
     <Compile Include="Forms\FrmListeBase.cs">
       <SubType>Form</SubType>
     </Compile>
@@ -138,6 +138,18 @@
       <SubType>Form</SubType>
     </Compile>
     <Compile Include="Forms\FrmPrincipal.BoutiqueWeb.cs">
+      <DependentUpon>FrmPrincipal.cs</DependentUpon>
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Forms\FrmPrincipal.Hub.cs">
+      <DependentUpon>FrmPrincipal.cs</DependentUpon>
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Forms\FrmPrincipal.Contexte.cs">
+      <DependentUpon>FrmPrincipal.cs</DependentUpon>
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Forms\FrmPrincipal.KanbanDetail.cs">
       <DependentUpon>FrmPrincipal.cs</DependentUpon>
       <SubType>Form</SubType>
     </Compile>
@@ -255,8 +267,6 @@
     <Compile Include="Forms\Shell\StatusBarPanel.cs">
       <SubType>Component</SubType>
     </Compile>
-    <Compile Include="Services\SimulationResultat.cs" />
-    <Compile Include="Services\SimulationService.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <EmbeddedResource Include="Properties\Resources.resx">

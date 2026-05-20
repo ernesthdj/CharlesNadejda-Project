@@ -19,7 +19,11 @@ namespace CharlesNadejda.DAL
                            s.id_fiche, s.id_production,
                            s.quantite_disponible, s.cout_unitaire,
                            s.date_production, s.date_dlc, s.date_creation,
-                           f.nom AS nom_fiche, f.unite_output,
+                           f.nom AS nom_fiche, f.unite_output, f.stock_cible,
+                           COALESCE((SELECT SUM(s2.quantite_disponible)
+                                     FROM bom_stocks s2
+                                     WHERE s2.id_fiche = s.id_fiche
+                                       AND s2.quantite_disponible > 0), 0) AS total_dispo_fiche,
                            n.nom AS nom_niveau, n.ordre,
                            c.nom AS nom_contexte,
                            a.nom AS nom_activite
@@ -102,15 +106,12 @@ namespace CharlesNadejda.DAL
                     FROM lots_ingredients l
                     INNER JOIN fiches_ingredients fi ON fi.id = l.id_fiche_ingredient
                     WHERE l.id_fiche_ingredient = @idFi
+                    HAVING dispo_nette > 0
                     ORDER BY l.date_achat ASC";
                 cmd.Parameters.AddWithValue("@idFi", idFicheIngredient);
                 using (var r = cmd.ExecuteReader())
                     while (r.Read())
-                    {
-                        decimal dispo = (decimal)r["dispo_nette"];
-                        if (dispo > 0)
-                            result.Add(((int)r["id"], dispo, (decimal)r["prix_unitaire_base"]));
-                    }
+                        result.Add(((int)r["id"], (decimal)r["dispo_nette"], (decimal)r["prix_unitaire_base"]));
             }
             return result;
         }
@@ -155,6 +156,8 @@ namespace CharlesNadejda.DAL
             DateCreation       = (DateTime)r["date_creation"],
             NomFiche           = r["nom_fiche"].ToString(),
             UniteOutput        = r["unite_output"].ToString(),
+            StockCible         = r["stock_cible"] == DBNull.Value ? (decimal?)null : (decimal)r["stock_cible"],
+            TotalDispoFiche    = Convert.ToDecimal(r["total_dispo_fiche"]),
             NomNiveau          = r["nom_niveau"].ToString(),
             OrdreNiveau        = Convert.ToInt32(r["ordre"]),
             NomContexte        = r["nom_contexte"].ToString(),

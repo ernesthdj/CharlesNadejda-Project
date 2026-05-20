@@ -26,6 +26,9 @@ namespace CharlesNadejda.Models
         public int?      IdStock             { get; set; }
         public string    StockNom            { get; set; }
 
+        // Lots uniquement — ID de la fiche ingrédient (pour agrégation)
+        public int?      IdFicheIngredient   { get; set; }
+
         // Produits fabriqués uniquement (NULL pour lots)
         public int?      IdActivite          { get; set; }
         public string    NomActivite         { get; set; }

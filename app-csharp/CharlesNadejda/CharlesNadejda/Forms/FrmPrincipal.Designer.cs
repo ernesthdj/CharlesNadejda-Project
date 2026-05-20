@@ -30,7 +30,7 @@ namespace CharlesNadejda.Forms
 
             // ── menuStrip ────────────────────────────────────────────
             this.menuStrip.Font = new System.Drawing.Font("Segoe UI", 9.5F);
-            this.menuStrip.BackColor = System.Drawing.Color.FromArgb(61, 40, 23);
+            this.menuStrip.BackColor = CharlesNadejda.Forms.AppColors.ChocoBrand;
             this.menuStrip.ForeColor = System.Drawing.Color.White;
             this.menuStrip.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
                 this.menuCatalogueWeb,

@@ -7,6 +7,18 @@ namespace CharlesNadejda.DAL
 {
     public static class LotDAL
     {
+        private const string SELECT_BASE = @"
+            SELECT l.id, l.id_fiche_ingredient, fi.nom AS nom_ingredient,
+                   fi.unite_mesure, fi.conditionnement_label, fi.qte_par_conditionnement,
+                   l.nb_conditionnements,
+                   l.numero_lot, l.id_fournisseur, f.nom AS nom_fournisseur,
+                   l.date_achat, l.date_peremption, l.quantite_initiale,
+                   l.quantite_disponible, l.prix_unitaire, l.prix_achat_reel,
+                   l.tva_pct, l.reference_facture, l.notes
+            FROM lots_ingredients l
+            INNER JOIN fiches_ingredients fi ON fi.id = l.id_fiche_ingredient
+            LEFT JOIN fournisseurs f ON f.id = l.id_fournisseur";
+
         /// <summary>idActivite : 0 = tous / filtre via activites_stocks → fiches_ingredients</summary>
         public static List<Lot> GetAll(int idActivite = 0)
         {
@@ -14,18 +26,7 @@ namespace CharlesNadejda.DAL
             using (var conn = DbHelper.GetConnection())
             using (var cmd = conn.CreateCommand())
             {
-                cmd.CommandText = @"
-                    SELECT l.id, l.id_fiche_ingredient, fi.nom AS nom_ingredient,
-                           fi.unite_mesure, fi.conditionnement_label, fi.qte_par_conditionnement,
-                           l.nb_conditionnements,
-                           l.numero_lot, l.id_fournisseur, f.nom AS nom_fournisseur,
-                           l.date_achat, l.date_peremption, l.quantite_initiale,
-                           l.quantite_disponible, l.prix_unitaire, l.prix_achat_reel,
-                           l.tva_pct, l.reference_facture, l.notes
-                    FROM lots_ingredients l
-                    INNER JOIN fiches_ingredients fi ON fi.id = l.id_fiche_ingredient
-                    LEFT JOIN fournisseurs f ON f.id = l.id_fournisseur
-                    WHERE 1=1";
+                cmd.CommandText = SELECT_BASE + " WHERE 1=1";
 
                 if (idActivite > 0)
                 {
@@ -42,23 +43,29 @@ namespace CharlesNadejda.DAL
             return list;
         }
 
+        /// <summary>Tous les lots d'une fiche ingrédient (pour détail agrégé Vue Stock).</summary>
+        public static List<Lot> GetByFicheIngredient(int idFiche)
+        {
+            var list = new List<Lot>();
+            using (var conn = DbHelper.GetConnection())
+            using (var cmd = conn.CreateCommand())
+            {
+                cmd.CommandText = SELECT_BASE + @"
+                    WHERE l.id_fiche_ingredient = @idFiche
+                    ORDER BY l.date_peremption ASC, l.date_achat DESC";
+                cmd.Parameters.AddWithValue("@idFiche", idFiche);
+                using (var r = cmd.ExecuteReader())
+                    while (r.Read()) list.Add(Map(r));
+            }
+            return list;
+        }
+
         public static Lot GetById(int id)
         {
             using (var conn = DbHelper.GetConnection())
             using (var cmd = conn.CreateCommand())
             {
-                cmd.CommandText = @"
-                    SELECT l.id, l.id_fiche_ingredient, fi.nom AS nom_ingredient,
-                           fi.unite_mesure, fi.conditionnement_label, fi.qte_par_conditionnement,
-                           l.nb_conditionnements,
-                           l.numero_lot, l.id_fournisseur, f.nom AS nom_fournisseur,
-                           l.date_achat, l.date_peremption, l.quantite_initiale,
-                           l.quantite_disponible, l.prix_unitaire, l.prix_achat_reel,
-                           l.tva_pct, l.reference_facture, l.notes
-                    FROM lots_ingredients l
-                    INNER JOIN fiches_ingredients fi ON fi.id = l.id_fiche_ingredient
-                    LEFT JOIN fournisseurs f ON f.id = l.id_fournisseur
-                    WHERE l.id = @id";
+                cmd.CommandText = SELECT_BASE + " WHERE l.id = @id";
                 cmd.Parameters.AddWithValue("@id", id);
                 using (var r = cmd.ExecuteReader())
                     return r.Read() ? Map(r) : null;
@@ -134,8 +141,8 @@ namespace CharlesNadejda.DAL
             cmd.Parameters.AddWithValue("@nbCond",    lot.NbConditionnements);
             cmd.Parameters.AddWithValue("@numeroLot", lot.NumeroLot       ?? (object)DBNull.Value);
             cmd.Parameters.AddWithValue("@idFourn",   lot.IdFournisseur.HasValue ? (object)lot.IdFournisseur.Value : DBNull.Value);
-            cmd.Parameters.AddWithValue("@dateAchat", lot.DateAchat.ToString("yyyy-MM-dd"));
-            cmd.Parameters.AddWithValue("@datePer",   lot.DatePeremption.HasValue ? (object)lot.DatePeremption.Value.ToString("yyyy-MM-dd") : DBNull.Value);
+            cmd.Parameters.AddWithValue("@dateAchat", lot.DateAchat);
+            cmd.Parameters.AddWithValue("@datePer",   lot.DatePeremption.HasValue ? (object)lot.DatePeremption.Value : DBNull.Value);
             cmd.Parameters.AddWithValue("@qteInit",   lot.QuantiteInitiale);
             cmd.Parameters.AddWithValue("@prixUnit",  lot.PrixUnitaire);
             cmd.Parameters.AddWithValue("@prixTotal", lot.PrixAchatReel);

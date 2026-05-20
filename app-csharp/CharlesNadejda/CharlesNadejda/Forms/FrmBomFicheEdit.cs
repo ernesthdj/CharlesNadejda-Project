@@ -32,6 +32,8 @@ namespace CharlesNadejda.Forms
         private readonly ComboBox      cboUniteOutput;
         private readonly NumericUpDown nudQuantiteOutput;
         private readonly NumericUpDown nudTemps;
+        private readonly CheckBox      chkStockCible;
+        private readonly NumericUpDown nudStockCible;
         private readonly Label         lblActiviteValeur;
 
         // ── Contrôles section lignes ──────────────────────────────────────
@@ -64,7 +66,7 @@ namespace CharlesNadejda.Forms
             {
                 AutoSize  = true,
                 Font      = new Font("Segoe UI", 10F, FontStyle.Bold),
-                ForeColor = Color.FromArgb(61, 40, 23),
+                ForeColor = AppColors.ChocoBrand,
                 Location  = new Point(304, 36), Text = ""
             };
             Controls.Add(lblActiviteValeur);
@@ -96,6 +98,23 @@ namespace CharlesNadejda.Forms
                 Font = font, Location = new Point(236, 97), Size = new Size(80, 26), TabIndex = 4
             };
             Controls.Add(nudTemps);
+
+            chkStockCible = new CheckBox
+            {
+                AutoSize = true, Font = font, Location = new Point(328, 99),
+                Text = "Stock cible", TabIndex = 5
+            };
+            chkStockCible.CheckedChanged += (s, e) => nudStockCible.Enabled = chkStockCible.Checked;
+            Controls.Add(chkStockCible);
+
+            nudStockCible = new NumericUpDown
+            {
+                DecimalPlaces = 2,
+                Minimum = 0, Maximum = 99999,
+                Enabled = false,
+                Font = font, Location = new Point(436, 97), Size = new Size(90, 26), TabIndex = 6
+            };
+            Controls.Add(nudStockCible);
 
             // ── Ligne 3 : Description ─────────────────────────────────────
             Controls.Add(new Label { AutoSize = true, Font = font, Location = new Point(12, 137), Text = "Description" });
@@ -212,6 +231,11 @@ namespace CharlesNadejda.Forms
                 nudQuantiteOutput.Value = (decimal)Math.Max(1, (double)_fiche.QuantiteOutput);
                 if (_fiche.TempsPreparation.HasValue)
                     nudTemps.Value = _fiche.TempsPreparation.Value;
+                if (_fiche.StockCible.HasValue)
+                {
+                    chkStockCible.Checked = true;
+                    nudStockCible.Value   = _fiche.StockCible.Value;
+                }
             }
 
             AfficherInfoInput();
@@ -224,7 +248,7 @@ namespace CharlesNadejda.Forms
             lblTypeInput.Text = _niveau.Ordre <= 2
                 ? "Inputs : ingrédients du stock (N1)"
                 : "Inputs : ingrédients + fiches de tous les niveaux inférieurs";
-            lblTypeInput.ForeColor = Color.FromArgb(111, 78, 55);
+            lblTypeInput.ForeColor = AppColors.ChocoMed;
             lblTypeInput.Font      = new Font("Segoe UI", 8.5F, FontStyle.Italic);
             lblTypeInput.AutoSize  = true;
         }
@@ -363,6 +387,7 @@ namespace CharlesNadejda.Forms
             _fiche.UniteOutput      = cboUniteOutput.SelectedItem?.ToString() ?? "piece";
             _fiche.QuantiteOutput   = nudQuantiteOutput.Value;
             _fiche.TempsPreparation = nudTemps.Value > 0 ? (int?)nudTemps.Value : null;
+            _fiche.StockCible       = chkStockCible.Checked && nudStockCible.Value > 0 ? nudStockCible.Value : (decimal?)null;
             _fiche.Lignes           = _lignes;
 
             if (_isEdit) BomFicheDAL.Update(_fiche);

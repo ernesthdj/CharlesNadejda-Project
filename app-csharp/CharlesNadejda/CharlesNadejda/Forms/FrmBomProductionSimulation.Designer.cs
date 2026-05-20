@@ -45,7 +45,7 @@ namespace CharlesNadejda.Forms
             // lblTitre — palette chocolat
             this.lblTitre.AutoSize  = false;
             this.lblTitre.Font      = new System.Drawing.Font("Segoe UI", 13F, System.Drawing.FontStyle.Bold);
-            this.lblTitre.ForeColor = System.Drawing.Color.FromArgb(61, 40, 23);
+            this.lblTitre.ForeColor = CharlesNadejda.Forms.AppColors.ChocoBrand;
             this.lblTitre.Location  = new System.Drawing.Point(12, 12);
             this.lblTitre.Size      = new System.Drawing.Size(700, 30);
             this.lblTitre.Text      = "Production BOM";
@@ -119,7 +119,7 @@ namespace CharlesNadejda.Forms
             // lblInfoBatch — affiche "1 batch = X [unité]" dynamiquement selon la fiche sélectionnée
             this.lblInfoBatch.AutoSize  = false;
             this.lblInfoBatch.Font      = new System.Drawing.Font("Segoe UI", 8.5F, System.Drawing.FontStyle.Italic);
-            this.lblInfoBatch.ForeColor = System.Drawing.Color.FromArgb(111, 78, 55);
+            this.lblInfoBatch.ForeColor = CharlesNadejda.Forms.AppColors.ChocoMed;
             this.lblInfoBatch.Location  = new System.Drawing.Point(10, 136);
             this.lblInfoBatch.Size      = new System.Drawing.Size(400, 16);
             this.lblInfoBatch.Text      = "";
@@ -212,14 +212,14 @@ namespace CharlesNadejda.Forms
             this.dgvSimulation.RowHeadersVisible     = false;
             this.dgvSimulation.BackgroundColor       = System.Drawing.Color.White;
             this.dgvSimulation.BorderStyle           = System.Windows.Forms.BorderStyle.None;
-            this.dgvSimulation.GridColor             = System.Drawing.Color.FromArgb(230, 220, 210);
+            this.dgvSimulation.GridColor             = CharlesNadejda.Forms.AppColors.GridLine;
             this.dgvSimulation.ColumnHeadersHeight   = 32;
             this.dgvSimulation.ColumnHeadersHeightSizeMode = System.Windows.Forms.DataGridViewColumnHeadersHeightSizeMode.DisableResizing;
-            this.dgvSimulation.ColumnHeadersDefaultCellStyle.BackColor          = System.Drawing.Color.FromArgb(245, 230, 211);
-            this.dgvSimulation.ColumnHeadersDefaultCellStyle.ForeColor          = System.Drawing.Color.FromArgb(61, 40, 23);
+            this.dgvSimulation.ColumnHeadersDefaultCellStyle.BackColor          = CharlesNadejda.Forms.AppColors.Creme;
+            this.dgvSimulation.ColumnHeadersDefaultCellStyle.ForeColor          = CharlesNadejda.Forms.AppColors.ChocoBrand;
             this.dgvSimulation.ColumnHeadersDefaultCellStyle.Font               = new System.Drawing.Font("Segoe UI", 9F, System.Drawing.FontStyle.Bold);
-            this.dgvSimulation.ColumnHeadersDefaultCellStyle.SelectionBackColor = System.Drawing.Color.FromArgb(245, 230, 211);
-            this.dgvSimulation.DefaultCellStyle.SelectionBackColor              = System.Drawing.Color.FromArgb(111, 78, 55);
+            this.dgvSimulation.ColumnHeadersDefaultCellStyle.SelectionBackColor = CharlesNadejda.Forms.AppColors.Creme;
+            this.dgvSimulation.DefaultCellStyle.SelectionBackColor              = CharlesNadejda.Forms.AppColors.ChocoMed;
             this.dgvSimulation.DefaultCellStyle.SelectionForeColor              = System.Drawing.Color.White;
             this.dgvSimulation.AlternatingRowsDefaultCellStyle.BackColor        = System.Drawing.Color.FromArgb(250, 247, 244);
             this.dgvSimulation.Location              = new System.Drawing.Point(10, 70);

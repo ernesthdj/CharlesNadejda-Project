@@ -32,7 +32,7 @@ namespace CharlesNadejda.Forms
         private ListBox _lstNiveauxSupp;
         private Button  _btnSupprimerNiv;
 
-        private static readonly Color CHOCOLAT_FONCE = Color.FromArgb(61, 40, 23);
+        private static readonly Color CHOCOLAT_FONCE = AppColors.ChocoBrand;
 
         public FrmBomContexteEdit(BomContexte contexte, Activite activiteForce = null)
         {

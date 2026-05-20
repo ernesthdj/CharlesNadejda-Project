@@ -18,7 +18,7 @@ namespace CharlesNadejda.Forms
 
             this.lblTitre.AutoSize  = false;
             this.lblTitre.Font      = new System.Drawing.Font("Segoe UI", 13F, System.Drawing.FontStyle.Bold);
-            this.lblTitre.ForeColor = System.Drawing.Color.FromArgb(61, 40, 23);
+            this.lblTitre.ForeColor = CharlesNadejda.Forms.AppColors.ChocoBrand;
             this.lblTitre.Location  = new System.Drawing.Point(12, 12);
             this.lblTitre.Size      = new System.Drawing.Size(560, 30);
             this.lblTitre.Text      = "Fournisseurs";
@@ -37,13 +37,13 @@ namespace CharlesNadejda.Forms
             this.dgv.RowHeadersVisible     = false;
             this.dgv.BackgroundColor       = System.Drawing.Color.White;
             this.dgv.BorderStyle           = System.Windows.Forms.BorderStyle.None;
-            this.dgv.GridColor             = System.Drawing.Color.FromArgb(230, 220, 210);
+            this.dgv.GridColor             = CharlesNadejda.Forms.AppColors.GridLine;
             this.dgv.ColumnHeadersHeight   = 32;
             this.dgv.ColumnHeadersHeightSizeMode = System.Windows.Forms.DataGridViewColumnHeadersHeightSizeMode.DisableResizing;
-            this.dgv.ColumnHeadersDefaultCellStyle.BackColor = System.Drawing.Color.FromArgb(245, 230, 211);
-            this.dgv.ColumnHeadersDefaultCellStyle.ForeColor = System.Drawing.Color.FromArgb(61, 40, 23);
+            this.dgv.ColumnHeadersDefaultCellStyle.BackColor = CharlesNadejda.Forms.AppColors.Creme;
+            this.dgv.ColumnHeadersDefaultCellStyle.ForeColor = CharlesNadejda.Forms.AppColors.ChocoBrand;
             this.dgv.ColumnHeadersDefaultCellStyle.Font      = new System.Drawing.Font("Segoe UI", 9.5F, System.Drawing.FontStyle.Bold);
-            this.dgv.DefaultCellStyle.SelectionBackColor     = System.Drawing.Color.FromArgb(111, 78, 55);
+            this.dgv.DefaultCellStyle.SelectionBackColor     = CharlesNadejda.Forms.AppColors.ChocoMed;
             this.dgv.DefaultCellStyle.SelectionForeColor     = System.Drawing.Color.White;
             this.dgv.AlternatingRowsDefaultCellStyle.BackColor = System.Drawing.Color.FromArgb(250, 247, 244);
 
@@ -53,7 +53,7 @@ namespace CharlesNadejda.Forms
             this.btnAjouter.Size      = new System.Drawing.Size(bw, bh);
             this.btnAjouter.Text      = "+ Ajouter";
             this.btnAjouter.Font      = new System.Drawing.Font("Segoe UI", 9.5F);
-            this.btnAjouter.BackColor = System.Drawing.Color.FromArgb(61, 40, 23);
+            this.btnAjouter.BackColor = CharlesNadejda.Forms.AppColors.ChocoBrand;
             this.btnAjouter.ForeColor = System.Drawing.Color.White;
             this.btnAjouter.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
             this.btnAjouter.Cursor    = System.Windows.Forms.Cursors.Hand;

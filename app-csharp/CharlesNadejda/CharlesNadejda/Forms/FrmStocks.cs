@@ -94,13 +94,13 @@ namespace CharlesNadejda.Forms
                 BorderStyle             = BorderStyle.None,
                 ColumnHeadersHeight     = 32,
                 Font                    = new Font("Segoe UI", 9.5F),
-                GridColor               = Color.FromArgb(230, 220, 210)
+                GridColor               = AppColors.GridLine
             };
             _dgv.ColumnHeadersDefaultCellStyle.BackColor          = CREME;
             _dgv.ColumnHeadersDefaultCellStyle.ForeColor          = CHOCOLAT_FONCE;
             _dgv.ColumnHeadersDefaultCellStyle.Font               = new Font("Segoe UI", 8.5F, FontStyle.Bold);
             _dgv.ColumnHeadersDefaultCellStyle.SelectionBackColor = CREME;
-            _dgv.DefaultCellStyle.SelectionBackColor              = Color.FromArgb(111, 78, 55);
+            _dgv.DefaultCellStyle.SelectionBackColor              = AppColors.ChocoMed;
             _dgv.DefaultCellStyle.SelectionForeColor              = Color.White;
             _dgv.CellDoubleClick += (s, e) => { if (e.RowIndex >= 0) Modifier(); };
 
@@ -153,7 +153,7 @@ namespace CharlesNadejda.Forms
                 Dock             = DockStyle.Fill,
                 Orientation      = Orientation.Vertical,
                 IsSplitterFixed  = false,   // fixé après layout
-                BackColor        = Color.FromArgb(230, 220, 210)  // couleur de la barre séparatrice
+                BackColor        = AppColors.GridLine  // couleur de la barre séparatrice
             };
 
             // Règle MEMORY.md : Panel1 (Fill) ajouté AVANT Panel2 (Right)

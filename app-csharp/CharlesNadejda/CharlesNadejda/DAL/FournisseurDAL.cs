@@ -32,7 +32,8 @@ namespace CharlesNadejda.DAL
             }
         }
 
-        public static void Insert(Fournisseur f)
+        /// <summary>Insère un fournisseur et retourne son ID généré.</summary>
+        public static int Insert(Fournisseur f)
         {
             using (var conn = DbHelper.GetConnection())
             using (var cmd = conn.CreateCommand())
@@ -41,6 +42,7 @@ namespace CharlesNadejda.DAL
                                     VALUES (@nom, @contact, @email, @tel, @adresse, @notes)";
                 Bind(cmd, f);
                 cmd.ExecuteNonQuery();
+                return (int)cmd.LastInsertedId;
             }
         }
 

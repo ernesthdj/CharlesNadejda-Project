@@ -18,7 +18,7 @@ namespace CharlesNadejda.DAL
             using (var cmd = conn.CreateCommand())
             {
                 cmd.CommandText = @"
-                    SELECT fi.id, fi.nom, fi.marque, fi.unite_mesure, fi.type_physique, fi.densite,
+                    SELECT fi.id, fi.nom, fi.marque, fi.description, fi.unite_mesure, fi.type_physique, fi.densite,
                            fi.conditionnement_label, fi.qte_par_conditionnement,
                            fi.prix_achat_reference, fi.seuil_alerte_stock, fi.stock_cible,
                            fi.id_fournisseur_defaut, fi.id_stock, fi.actif,
@@ -51,6 +51,32 @@ namespace CharlesNadejda.DAL
             return list;
         }
 
+        /// <summary>Retourne un ingrédient par son ID, ou null si introuvable.</summary>
+        public static Ingredient GetById(int id)
+        {
+            using (var conn = DbHelper.GetConnection())
+            using (var cmd = conn.CreateCommand())
+            {
+                cmd.CommandText = @"
+                    SELECT fi.id, fi.nom, fi.marque, fi.description, fi.unite_mesure, fi.type_physique, fi.densite,
+                           fi.conditionnement_label, fi.qte_par_conditionnement,
+                           fi.prix_achat_reference, fi.seuil_alerte_stock, fi.stock_cible,
+                           fi.id_fournisseur_defaut, fi.id_stock, fi.actif,
+                           f.nom  AS nom_fournisseur,
+                           s.nom  AS nom_stock,
+                           COALESCE(SUM(l.quantite_disponible), 0) AS stock_actuel
+                    FROM fiches_ingredients fi
+                    LEFT  JOIN fournisseurs      f ON f.id = fi.id_fournisseur_defaut
+                    INNER JOIN stocks            s ON s.id = fi.id_stock
+                    LEFT  JOIN lots_ingredients  l ON l.id_fiche_ingredient = fi.id
+                    WHERE fi.id = @id
+                    GROUP BY fi.id";
+                cmd.Parameters.AddWithValue("@id", id);
+                using (var r = cmd.ExecuteReader())
+                    return r.Read() ? Map(r) : null;
+            }
+        }
+
         public static bool NomExiste(string nom, int excludeId = 0)
         {
             using (var conn = DbHelper.GetConnection())
@@ -63,22 +89,24 @@ namespace CharlesNadejda.DAL
             }
         }
 
-        public static void Insert(Ingredient i)
+        /// <summary>Insère un ingrédient et retourne son ID généré.</summary>
+        public static int Insert(Ingredient i)
         {
             using (var conn = DbHelper.GetConnection())
             using (var cmd = conn.CreateCommand())
             {
                 cmd.CommandText = @"
                     INSERT INTO fiches_ingredients
-                        (nom, marque, unite_mesure, type_physique, densite,
+                        (nom, marque, description, unite_mesure, type_physique, densite,
                          conditionnement_label, qte_par_conditionnement,
                          prix_achat_reference, seuil_alerte_stock, stock_cible,
                          id_fournisseur_defaut, id_stock, actif)
-                    VALUES (@nom, @marque, @unite, @type_physique, @densite,
+                    VALUES (@nom, @marque, @desc, @unite, @type_physique, @densite,
                             @condLabel, @condQte,
                             @prix, @seuil, @stockCible, @fournisseur, @idStock, 1)";
                 Bind(cmd, i);
                 cmd.ExecuteNonQuery();
+                return (int)cmd.LastInsertedId;
             }
         }
 
@@ -89,7 +117,7 @@ namespace CharlesNadejda.DAL
             {
                 cmd.CommandText = @"
                     UPDATE fiches_ingredients
-                    SET nom=@nom, marque=@marque, unite_mesure=@unite,
+                    SET nom=@nom, marque=@marque, description=@desc, unite_mesure=@unite,
                         type_physique=@type_physique, densite=@densite,
                         conditionnement_label=@condLabel, qte_par_conditionnement=@condQte,
                         prix_achat_reference=@prix, seuil_alerte_stock=@seuil,
@@ -117,6 +145,7 @@ namespace CharlesNadejda.DAL
         {
             cmd.Parameters.AddWithValue("@nom",          i.Nom);
             cmd.Parameters.AddWithValue("@marque",       i.Marque ?? (object)DBNull.Value);
+            cmd.Parameters.AddWithValue("@desc",         i.Description ?? (object)DBNull.Value);
             cmd.Parameters.AddWithValue("@unite",        i.UniteMesure);
             cmd.Parameters.AddWithValue("@type_physique",i.TypePhysique ?? "solide");
             cmd.Parameters.AddWithValue("@densite",      i.Densite.HasValue ? (object)i.Densite.Value : DBNull.Value);
@@ -134,6 +163,7 @@ namespace CharlesNadejda.DAL
             Id                    = (int)r["id"],
             Nom                   = r["nom"].ToString(),
             Marque                = r["marque"]               == DBNull.Value ? null : r["marque"].ToString(),
+            Description           = r["description"]          == DBNull.Value ? null : r["description"].ToString(),
             UniteMesure           = r["unite_mesure"].ToString(),
             TypePhysique          = r["type_physique"].ToString(),
             Densite               = r["densite"]              == DBNull.Value ? (decimal?)null : (decimal)r["densite"],

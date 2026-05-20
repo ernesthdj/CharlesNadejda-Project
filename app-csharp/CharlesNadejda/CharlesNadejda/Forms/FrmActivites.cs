@@ -82,7 +82,7 @@ namespace CharlesNadejda.Forms
                 BorderStyle           = BorderStyle.None,
                 ColumnHeadersHeight   = 32,
                 Font                  = new Font("Segoe UI", 9.5F),
-                GridColor             = Color.FromArgb(230, 220, 210)
+                GridColor             = AppColors.GridLine
             };
             _dgv.ColumnHeadersDefaultCellStyle.BackColor   = AppColors.Creme;
             _dgv.ColumnHeadersDefaultCellStyle.ForeColor   = AppColors.ChocoBrand;

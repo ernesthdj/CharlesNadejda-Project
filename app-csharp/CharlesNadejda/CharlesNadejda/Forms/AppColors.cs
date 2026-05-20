@@ -96,5 +96,12 @@ namespace CharlesNadejda.Forms
 
         /// <summary>#316AC5 — bleu info / sélection.</summary>
         public static readonly Color Info          = Color.FromArgb(49, 106, 197);
+
+        // ── Grille / DGV ───────────────────────────────────────────────────
+        /// <summary>#E6DCD2 — couleur des lignes de grille DGV.</summary>
+        public static readonly Color GridLine      = Color.FromArgb(230, 220, 210);
+
+        /// <summary>#DCD0C0 — fond des chips inactifs / boutons secondaires tertiaires.</summary>
+        public static readonly Color ChipInactive  = Color.FromArgb(220, 208, 192);
     }
 }

@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using MySql.Data.MySqlClient;
 using CharlesNadejda.Models;
 
@@ -67,6 +68,67 @@ namespace CharlesNadejda.DAL
                 ORDER BY vsg.date_dlc ASC",
                 ("@p", (object)idNiveau));
 
+        // ── Agrégation par fiche ingrédient ──────────────────────────────
+
+        /// <summary>
+        /// Agrège les lots par fiche ingrédient : 1 ligne = 1 ingrédient (somme de tous ses lots).
+        /// Les produits fabriqués passent tels quels.
+        /// </summary>
+        public static List<VueStockGlobal> AgregerParFiche(List<VueStockGlobal> source)
+        {
+            var result = new List<VueStockGlobal>();
+
+            // Produits fabriqués : pas d'agrégation
+            result.AddRange(source.Where(l => !l.EstLot));
+
+            // Lots : grouper par IdFicheIngredient
+            var groupes = source
+                .Where(l => l.EstLot && l.IdFicheIngredient.HasValue)
+                .GroupBy(l => l.IdFicheIngredient.Value);
+
+            foreach (var g in groupes)
+            {
+                var premier  = g.First();
+                var totalQte = g.Sum(l => l.QuantiteTotale);
+                var totalRes = g.Sum(l => l.QuantiteReservee);
+
+                decimal coutMoyen = totalQte > 0
+                    ? g.Sum(l => l.CoutUnitaire * l.QuantiteTotale) / totalQte
+                    : 0m;
+
+                result.Add(new VueStockGlobal
+                {
+                    TypeStock             = premier.TypeStock,
+                    IdEntree              = premier.IdEntree,
+                    Nom                   = premier.Nom,
+                    Unite                 = premier.Unite,
+                    QuantiteTotale        = totalQte,
+                    QuantiteReservee      = totalRes,
+                    QuantiteDispoReelle   = totalQte - totalRes,
+                    CoutUnitaire          = coutMoyen,
+                    PrixConditionnement   = null,
+                    QteParConditionnement = premier.QteParConditionnement,
+                    ConditionnementLabel  = premier.ConditionnementLabel,
+                    DateDlc               = g.Any(l => l.DateDlc.HasValue)
+                                             ? g.Where(l => l.DateDlc.HasValue).Min(l => l.DateDlc.Value)
+                                             : (DateTime?)null,
+                    IdStock               = premier.IdStock,
+                    StockNom              = premier.StockNom,
+                    IdFicheIngredient     = g.Key,
+                    IdActivite            = null,
+                    NomActivite           = null,
+                    IdContexte            = null,
+                    IdNiveau              = null,
+                    IdFicheBom            = null
+                });
+            }
+
+            // Lots sans fiche (cas improbable)
+            result.AddRange(source.Where(l => l.EstLot && !l.IdFicheIngredient.HasValue));
+
+            return result;
+        }
+
         // ── Helpers privés ────────────────────────────────────────────────
 
         private static List<VueStockGlobal> Execute(string sql,
@@ -107,6 +169,8 @@ namespace CharlesNadejda.DAL
                                     ? (int?)null : Convert.ToInt32(r["id_stock"]),
             StockNom            = r["stock_nom"]     == DBNull.Value
                                     ? null : r["stock_nom"].ToString(),
+            IdFicheIngredient   = r["id_fiche_ingredient"] == DBNull.Value
+                                    ? (int?)null : Convert.ToInt32(r["id_fiche_ingredient"]),
             IdActivite          = r["id_activite"]   == DBNull.Value
                                     ? (int?)null : Convert.ToInt32(r["id_activite"]),
             NomActivite         = r["nom_activite"]  == DBNull.Value
