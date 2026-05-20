@@ -1,113 +1,113 @@
-# Graph Report - app-csharp/CharlesNadejda  (2026-05-15)
+# Graph Report - app-csharp/CharlesNadejda/CharlesNadejda  (2026-05-21)
 
 ## Corpus Check
-- 127 files · ~99,758 words
+- 945 files · ~50,000 words
 - Verdict: corpus is large enough that graph structure adds value.
 
 ## Summary
-- 771 nodes · 1143 edges · 78 communities (28 shown, 50 thin omitted)
-- Extraction: 98% EXTRACTED · 2% INFERRED · 0% AMBIGUOUS · INFERRED: 28 edges (avg confidence: 0.83)
-- Token cost: 180,589 input · 0 output
+- 945 nodes · 1468 edges · 79 communities (37 shown, 42 thin omitted)
+- Extraction: 96% EXTRACTED · 4% INFERRED · 0% AMBIGUOUS · INFERRED: 54 edges (avg confidence: 0.82)
+- Token cost: 0 input · 0 output
 
 ## Community Hubs (Navigation)
-- [[_COMMUNITY_Shell ERP Principal|Shell ERP Principal]]
-- [[_COMMUNITY_Forms Base & Login|Forms Base & Login]]
-- [[_COMMUNITY_Shell Navigation & Utils|Shell Navigation & Utils]]
-- [[_COMMUNITY_BOM Contextes & Liste Base|BOM Contextes & Liste Base]]
-- [[_COMMUNITY_Production Workflow|Production Workflow]]
-- [[_COMMUNITY_BOM Fiches & Simulation|BOM Fiches & Simulation]]
+- [[_COMMUNITY_Contexte Screen & Kanban|Contexte Screen & Kanban]]
+- [[_COMMUNITY_Forms Base & UI Config|Forms Base & UI Config]]
+- [[_COMMUNITY_BOM Contextes & Utils|BOM Contextes & Utils]]
+- [[_COMMUNITY_Production & Costing Engine|Production & Costing Engine]]
+- [[_COMMUNITY_Shell & Navigation|Shell & Navigation]]
+- [[_COMMUNITY_Stock & Reservations|Stock & Reservations]]
+- [[_COMMUNITY_BOM Fiches & Niveaux|BOM Fiches & Niveaux]]
+- [[_COMMUNITY_Production Screen|Production Screen]]
+- [[_COMMUNITY_Activities & Designer|Activities & Designer]]
+- [[_COMMUNITY_BOM Fiches UI & Simulation|BOM Fiches UI & Simulation]]
+- [[_COMMUNITY_Edit Forms CRUD|Edit Forms CRUD]]
 - [[_COMMUNITY_Vue Stock Global|Vue Stock Global]]
-- [[_COMMUNITY_Architecture & DAL BOM|Architecture & DAL BOM]]
-- [[_COMMUNITY_Forms Edit CRUD|Forms Edit CRUD]]
-- [[_COMMUNITY_BOM Fiche Editor|BOM Fiche Editor]]
-- [[_COMMUNITY_Stock DAL|Stock DAL]]
-- [[_COMMUNITY_Achat Editor|Achat Editor]]
-- [[_COMMUNITY_BOM Fiche DAL|BOM Fiche DAL]]
-- [[_COMMUNITY_Production DAL|Production DAL]]
-- [[_COMMUNITY_Ingrédients Liste|Ingrédients Liste]]
-- [[_COMMUNITY_Login Designer & UI|Login Designer & UI]]
-- [[_COMMUNITY_Activité DAL|Activité DAL]]
-- [[_COMMUNITY_BOM Contexte DAL|BOM Contexte DAL]]
-- [[_COMMUNITY_BOM Niveau DAL|BOM Niveau DAL]]
-- [[_COMMUNITY_Activités Forms|Activités Forms]]
-- [[_COMMUNITY_NuGet Dependencies|NuGet Dependencies]]
-- [[_COMMUNITY_Réservation DAL|Réservation DAL]]
-- [[_COMMUNITY_Fournisseurs Liste|Fournisseurs Liste]]
-- [[_COMMUNITY_VS Project Config|VS Project Config]]
-- [[_COMMUNITY_Fournisseur DAL|Fournisseur DAL]]
-- [[_COMMUNITY_Ingrédient DAL|Ingrédient DAL]]
-- [[_COMMUNITY_Lot DAL|Lot DAL]]
-- [[_COMMUNITY_BOM Contexte Editor|BOM Contexte Editor]]
-- [[_COMMUNITY_Ingrédient Editor|Ingrédient Editor]]
-- [[_COMMUNITY_BOM Stock DAL|BOM Stock DAL]]
-- [[_COMMUNITY_Vue Stock Global DAL|Vue Stock Global DAL]]
-- [[_COMMUNITY_BOM Niveaux Forms|BOM Niveaux Forms]]
-- [[_COMMUNITY_AppState Navigation|AppState Navigation]]
-- [[_COMMUNITY_Achats Liste|Achats Liste]]
-- [[_COMMUNITY_FrmPrincipal Designer|FrmPrincipal Designer]]
-- [[_COMMUNITY_Dark Menu Renderer|Dark Menu Renderer]]
-- [[_COMMUNITY_BOM Coût DAL|BOM Coût DAL]]
-- [[_COMMUNITY_BOM Fiche Ligne DAL|BOM Fiche Ligne DAL]]
-- [[_COMMUNITY_Simulation Designer|Simulation Designer]]
-- [[_COMMUNITY_Fournisseurs Designer|Fournisseurs Designer]]
-- [[_COMMUNITY_Stock Editor|Stock Editor]]
-- [[_COMMUNITY_Form Helper Utils|Form Helper Utils]]
-- [[_COMMUNITY_Resources Designer|Resources Designer]]
-- [[_COMMUNITY_Simulation Service|Simulation Service]]
-- [[_COMMUNITY_VS Layout Backup|VS Layout Backup]]
-- [[_COMMUNITY_VS Layout Active|VS Layout Active]]
-- [[_COMMUNITY_Model BomFiche|Model BomFiche]]
-- [[_COMMUNITY_Model BomManque|Model BomManque]]
-- [[_COMMUNITY_Model BomReservation|Model BomReservation]]
-- [[_COMMUNITY_Model Fournisseur|Model Fournisseur]]
-- [[_COMMUNITY_Model RapportCout|Model RapportCout]]
-- [[_COMMUNITY_Program Entry Point|Program Entry Point]]
-- [[_COMMUNITY_DbHelper Connection|DbHelper Connection]]
-- [[_COMMUNITY_Utilisateur Auth DAL|Utilisateur Auth DAL]]
-- [[_COMMUNITY_String Extensions|String Extensions]]
-- [[_COMMUNITY_Model Activite|Model Activite]]
-- [[_COMMUNITY_Model BomContexte|Model BomContexte]]
-- [[_COMMUNITY_Model BomFicheLigne|Model BomFicheLigne]]
-- [[_COMMUNITY_Model BomNiveau|Model BomNiveau]]
-- [[_COMMUNITY_Model BomProduction|Model BomProduction]]
-- [[_COMMUNITY_Model BomProductionLigne|Model BomProductionLigne]]
-- [[_COMMUNITY_Model BomStock|Model BomStock]]
-- [[_COMMUNITY_Model Ingredient|Model Ingredient]]
-- [[_COMMUNITY_Model Stock|Model Stock]]
-- [[_COMMUNITY_Model Utilisateur|Model Utilisateur]]
-- [[_COMMUNITY_Model Lot|Model Lot]]
-- [[_COMMUNITY_Navigation Params|Navigation Params]]
-- [[_COMMUNITY_Settings Designer|Settings Designer]]
-- [[_COMMUNITY_Simulation Resultat|Simulation Resultat]]
-- [[_COMMUNITY_Model VueStockGlobal|Model VueStockGlobal]]
-- [[_COMMUNITY_RessourceType Enum|RessourceType Enum]]
-- [[_COMMUNITY_NavItemId Enum|NavItemId Enum]]
-- [[_COMMUNITY_ScreenId Enum|ScreenId Enum]]
-- [[_COMMUNITY_Stock Vue Bridge|Stock Vue Bridge]]
-- [[_COMMUNITY_ArtiStock Project|ArtiStock Project]]
-- [[_COMMUNITY_Copilot Instructions|Copilot Instructions]]
+- [[_COMMUNITY_Catalogue & Fournisseurs DAL|Catalogue & Fournisseurs DAL]]
+- [[_COMMUNITY_Architecture BOM Plan|Architecture BOM Plan]]
+- [[_COMMUNITY_Boutique Web|Boutique Web]]
+- [[_COMMUNITY_FrmListeBase Generic|FrmListeBase Generic]]
+- [[_COMMUNITY_Fiche Edit & Lignes|Fiche Edit & Lignes]]
+- [[_COMMUNITY_Achat Edit Form|Achat Edit Form]]
+- [[_COMMUNITY_Activites DAL|Activites DAL]]
+- [[_COMMUNITY_Ingredients List & Filters|Ingredients List & Filters]]
+- [[_COMMUNITY_Community 20|Community 20]]
+- [[_COMMUNITY_Community 21|Community 21]]
+- [[_COMMUNITY_Community 22|Community 22]]
+- [[_COMMUNITY_Community 23|Community 23]]
+- [[_COMMUNITY_Community 24|Community 24]]
+- [[_COMMUNITY_Community 25|Community 25]]
+- [[_COMMUNITY_Community 26|Community 26]]
+- [[_COMMUNITY_Community 27|Community 27]]
+- [[_COMMUNITY_Community 28|Community 28]]
+- [[_COMMUNITY_Community 29|Community 29]]
+- [[_COMMUNITY_Community 30|Community 30]]
+- [[_COMMUNITY_Community 31|Community 31]]
+- [[_COMMUNITY_Community 32|Community 32]]
+- [[_COMMUNITY_Community 33|Community 33]]
+- [[_COMMUNITY_Community 34|Community 34]]
+- [[_COMMUNITY_Community 35|Community 35]]
+- [[_COMMUNITY_Community 36|Community 36]]
+- [[_COMMUNITY_Community 37|Community 37]]
+- [[_COMMUNITY_Community 38|Community 38]]
+- [[_COMMUNITY_Community 39|Community 39]]
+- [[_COMMUNITY_Community 41|Community 41]]
+- [[_COMMUNITY_Community 42|Community 42]]
+- [[_COMMUNITY_Community 43|Community 43]]
+- [[_COMMUNITY_Community 44|Community 44]]
+- [[_COMMUNITY_Community 45|Community 45]]
+- [[_COMMUNITY_Community 46|Community 46]]
+- [[_COMMUNITY_Community 47|Community 47]]
+- [[_COMMUNITY_Community 48|Community 48]]
+- [[_COMMUNITY_Community 49|Community 49]]
+- [[_COMMUNITY_Community 50|Community 50]]
+- [[_COMMUNITY_Community 51|Community 51]]
+- [[_COMMUNITY_Community 52|Community 52]]
+- [[_COMMUNITY_Community 53|Community 53]]
+- [[_COMMUNITY_Community 54|Community 54]]
+- [[_COMMUNITY_Community 55|Community 55]]
+- [[_COMMUNITY_Community 56|Community 56]]
+- [[_COMMUNITY_Community 57|Community 57]]
+- [[_COMMUNITY_Community 58|Community 58]]
+- [[_COMMUNITY_Community 59|Community 59]]
+- [[_COMMUNITY_Community 60|Community 60]]
+- [[_COMMUNITY_Community 61|Community 61]]
+- [[_COMMUNITY_Community 62|Community 62]]
+- [[_COMMUNITY_Community 63|Community 63]]
+- [[_COMMUNITY_Community 64|Community 64]]
+- [[_COMMUNITY_Community 65|Community 65]]
+- [[_COMMUNITY_Community 66|Community 66]]
+- [[_COMMUNITY_Community 67|Community 67]]
+- [[_COMMUNITY_Community 68|Community 68]]
+- [[_COMMUNITY_Community 69|Community 69]]
+- [[_COMMUNITY_Community 70|Community 70]]
+- [[_COMMUNITY_Community 71|Community 71]]
+- [[_COMMUNITY_Community 72|Community 72]]
+- [[_COMMUNITY_Community 73|Community 73]]
+- [[_COMMUNITY_Community 74|Community 74]]
+- [[_COMMUNITY_Community 77|Community 77]]
+- [[_COMMUNITY_Community 78|Community 78]]
 
 ## God Nodes (most connected - your core abstractions)
-1. `FrmPrincipal` - 76 edges
+1. `FrmPrincipal` - 78 edges
 2. `FrmPrincipal` - 36 edges
-3. `FrmVueStock` - 30 edges
-4. `FrmAchatEdit` - 21 edges
-5. `FrmListeBase` - 21 edges
-6. `FrmStocks` - 21 edges
-7. `FrmBomFicheEdit` - 20 edges
-8. `FrmBomProductionSimulation` - 20 edges
-9. `FrmBomContexteEdit` - 17 edges
-10. `SidebarPanel` - 17 edges
+3. `FrmVueStock` - 31 edges
+4. `FrmPrincipal` - 24 edges
+5. `FrmAchatEdit` - 22 edges
+6. `FrmBomFicheEdit` - 22 edges
+7. `FrmStocks` - 22 edges
+8. `FrmListeBase` - 21 edges
+9. `FrmBomProductionSimulation` - 20 edges
+10. `FrmBomContexteEdit` - 18 edges
 
 ## Surprising Connections (you probably didn't know these)
 - `FrmPrincipal — Main Shell Form` --implements--> `ArtisaStock Design System — Chocolate Palette`  [INFERRED]
   CharlesNadejda/Forms/FrmPrincipal.cs → app-csharp/CharlesNadejda/docs/PO_AUDIT_FONCTIONNALITES_DESIGN.md
 - `Single-Form Application Pattern (SFA)` --rationale_for--> `FrmPrincipal — Main Shell Form`  [EXTRACTED]
   app-csharp/CharlesNadejda/docs/ARCHITECT_PLAN_TECHNIQUE.md → CharlesNadejda/Forms/FrmPrincipal.cs
-- `Architect Plan Technique — Refactoring` --references--> `FrmBomProductionSimulation — Production Simulation`  [EXTRACTED]
-  app-csharp/CharlesNadejda/docs/ARCHITECT_PLAN_TECHNIQUE.md → CharlesNadejda/Forms/FrmBomProductionSimulation.cs
-- `OWASP Security Constraints` --rationale_for--> `IngredientDAL — Ingredient Data Access Layer`  [INFERRED]
-  app-csharp/CharlesNadejda/docs/PO_USER_STORIES_REFACTORING.md → CharlesNadejda/DAL/IngredientDAL.cs
+- `FrmBomProductionSimulation — Production Simulation` --references--> `Architect Plan Technique — Refactoring`  [EXTRACTED]
+  CharlesNadejda/Forms/FrmBomProductionSimulation.cs → app-csharp/CharlesNadejda/docs/ARCHITECT_PLAN_TECHNIQUE.md
+- `IngredientDAL — Ingredient Data Access Layer` --rationale_for--> `OWASP Security Constraints`  [INFERRED]
+  CharlesNadejda/DAL/IngredientDAL.cs → app-csharp/CharlesNadejda/docs/PO_USER_STORIES_REFACTORING.md
 - `StockDAL — Stock Data Access Layer` --implements--> `M:N Relationship Stock-Activity Liaison`  [EXTRACTED]
   CharlesNadejda/DAL/StockDAL.cs → app-csharp/CharlesNadejda/docs/ARCHITECT_PLAN_TECHNIQUE.md
 
@@ -116,180 +116,163 @@
 - **Multi-Agent Workflow Pipeline (PO Audit -> User Stories -> Architect Plan -> Implementation)** — po_audit_design, po_user_stories, architect_plan, journal [EXTRACTED 1.00]
 - **BOM Production Stack (FIFO Engine + Multi-Level + DALs)** — fifo_transaction, bom_multilevel, bomproductiondal, bomfichedal, bomniveaudal, bomstockdal [INFERRED 0.85]
 
-## Communities (78 total, 50 thin omitted)
+## Communities (79 total, 42 thin omitted)
 
-### Community 0 - "Shell ERP Principal"
-Cohesion: 0.07
-Nodes (5): AppStatusBar, FrmPrincipal, SidebarPanel, TitleBarPanel, Utilisateur
+### Community 0 - "Contexte Screen & Kanban"
+Cohesion: 0.05
+Nodes (9): AppStatusBar, CharlesNadejda.Forms, FrmPrincipal, FrmPrincipal, CharlesNadejda.Forms, FrmPrincipal, SidebarPanel, TitleBarPanel (+1 more)
 
-### Community 1 - "Forms Base & Login"
-Cohesion: 0.07
+### Community 1 - "Forms Base & UI Config"
+Cohesion: 0.06
 Nodes (17): CheckedListBox, Color, ErrorProvider, Form, AppColors, CharlesNadejda.Forms, CharlesNadejda.Forms, FrmActiviteStocks (+9 more)
 
-### Community 2 - "Shell Navigation & Utils"
+### Community 2 - "BOM Contextes & Utils"
+Cohesion: 0.07
+Nodes (11): MODULE: Forms Base & Utilitaires, BomContexteDAL, CharlesNadejda.DAL, CharlesNadejda.DAL, CommandeWebDAL, Dictionary, CharlesNadejda, UnitConvertisseur (+3 more)
+
+### Community 3 - "Production & Costing Engine"
+Cohesion: 0.07
+Nodes (10): MODULE: Production BOM, BomCoutDAL, CharlesNadejda.DAL, BomProductionDAL, CharlesNadejda.DAL, BomStockDAL, CharlesNadejda.DAL, decimal (+2 more)
+
+### Community 4 - "Shell & Navigation"
 Cohesion: 0.06
-Nodes (16): AppState, Dictionary, CharlesNadejda, UnitConvertisseur, int, CharlesNadejda.Navigation, ScreenRouter, NavigationParams — Screen Navigation Parameters (+8 more)
+Nodes (15): AppState, int, CharlesNadejda.Navigation, ScreenRouter, NavigationParams — Screen Navigation Parameters, NavItemId, Panel, RessourceType (+7 more)
 
-### Community 3 - "BOM Contextes & Liste Base"
-Cohesion: 0.1
-Nodes (4): CharlesNadejda.Forms, FrmBomContextes, CharlesNadejda.Forms, FrmListeBase
+### Community 5 - "Stock & Reservations"
+Cohesion: 0.07
+Nodes (7): MODULE: Stock & Achats, BomReservationDAL, CharlesNadejda.DAL, CharlesNadejda.DAL, StockDAL, CharlesNadejda.DAL, VueStockGlobalDAL
 
-### Community 5 - "BOM Fiches & Simulation"
+### Community 6 - "BOM Fiches & Niveaux"
+Cohesion: 0.08
+Nodes (7): MODULE: Fiches & Niveaux BOM, BomFicheDAL, CharlesNadejda.DAL, BomFicheLigneDAL, CharlesNadejda.DAL, BomNiveauDAL, CharlesNadejda.DAL
+
+### Community 8 - "Activities & Designer"
+Cohesion: 0.11
+Nodes (10): DataGridView, CharlesNadejda.Forms, FrmActivites, CharlesNadejda.Forms, FrmFournisseurs, CharlesNadejda.Forms, FrmPrincipal, IContainer (+2 more)
+
+### Community 9 - "BOM Fiches UI & Simulation"
 Cohesion: 0.11
 Nodes (5): BomNiveau, CharlesNadejda.Forms, FrmBomFiches, CharlesNadejda.Forms, FrmBomProductionSimulation
 
-### Community 7 - "Architecture & DAL BOM"
+### Community 10 - "Edit Forms CRUD"
+Cohesion: 0.1
+Nodes (14): Activite, bool, CharlesNadejda.Forms, FrmActiviteEdit, CharlesNadejda.Forms, FrmBomNiveauEdit, CharlesNadejda.Forms, FrmFournisseurEdit (+6 more)
+
+### Community 12 - "Catalogue & Fournisseurs DAL"
+Cohesion: 0.12
+Nodes (5): MODULE: Catalogue (Ingredients & Fournisseurs), CharlesNadejda.DAL, FournisseurDAL, CharlesNadejda.DAL, IngredientDAL
+
+### Community 13 - "Architecture BOM Plan"
 Cohesion: 0.13
 Nodes (24): M:N Relationship Stock-Activity Liaison, Architect Plan Technique — Refactoring, BOM Multi-Level Production System, BomFicheDAL — BOM Recipe Data Access Layer, BomNiveauDAL — BOM Level Data Access Layer, BomProductionDAL — Production Execution DAL, BomStockDAL — BOM Stock Data Access Layer, ArtisaStock Design System — Chocolate Palette (+16 more)
 
-### Community 8 - "Forms Edit CRUD"
-Cohesion: 0.13
-Nodes (10): bool, CharlesNadejda.Forms, FrmActiviteEdit, CharlesNadejda.Forms, FrmBomNiveauEdit, CharlesNadejda.Forms, FrmFournisseurEdit, Fournisseur (+2 more)
-
-### Community 9 - "BOM Fiche Editor"
-Cohesion: 0.19
-Nodes (5): BomFiche, CharlesNadejda.Forms, FrmBomFicheEdit, InputItem, List
-
-### Community 11 - "Achat Editor"
+### Community 14 - "Boutique Web"
 Cohesion: 0.2
-Nodes (6): CheckBox, DateTimePicker, CharlesNadejda.Forms, FrmAchatEdit, Lot, RadioButton
+Nodes (3): CharlesNadejda.Forms, FrmPrincipal, TabControl
 
-### Community 14 - "Ingrédients Liste"
+### Community 16 - "Fiche Edit & Lignes"
+Cohesion: 0.21
+Nodes (4): BomFiche, CharlesNadejda.Forms, FrmBomFicheEdit, InputItem
+
+### Community 17 - "Achat Edit Form"
+Cohesion: 0.21
+Nodes (5): DateTimePicker, CharlesNadejda.Forms, FrmAchatEdit, Lot, RadioButton
+
+### Community 18 - "Activites DAL"
+Cohesion: 0.2
+Nodes (3): MODULE: Activites, ActiviteDAL, CharlesNadejda.DAL
+
+### Community 19 - "Ingredients List & Filters"
 Cohesion: 0.19
 Nodes (3): FlowLayoutPanel, CharlesNadejda.Forms, FrmIngredients
 
-### Community 15 - "Login Designer & UI"
-Cohesion: 0.17
-Nodes (6): CharlesNadejda.Forms, FrmLogin, Label, Panel, AppStatusBar, CharlesNadejda.Forms.Shell
-
-### Community 20 - "NuGet Dependencies"
+### Community 21 - "Community 21"
 Cohesion: 0.3
 Nodes (12): BCrypt.Net-Next 4.1.0, BouncyCastle.Cryptography 2.6.2, CharlesNadejda C# Application, MySQL Database Connectivity via Connector/NET, MySql.Data 9.6.0 (MySQL Connector/NET), Newtonsoft.Json 13.0.4 (Json.NET), BCrypt Password Hashing Strategy, System.Buffers 4.6.1 (+4 more)
 
-### Community 23 - "VS Project Config"
+### Community 23 - "Community 23"
+Cohesion: 0.18
+Nodes (4): CharlesNadejda.Forms, FrmBomContexteEdit, List, ListBox
+
+### Community 26 - "Community 26"
+Cohesion: 0.2
+Nodes (3): Button, CharlesNadejda.Forms, FrmBomContextes
+
+### Community 28 - "Community 28"
+Cohesion: 0.29
+Nodes (3): MODULE: Shell & Navigation, AppState, CharlesNadejda.Navigation
+
+### Community 29 - "Community 29"
 Cohesion: 0.2
 Nodes (9): Analyzers, Configuration, CopyToOutputEntries, FrameworkPath, Outputs, ProjectFileName, References, RootPath (+1 more)
 
-### Community 27 - "BOM Contexte Editor"
-Cohesion: 0.2
-Nodes (3): CharlesNadejda.Forms, FrmBomContexteEdit, ListBox
-
-### Community 28 - "Ingrédient Editor"
+### Community 30 - "Community 30"
 Cohesion: 0.24
-Nodes (4): ComboBox, CharlesNadejda.Forms, FrmIngredientEdit, Ingredient
+Nodes (4): CharlesNadejda.Forms, FrmIngredientEdit, Ingredient, NumericUpDown
 
-### Community 31 - "BOM Niveaux Forms"
+### Community 31 - "Community 31"
 Cohesion: 0.22
-Nodes (4): BomContexte, CharlesNadejda.Forms, FrmBomNiveaux, FrmListeBase
+Nodes (3): BomContexte, CharlesNadejda.Forms, FrmBomNiveaux
 
-### Community 33 - "Achats Liste"
-Cohesion: 0.25
-Nodes (3): Activite, CharlesNadejda.Forms, FrmAchats
+### Community 32 - "Community 32"
+Cohesion: 0.22
+Nodes (4): CharlesNadejda.Forms, FrmProduitWebEdit, PictureBox, ProduitWeb
 
-### Community 34 - "FrmPrincipal Designer"
-Cohesion: 0.25
-Nodes (5): CharlesNadejda.Forms, FrmPrincipal, IContainer, MenuStrip, ToolStripMenuItem
-
-### Community 35 - "Dark Menu Renderer"
-Cohesion: 0.25
+### Community 33 - "Community 33"
+Cohesion: 0.28
 Nodes (5): CharlesNadejda.Forms, DarkColorTable, DarkMenuRenderer, ProfessionalColorTable, ToolStripProfessionalRenderer
 
-### Community 38 - "Simulation Designer"
-Cohesion: 0.29
-Nodes (4): CharlesNadejda.Forms, FrmBomProductionSimulation, GroupBox, NumericUpDown
+### Community 34 - "Community 34"
+Cohesion: 0.25
+Nodes (3): CharlesNadejda.Forms, FrmAchats, FrmListeBase
 
-### Community 39 - "Fournisseurs Designer"
+### Community 35 - "Community 35"
 Cohesion: 0.29
-Nodes (4): Button, DataGridView, CharlesNadejda.Forms, FrmFournisseurs
+Nodes (4): ComboBox, CharlesNadejda.Forms, FrmBomProductionSimulation, GroupBox
 
-### Community 40 - "Stock Editor"
+### Community 36 - "Community 36"
+Cohesion: 0.25
+Nodes (4): CategorieWeb, CheckBox, CharlesNadejda.Forms, FrmCategorieWebEdit
+
+### Community 37 - "Community 37"
 Cohesion: 0.33
-Nodes (3): CharlesNadejda.Forms, FrmStockEdit, Stock
+Nodes (3): CharlesNadejda.Forms, FrmLogin, Label
 
-### Community 42 - "Resources Designer"
+### Community 38 - "Community 38"
 Cohesion: 0.4
 Nodes (4): CultureInfo, CharlesNadejda.Properties, Resources, ResourceManager
 
-### Community 44 - "VS Layout Backup"
+### Community 43 - "Community 43"
 Cohesion: 0.4
 Nodes (4): DocumentGroupContainers, Documents, Version, WorkspaceRootPath
 
-### Community 45 - "VS Layout Active"
+### Community 44 - "Community 44"
 Cohesion: 0.4
 Nodes (4): DocumentGroupContainers, Documents, Version, WorkspaceRootPath
 
-### Community 50 - "Model RapportCout"
+### Community 63 - "Community 63"
 Cohesion: 0.5
 Nodes (3): CharlesNadejda.Models, LigneCout, RapportCout
 
 ## Knowledge Gaps
-- **138 isolated node(s):** `Version`, `WorkspaceRootPath`, `Documents`, `DocumentGroupContainers`, `Version` (+133 more)
+- **129 isolated node(s):** `Version`, `WorkspaceRootPath`, `Documents`, `DocumentGroupContainers`, `Version` (+124 more)
   These have ≤1 connection - possible missing edges or undocumented components.
-- **50 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
+- **42 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
 
 ## Suggested Questions
 _Questions this graph is uniquely positioned to answer:_
 
-- **Why does `FrmPrincipal` connect `Shell ERP Principal` to `Forms Base & Login`, `Shell Navigation & Utils`, `Dark Menu Renderer`, `Architecture & DAL BOM`, `Fournisseurs Designer`, `BOM Fiche Editor`, `Login Designer & UI`?**
-  _High betweenness centrality (0.163) - this node is a cross-community bridge._
-- **Why does `string` connect `Shell Navigation & Utils` to `BOM Contexte DAL`, `BOM Niveau DAL`, `BOM Fiche DAL`, `Vue Stock Global DAL`?**
-  _High betweenness centrality (0.078) - this node is a cross-community bridge._
-- **Why does `Label` connect `Login Designer & UI` to `Shell ERP Principal`, `Shell Navigation & Utils`, `BOM Contextes & Liste Base`, `Production Workflow`, `BOM Fiches & Simulation`, `Simulation Designer`, `Fournisseurs Designer`, `Forms Edit CRUD`, `BOM Fiche Editor`, `Vue Stock Global`, `Achat Editor`, `Ingrédient Editor`?**
-  _High betweenness centrality (0.069) - this node is a cross-community bridge._
+- **Why does `FrmPrincipal` connect `Contexte Screen & Kanban` to `Forms Base & UI Config`, `Community 33`, `BOM Contextes & Utils`, `Shell & Navigation`, `Community 37`, `Production Screen`, `Activities & Designer`, `Architecture BOM Plan`, `Community 23`, `Community 26`, `Community 28`?**
+  _High betweenness centrality (0.199) - this node is a cross-community bridge._
+- **Why does `string` connect `BOM Contextes & Utils` to `Community 32`, `Shell & Navigation`, `Stock & Reservations`, `BOM Fiches & Niveaux`, `Community 20`, `Community 22`?**
+  _High betweenness centrality (0.174) - this node is a cross-community bridge._
+- **Why does `FrmProduitWebEdit` connect `Community 32` to `BOM Contextes & Utils`, `Community 35`, `Community 36`, `Community 37`, `Edit Forms CRUD`, `Community 26`, `Community 30`?**
+  _High betweenness centrality (0.116) - this node is a cross-community bridge._
 - **What connects `Version`, `WorkspaceRootPath`, `Documents` to the rest of the system?**
-  _138 weakly-connected nodes found - possible documentation gaps or missing edges._
-- **Should `Shell ERP Principal` be split into smaller, more focused modules?**
-  _Cohesion score 0.07 - nodes in this community are weakly interconnected._
-- **Should `Forms Base & Login` be split into smaller, more focused modules?**
-  _Cohesion score 0.07 - nodes in this community are weakly interconnected._
-- **Should `Shell Navigation & Utils` be split into smaller, more focused modules?**
+  _129 weakly-connected nodes found - possible documentation gaps or missing edges._
+- **Should `Contexte Screen & Kanban` be split into smaller, more focused modules?**
+  _Cohesion score 0.05 - nodes in this community are weakly interconnected._
+- **Should `Forms Base & UI Config` be split into smaller, more focused modules?**
   _Cohesion score 0.06 - nodes in this community are weakly interconnected._
----
-
-## Documentation des noeuds enrichis
-
-| Noeud | Fichier doc | Source |
-|-------|-------------|--------|
-| [ActiviteDAL](ActiviteDAL.md) | `ActiviteDAL.md` | `CharlesNadejda/DAL/ActiviteDAL.cs` |
-| [AppState](AppState.md) | `AppState.md` | `CharlesNadejda/Navigation/AppState.cs` |
-| [Architect Plan Technique — Refactoring](Architect_Plan_Technique_—_Refactoring.md) | `Architect_Plan_Technique_—_Refactoring.md` | `app-csharp/CharlesNadejda/docs/ARCHITECT_PLAN_TECHNIQUE.md` |
-| [BomContexteDAL](BomContexteDAL.md) | `BomContexteDAL.md` | `CharlesNadejda/DAL/BomContexteDAL.cs` |
-| [BomCoutDAL](BomCoutDAL.md) | `BomCoutDAL.md` | `CharlesNadejda/DAL/BomCoutDAL.cs` |
-| [BomFicheDAL](BomFicheDAL.md) | `BomFicheDAL.md` | `CharlesNadejda/DAL/BomFicheDAL.cs` |
-| [BomFicheLigneDAL](BomFicheLigneDAL.md) | `BomFicheLigneDAL.md` | `CharlesNadejda/DAL/BomFicheLigneDAL.cs` |
-| [BomNiveauDAL](BomNiveauDAL.md) | `BomNiveauDAL.md` | `CharlesNadejda/DAL/BomNiveauDAL.cs` |
-| [BomProductionDAL](BomProductionDAL.md) | `BomProductionDAL.md` | `CharlesNadejda/DAL/BomProductionDAL.cs` |
-| [BomReservationDAL](BomReservationDAL.md) | `BomReservationDAL.md` | `CharlesNadejda/DAL/BomReservationDAL.cs` |
-| [BomStockDAL](BomStockDAL.md) | `BomStockDAL.md` | `CharlesNadejda/DAL/BomStockDAL.cs` |
-| [CharlesNadejda.Forms](CharlesNadejda.Forms.md) | `CharlesNadejda.Forms.md` | `CharlesNadejda/Forms/FrmListeBase.cs` |
-| [CharlesNadejda.Forms](CharlesNadejda.Forms.md) | `CharlesNadejda.Forms.md` | `CharlesNadejda/Forms/FrmListeBase.cs` |
-| [FournisseurDAL](FournisseurDAL.md) | `FournisseurDAL.md` | `CharlesNadejda/DAL/FournisseurDAL.cs` |
-| [FrmAchatEdit](FrmAchatEdit.md) | `FrmAchatEdit.md` | `CharlesNadejda/Forms/FrmAchatEdit.cs` |
-| [FrmActivites](FrmActivites.md) | `FrmActivites.md` | `CharlesNadejda/Forms/FrmActivites.cs` |
-| [FrmBomContexteEdit](FrmBomContexteEdit.md) | `FrmBomContexteEdit.md` | `CharlesNadejda/Forms/FrmBomContexteEdit.cs` |
-| [FrmBomContextes](FrmBomContextes.md) | `FrmBomContextes.md` | `CharlesNadejda/Forms/FrmBomContextes.cs` |
-| [FrmBomFicheEdit](FrmBomFicheEdit.md) | `FrmBomFicheEdit.md` | `CharlesNadejda/Forms/FrmBomFicheEdit.cs` |
-| [FrmBomFiches](FrmBomFiches.md) | `FrmBomFiches.md` | `CharlesNadejda/Forms/FrmBomFiches.cs` |
-| [FrmBomProductionSimulation](FrmBomProductionSimulation.md) | `FrmBomProductionSimulation.md` | `CharlesNadejda/Forms/FrmBomProductionSimulation.cs` |
-| [FrmIngredientEdit](FrmIngredientEdit.md) | `FrmIngredientEdit.md` | `CharlesNadejda/Forms/FrmIngredientEdit.cs` |
-| [FrmIngredients](FrmIngredients.md) | `FrmIngredients.md` | `CharlesNadejda/Forms/FrmIngredients.cs` |
-| [FrmPrincipal](FrmPrincipal.md) | `FrmPrincipal.md` | `CharlesNadejda/Forms/FrmPrincipal.cs` |
-| [FrmPrincipal](FrmPrincipal.md) | `FrmPrincipal.md` | `CharlesNadejda/Forms/FrmPrincipal.cs` |
-| [FrmVueStock](FrmVueStock.md) | `FrmVueStock.md` | `CharlesNadejda/Forms/FrmVueStock.cs` |
-| [IngredientDAL](IngredientDAL.md) | `IngredientDAL.md` | `CharlesNadejda/DAL/IngredientDAL.cs` |
-| [LotDAL](LotDAL.md) | `LotDAL.md` | `CharlesNadejda/DAL/LotDAL.cs` |
-| [MODULE: Activites](MODULE_Activites.md) | `MODULE_Activites.md` | `app-csharp/CharlesNadejda/CharlesNadejda/DAL/ActiviteDAL.cs` |
-| [MODULE: Catalogue (Ingredients & Fournisseurs)](MODULE_Catalogue_(Ingredients_&_Fournisseurs).md) | `MODULE_Catalogue_(Ingredients_&_Fournisseurs).md` | `app-csharp/CharlesNadejda/CharlesNadejda/DAL/IngredientDAL.cs` |
-| [MODULE: Fiches & Niveaux BOM](MODULE_Fiches_&_Niveaux_BOM.md) | `MODULE_Fiches_&_Niveaux_BOM.md` | `app-csharp/CharlesNadejda/CharlesNadejda/DAL/BomFicheDAL.cs` |
-| [MODULE: Forms Base & Utilitaires](MODULE_Forms_Base_&_Utilitaires.md) | `MODULE_Forms_Base_&_Utilitaires.md` | `app-csharp/CharlesNadejda/CharlesNadejda/Forms/FrmEditBase.cs` |
-| [MODULE: Production BOM](MODULE_Production_BOM.md) | `MODULE_Production_BOM.md` | `app-csharp/CharlesNadejda/CharlesNadejda/DAL/BomProductionDAL.cs` |
-| [MODULE: Shell & Navigation](MODULE_Shell_&_Navigation.md) | `MODULE_Shell_&_Navigation.md` | `app-csharp/CharlesNadejda/CharlesNadejda/Forms/FrmPrincipal.cs` |
-| [MODULE: Stock & Achats](MODULE_Stock_&_Achats.md) | `MODULE_Stock_&_Achats.md` | `app-csharp/CharlesNadejda/CharlesNadejda/DAL/StockDAL.cs` |
-| [SidebarPanel.cs](SidebarPanel.cs.md) | `SidebarPanel.cs.md` | `CharlesNadejda/Forms/Shell/SidebarPanel.cs` |
-| [SimulationService](SimulationService.md) | `SimulationService.md` | `CharlesNadejda/Services/SimulationService.cs` |
-| [StockDAL](StockDAL.md) | `StockDAL.md` | `CharlesNadejda/DAL/StockDAL.cs` |
-| [UnitConvertisseur](UnitConvertisseur.md) | `UnitConvertisseur.md` | `CharlesNadejda/Forms/UnitConvertisseur.cs` |
-| [VueStockGlobalDAL](VueStockGlobalDAL.md) | `VueStockGlobalDAL.md` | `CharlesNadejda/DAL/VueStockGlobalDAL.cs` |
-
-> Chaque fichier .md ci-dessus contient : description, methodes, regles, relations avec backlinks.
-> Source de verite : `graph.json`. Regenerer avec `/graphify --update` apres modification du code.
+- **Should `BOM Contextes & Utils` be split into smaller, more focused modules?**
+  _Cohesion score 0.07 - nodes in this community are weakly interconnected._
