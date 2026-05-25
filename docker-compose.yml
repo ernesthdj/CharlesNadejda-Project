@@ -9,6 +9,9 @@
 #
 # L'app C# Windows Forms tourne en NATIF sur Windows
 # et se connecte à MySQL via localhost:3306 (port mappé par Docker).
+#
+# CONFIGURATION :
+#   Copier docker/.env.example → docker/.env et adapter les valeurs.
 # ============================================================
 
 services:
@@ -21,10 +24,10 @@ services:
     container_name: charlesnadejda_mysql
     restart: unless-stopped
     environment:
-      MYSQL_ROOT_PASSWORD: root
-      MYSQL_DATABASE: charlesnadejda
-      MYSQL_USER: cn_user
-      MYSQL_PASSWORD: cn_password
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${MYSQL_DATABASE:-charlesnadejda}
+      MYSQL_USER: ${MYSQL_USER}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
     ports:
       - "3306:3306"    # Accessible depuis l'app C# via localhost:3306
     volumes:
@@ -35,7 +38,7 @@ services:
     networks:
       - cn_network
     healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-uroot", "-proot"]
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p${MYSQL_ROOT_PASSWORD}"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -87,7 +90,7 @@ services:
     environment:
       PMA_HOST: mysql
       PMA_PORT: 3306
-      MYSQL_ROOT_PASSWORD: root
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
     networks:
       - cn_network
     depends_on:

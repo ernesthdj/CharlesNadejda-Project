@@ -57,9 +57,7 @@ docker/**/data/
 # ===========================
 # Obsidian
 # ===========================
-.obsidian/workspace.json
-.obsidian/workspace-mobile.json
-.obsidian/cache
+.obsidian/
 
 # ===========================
 # Éditeurs & OS
@@ -81,3 +79,9 @@ desktop.ini
 dbml-error.log
 *.tmp
 *.bak
+
+# ===========================
+# Fichiers de config locaux (secrets)
+# ===========================
+.env
+app-csharp/**/App.config
