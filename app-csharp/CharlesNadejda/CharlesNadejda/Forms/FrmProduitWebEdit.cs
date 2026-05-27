@@ -211,7 +211,12 @@ namespace CharlesNadejda.Forms
                     lblImagePath.Text = _prod.ImagePath;
                     var fullPath = Path.Combine(_laravelStoragePath, _prod.ImagePath.Replace('/', '\\'));
                     if (File.Exists(fullPath))
-                        picImage.Image = Image.FromFile(fullPath);
+                    {
+                        // Charger via MemoryStream pour ne pas verrouiller le fichier
+                        var bytes = File.ReadAllBytes(fullPath);
+                        using (var ms = new System.IO.MemoryStream(bytes))
+                            picImage.Image = Image.FromStream(ms);
+                    }
                 }
             }
         }
@@ -284,19 +289,19 @@ namespace CharlesNadejda.Forms
             else
             {
                 int newId = ProduitWebDAL.Insert(_prod);
-                // Renommer l'image avec le vrai ID si nécessaire
-                if (!string.IsNullOrEmpty(_prod.ImagePath) && _prod.ImagePath.Contains("/0_"))
+
+                // Renommer l'image avec le vrai ID (évite le double write Copy+Move)
+                if (!string.IsNullOrEmpty(_selectedImagePath))
                 {
+                    var ext = Path.GetExtension(_selectedImagePath).ToLower();
+                    var newFileName = $"produits/{newId}_{DateTime.Now:yyyyMMddHHmmss}{ext}";
                     var oldPath = Path.Combine(_laravelStoragePath, _prod.ImagePath.Replace('/', '\\'));
-                    var newFileName = _prod.ImagePath.Replace("/0_", $"/{newId}_");
                     var newPath = Path.Combine(_laravelStoragePath, newFileName.Replace('/', '\\'));
                     if (File.Exists(oldPath))
-                    {
                         File.Move(oldPath, newPath);
-                        _prod.ImagePath = newFileName;
-                        _prod.Id = newId;
-                        ProduitWebDAL.Update(_prod);
-                    }
+                    _prod.ImagePath = newFileName;
+                    _prod.Id = newId;
+                    ProduitWebDAL.Update(_prod);
                 }
             }
         }

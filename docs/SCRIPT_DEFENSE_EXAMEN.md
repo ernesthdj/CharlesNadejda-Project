@@ -65,6 +65,122 @@ Ouvre un schema (dessine-le a l'avance ou montre le texte ci-dessous) :
 
 ---
 
+## ETAPE 0 -- Login et lancement de l'application
+
+> **Criteres d'examen couverts** : C# syntaxe, POO (classes, proprietes, encapsulation), securite (BCrypt, requetes parametrees), pattern SFA, DialogResult, gestion d'erreurs, connexion BDD
+
+---
+
+### 0.1 Lancer ArtisaStock et se connecter
+
+#### Ce que tu montres
+
+1. Lance l'application depuis Visual Studio (F5)
+2. L'ecran **FrmLogin** s'affiche avec le bandeau chocolat en degradeé (gradient #3D2817 → #6F4E37)
+3. Tape l'email : `charles@charlesnadejda.be`
+4. Tape le mot de passe : `password`
+5. Clique **Connexion** (ou appuie sur Entree)
+6. L'ecran **FrmPrincipal** s'ouvre avec la sidebar, le bandeau titre et la barre de statut
+
+**Fichiers a ouvrir dans Visual Studio :**
+- `Program.cs` -- point d'entree
+- `Forms/FrmLogin.cs` -- formulaire de login
+- `DAL/UtilisateurDAL.cs` -- authentification
+- `Models/Utilisateur.cs` -- modele utilisateur
+
+#### Ce que tu dis
+
+> "L'application demarre par le `Program.cs`. J'utilise le pattern SFA -- Show First Approach :
+> le `FrmLogin` est affiche en dialogue bloquant via `ShowDialog()` avant meme de lancer la boucle de messages Windows.
+> Si le login est annule, l'application se ferme proprement. Sinon, l'utilisateur authentifie est passe
+> en parametre a `FrmPrincipal`, qui devient la fenetre racine de l'application."
+
+```csharp
+// Program.cs - Point d'entree
+var login = new FrmLogin();
+if (login.ShowDialog() != DialogResult.OK)
+    return;   // Annulation login → quitter proprement
+Application.Run(new FrmPrincipal(login.Utilisateur));
+```
+
+> "Le formulaire `FrmLogin` effectue d'abord une validation basique -- les champs ne doivent pas etre vides.
+> Ensuite il appelle `UtilisateurDAL.Authenticate()` qui fait deux choses :
+>
+> Premierement, une requete parametree qui cherche l'utilisateur par email.
+> Remarquez le filtre `role = 'admin'` -- seuls les administrateurs peuvent se connecter a l'ERP.
+> Cote boutique web Laravel, les clients se connectent avec la meme table `utilisateurs`
+> mais via un controleur Laravel qui ne filtre pas le role.
+>
+> Deuxiemement, si l'email existe, on verifie le mot de passe avec `BCrypt.Net.BCrypt.Verify()`.
+> Le hash n'est jamais compare en clair. C'est le meme algorithme BCrypt que celui utilise cote Laravel
+> avec `password_hash()` et `password_verify()`, ce qui rend les mots de passe interoperables entre les deux applications."
+
+```csharp
+// UtilisateurDAL.cs - Authenticate
+cmd.CommandText = @"
+    SELECT id, nom, prenom, email, role, mot_de_passe
+    FROM utilisateurs
+    WHERE email = @email AND actif = 1 AND role = 'admin'";
+cmd.Parameters.AddWithValue("@email", email);
+
+// ...
+string hash = reader["mot_de_passe"].ToString();
+if (!BCrypt.Net.BCrypt.Verify(motDePasse, hash))
+    return null;
+```
+
+> "Cote securite, il y a plusieurs choses a noter :
+> - La requete SQL est parametree (`@email`) -- protection contre l'injection SQL.
+> - Le mot de passe n'est jamais stocke en clair, uniquement le hash BCrypt.
+> - Le message d'erreur est generique ('Email ou mot de passe incorrect') -- on ne dit jamais a l'attaquant
+>   si c'est l'email ou le mot de passe qui est faux.
+> - Les exceptions sont capturees mais le detail technique (`ex.Message`) n'est affiche
+>   qu'en mode Debug, jamais expose a l'utilisateur final."
+
+> "Le modele `Utilisateur` est une classe POCO simple avec des proprietes auto-implementees.
+> Le `ToString()` est surcharge pour afficher 'Prenom Nom (Role)' -- c'est ce qu'on voit dans la barre de statut
+> en bas de l'ecran principal une fois connecte."
+
+```csharp
+// Utilisateur.cs
+public class Utilisateur
+{
+    public int    Id      { get; set; }
+    public string Nom     { get; set; }
+    public string Prenom  { get; set; }
+    public string Email   { get; set; }
+    public string Role    { get; set; }
+
+    public override string ToString() => $"{Prenom} {Nom} ({Role})";
+}
+```
+
+#### Questions probables
+
+**Q : Pourquoi utiliser BCrypt et pas un simple hash SHA-256 ?**
+> "SHA-256 est un hash rapide, concu pour la performance. BCrypt est un hash lent par conception --
+> il inclut un facteur de cout (salt rounds) qui le rend resistant aux attaques par force brute.
+> Meme si un attaquant vole la base de donnees, il lui faudrait des annees pour casser un mot de passe BCrypt
+> alors que SHA-256 peut etre attaque en quelques secondes avec un GPU moderne."
+
+**Q : Comment le mot de passe est interoperable entre C# et Laravel ?**
+> "BCrypt est un standard ouvert. La librairie `BCrypt.Net-Next` en C# et la fonction `password_hash()` de PHP
+> produisent des hash au meme format `$2y$...` avec le meme algorithme. Un hash cree par PHP peut etre verifie
+> par C# et vice-versa. C'est pour ca que j'ai choisi BCrypt plutot qu'un algorithme proprietaire."
+
+**Q : Que se passe-t-il si la base de donnees n'est pas disponible ?**
+> "Le bloc `try/catch` dans `FrmLogin` capture toute exception de connexion.
+> L'utilisateur voit un message generique 'Erreur de connexion a la base de donnees',
+> et le detail technique est ecrit dans la fenetre Debug de Visual Studio. En production,
+> on remplacerait ca par un logger comme Serilog ou NLog."
+
+**Q : Pourquoi `ShowDialog()` plutot que `Show()` ?**
+> "ShowDialog ouvre le formulaire en mode modal et bloque l'execution jusqu'a sa fermeture.
+> Ca garantit que `Program.Main` ne continue pas tant que le login n'est pas termine.
+> Avec `Show()`, l'application continuerait sans attendre l'authentification."
+
+---
+
 ## ETAPE 1 -- Creation de l'infrastructure (Stock, Activite, Contexte, Niveaux)
 
 > **Criteres d'examen couverts** : C# syntaxe, POO (classes, encapsulation, heritage), formulaires modaux, DialogResult, INSERT, validation, unicite

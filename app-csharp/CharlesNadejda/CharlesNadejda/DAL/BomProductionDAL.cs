@@ -189,7 +189,7 @@ namespace CharlesNadejda.DAL
         /// </summary>
         private static List<BomManque> SimulerLignes(List<BomFicheLigne> lignes, decimal quantiteCible)
         {
-            var résultat = new List<BomManque>();
+            var resultat = new List<BomManque>();
             decimal multiplicateur = quantiteCible;
 
             foreach (var ligne in lignes)
@@ -213,7 +213,7 @@ namespace CharlesNadejda.DAL
                         : 0;
                 }
 
-                résultat.Add(new BomManque
+                resultat.Add(new BomManque
                 {
                     NomInput           = ligne.NomInput,
                     Unite              = ligne.UniteMesureInput,
@@ -221,7 +221,7 @@ namespace CharlesNadejda.DAL
                     QuantiteDisponible = qteDisponible
                 });
             }
-            return résultat;
+            return resultat;
         }
 
         // ── Exécution de production ───────────────────────────────────────

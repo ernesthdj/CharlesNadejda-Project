@@ -9,7 +9,7 @@ namespace CharlesNadejda.DAL
     {
         private const string SELECT_HEADER = @"
             SELECT f.id, f.id_niveau, f.nom, f.description,
-                   f.unite_output, f.quantite_output, f.temps_preparation, f.actif, f.date_creation,
+                   f.unite_output, f.quantite_output, f.temps_preparation, f.stock_cible, f.actif, f.date_creation,
                    n.nom AS nom_niveau, n.ordre AS ordre_niveau,
                    c.id  AS id_contexte, c.nom AS nom_contexte, c.id_activite,
                    a.nom AS nom_activite
@@ -111,8 +111,8 @@ namespace CharlesNadejda.DAL
                         cmd.Transaction = tx;
                         cmd.CommandText = @"
                             INSERT INTO bom_fiches
-                                (id_niveau, nom, description, unite_output, quantite_output, temps_preparation, actif)
-                            VALUES (@idNiveau, @nom, @desc, @unite, @qte, @temps, 1)";
+                                (id_niveau, nom, description, unite_output, quantite_output, temps_preparation, stock_cible, actif)
+                            VALUES (@idNiveau, @nom, @desc, @unite, @qte, @temps, @stockCible, 1)";
                         BindHeader(cmd, f);
                         cmd.ExecuteNonQuery();
                         idFiche = (int)cmd.LastInsertedId;
@@ -139,7 +139,8 @@ namespace CharlesNadejda.DAL
                         cmd.CommandText = @"
                             UPDATE bom_fiches
                             SET id_niveau=@idNiveau, nom=@nom, description=@desc,
-                                unite_output=@unite, quantite_output=@qte, temps_preparation=@temps
+                                unite_output=@unite, quantite_output=@qte, temps_preparation=@temps,
+                                stock_cible=@stockCible
                             WHERE id=@id";
                         BindHeader(cmd, f);
                         cmd.Parameters.AddWithValue("@id", f.Id);
@@ -188,7 +189,27 @@ namespace CharlesNadejda.DAL
             using (var conn = DbHelper.GetConnection())
             using (var cmd = conn.CreateCommand())
             {
+                // Vérifier si cette fiche est consommée par des fiches de niveau supérieur
+                cmd.CommandText = @"
+                    SELECT COUNT(*) FROM bom_fiches_lignes
+                    WHERE id_input_fiche = @id";
+                cmd.Parameters.AddWithValue("@id", id);
+                int nbRef = Convert.ToInt32(cmd.ExecuteScalar());
+                if (nbRef > 0)
+                    throw new InvalidOperationException(
+                        $"Impossible de supprimer : cette fiche est référencée dans {nbRef} fiche(s) de niveau supérieur.");
+
+                // Vérifier les productions existantes
+                cmd.CommandText = "SELECT COUNT(*) FROM bom_productions WHERE id_fiche = @id";
+                cmd.Parameters.Clear();
+                cmd.Parameters.AddWithValue("@id", id);
+                int nbProd = Convert.ToInt32(cmd.ExecuteScalar());
+                if (nbProd > 0)
+                    throw new InvalidOperationException(
+                        $"Impossible de supprimer : {nbProd} production(s) enregistrée(s) avec cette fiche.");
+
                 cmd.CommandText = "DELETE FROM bom_fiches WHERE id = @id";
+                cmd.Parameters.Clear();
                 cmd.Parameters.AddWithValue("@id", id);
                 cmd.ExecuteNonQuery();
             }
@@ -223,6 +244,7 @@ namespace CharlesNadejda.DAL
                 UniteOutput      = source.UniteOutput,
                 QuantiteOutput   = source.QuantiteOutput,
                 TempsPreparation = source.TempsPreparation,
+                StockCible       = source.StockCible,
                 Lignes           = source.Lignes   // Insert() réinsère chaque ligne
             };
             return Insert(copie);
@@ -266,6 +288,7 @@ namespace CharlesNadejda.DAL
             cmd.Parameters.AddWithValue("@unite",    f.UniteOutput ?? "piece");
             cmd.Parameters.AddWithValue("@qte",      f.QuantiteOutput);
             cmd.Parameters.AddWithValue("@temps",    f.TempsPreparation.HasValue ? (object)f.TempsPreparation.Value : DBNull.Value);
+            cmd.Parameters.AddWithValue("@stockCible", f.StockCible.HasValue ? (object)f.StockCible.Value : DBNull.Value);
         }
 
         private static BomFiche MapHeader(MySqlDataReader r) => new BomFiche
@@ -277,6 +300,7 @@ namespace CharlesNadejda.DAL
             UniteOutput      = r["unite_output"].ToString(),
             QuantiteOutput   = (decimal)r["quantite_output"],
             TempsPreparation = r["temps_preparation"] == DBNull.Value ? (int?)null : (int)r["temps_preparation"],
+            StockCible       = r["stock_cible"] == DBNull.Value ? (decimal?)null : (decimal)r["stock_cible"],
             Actif            = Convert.ToBoolean(r["actif"]),
             DateCreation     = (DateTime)r["date_creation"],
             NomNiveau        = r["nom_niveau"].ToString(),

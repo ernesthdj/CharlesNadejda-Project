@@ -282,16 +282,9 @@ namespace CharlesNadejda.Forms
         /// Utilisé pour désactiver le bouton Supprimer et afficher un ToolTip explicatif.
         /// La protection réelle est aussi dans StockDAL.Delete() — double filet de sécurité.
         /// </summary>
-        /// <summary>
-        /// Vérifie si le stock contient des fiches d'ingrédients ou des lots actifs.
-        /// La protection réelle est dans StockDAL.Delete() (lève InvalidOperationException).
-        /// Ce helper retourne false par défaut — le bouton Supprimer est actif mais la suppression
-        /// sera bloquée par la DAL si nécessaire (Nielsen #5 : prévention d'erreur sans sur-blocage UI).
-        /// Amélioration future : implémenter StockDAL.ContientDonnees(id) sans lever d'exception.
-        /// </summary>
         private bool StockContientDonnees(int idStock)
         {
-            return false;
+            return StockDAL.ContientDonnees(idStock);
         }
 
         // ── Liaison M:N : ItemCheck → INSERT ou DELETE immédiat ──────────

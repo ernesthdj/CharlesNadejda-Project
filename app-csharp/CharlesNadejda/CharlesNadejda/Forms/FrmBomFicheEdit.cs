@@ -121,7 +121,7 @@ namespace CharlesNadejda.Forms
             txtDescription = new TextBox
             {
                 Font = font, Location = new Point(12, 158),
-                Size = new Size(432, 50), Multiline = true, TabIndex = 5
+                Size = new Size(432, 50), Multiline = true, TabIndex = 1
             };
             Controls.Add(txtDescription);
 
@@ -167,8 +167,7 @@ namespace CharlesNadejda.Forms
                 DropDownStyle = ComboBoxStyle.DropDownList,
                 Font = fontS, Location = new Point(470, 47), Size = new Size(80, 24), TabIndex = 9
             };
-            cboUniteLigne.Items.AddRange(new object[] { "piece", "kg", "g", "l", "ml", "cl" });
-            cboUniteLigne.SelectedIndex = 0;
+            // Unités remplies dynamiquement par SynchroniserUniteInput()
             grpLignes.Controls.Add(cboUniteLigne);
 
             var btnAjouterLigne = new Button

@@ -173,6 +173,27 @@ namespace CharlesNadejda.DAL
             return list;
         }
 
+        /// <summary>
+        /// Vérifie si le stock contient des fiches d'ingrédients ou des lots actifs.
+        /// Retourne true si la suppression doit être bloquée.
+        /// </summary>
+        public static bool ContientDonnees(int idStock)
+        {
+            using (var conn = DbHelper.GetConnection())
+            using (var cmd = conn.CreateCommand())
+            {
+                cmd.CommandText = @"
+                    SELECT
+                        (SELECT COUNT(*) FROM fiches_ingredients WHERE id_stock = @id) +
+                        (SELECT COUNT(*) FROM lots_ingredients li
+                         INNER JOIN fiches_ingredients fi ON fi.id = li.id_fiche_ingredient
+                         WHERE fi.id_stock = @id AND li.quantite_disponible > 0)
+                    AS total";
+                cmd.Parameters.AddWithValue("@id", idStock);
+                return Convert.ToInt32(cmd.ExecuteScalar()) > 0;
+            }
+        }
+
         private static void Bind(MySqlCommand cmd, Stock s)
         {
             cmd.Parameters.AddWithValue("@nom",  s.Nom);

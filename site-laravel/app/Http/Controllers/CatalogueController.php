@@ -10,7 +10,8 @@ class CatalogueController extends Controller
     public function index()
     {
         $query = ProduitWeb::where('en_vente', 1)
-            ->with('categorie');
+            ->with('categorie')
+            ->withStockDisponible();
 
         // Filtre par catégorie
         if (request('categorie')) {

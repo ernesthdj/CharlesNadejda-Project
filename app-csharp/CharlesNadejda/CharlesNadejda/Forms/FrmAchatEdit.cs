@@ -18,6 +18,7 @@ namespace CharlesNadejda.Forms
         private readonly Lot        _lot;
         private readonly bool       _isEdit;
         private readonly int        _idActivite;
+        private readonly int        _idIngredientPreselect;
         private          Ingredient _ingredientSelectionne;
 
         private readonly ComboBox       cmbIngredient;
@@ -40,11 +41,12 @@ namespace CharlesNadejda.Forms
         private readonly DateTimePicker dtpPeremption;
         private readonly TextBox        txtNotes;
 
-        public FrmAchatEdit(Lot lot, int idActivite = 0)
+        public FrmAchatEdit(Lot lot, int idActivite = 0, int idIngredientPreselect = 0)
         {
-            _isEdit     = lot != null;
-            _lot        = lot ?? new Lot();
-            _idActivite = idActivite;
+            _isEdit                = lot != null;
+            _lot                   = lot ?? new Lot();
+            _idActivite            = idActivite;
+            _idIngredientPreselect = idIngredientPreselect;
 
             var font     = new Font("Segoe UI", 10F);
             var fontBold = new Font("Segoe UI", 10F, FontStyle.Bold);
@@ -104,7 +106,7 @@ namespace CharlesNadejda.Forms
             nudQuantite = new NumericUpDown
             {
                 Font = font, Location = new Point(lx, 208), Size = new Size(120, 26),
-                DecimalPlaces = 3, Minimum = 0, Maximum = 99999, TabIndex = tab++
+                DecimalPlaces = 3, Minimum = 0.001m, Maximum = 99999, TabIndex = tab++
             };
             nudQuantite.ValueChanged += (s, e) => MajPrix();
             Controls.Add(nudQuantite);
@@ -238,6 +240,8 @@ namespace CharlesNadejda.Forms
             cmbIngredient.DataSource    = ingredients;
             cmbIngredient.DisplayMember = "Nom";
             cmbIngredient.ValueMember   = "Id";
+            if (_idIngredientPreselect > 0)
+                cmbIngredient.SelectedValue = _idIngredientPreselect;
             if (ingredients.Count > 0) MajUniteIngredient();
         }
 

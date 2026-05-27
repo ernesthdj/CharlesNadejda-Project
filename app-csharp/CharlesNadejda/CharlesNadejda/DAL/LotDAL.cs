@@ -127,7 +127,19 @@ namespace CharlesNadejda.DAL
             using (var conn = DbHelper.GetConnection())
             using (var cmd = conn.CreateCommand())
             {
+                // Vérifier si le lot a été partiellement consommé (traçabilité)
+                cmd.CommandText = @"
+                    SELECT quantite_initiale - quantite_disponible AS consomme
+                    FROM lots_ingredients WHERE id = @id";
+                cmd.Parameters.AddWithValue("@id", id);
+                var result = cmd.ExecuteScalar();
+                if (result != null && Convert.ToDecimal(result) > 0)
+                    throw new InvalidOperationException(
+                        "Impossible de supprimer : ce lot a été partiellement consommé en production.\n" +
+                        "Les données de traçabilité seraient perdues.");
+
                 cmd.CommandText = "DELETE FROM lots_ingredients WHERE id = @id";
+                cmd.Parameters.Clear();
                 cmd.Parameters.AddWithValue("@id", id);
                 cmd.ExecuteNonQuery();
             }

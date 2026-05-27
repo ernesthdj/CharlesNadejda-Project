@@ -138,7 +138,30 @@ namespace CharlesNadejda.DAL
             using (var conn = DbHelper.GetConnection())
             using (var cmd = conn.CreateCommand())
             {
+                // Vérifier les productions existantes
+                cmd.CommandText = @"
+                    SELECT COUNT(*) FROM bom_productions p
+                    INNER JOIN bom_niveaux n ON n.id = p.id_niveau
+                    WHERE n.id_contexte = @id";
+                cmd.Parameters.AddWithValue("@id", id);
+                int nbProd = Convert.ToInt32(cmd.ExecuteScalar());
+                if (nbProd > 0)
+                    throw new InvalidOperationException(
+                        $"Impossible de supprimer : {nbProd} production(s) enregistrée(s) dans ce contexte.");
+
+                // Vérifier les stocks BOM existants
+                cmd.CommandText = @"
+                    SELECT COUNT(*) FROM bom_stocks
+                    WHERE id_contexte = @id AND quantite_disponible > 0";
+                cmd.Parameters.Clear();
+                cmd.Parameters.AddWithValue("@id", id);
+                int nbStocks = Convert.ToInt32(cmd.ExecuteScalar());
+                if (nbStocks > 0)
+                    throw new InvalidOperationException(
+                        $"Impossible de supprimer : {nbStocks} entrée(s) de stock actives dans ce contexte.");
+
                 cmd.CommandText = "DELETE FROM bom_contextes WHERE id = @id";
+                cmd.Parameters.Clear();
                 cmd.Parameters.AddWithValue("@id", id);
                 cmd.ExecuteNonQuery();
             }

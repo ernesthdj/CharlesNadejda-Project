@@ -135,7 +135,29 @@ namespace CharlesNadejda.DAL
             using (var conn = DbHelper.GetConnection())
             using (var cmd = conn.CreateCommand())
             {
+                // Vérifier les lots actifs
+                cmd.CommandText = @"
+                    SELECT COUNT(*) FROM lots_ingredients
+                    WHERE id_fiche_ingredient = @id AND quantite_disponible > 0";
+                cmd.Parameters.AddWithValue("@id", id);
+                int nbLots = Convert.ToInt32(cmd.ExecuteScalar());
+                if (nbLots > 0)
+                    throw new InvalidOperationException(
+                        $"Impossible de supprimer : {nbLots} lot(s) avec du stock disponible.");
+
+                // Vérifier les références dans les fiches BOM
+                cmd.CommandText = @"
+                    SELECT COUNT(*) FROM bom_fiches_lignes
+                    WHERE id_input_ingredient = @id";
+                cmd.Parameters.Clear();
+                cmd.Parameters.AddWithValue("@id", id);
+                int nbLignes = Convert.ToInt32(cmd.ExecuteScalar());
+                if (nbLignes > 0)
+                    throw new InvalidOperationException(
+                        $"Impossible de supprimer : cet ingrédient est utilisé dans {nbLignes} fiche(s) BOM.");
+
                 cmd.CommandText = "DELETE FROM fiches_ingredients WHERE id = @id";
+                cmd.Parameters.Clear();
                 cmd.Parameters.AddWithValue("@id", id);
                 cmd.ExecuteNonQuery();
             }

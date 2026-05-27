@@ -492,8 +492,7 @@ namespace CharlesNadejda.Forms
             {
                 if (idFiche > 0)
                 {
-                    var fiches = IngredientDAL.GetAll();
-                    fiche = fiches.FirstOrDefault(i => i.Id == idFiche);
+                    fiche = IngredientDAL.GetById(idFiche);
                     lots = LotDAL.GetByFicheIngredient(idFiche);
                 }
             }

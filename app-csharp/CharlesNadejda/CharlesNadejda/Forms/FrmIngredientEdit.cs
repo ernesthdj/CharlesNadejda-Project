@@ -1,6 +1,5 @@
 using System;
 using System.Drawing;
-using System.Globalization;
 using System.Windows.Forms;
 using CharlesNadejda.DAL;
 using CharlesNadejda.Models;
@@ -18,7 +17,7 @@ namespace CharlesNadejda.Forms
 
         private readonly TextBox       txtNom;
         private readonly TextBox       txtMarque;
-        private readonly TextBox       txtSeuil;
+        private readonly NumericUpDown nudSeuil;
         private readonly NumericUpDown nudStockCible;
         private readonly ComboBox      cmbUnite;
         private readonly ComboBox      cmbTypePhysique;
@@ -129,8 +128,12 @@ namespace CharlesNadejda.Forms
             });
 
             // ── Ligne 6 — Seuil alerte ────────────────────────────────────
-            txtSeuil = new TextBox();
-            AddField("Seuil alerte stock", txtSeuil, lx, 262, wL);
+            nudSeuil = new NumericUpDown
+            {
+                DecimalPlaces = 4, Minimum = 0,
+                Maximum = new decimal(new[] { 999999, 0, 0, 0 }), Value = 0
+            };
+            AddField("Seuil alerte stock", nudSeuil, lx, 262, wL);
             nudStockCible = new NumericUpDown
             {
                 DecimalPlaces = 0, Minimum = 0,
@@ -154,8 +157,8 @@ namespace CharlesNadejda.Forms
 
         private void FrmIngredientEdit_Load(object sender, EventArgs e)
         {
-            FormHelper.ActiverPointDecimal(nudPrix, nudQteConditionnement, nudDensite, nudStockCible);
-            FormHelper.ActiverSelectionAuFocus(nudPrix, nudQteConditionnement, nudDensite, nudStockCible);
+            FormHelper.ActiverPointDecimal(nudPrix, nudQteConditionnement, nudDensite, nudStockCible, nudSeuil);
+            FormHelper.ActiverSelectionAuFocus(nudPrix, nudQteConditionnement, nudDensite, nudStockCible, nudSeuil);
             Text = _isEdit ? "Modifier la fiche ingrédient" : "Nouvelle fiche ingrédient";
 
             cmbTypePhysique.Items.AddRange(new object[] { "solide", "liquide", "poudre", "piece" });
@@ -176,7 +179,10 @@ namespace CharlesNadejda.Forms
                 foreach (var f in fournisseurs) cmbFournisseur.Items.Add(f);
                 cmbFournisseur.DisplayMember = "Nom";
             }
-            catch { }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine("Chargement fournisseurs : " + ex.Message);
+            }
 
             if (_isEdit)
             {
@@ -186,8 +192,8 @@ namespace CharlesNadejda.Forms
                 cmbTypePhysique.SelectedItem = _ing.TypePhysique ?? "solide";
                 nudPrix.Value                = _ing.PrixAchatReference;
                 nudQteConditionnement.Value  = _ing.QteParConditionnement > 0 ? _ing.QteParConditionnement : 1m;
-                txtSeuil.Text = _ing.SeuilAlerteStock.HasValue
-                    ? _ing.SeuilAlerteStock.Value.ToString("F4") : "";
+                if (_ing.SeuilAlerteStock.HasValue)
+                    nudSeuil.Value = _ing.SeuilAlerteStock.Value;
                 if (_ing.StockCible.HasValue && _ing.QteParConditionnement > 0)
                     nudStockCible.Value = Math.Round(_ing.StockCible.Value / _ing.QteParConditionnement);
                 else
@@ -265,11 +271,7 @@ namespace CharlesNadejda.Forms
 
         protected override void Sauvegarder()
         {
-            decimal? seuil = null;
-            if (!string.IsNullOrWhiteSpace(txtSeuil.Text)
-                && decimal.TryParse(txtSeuil.Text.Replace(',', '.'),
-                    NumberStyles.Any, CultureInfo.InvariantCulture, out decimal s))
-                seuil = s;
+            decimal? seuil = nudSeuil.Value > 0 ? (decimal?)nudSeuil.Value : null;
 
             decimal? stockCible = null;
             if (nudStockCible.Value > 0)
