@@ -52,44 +52,30 @@ namespace CharlesNadejda.Forms
 
         protected override void ConfigurerColonnes()
         {
-            CacherColonnes("Id", "IdFournisseurDefaut", "IdStock", "Actif",
-                           "Description", "EstEnAlerte", "Marque",
-                           "SeuilAlerteStock", "NomFournisseur",
-                           "QteParConditionnement", "PrixParUniteBase");
+            CacherColonnes("Id", "IdFournisseurDefaut", "Actif",
+                           "EstEnAlerte", "Marque",
+                           "SeuilAlerteStock",
+                           "QteParConditionnement", "PrixParUniteBase",
+                           "StockActuel", "PrixAchatReference",
+                           "UniteMesure");
 
             ConfigCol("Nom",                  "Ingrédient",       180, 120);
             ConfigCol("ConditionnementLabel", "Conditionnement",  140,  90);
-            ConfigCol("StockNom",             "Stock (lieu)",     110,  75);
             ConfigCol("TypePhysique",         "Type physique",     90,  65);
             ConfigCol("Densite",              "Densité",           70,  55);
-            ConfigCol("StockActuel",          "Dispo",             90,  70);
-            ConfigCol("PrixAchatReference",   "€/cond.",           80,  65);
+            ConfigCol("NomFournisseur",       "Fournisseur",      140,  90);
+            ConfigCol("Description",          "Description",      180, 100);
 
-            CacherColonnes("UniteMesure");
-
-            dgv.CellFormatting += (s, ev) =>
-            {
-                if (ev.RowIndex < 0) return;
-                var col = dgv.Columns[ev.ColumnIndex];
-                if (col.Name == "StockActuel" && dgv.Rows[ev.RowIndex].DataBoundItem is Ingredient ing)
-                    ev.Value = UnitConvertisseur.FormatQte(ing.StockActuel, ing.UniteMesure);
-                else if (col.Name == "PrixAchatReference" && dgv.Rows[ev.RowIndex].DataBoundItem is Ingredient ing2)
-                    ev.Value = UnitConvertisseur.FormatPrix(ing2.PrixAchatReference);
-            };
-
-            // Ordre d'affichage des colonnes
-            string[] ordre = { "Nom", "StockActuel",
-                                "PrixAchatReference", "StockNom", "ConditionnementLabel",
-                                "TypePhysique", "Densite" };
+            // Ordre d'affichage
+            string[] ordre = { "Nom", "ConditionnementLabel", "TypePhysique",
+                                "Densite", "NomFournisseur", "Description" };
             for (int i = 0; i < ordre.Length; i++)
                 if (dgv.Columns[ordre[i]] != null)
                     dgv.Columns[ordre[i]].DisplayIndex = i;
         }
 
         protected override Form OuvrirFormulaire(Ingredient element)
-            => element == null
-                ? new FrmIngredientEdit(null, _stockFiltre)
-                : new FrmIngredientEdit(element);
+            => new FrmIngredientEdit(element);
 
         protected override void Supprimer(Ingredient element)
             => IngredientDAL.Delete(element.Id);

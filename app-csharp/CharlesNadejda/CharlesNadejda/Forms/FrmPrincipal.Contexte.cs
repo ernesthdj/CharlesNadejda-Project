@@ -254,7 +254,10 @@ namespace CharlesNadejda.Forms
             if (_btnGererFiches != null)
                 _btnGererFiches.Enabled = true;
             if (_btnAchatRapide != null)
+            {
                 _btnAchatRapide.Visible = niv.Ordre == 1;
+                _btnAchatRapide.Enabled = niv.Ordre == 1;
+            }
             ChargerStockNiveau(niv);
         }
 

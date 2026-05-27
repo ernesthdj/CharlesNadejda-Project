@@ -39,6 +39,7 @@ namespace CharlesNadejda.Forms
         private readonly DateTimePicker dtpDateAchat;
         private readonly CheckBox       chkPeremption;
         private readonly DateTimePicker dtpPeremption;
+        private readonly ComboBox       cmbStock;
         private readonly TextBox        txtNotes;
 
         public FrmAchatEdit(Lot lot, int idActivite = 0, int idIngredientPreselect = 0)
@@ -96,16 +97,25 @@ namespace CharlesNadejda.Forms
             };
             Controls.Add(cmbFournisseur);
 
+            // ── Stock (lieu de rangement) ────────────────────────────────
+            AddLabel("Stock (lieu) *", lx, 128);
+            cmbStock = new ComboBox
+            {
+                Font = font, Location = new Point(lx, 150), Size = new Size(w, 26),
+                DropDownStyle = ComboBoxStyle.DropDownList, TabIndex = tab++
+            };
+            Controls.Add(cmbStock);
+
             // ── N° lot ────────────────────────────────────────────────────
-            AddLabel("N° lot (facultatif)", lx, 128);
-            txtNumeroLot = new TextBox { Font = font, Location = new Point(lx, 150), Size = new Size(200, 26), TabIndex = tab++ };
+            AddLabel("N° lot (facultatif)", lx, 186);
+            txtNumeroLot = new TextBox { Font = font, Location = new Point(lx, 208), Size = new Size(200, 26), TabIndex = tab++ };
             Controls.Add(txtNumeroLot);
 
             // ── Quantité ──────────────────────────────────────────────────
-            AddLabel("Nombre de conditionnements *", lx, 186);
+            AddLabel("Nombre de conditionnements *", lx, 244);
             nudQuantite = new NumericUpDown
             {
-                Font = font, Location = new Point(lx, 208), Size = new Size(120, 26),
+                Font = font, Location = new Point(lx, 266), Size = new Size(120, 26),
                 DecimalPlaces = 3, Minimum = 0.001m, Maximum = 99999, TabIndex = tab++
             };
             nudQuantite.ValueChanged += (s, e) => MajPrix();
@@ -115,14 +125,14 @@ namespace CharlesNadejda.Forms
             {
                 AutoSize = false, Font = new Font("Segoe UI", 9F, FontStyle.Italic),
                 ForeColor = Color.FromArgb(60, 110, 60),
-                Location = new Point(lx, 236), Size = new Size(w, 20), Text = "—"
+                Location = new Point(lx, 294), Size = new Size(w, 20), Text = "—"
             };
             Controls.Add(lblUnite);
 
             // ── GroupBox prix ─────────────────────────────────────────────
             var grp = new GroupBox
             {
-                Font = font, Location = new Point(12, 262), Size = new Size(390, 120),
+                Font = font, Location = new Point(12, 320), Size = new Size(390, 120),
                 Text = "Saisie du prix (€ par conditionnement)"
             };
             Controls.Add(grp);
@@ -158,30 +168,30 @@ namespace CharlesNadejda.Forms
             grp.Controls.Add(lblPrixTvac);
 
             // ── Totaux ────────────────────────────────────────────────────
-            lblTotalHtva = new Label { AutoSize = true, Font = fontBold, ForeColor = Color.FromArgb(30, 110, 30), Location = new Point(lx, 395), Text = "Total HTVA : — €" };
-            lblTotalTvac = new Label { AutoSize = true, Font = fontBold, ForeColor = Color.FromArgb(180, 80, 10), Location = new Point(215, 395), Text = "Total TVAC : — €" };
+            lblTotalHtva = new Label { AutoSize = true, Font = fontBold, ForeColor = Color.FromArgb(30, 110, 30), Location = new Point(lx, 453), Text = "Total HTVA : — €" };
+            lblTotalTvac = new Label { AutoSize = true, Font = fontBold, ForeColor = Color.FromArgb(180, 80, 10), Location = new Point(215, 453), Text = "Total TVAC : — €" };
             Controls.Add(lblTotalHtva);
             Controls.Add(lblTotalTvac);
 
             // ── Réf. facture ──────────────────────────────────────────────
-            AddLabel("Réf. facture", lx, 425);
-            txtRefFacture = new TextBox { Font = font, Location = new Point(lx, 447), Size = new Size(200, 26), TabIndex = tab++ };
+            AddLabel("Réf. facture", lx, 483);
+            txtRefFacture = new TextBox { Font = font, Location = new Point(lx, 505), Size = new Size(200, 26), TabIndex = tab++ };
             Controls.Add(txtRefFacture);
 
             // ── Date achat ────────────────────────────────────────────────
-            AddLabel("Date achat *", lx, 483);
+            AddLabel("Date achat *", lx, 541);
             dtpDateAchat = new DateTimePicker
             {
-                Font = font, Location = new Point(lx, 505), Size = new Size(180, 26),
+                Font = font, Location = new Point(lx, 563), Size = new Size(180, 26),
                 Format = DateTimePickerFormat.Short, TabIndex = tab++
             };
             Controls.Add(dtpDateAchat);
 
             // ── Péremption ────────────────────────────────────────────────
-            chkPeremption = new CheckBox { Font = font, Location = new Point(lx, 542), AutoSize = true, Text = "Date de péremption", TabIndex = tab++ };
+            chkPeremption = new CheckBox { Font = font, Location = new Point(lx, 600), AutoSize = true, Text = "Date de péremption", TabIndex = tab++ };
             dtpPeremption = new DateTimePicker
             {
-                Font = font, Location = new Point(lx, 566), Size = new Size(180, 26),
+                Font = font, Location = new Point(lx, 624), Size = new Size(180, 26),
                 Format = DateTimePickerFormat.Short, Enabled = false, TabIndex = tab++
             };
             chkPeremption.CheckedChanged += (s, e) =>
@@ -194,15 +204,15 @@ namespace CharlesNadejda.Forms
             Controls.Add(dtpPeremption);
 
             // ── Notes ─────────────────────────────────────────────────────
-            AddLabel("Notes", lx, 602);
+            AddLabel("Notes", lx, 660);
             txtNotes = new TextBox
             {
-                Font = font, Location = new Point(lx, 624), Size = new Size(w, 50),
+                Font = font, Location = new Point(lx, 682), Size = new Size(w, 50),
                 Multiline = true, TabIndex = tab++
             };
             Controls.Add(txtNotes);
 
-            PositionnerBoutons(685);
+            PositionnerBoutons(743);
 
             FormHelper.ActiverPointDecimal(nudQuantite, nudPrix, nudTvaPct);
             FormHelper.ActiverSelectionAuFocus(nudQuantite, nudPrix, nudTvaPct);
@@ -224,6 +234,12 @@ namespace CharlesNadejda.Forms
                 cmbFournisseur.DisplayMember = "Nom";
                 cmbFournisseur.SelectedIndex = 0;
 
+                // Charger les stocks physiques
+                var stocks = StockDAL.GetAll();
+                foreach (var s in stocks) cmbStock.Items.Add(s);
+                cmbStock.DisplayMember = "Nom";
+                if (cmbStock.Items.Count > 0) cmbStock.SelectedIndex = 0;
+
                 if (_isEdit) PreremplirEdition();
                 else         ChargerIngredients();
             }
@@ -236,7 +252,7 @@ namespace CharlesNadejda.Forms
 
         private void ChargerIngredients()
         {
-            var ingredients = IngredientDAL.GetAll(idActivite: _idActivite);
+            var ingredients = IngredientDAL.GetAll();
             cmbIngredient.DataSource    = ingredients;
             cmbIngredient.DisplayMember = "Nom";
             cmbIngredient.ValueMember   = "Id";
@@ -276,6 +292,14 @@ namespace CharlesNadejda.Forms
                     if (cmbFournisseur.Items[i] is Fournisseur f && f.Id == _lot.IdFournisseur.Value)
                     { cmbFournisseur.SelectedIndex = i; break; }
                 }
+            }
+
+            // Pré-sélectionner le stock du lot
+            if (_lot.IdStock > 0)
+            {
+                foreach (var item in cmbStock.Items)
+                    if (item is Stock s && s.Id == _lot.IdStock)
+                    { cmbStock.SelectedItem = item; break; }
             }
 
             MajPrix();
@@ -363,6 +387,9 @@ namespace CharlesNadejda.Forms
             if (nudPrix.Value <= 0)
             { errorProvider.SetError(nudPrix, "Prix invalide."); ok = false; }
 
+            if (cmbStock.SelectedItem == null)
+            { errorProvider.SetError(cmbStock, "Choisissez un stock."); ok = false; }
+
             return ok;
         }
 
@@ -379,6 +406,8 @@ namespace CharlesNadejda.Forms
             Ingredient ing = _isEdit ? null : (cmbIngredient?.SelectedItem as Ingredient);
             decimal qteParCond = ing?.QteParConditionnement ?? _lot.QteParConditionnement;
 
+            var stockSel = (Stock)cmbStock.SelectedItem;
+            _lot.IdStock            = stockSel.Id;
             _lot.NumeroLot          = txtNumeroLot.Text.Trim().NullIfEmpty();
             _lot.IdFournisseur      = cmbFournisseur.SelectedItem is Fournisseur f ? (int?)f.Id : null;
             _lot.DateAchat          = dtpDateAchat.Value;

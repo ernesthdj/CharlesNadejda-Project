@@ -99,19 +99,18 @@ namespace CharlesNadejda.DAL
             using (var conn = DbHelper.GetConnection())
             using (var cmd  = conn.CreateCommand())
             {
-                // Vérification 1 : fiches_ingredients liées
-                cmd.CommandText = "SELECT COUNT(*) FROM fiches_ingredients WHERE id_stock = @id";
+                // Vérification : lots_ingredients liés à ce stock
+                cmd.CommandText = @"SELECT COUNT(*) FROM lots_ingredients WHERE id_stock = @id";
                 cmd.Parameters.AddWithValue("@id", id);
                 int nb = Convert.ToInt32(cmd.ExecuteScalar());
                 if (nb > 0)
                     throw new InvalidOperationException(
-                        $"Impossible de supprimer : ce stock contient {nb} fiche(s) d'ingrédients.\n" +
-                        "Déplacez ou supprimez les ingrédients avant de supprimer le stock.");
+                        $"Impossible de supprimer : ce stock contient {nb} lot(s) d'ingrédients.\n" +
+                        "Déplacez ou supprimez les lots avant de supprimer le stock.");
 
-                // Vérification 2 : lots_ingredients actifs
-                cmd.CommandText = @"SELECT COUNT(*) FROM lots_ingredients li
-                                    INNER JOIN fiches_ingredients fi ON fi.id = li.id_fiche_ingredient
-                                    WHERE fi.id_stock = @id AND li.quantite_disponible > 0";
+                // Vérification 2 : lots avec du stock disponible
+                cmd.CommandText = @"SELECT COUNT(*) FROM lots_ingredients
+                                    WHERE id_stock = @id AND quantite_disponible > 0";
                 cmd.Parameters.Clear();
                 cmd.Parameters.AddWithValue("@id", id);
                 int nbLots = Convert.ToInt32(cmd.ExecuteScalar());
@@ -184,10 +183,9 @@ namespace CharlesNadejda.DAL
             {
                 cmd.CommandText = @"
                     SELECT
-                        (SELECT COUNT(*) FROM fiches_ingredients WHERE id_stock = @id) +
-                        (SELECT COUNT(*) FROM lots_ingredients li
-                         INNER JOIN fiches_ingredients fi ON fi.id = li.id_fiche_ingredient
-                         WHERE fi.id_stock = @id AND li.quantite_disponible > 0)
+                        (SELECT COUNT(*) FROM lots_ingredients WHERE id_stock = @id) +
+                        (SELECT COUNT(*) FROM lots_ingredients
+                         WHERE id_stock = @id AND quantite_disponible > 0)
                     AS total";
                 cmd.Parameters.AddWithValue("@id", idStock);
                 return Convert.ToInt32(cmd.ExecuteScalar()) > 0;

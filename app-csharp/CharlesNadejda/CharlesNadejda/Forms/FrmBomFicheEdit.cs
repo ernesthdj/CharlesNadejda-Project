@@ -256,7 +256,7 @@ namespace CharlesNadejda.Forms
         {
             cboInput.Items.Clear();
 
-            foreach (var ing in IngredientDAL.GetAll(idActivite: _niveau.IdActivite))
+            foreach (var ing in IngredientDAL.GetAll())
                 cboInput.Items.Add(new InputItem
                 {
                     Id = ing.Id, Nom = "[Ingr.]  " + ing.Nom,

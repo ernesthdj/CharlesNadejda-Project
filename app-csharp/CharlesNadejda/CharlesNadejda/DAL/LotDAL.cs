@@ -8,15 +8,17 @@ namespace CharlesNadejda.DAL
     public static class LotDAL
     {
         private const string SELECT_BASE = @"
-            SELECT l.id, l.id_fiche_ingredient, fi.nom AS nom_ingredient,
+            SELECT l.id, l.id_fiche_ingredient, l.id_stock, fi.nom AS nom_ingredient,
                    fi.unite_mesure, fi.conditionnement_label, fi.qte_par_conditionnement,
                    l.nb_conditionnements,
                    l.numero_lot, l.id_fournisseur, f.nom AS nom_fournisseur,
                    l.date_achat, l.date_peremption, l.quantite_initiale,
                    l.quantite_disponible, l.prix_unitaire, l.prix_achat_reel,
-                   l.tva_pct, l.reference_facture, l.notes
+                   l.tva_pct, l.reference_facture, l.notes,
+                   s.nom AS nom_stock
             FROM lots_ingredients l
             INNER JOIN fiches_ingredients fi ON fi.id = l.id_fiche_ingredient
+            INNER JOIN stocks s ON s.id = l.id_stock
             LEFT JOIN fournisseurs f ON f.id = l.id_fournisseur";
 
         /// <summary>idActivite : 0 = tous / filtre via activites_stocks → fiches_ingredients</summary>
@@ -30,7 +32,7 @@ namespace CharlesNadejda.DAL
 
                 if (idActivite > 0)
                 {
-                    cmd.CommandText += @" AND fi.id_stock IN (
+                    cmd.CommandText += @" AND l.id_stock IN (
                         SELECT id_stock FROM activites_stocks WHERE id_activite = @idActivite)";
                     cmd.Parameters.AddWithValue("@idActivite", idActivite);
                 }
@@ -79,11 +81,11 @@ namespace CharlesNadejda.DAL
             {
                 cmd.CommandText = @"
                     INSERT INTO lots_ingredients
-                        (id_fiche_ingredient, nb_conditionnements,
+                        (id_fiche_ingredient, id_stock, nb_conditionnements,
                          numero_lot, id_fournisseur, date_achat,
                          date_peremption, quantite_initiale, quantite_disponible,
                          prix_unitaire, prix_achat_reel, tva_pct, reference_facture, notes)
-                    VALUES (@idFi, @nbCond,
+                    VALUES (@idFi, @idStock, @nbCond,
                             @numeroLot, @idFourn, @dateAchat, @datePer,
                             @qteInit, @qteInit, @prixUnit, @prixTotal, @tvaPct, @refFact, @notes)";
 
@@ -102,6 +104,7 @@ namespace CharlesNadejda.DAL
                 cmd.CommandText = @"
                     UPDATE lots_ingredients SET
                         id_fiche_ingredient = @idFi,
+                        id_stock            = @idStock,
                         nb_conditionnements = @nbCond,
                         numero_lot          = @numeroLot,
                         id_fournisseur      = @idFourn,
@@ -150,6 +153,7 @@ namespace CharlesNadejda.DAL
         private static void Bind(MySqlCommand cmd, Lot lot)
         {
             cmd.Parameters.AddWithValue("@idFi",      lot.IdFicheIngredient);
+            cmd.Parameters.AddWithValue("@idStock",   lot.IdStock);
             cmd.Parameters.AddWithValue("@nbCond",    lot.NbConditionnements);
             cmd.Parameters.AddWithValue("@numeroLot", lot.NumeroLot       ?? (object)DBNull.Value);
             cmd.Parameters.AddWithValue("@idFourn",   lot.IdFournisseur.HasValue ? (object)lot.IdFournisseur.Value : DBNull.Value);
@@ -167,6 +171,8 @@ namespace CharlesNadejda.DAL
         {
             Id                    = (int)r["id"],
             IdFicheIngredient     = (int)r["id_fiche_ingredient"],
+            IdStock               = (int)r["id_stock"],
+            StockNom              = r["nom_stock"].ToString(),
             NomIngredient         = r["nom_ingredient"].ToString(),
             UniteMesure           = r["unite_mesure"].ToString(),
             ConditionnementLabel  = r["conditionnement_label"].ToString(),

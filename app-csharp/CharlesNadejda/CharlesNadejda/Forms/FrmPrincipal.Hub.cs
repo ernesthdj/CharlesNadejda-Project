@@ -23,7 +23,7 @@ namespace CharlesNadejda.Forms
             List<BomProduction> prods  = new List<BomProduction>();
             try
             {
-                ings   = IngredientDAL.GetAll(idActivite: _state.ActiveActivite.Id);
+                ings   = IngredientDAL.GetAll();
                 fiches = BomFicheDAL.GetAll(idActivite: _state.ActiveActivite.Id);
                 prods  = BomProductionDAL.GetRecentByActivite(_state.ActiveActivite.Id, 10);
             }
@@ -309,7 +309,7 @@ namespace CharlesNadejda.Forms
             try
             {
                 prodsJour = BomProductionDAL.GetDuJourByActivite(_state.ActiveActivite.Id);
-                alertes   = IngredientDAL.GetAll(idActivite: _state.ActiveActivite.Id)
+                alertes   = IngredientDAL.GetAll()
                                          .Where(i => i.EstEnAlerte).ToList();
             }
             catch (Exception ex)

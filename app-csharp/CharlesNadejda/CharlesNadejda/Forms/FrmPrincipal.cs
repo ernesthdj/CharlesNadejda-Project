@@ -493,7 +493,7 @@ namespace CharlesNadejda.Forms
                 if (niv.Ordre == 1)
                 {
                     // Charge les ingrédients pour le stock N1
-                    var ings = ingsCache ?? IngredientDAL.GetAll(idActivite: _state.ActiveActivite?.Id ?? 0);
+                    var ings = ingsCache ?? IngredientDAL.GetAll();
                     _dgvStock.DataSource = ings.Where(i => i.StockActuel > 0).ToList();
                     if (_dgvStock.Columns.Count > 0)
                     {
@@ -513,7 +513,6 @@ namespace CharlesNadejda.Forms
                         ShowCol("StockActuel",         "Dispo",           80);
                         ShowCol("StockPieces",         "Pièces",          50);
                         ShowCol("PrixAchatReference",  "€/cond.",         65);
-                        ShowCol("StockNom",            "Lieu",            90);
 
                         // Colonne jauge custom-drawn
                         var colJauge = new DataGridViewTextBoxColumn

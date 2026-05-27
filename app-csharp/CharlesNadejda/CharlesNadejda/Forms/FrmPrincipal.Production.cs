@@ -44,7 +44,7 @@ namespace CharlesNadejda.Forms
             try
             {
                 prods  = BomProductionDAL.GetRecentByActivite(_state.ActiveActivite.Id, 10);
-                ings   = IngredientDAL.GetAll(idActivite: _state.ActiveActivite.Id);
+                ings   = IngredientDAL.GetAll();
                 fiches = BomFicheDAL.GetAll(idActivite: _state.ActiveActivite.Id);
             }
             catch (Exception ex)

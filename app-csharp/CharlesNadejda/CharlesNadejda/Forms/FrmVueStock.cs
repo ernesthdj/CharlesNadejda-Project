@@ -515,7 +515,6 @@ namespace CharlesNadejda.Forms
                     ? fiche.ConditionnementLabel
                     : UnitConvertisseur.FormatQte(fiche.QteParConditionnement, fiche.UniteMesure);
                 y = AddDetailRow("Conditionnement", condLabel, y);
-                y = AddDetailRow("Stock de rattach.", fiche.StockNom, y);
             }
 
             // ── Stock (valeurs agrégées) ──

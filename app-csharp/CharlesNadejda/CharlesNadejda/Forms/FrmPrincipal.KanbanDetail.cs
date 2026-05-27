@@ -65,8 +65,6 @@ namespace CharlesNadejda.Forms
                     ing.EstEnAlerte ? RED_CRIT : AppColors.Success);
             }
             y = KDetailRow("Prix/cond.", UnitConvertisseur.FormatPrix(ing.PrixAchatReference), y);
-            if (!string.IsNullOrEmpty(ing.StockNom))
-                y = KDetailRow("Emplacement", ing.StockNom, y);
             if (!string.IsNullOrEmpty(ing.NomFournisseur))
                 y = KDetailRow("Fournisseur", ing.NomFournisseur, y);
 

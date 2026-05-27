@@ -8,10 +8,10 @@ namespace CharlesNadejda.DAL
     public static class IngredientDAL
     {
         /// <summary>
-        /// idStock    : 0 = tous / filtre par stock physique
-        /// idActivite : 0 = tous / filtre par tous les stocks liés à cette activité
+        /// idStock : 0 = tous / filtre par stock physique (via lots_ingredients)
+        /// Les fiches sont globales — le stock est assigné au lot, pas à la fiche.
         /// </summary>
-        public static List<Ingredient> GetAll(int idStock = 0, int idActivite = 0)
+        public static List<Ingredient> GetAll(int idStock = 0)
         {
             var list = new List<Ingredient>();
             using (var conn = DbHelper.GetConnection())
@@ -21,26 +21,19 @@ namespace CharlesNadejda.DAL
                     SELECT fi.id, fi.nom, fi.marque, fi.description, fi.unite_mesure, fi.type_physique, fi.densite,
                            fi.conditionnement_label, fi.qte_par_conditionnement,
                            fi.prix_achat_reference, fi.seuil_alerte_stock, fi.stock_cible,
-                           fi.id_fournisseur_defaut, fi.id_stock, fi.actif,
+                           fi.id_fournisseur_defaut, fi.actif,
                            f.nom  AS nom_fournisseur,
-                           s.nom  AS nom_stock,
                            COALESCE(SUM(l.quantite_disponible), 0) AS stock_actuel
                     FROM fiches_ingredients fi
                     LEFT  JOIN fournisseurs      f ON f.id = fi.id_fournisseur_defaut
-                    INNER JOIN stocks            s ON s.id = fi.id_stock
                     LEFT  JOIN lots_ingredients  l ON l.id_fiche_ingredient = fi.id
                     WHERE fi.actif = 1";
 
                 if (idStock > 0)
                 {
-                    cmd.CommandText += " AND fi.id_stock = @idStock";
+                    cmd.CommandText += @" AND fi.id IN (
+                        SELECT DISTINCT id_fiche_ingredient FROM lots_ingredients WHERE id_stock = @idStock)";
                     cmd.Parameters.AddWithValue("@idStock", idStock);
-                }
-                else if (idActivite > 0)
-                {
-                    cmd.CommandText += @" AND fi.id_stock IN (
-                        SELECT id_stock FROM activites_stocks WHERE id_activite = @idActivite)";
-                    cmd.Parameters.AddWithValue("@idActivite", idActivite);
                 }
 
                 cmd.CommandText += " GROUP BY fi.id ORDER BY fi.nom";
@@ -61,13 +54,11 @@ namespace CharlesNadejda.DAL
                     SELECT fi.id, fi.nom, fi.marque, fi.description, fi.unite_mesure, fi.type_physique, fi.densite,
                            fi.conditionnement_label, fi.qte_par_conditionnement,
                            fi.prix_achat_reference, fi.seuil_alerte_stock, fi.stock_cible,
-                           fi.id_fournisseur_defaut, fi.id_stock, fi.actif,
+                           fi.id_fournisseur_defaut, fi.actif,
                            f.nom  AS nom_fournisseur,
-                           s.nom  AS nom_stock,
                            COALESCE(SUM(l.quantite_disponible), 0) AS stock_actuel
                     FROM fiches_ingredients fi
                     LEFT  JOIN fournisseurs      f ON f.id = fi.id_fournisseur_defaut
-                    INNER JOIN stocks            s ON s.id = fi.id_stock
                     LEFT  JOIN lots_ingredients  l ON l.id_fiche_ingredient = fi.id
                     WHERE fi.id = @id
                     GROUP BY fi.id";
@@ -100,10 +91,10 @@ namespace CharlesNadejda.DAL
                         (nom, marque, description, unite_mesure, type_physique, densite,
                          conditionnement_label, qte_par_conditionnement,
                          prix_achat_reference, seuil_alerte_stock, stock_cible,
-                         id_fournisseur_defaut, id_stock, actif)
+                         id_fournisseur_defaut, actif)
                     VALUES (@nom, @marque, @desc, @unite, @type_physique, @densite,
                             @condLabel, @condQte,
-                            @prix, @seuil, @stockCible, @fournisseur, @idStock, 1)";
+                            @prix, @seuil, @stockCible, @fournisseur, 1)";
                 Bind(cmd, i);
                 cmd.ExecuteNonQuery();
                 return (int)cmd.LastInsertedId;
@@ -122,7 +113,7 @@ namespace CharlesNadejda.DAL
                         conditionnement_label=@condLabel, qte_par_conditionnement=@condQte,
                         prix_achat_reference=@prix, seuil_alerte_stock=@seuil,
                         stock_cible=@stockCible,
-                        id_fournisseur_defaut=@fournisseur, id_stock=@idStock
+                        id_fournisseur_defaut=@fournisseur
                     WHERE id=@id";
                 Bind(cmd, i);
                 cmd.Parameters.AddWithValue("@id", i.Id);
@@ -177,7 +168,6 @@ namespace CharlesNadejda.DAL
             cmd.Parameters.AddWithValue("@seuil",        i.SeuilAlerteStock.HasValue ? (object)i.SeuilAlerteStock.Value : DBNull.Value);
             cmd.Parameters.AddWithValue("@stockCible",   i.StockCible.HasValue ? (object)i.StockCible.Value : DBNull.Value);
             cmd.Parameters.AddWithValue("@fournisseur",  i.IdFournisseurDefaut.HasValue ? (object)i.IdFournisseurDefaut.Value : DBNull.Value);
-            cmd.Parameters.AddWithValue("@idStock",       i.IdStock);
         }
 
         private static Ingredient Map(MySqlDataReader r) => new Ingredient
@@ -196,8 +186,6 @@ namespace CharlesNadejda.DAL
             StockCible            = r["stock_cible"]           == DBNull.Value ? (decimal?)null : (decimal)r["stock_cible"],
             IdFournisseurDefaut   = r["id_fournisseur_defaut"] == DBNull.Value ? (int?)null : (int)r["id_fournisseur_defaut"],
             NomFournisseur        = r["nom_fournisseur"]      == DBNull.Value ? null : r["nom_fournisseur"].ToString(),
-            IdStock               = (int)r["id_stock"],
-            StockNom              = r["nom_stock"].ToString(),
             Actif                 = Convert.ToBoolean(r["actif"]),
             StockActuel           = (decimal)r["stock_actuel"]
         };

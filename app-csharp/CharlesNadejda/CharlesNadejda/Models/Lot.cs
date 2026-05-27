@@ -6,6 +6,8 @@ namespace CharlesNadejda.Models
     {
         public int      Id                      { get; set; }
         public int      IdFicheIngredient       { get; set; }
+        public int      IdStock                 { get; set; }
+        public string   StockNom                { get; set; }   // jointure stocks
         public string   NomIngredient           { get; set; }   // jointure
         public string   UniteMesure             { get; set; }   // jointure — unité de base ('g','ml','piece')
         public string   ConditionnementLabel    { get; set; }   // jointure — label du conditionnement

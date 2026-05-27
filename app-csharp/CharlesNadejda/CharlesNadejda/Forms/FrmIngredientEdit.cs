@@ -22,22 +22,16 @@ namespace CharlesNadejda.Forms
         private readonly ComboBox      cmbUnite;
         private readonly ComboBox      cmbTypePhysique;
         private readonly ComboBox      cmbFournisseur;
-        private readonly ComboBox      cmbStock;
         private readonly NumericUpDown nudDensite;
         private readonly NumericUpDown nudPrix;
         private readonly NumericUpDown nudQteConditionnement;
         private readonly Label         lblDensite;
         private readonly Label         lblUniteQteCond;
 
-        public FrmIngredientEdit(Ingredient ing, Stock stockDefaut = null)
+        public FrmIngredientEdit(Ingredient ing)
         {
             _isEdit = ing != null;
-            _ing    = ing ?? new Ingredient
-            {
-                IdStock  = stockDefaut?.Id  ?? 0,
-                StockNom = stockDefaut?.Nom ?? "",
-                Actif    = true
-            };
+            _ing    = ing ?? new Ingredient { Actif = true };
 
             var font  = new Font("Segoe UI", 10F);
             var fontS = new Font("Segoe UI", 9F, FontStyle.Italic);
@@ -146,11 +140,7 @@ namespace CharlesNadejda.Forms
             cmbFournisseur = new ComboBox { DropDownStyle = ComboBoxStyle.DropDownList };
             AddField("Fournisseur par défaut", cmbFournisseur, lx, 310, 360);
 
-            // ── Ligne 8 — Stock ───────────────────────────────────────────
-            cmbStock = new ComboBox { DropDownStyle = ComboBoxStyle.DropDownList };
-            AddField("Stock *", cmbStock, lx, 358, 360);
-
-            PositionnerBoutons(414);
+            PositionnerBoutons(366);
 
             Load += FrmIngredientEdit_Load;
         }
@@ -166,11 +156,6 @@ namespace CharlesNadejda.Forms
 
             cmbTypePhysique.SelectedIndexChanged += (s, ev) => MettreAJourVisibiliteDensite();
             cmbUnite.SelectedIndexChanged        += (s, ev) => MajLabelUniteQteCond();
-
-            var stocks = StockDAL.GetAll();
-            cmbStock.Items.Clear();
-            foreach (var s in stocks) cmbStock.Items.Add(s);
-            cmbStock.DisplayMember = "Nom";
 
             try
             {
@@ -199,9 +184,6 @@ namespace CharlesNadejda.Forms
                 else
                     nudStockCible.Value = 0;
 
-                foreach (var item in cmbStock.Items)
-                    if (((Stock)item).Id == _ing.IdStock) { cmbStock.SelectedItem = item; break; }
-
                 if (_ing.Densite.HasValue) nudDensite.Value = _ing.Densite.Value;
 
                 if (_ing.IdFournisseurDefaut.HasValue)
@@ -216,12 +198,6 @@ namespace CharlesNadejda.Forms
                 cmbUnite.SelectedIndex        = 0;
                 cmbFournisseur.SelectedIndex  = 0;
                 nudQteConditionnement.Value   = 1m;
-
-                if (_ing.IdStock > 0)
-                    foreach (var item in cmbStock.Items)
-                        if (((Stock)item).Id == _ing.IdStock) { cmbStock.SelectedItem = item; break; }
-                else if (cmbStock.Items.Count > 0)
-                    cmbStock.SelectedIndex = 0;
             }
 
             MettreAJourVisibiliteDensite();
@@ -259,9 +235,6 @@ namespace CharlesNadejda.Forms
             if (cmbTypePhysique.SelectedItem == null)
             { errorProvider.SetError(cmbTypePhysique, "Choisissez un type physique."); ok = false; }
 
-            if (cmbStock.SelectedItem == null)
-            { errorProvider.SetError(cmbStock, "Choisissez un stock."); ok = false; }
-
             string typeSel = cmbTypePhysique.SelectedItem?.ToString() ?? "solide";
             if ((typeSel == "liquide" || typeSel == "poudre") && nudDensite.Value <= 0)
             { errorProvider.SetError(nudDensite, "La densité est obligatoire pour ce type."); ok = false; }
@@ -278,7 +251,6 @@ namespace CharlesNadejda.Forms
                 stockCible = nudStockCible.Value * nudQteConditionnement.Value;
 
             string typeSel = cmbTypePhysique.SelectedItem.ToString();
-            var stockSel   = (Stock)cmbStock.SelectedItem;
 
             _ing.Nom                   = txtNom.Text.Trim();
             _ing.Marque                = txtMarque.Text.Trim().NullIfEmpty();
@@ -291,8 +263,6 @@ namespace CharlesNadejda.Forms
             _ing.PrixAchatReference    = nudPrix.Value;
             _ing.SeuilAlerteStock      = seuil;
             _ing.StockCible            = stockCible;
-            _ing.IdStock               = stockSel.Id;
-            _ing.StockNom              = stockSel.Nom;
             _ing.IdFournisseurDefaut   = cmbFournisseur.SelectedItem is Fournisseur f ? (int?)f.Id : null;
 
             if (_isEdit) IngredientDAL.Update(_ing);

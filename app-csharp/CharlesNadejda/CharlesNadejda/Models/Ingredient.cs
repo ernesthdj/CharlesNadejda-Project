@@ -23,8 +23,6 @@ namespace CharlesNadejda.Models
         public decimal? StockCible              { get; set; }
         public int?     IdFournisseurDefaut      { get; set; }
         public string   NomFournisseur          { get; set; }   // jointure fournisseurs
-        public int      IdStock                 { get; set; }
-        public string   StockNom                { get; set; }   // jointure stocks
         public bool     Actif                   { get; set; }
 
         /// <summary>Coût par unité de base (€/g, €/ml, €/pce), calculé depuis le prix de référence.</summary>

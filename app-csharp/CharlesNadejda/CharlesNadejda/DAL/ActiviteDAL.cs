@@ -112,18 +112,19 @@ namespace CharlesNadejda.DAL
                             throw new InvalidOperationException(
                                 $"Impossible de désactiver : {nbContextes} contexte(s) actif(s) rattaché(s) à cette activité.");
 
+                        // Vérifier les lots actifs dans les stocks liés à cette activité
                         cmd.CommandText = @"
                             SELECT COUNT(*)
-                            FROM fiches_ingredients fi
-                            JOIN stocks s            ON s.id = fi.id_stock
-                            JOIN activites_stocks ast ON ast.id_stock = s.id
-                            WHERE ast.id_activite = @id AND fi.actif = 1";
+                            FROM lots_ingredients li
+                            WHERE li.id_stock IN (
+                                SELECT id_stock FROM activites_stocks WHERE id_activite = @id
+                            ) AND li.quantite_disponible > 0";
                         cmd.Parameters.Clear();
                         cmd.Parameters.AddWithValue("@id", id);
-                        int nbIngredients = Convert.ToInt32(cmd.ExecuteScalar());
-                        if (nbIngredients > 0)
+                        int nbLots = Convert.ToInt32(cmd.ExecuteScalar());
+                        if (nbLots > 0)
                             throw new InvalidOperationException(
-                                $"Impossible de désactiver : {nbIngredients} ingrédient(s) actif(s) rattaché(s) à cette activité.");
+                                $"Impossible de désactiver : {nbLots} lot(s) actif(s) dans les stocks rattachés à cette activité.");
 
                         cmd.CommandText = "UPDATE activites SET actif = 0 WHERE id = @id";
                         cmd.Parameters.Clear();
