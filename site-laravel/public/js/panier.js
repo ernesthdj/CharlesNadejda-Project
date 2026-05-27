@@ -1,6 +1,8 @@
 /**
  * ArtisaStock Boutique — Interactions AJAX panier
  * Vanilla JS (ES6+) — fetch API
+ *
+ * 📌 SCRIPT DEFENSE — Étape 6.4 : AJAX fetch + X-CSRF-TOKEN + toast + badge update sans rechargement
  */
 
 const CSRF = document.querySelector('meta[name="csrf-token"]')?.content;

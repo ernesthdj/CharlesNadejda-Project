@@ -5,6 +5,9 @@ using CharlesNadejda.Models;
 
 namespace CharlesNadejda.DAL
 {
+    // 📌 SCRIPT DEFENSE — Étape 5 : GetFichesNonPubliees (NOT IN — filtre fiches déjà publiées)
+    //                     Étape 5 : GetAll — COALESCE(SUM(bs.quantite_disponible)) stock temps réel
+    //                     Étape 5 : PeutSupprimer — FK check avant DELETE
     public static class ProduitWebDAL
     {
         private const string SELECT_BASE = @"

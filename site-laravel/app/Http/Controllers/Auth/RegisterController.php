@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\RegisterRequest;
 use App\Models\Client;
 
+// 📌 SCRIPT DEFENSE — Étape 6.2 : Inscription — password_hash(BCrypt), session(), regenerate()
 class RegisterController extends Controller
 {
     public function showForm()

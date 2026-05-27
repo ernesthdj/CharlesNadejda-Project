@@ -5,6 +5,7 @@ using CharlesNadejda.Models;
 
 namespace CharlesNadejda.Forms
 {
+    // 📌 SCRIPT DEFENSE — Étape 1.1 : FrmStockEdit hérite FrmEditBase — ShowDialog, Valider, NomExiste
     /// <summary>
     /// Formulaire de création / modification d'un stock.
     /// Migré vers FrmEditBase — errorProvider et boutons gérés par la classe de base.

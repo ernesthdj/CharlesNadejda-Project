@@ -6,6 +6,8 @@ using CharlesNadejda.Models;
 
 namespace CharlesNadejda.DAL
 {
+    // 📌 SCRIPT DEFENSE — Étape 7 : Vue Stock Global — lecture de la VIEW SQL (UNION ALL lots + produits)
+    //                     Étape 8.6 : vue_stock_global — COALESCE, NULLIF, colonnes calculées
     /// <summary>
     /// Accès en lecture seule à la VIEW vue_stock_global.
     /// Fournit des filtres par activité, contexte et niveau.

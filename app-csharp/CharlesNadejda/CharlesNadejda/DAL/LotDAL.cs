@@ -5,6 +5,8 @@ using CharlesNadejda.Models;
 
 namespace CharlesNadejda.DAL
 {
+    // 📌 SCRIPT DEFENSE — Étape 2.2 : Insert (quantite_initiale = nb_cond × qte_par_cond)
+    //                     Étape 2.2 : Update — GREATEST(0, ...) conservation de la consommation
     public static class LotDAL
     {
         private const string SELECT_BASE = @"

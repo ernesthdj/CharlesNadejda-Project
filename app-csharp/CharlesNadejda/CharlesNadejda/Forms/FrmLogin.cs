@@ -7,6 +7,7 @@ using CharlesNadejda.Models;
 
 namespace CharlesNadejda.Forms
 {
+    // 📌 SCRIPT DEFENSE — Étape 0.1 : Login — validation + UtilisateurDAL.Authenticate + message générique
     public partial class FrmLogin : Form
     {
         /// <summary>

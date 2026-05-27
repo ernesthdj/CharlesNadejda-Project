@@ -8,6 +8,7 @@ use App\Models\CommandeWeb;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
+// 📌 SCRIPT DEFENSE — Étape 6.5 : Checkout — DB::beginTransaction, lockForUpdate, FIFO décrémentation
 class CommandeController extends Controller
 {
     public function recap()

@@ -5,6 +5,8 @@ using CharlesNadejda.Models;
 
 namespace CharlesNadejda.DAL
 {
+    // 📌 SCRIPT DEFENSE — Étape 7 : DAL lecture seule — commandes créées par Laravel, lues par C#
+    //                     Étape 7 : GetAll — INNER JOIN clients, sous-requête COUNT, filtre statut
     /// <summary>
     /// DAL lecture seule pour les commandes web.
     /// Les commandes sont créées par le site Laravel, consultées par l'admin dans l'ERP.

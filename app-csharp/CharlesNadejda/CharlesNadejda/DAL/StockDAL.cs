@@ -5,6 +5,9 @@ using CharlesNadejda.Models;
 
 namespace CharlesNadejda.DAL
 {
+    // 📌 SCRIPT DEFENSE — Étape 1.1 : Insert (requête paramétrée @nom, @desc)
+    //                     Étape 1.1 : NomExiste (unicité, excludeId pour mode édition)
+    //                     Étape 1.2 : LierActivite (INSERT IGNORE — jonction M:N activites_stocks)
     public static class StockDAL
     {
         public static List<Stock> GetAll(bool includeInactifs = false)

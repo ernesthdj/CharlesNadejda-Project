@@ -5,6 +5,8 @@ using System;
 
 namespace CharlesNadejda.DAL
 {
+    // 📌 SCRIPT DEFENSE — Étape 3 : GetByFiche — COALESCE résout le polymorphisme (ingredient OU fiche)
+    //                     Étape 8.5 : FK polymorphique (type_input + 2 FK mutuellement exclusives)
     public static class BomFicheLigneDAL
     {
         /// <summary>

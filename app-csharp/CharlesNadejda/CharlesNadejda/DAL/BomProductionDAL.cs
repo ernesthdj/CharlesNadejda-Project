@@ -5,6 +5,9 @@ using CharlesNadejda.Models;
 
 namespace CharlesNadejda.DAL
 {
+    // 📌 SCRIPT DEFENSE — Étape 4 : Executer — transaction atomique (vérif + INSERT + FIFO + bom_stocks)
+    //                     Étape 4 : ConsumeStock — algorithme FIFO (lots triés par date_achat ASC)
+    //                     Étape 4 : Simuler — calcul disponibilité avec jauges visuelles
     /// <summary>
     /// Moteur de production BOM (Bill of Materials).
     /// Gère la validation de stock, la consommation FIFO (First In First Out)

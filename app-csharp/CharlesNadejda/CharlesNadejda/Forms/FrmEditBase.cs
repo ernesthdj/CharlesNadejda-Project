@@ -4,6 +4,7 @@ using System.Windows.Forms;
 
 namespace CharlesNadejda.Forms
 {
+    // 📌 SCRIPT DEFENSE — Étape 1.1 : FrmEditBase — classe abstraite (héritage, ErrorProvider, cycle Valider→Sauvegarder)
     /// <summary>
     /// Formulaire d'édition générique — base commune à tous les formulaires Create/Update.
     ///

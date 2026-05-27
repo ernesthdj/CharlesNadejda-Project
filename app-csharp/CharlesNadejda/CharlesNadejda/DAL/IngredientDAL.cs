@@ -5,6 +5,7 @@ using CharlesNadejda.Models;
 
 namespace CharlesNadejda.DAL
 {
+    // 📌 SCRIPT DEFENSE — Étape 2.1 : GetAll — LEFT/INNER JOIN, COALESCE(SUM), GROUP BY, filtre WHERE dynamique
     public static class IngredientDAL
     {
         /// <summary>

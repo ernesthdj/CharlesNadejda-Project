@@ -91,6 +91,18 @@ namespace CharlesNadejda.DAL
             }
         }
 
+        /// <summary>Réactive une activité précédemment désactivée.</summary>
+        public static void Reactiver(int id)
+        {
+            using (var conn = DbHelper.GetConnection())
+            using (var cmd = conn.CreateCommand())
+            {
+                cmd.CommandText = "UPDATE activites SET actif = 1 WHERE id = @id";
+                cmd.Parameters.AddWithValue("@id", id);
+                cmd.ExecuteNonQuery();
+            }
+        }
+
         /// <summary>
         /// Désactivation soft — lève une exception si des contextes actifs y sont rattachés.
         /// </summary>

@@ -3,6 +3,7 @@ using CharlesNadejda.Models;
 
 namespace CharlesNadejda.DAL
 {
+    // 📌 SCRIPT DEFENSE — Étape 0.1 : Authentification (requête paramétrée + BCrypt.Verify)
     public static class UtilisateurDAL
     {
         public static Utilisateur Authenticate(string email, string motDePasse)

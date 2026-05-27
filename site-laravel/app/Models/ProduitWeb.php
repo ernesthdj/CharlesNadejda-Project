@@ -6,6 +6,8 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\DB;
 
+// 📌 SCRIPT DEFENSE — Étape 6.1 : Accessor getStockDisponibleAttribute — stock calculé depuis bom_stocks
+//                     Étape 6.1 : scopeWithStockDisponible — sous-requête pour éviter N+1
 class ProduitWeb extends Model
 {
     protected $table = 'produits_web';

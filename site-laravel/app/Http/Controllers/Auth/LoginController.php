@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Client;
 use Illuminate\Http\Request;
 
+// 📌 SCRIPT DEFENSE — Étape 6.3 : Login — password_verify, message générique, session regenerate
 class LoginController extends Controller
 {
     public function showForm()

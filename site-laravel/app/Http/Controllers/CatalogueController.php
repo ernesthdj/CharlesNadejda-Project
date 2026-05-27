@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\CategorieWeb;
 use App\Models\ProduitWeb;
 
+// 📌 SCRIPT DEFENSE — Étape 6.1 : Catalogue — Eloquent with() eager loading, match() tri, scope stock
 class CatalogueController extends Controller
 {
     public function index()

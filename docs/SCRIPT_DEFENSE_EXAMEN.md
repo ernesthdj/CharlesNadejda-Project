@@ -1204,6 +1204,470 @@ ORDER BY cmd.date_commande DESC
 
 ---
 
+## ETAPE 8 -- Defense de la base de donnees (5 minutes)
+
+> **Examens concernes** : PDSGBD principalement, PDWEB en complément
+> **Objectif** : montrer la maitrise de la conception relationnelle, la normalisation, les contraintes et la securite
+
+### 8.1 Vue d'ensemble du schema
+
+#### Ce que tu montres
+
+Ouvre `sql/schema_complet.sql` et montre la structure des modules :
+
+```
+  MODULE Referentiels         MODULE Catalogue           MODULE BOM
+ +-------------------+      +--------------------+     +---------------------+
+ | activites         |      | fiches_ingredients |     | bom_contextes       |
+ | stocks            |      | lots_ingredients   |     | bom_niveaux         |
+ | activites_stocks  |      | fournisseurs       |     | bom_fiches          |
+ | utilisateurs      |      +--------------------+     | bom_fiches_lignes   |
+ +-------------------+                                  | bom_reservations    |
+                                                        +---------------------+
+  MODULE Production            MODULE Web (e-commerce)
+ +---------------------+      +------------------------+
+ | bom_productions     |      | clients                |
+ | bom_productions_lgn |      | categories_web         |
+ | bom_stocks          |      | produits_web           |
+ +---------------------+      | commandes_web          |
+                               | commandes_web_lignes   |
+  +--- 1 VIEW ---+             +------------------------+
+  | vue_stock_global |
+  +------------------+
+```
+
+#### Ce que tu dis
+
+> "La base de donnees compte 19 tables et 1 vue. Elle est organisee en 5 modules :
+> les referentiels de base (activites, stocks, fournisseurs), le catalogue (ingredients et lots),
+> le BOM -- Bill of Materials, c'est la nomenclature des recettes sur plusieurs niveaux --,
+> la production (ordres de fabrication et stocks fabriques),
+> et enfin le module web pour l'e-commerce (clients, commandes, produits).
+>
+> Tout est en InnoDB pour avoir les transactions ACID et les foreign keys.
+> Le charset est utf8mb4, ce qui supporte les accents et les caracteres speciaux."
+
+---
+
+### 8.2 Normalisation (3NF)
+
+#### Ce que tu montres
+
+Prends l'exemple de `fiches_ingredients` :
+
+```sql
+-- 3NF respectee : chaque colonne depend de la PK et uniquement de la PK
+CREATE TABLE fiches_ingredients (
+  id                      INT NOT NULL AUTO_INCREMENT,   -- PK
+  nom                     VARCHAR(200) NOT NULL,          -- depend de id
+  unite_mesure            ENUM('mg','g','kg','ml','cl','dl','l','piece'), -- depend de id
+  id_fournisseur_defaut   INT,                            -- FK, pas de donnees du fournisseur ici
+  ...
+);
+-- Le nom/email/telephone du fournisseur sont dans la table fournisseurs
+-- Pas de redondance, pas de dependance transitive
+```
+
+Puis montre la denormalisation volontaire :
+
+```sql
+-- commandes_web_lignes : denormalisation VOULUE
+prix_unitaire   DECIMAL(10,2) NOT NULL COMMENT 'Snapshot du prix au moment de l ajout',
+sous_total      DECIMAL(10,2) GENERATED ALWAYS AS (quantite * prix_unitaire) STORED,
+-- Pourquoi ? Si le prix change dans produits_web, les anciennes commandes
+-- doivent garder le prix du moment de l'achat. C'est un snapshot intentionnel.
+```
+
+Et montre la migration v18 :
+
+```sql
+-- Migration v18 : correction d'une dependance transitive
+-- AVANT : fiches_ingredients.id_stock (le stock dependait de la fiche)
+-- PROBLEME : un meme ingredient peut exister dans plusieurs stocks (frigo + armoire)
+-- APRES : lots_ingredients.id_stock (le stock depend du lot = moment de l'achat)
+ALTER TABLE lots_ingredients ADD COLUMN id_stock INT NOT NULL;
+ALTER TABLE fiches_ingredients DROP COLUMN id_stock;
+```
+
+#### Ce que tu dis
+
+> "La base est en troisieme forme normale. Chaque attribut non-cle depend uniquement de la cle primaire,
+> pas d'un autre attribut non-cle. Par exemple, dans `fiches_ingredients`,
+> je ne stocke que l'`id_fournisseur_defaut` -- les informations du fournisseur
+> (nom, email, telephone) restent dans la table `fournisseurs`.
+>
+> Il y a une denormalisation volontaire dans `commandes_web_lignes` :
+> le `prix_unitaire` est un snapshot du prix au moment de l'ajout au panier.
+> Si le prix du produit change plus tard, les anciennes commandes gardent le prix d'origine.
+> Le `sous_total` est une colonne generee (GENERATED ALWAYS AS) qui se recalcule automatiquement.
+>
+> La migration v18 a corrige une dependance transitive : `id_stock` etait sur `fiches_ingredients`,
+> mais en realite le stock physique depend du lot d'achat, pas de la fiche ingredient.
+> Un meme ingredient peut etre range dans le frigo ou dans l'armoire selon le lot.
+> J'ai donc deplace `id_stock` de la fiche vers le lot."
+
+#### Questions probables
+
+**Q : C'est quoi la troisieme forme normale ?**
+> "C'est une regle de conception qui dit que chaque colonne d'une table doit dependre
+> uniquement de la cle primaire. Pas de dependance transitive -- c'est-a-dire
+> qu'une colonne ne doit pas dependre d'une autre colonne non-cle.
+> Ca evite la redondance et les anomalies de mise a jour."
+
+**Q : Pourquoi tu denormalises le prix dans les commandes ?**
+> "C'est un pattern classique en e-commerce. Le prix d'un produit peut changer,
+> mais une commande deja passee doit garder le prix du moment de l'achat.
+> Si je mettais juste une FK vers le produit, un changement de prix modifierait
+> retroactivement toutes les anciennes commandes. Le snapshot resout ce probleme."
+
+---
+
+### 8.3 Types de donnees et contraintes
+
+#### Ce que tu montres
+
+```sql
+-- ENUM : liste fermee de valeurs valides
+statut       ENUM('panier','payee','annulee') NOT NULL DEFAULT 'panier',
+unite_mesure ENUM('mg','g','kg','ml','cl','dl','l','piece') NOT NULL,
+type_input   ENUM('ingredient','fiche') NOT NULL,
+
+-- DECIMAL vs FLOAT : precision exacte pour les montants et quantites
+prix_vente        DECIMAL(10,2) NOT NULL,   -- prix : 2 decimales
+quantite          DECIMAL(12,4) NOT NULL,   -- quantites : 4 decimales de precision
+tva_pct           DECIMAL(5,2)  NOT NULL DEFAULT 0.00,
+
+-- TINYINT(1) : booleen MySQL (0/1)
+actif TINYINT(1) NOT NULL DEFAULT 1,
+
+-- GENERATED column : calcul automatique
+sous_total DECIMAL(10,2) GENERATED ALWAYS AS (quantite * prix_unitaire) STORED,
+
+-- CHECK constraint
+CONSTRAINT chk_cmdligne_qte_positive CHECK (quantite >= 1)
+```
+
+#### Ce que tu dis
+
+> "Les types de donnees sont choisis avec precision. J'utilise ENUM pour tout ce qui est une liste fermee --
+> les statuts de commande, les unites de mesure, les types de ligne BOM.
+> Ca empeche d'inserer une valeur invalide directement au niveau de la base.
+>
+> Pour les montants et les quantites, j'utilise DECIMAL et jamais FLOAT.
+> FLOAT a des erreurs d'arrondi -- par exemple 0.1 + 0.2 ne fait pas exactement 0.3 en FLOAT.
+> DECIMAL stocke les chiffres de maniere exacte, c'est indispensable pour des prix et des quantites.
+>
+> Les booleens sont en TINYINT(1) avec un DEFAULT, donc chaque champ a toujours une valeur coherente.
+> Et j'ai une colonne GENERATED ALWAYS AS pour le sous-total des lignes de commande :
+> MySQL recalcule automatiquement `quantite * prix_unitaire` a chaque modification."
+
+---
+
+### 8.4 Cles et integrite referentielle
+
+#### Ce que tu montres
+
+```sql
+-- 1. PK auto-increment classique
+PRIMARY KEY (id)
+
+-- 2. PK composite (table de jonction M:N)
+CREATE TABLE activites_stocks (
+  id_activite INT NOT NULL,
+  id_stock    INT NOT NULL,
+  PRIMARY KEY (id_activite, id_stock)   -- pas d'id propre, la PK = le couple
+);
+
+-- 3. FK avec CASCADE (suppression en cascade)
+CONSTRAINT fk_as_activite FOREIGN KEY (id_activite) REFERENCES activites(id)
+    ON DELETE CASCADE ON UPDATE CASCADE
+-- Si on supprime une activite, ses liaisons activites_stocks sont supprimees aussi
+
+-- 4. FK avec RESTRICT (blocage de la suppression)
+CONSTRAINT fk_bf_niveau FOREIGN KEY (id_niveau) REFERENCES bom_niveaux(id)
+    ON DELETE RESTRICT ON UPDATE CASCADE
+-- On ne peut PAS supprimer un niveau qui contient des fiches
+
+-- 5. FK avec SET NULL (orphelin autorise)
+CONSTRAINT fk_fi_fournisseur FOREIGN KEY (id_fournisseur_defaut) REFERENCES fournisseurs(id)
+    ON DELETE SET NULL ON UPDATE CASCADE
+-- Si on supprime un fournisseur, l'ingredient garde sa fiche mais perd le lien fournisseur
+
+-- 6. UNIQUE KEY simple
+UNIQUE KEY (nom)           -- pas deux activites avec le meme nom
+UNIQUE KEY (email)         -- pas deux clients avec le meme email
+
+-- 7. UNIQUE KEY composite
+UNIQUE KEY uq_bom_niveau_ordre (id_contexte, ordre)   -- pas deux niveaux au meme rang dans un contexte
+UNIQUE KEY uq_fiche_nom_niveau (nom, id_niveau)        -- pas deux fiches avec le meme nom dans un niveau
+```
+
+#### Ce que tu dis
+
+> "L'integrite referentielle est geree par les foreign keys avec trois politiques differentes selon le cas :
+>
+> CASCADE pour les tables de jonction et les relations parent-enfant fort --
+> si je supprime une activite, les lignes de `activites_stocks` sont supprimees automatiquement.
+>
+> RESTRICT pour les entites metier critiques -- on ne peut pas supprimer un niveau
+> qui contient des fiches de production, ni supprimer une fiche qui a deja ete produite.
+> Ca protege l'historique des donnees.
+>
+> SET NULL pour les references optionnelles -- si un fournisseur est supprime,
+> les ingredients gardent leur fiche mais le champ `id_fournisseur_defaut` passe a NULL.
+>
+> Pour les cles uniques, j'ai des UNIQUE simples comme le nom ou l'email,
+> et des UNIQUE composites comme `(id_contexte, ordre)` dans `bom_niveaux`
+> qui garantit qu'on ne peut pas avoir deux niveaux au meme rang dans un contexte."
+
+---
+
+### 8.5 Relations et cardinalites
+
+#### Ce que tu montres
+
+```
+RELATIONS PRINCIPALES :
+
+  activites ─1:N─ bom_contextes      (une activite a plusieurs contextes BOM)
+  activites ─M:N─ stocks             (via activites_stocks -- table pivot)
+
+  bom_contextes ─1:N─ bom_niveaux    (un contexte a N niveaux ordonnes)
+  bom_niveaux   ─1:N─ bom_fiches     (un niveau contient N fiches)
+  bom_fiches    ─1:N─ bom_fiches_lignes (une fiche a N lignes d'ingredients)
+
+  bom_fiches_lignes : FK polymorphique
+    type_input = 'ingredient' → id_input_ingredient → fiches_ingredients
+    type_input = 'fiche'      → id_input_fiche      → bom_fiches (recursivite)
+
+  CHAINE COMPLETE (production) :
+  activite → contexte → niveau → fiche → production → bom_stock
+
+  clients ─1:N─ commandes_web ─1:N─ commandes_web_lignes
+  produits_web ─N:1─ bom_fiches (le produit web pointe vers une fiche BOM)
+```
+
+#### Ce que tu dis
+
+> "Les relations couvrent tous les cas classiques.
+> Le 1:N est le plus frequent -- une activite a plusieurs contextes, un contexte a plusieurs niveaux.
+>
+> Le M:N est gere par une table pivot `activites_stocks` avec une cle primaire composite.
+> Pas d'id propre sur cette table, la PK c'est le couple (id_activite, id_stock).
+>
+> Le cas le plus interessant c'est `bom_fiches_lignes` : c'est une FK polymorphique.
+> Une ligne de recette peut pointer soit vers un ingredient brut, soit vers une autre fiche BOM.
+> Le champ `type_input` (ENUM 'ingredient' ou 'fiche') determine lequel des deux FK est utilise.
+> Ca permet la recursivite -- un produit fini peut contenir un semi-fini qui contient des ingredients.
+>
+> La chaine complete va de l'activite jusqu'au stock fabrique :
+> activite, contexte, niveau, fiche, production, bom_stock.
+> Cote web, un `produit_web` pointe vers une `bom_fiche`, ce qui relie le catalogue en ligne
+> a la chaine de production."
+
+---
+
+### 8.6 VIEW vue_stock_global
+
+#### Ce que tu montres
+
+```sql
+-- Vue qui unifie les deux types de stock (matieres premieres + produits fabriques)
+CREATE OR REPLACE VIEW vue_stock_global AS
+
+    -- Partie 1 : lots d'ingredients achetes
+    SELECT
+        'lot_ingredient'        AS type_stock,
+        li.id                   AS id_entree,
+        fi.nom                  AS nom,
+        li.quantite_disponible  AS quantite_totale,
+        COALESCE(SUM(br.quantite_reservee), 0) AS quantite_reservee,
+        li.quantite_disponible - COALESCE(SUM(br.quantite_reservee), 0)
+                                AS quantite_dispo_reelle,
+        li.prix_unitaire / NULLIF(fi.qte_par_conditionnement, 0) AS cout_unitaire,
+        ...
+    FROM lots_ingredients li
+    JOIN fiches_ingredients fi ON fi.id = li.id_fiche_ingredient
+    JOIN stocks s              ON s.id  = li.id_stock
+    LEFT JOIN bom_reservations br ON br.id_lot = li.id AND br.actif = 1
+    GROUP BY li.id, ...
+
+UNION ALL
+
+    -- Partie 2 : produits fabriques (sortie BOM)
+    SELECT
+        'produit_fabrique'      AS type_stock,
+        bs.id                   AS id_entree,
+        bf.nom                  AS nom,
+        bs.quantite_disponible  AS quantite_totale,
+        0                       AS quantite_reservee,
+        bs.quantite_disponible  AS quantite_dispo_reelle,
+        bs.cout_unitaire,
+        ...
+    FROM bom_stocks bs
+    JOIN bom_fiches bf ON bf.id = bs.id_fiche;
+```
+
+#### Ce que tu dis
+
+> "La vue `vue_stock_global` est un UNION ALL qui regroupe deux sources :
+> les lots d'ingredients achetes et les produits fabriques par le BOM.
+> Ca donne une vue unifiee de tout le stock, peu importe l'origine.
+>
+> Il y a des colonnes calculees : `quantite_dispo_reelle` soustrait les reservations,
+> et `cout_unitaire` divise le prix d'achat par la quantite du conditionnement
+> avec un NULLIF pour eviter la division par zero.
+>
+> Le COALESCE gere le cas ou il n'y a aucune reservation -- SUM retourne NULL,
+> COALESCE le transforme en 0.
+>
+> Cote C#, la DAL `VueStockGlobalDAL` interroge cette vue exactement comme une table.
+> Ca simplifie enormement le code : une seule requete au lieu de deux jointures separees."
+
+#### Questions probables
+
+**Q : Pourquoi UNION ALL et pas UNION ?**
+> "UNION supprime les doublons, ce qui force MySQL a faire un tri et une comparaison sur toutes les lignes.
+> UNION ALL garde tout tel quel, c'est plus performant.
+> Et ici il n'y a pas de doublons possibles puisque les deux SELECT ont des `type_stock` differents."
+
+**Q : C'est quoi NULLIF ?**
+> "NULLIF(a, 0) retourne NULL si a vaut 0, sinon retourne a.
+> Ca evite une erreur de division par zero. Si `qte_par_conditionnement` est 0,
+> la division retourne NULL au lieu de planter."
+
+---
+
+### 8.7 Securite de la base de donnees
+
+#### Ce que tu montres
+
+```csharp
+// C# : requetes parametrees (jamais de concatenation)
+cmd.Parameters.AddWithValue("@nom", ingredient.Nom);
+cmd.Parameters.AddWithValue("@prix", ingredient.PrixAchat);
+// MySQL recoit : SELECT * FROM fiches_ingredients WHERE nom = ? AND prix = ?
+```
+
+```php
+// Laravel : Eloquent genere des requetes parametrees via PDO
+ProduitWeb::where('en_vente', 1)->with('categorie')->get();
+// PDO genere : SELECT * FROM produits_web WHERE en_vente = ? -- parametre lie
+```
+
+```sql
+-- Mots de passe : BCrypt hash (jamais en clair)
+mot_de_passe VARCHAR(255) NOT NULL COMMENT 'BCrypt hash'
+-- Laravel : Hash::make($password) a l'inscription, Hash::check() a la connexion
+```
+
+```csharp
+// Transactions ACID pour les operations multi-tables
+using var tx = conn.BeginTransaction();
+try {
+    // INSERT production + UPDATE lots + INSERT bom_stock
+    tx.Commit();
+} catch {
+    tx.Rollback();
+    throw;
+}
+```
+
+#### Ce que tu dis
+
+> "La securite de la base est assuree a plusieurs niveaux.
+>
+> Premiere protection : les requetes parametrees. Cote C#, j'utilise `AddWithValue`
+> sur tous les parametres -- jamais de concatenation de chaines dans le SQL.
+> Cote Laravel, Eloquent passe par PDO qui parametre automatiquement.
+> Ca rend l'injection SQL impossible.
+>
+> Deuxieme protection : les mots de passe sont hashes avec BCrypt.
+> Jamais stockes en clair. Laravel genere le hash a l'inscription
+> et fait la comparaison securisee a la connexion.
+>
+> Troisieme protection : les transactions ACID. Quand je lance une production,
+> ca touche plusieurs tables : insert dans `bom_productions`, update des quantites de lots,
+> insert dans `bom_stocks`. Si une etape echoue, le rollback annule tout.
+> La base reste toujours dans un etat coherent.
+>
+> Et cote web, Laravel ajoute des locks pessimistes (`lockForUpdate()`) pendant le checkout
+> pour eviter que deux clients achetent le meme stock en parallele."
+
+---
+
+### 8.8 Migrations
+
+#### Ce que tu montres
+
+```
+sql/
+├── create_database.sql          -- Schema initial
+├── migration_v04_bom.sql        -- Ajout module BOM
+├── migration_v05_fiches_niveau.sql
+├── ...
+├── migration_v15_boutique_web.sql -- Module e-commerce
+├── migration_v16_bom_stock_cible.sql
+├── migration_v17_vue_stock_global_fiche.sql
+├── migration_v18_stock_sur_lot.sql  -- Derniere : id_stock fiche → lot
+└── schema_complet.sql           -- Export post-v18 (reference)
+```
+
+Puis montre un extrait de la migration v18 :
+
+```sql
+-- Migration v18 : deplacement id_stock de fiches_ingredients vers lots_ingredients
+-- Strategie : ALTER TABLE incrementale (pas de DROP/CREATE)
+
+-- 1. Ajouter la colonne sur lots_ingredients
+ALTER TABLE lots_ingredients ADD COLUMN id_stock INT NULL AFTER id_fiche_ingredient;
+
+-- 2. Migrer les donnees existantes
+UPDATE lots_ingredients l
+JOIN fiches_ingredients fi ON fi.id = l.id_fiche_ingredient
+SET l.id_stock = fi.id_stock;
+
+-- 3. Rendre NOT NULL + FK
+ALTER TABLE lots_ingredients MODIFY COLUMN id_stock INT NOT NULL,
+    ADD CONSTRAINT fk_lots_stock FOREIGN KEY (id_stock) REFERENCES stocks(id);
+
+-- 4. Supprimer l'ancienne colonne
+ALTER TABLE fiches_ingredients DROP FOREIGN KEY fk_fi_stock, DROP COLUMN id_stock;
+
+-- 5. Recreer la VIEW (join via li.id_stock au lieu de fi.id_stock)
+```
+
+#### Ce que tu dis
+
+> "Le schema a evolue en 18 migrations incrementales. Chaque migration est un fichier SQL
+> qui utilise ALTER TABLE pour modifier la structure sans tout recrer.
+> Ca permet de garder les donnees existantes entre les versions.
+>
+> La migration v18 est un bon exemple : j'ai deplace `id_stock`
+> de `fiches_ingredients` vers `lots_ingredients`.
+> La strategie c'est : d'abord ajouter la colonne en NULL,
+> puis migrer les donnees avec un UPDATE JOIN,
+> puis rendre la colonne NOT NULL et ajouter la FK,
+> et enfin supprimer l'ancienne colonne.
+> La vue `vue_stock_global` a aussi ete recree pour pointer sur le nouveau chemin.
+>
+> Le fichier `schema_complet.sql` est une reference exportee apres la derniere migration.
+> C'est utile pour voir l'etat final sans rejouer les 18 migrations."
+
+#### Questions probables
+
+**Q : Pourquoi pas juste DROP TABLE et CREATE TABLE ?**
+> "Parce qu'en production, les tables contiennent des donnees.
+> ALTER TABLE modifie la structure tout en preservant les donnees existantes.
+> Si je faisais DROP + CREATE, je perdrais tout le contenu."
+
+**Q : Comment tu geres les migrations en equipe ?**
+> "Chaque migration est un fichier versionne dans git. Le numero de version (v04, v05...)
+> garantit l'ordre d'execution. Le fichier `schema_complet.sql` sert de reference
+> pour quelqu'un qui installe le projet de zero."
+
+---
+
 ## CONCLUSION (1 minute)
 
 ### Ce que tu dis
@@ -1256,6 +1720,15 @@ ORDER BY cmd.date_commande DESC
 | **AJAX** | Etape 6.4 | `panier.js` + `PanierController.php` |
 | **CSRF** | Etape 6.4 | `<meta name="csrf-token">` + header `X-CSRF-TOKEN` |
 | **FIFO** | Etape 4 ou 6.5 | C# `ConsumeStock()` ou Laravel `CommandeController@valider` |
+| **Normalisation 3NF** | Etape 8.2 | `fiches_ingredients` -- FK sans redondance |
+| **Denormalisation (snapshot prix)** | Etape 8.2 | `commandes_web_lignes.prix_unitaire` |
+| **ENUM / DECIMAL / GENERATED** | Etape 8.3 | `statut ENUM(...)`, `DECIMAL(10,2)`, `sous_total GENERATED` |
+| **PK composite** | Etape 8.4 | `activites_stocks (id_activite, id_stock)` |
+| **CASCADE / RESTRICT / SET NULL** | Etape 8.4 | FK policies -- `schema_complet.sql` |
+| **UNIQUE KEY composite** | Etape 8.4 | `uq_bom_niveau_ordre`, `uq_fiche_nom_niveau` |
+| **FK polymorphique** | Etape 8.5 | `bom_fiches_lignes.type_input` + 2 FK |
+| **VIEW / UNION ALL** | Etape 8.6 | `vue_stock_global` -- lots + produits fabriques |
+| **Migrations incrementales** | Etape 8.8 | `sql/migration_v01..v18` -- ALTER TABLE |
 
 ---
 

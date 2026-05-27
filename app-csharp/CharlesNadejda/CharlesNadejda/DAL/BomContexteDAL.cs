@@ -5,6 +5,7 @@ using CharlesNadejda.Models;
 
 namespace CharlesNadejda.DAL
 {
+    // 📌 SCRIPT DEFENSE — Étape 1.3 : InsertAvecNiveaux — transaction atomique (BeginTransaction/Commit/Rollback)
     public static class BomContexteDAL
     {
         private const string SELECT_BASE = @"

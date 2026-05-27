@@ -5,6 +5,7 @@ using CharlesNadejda.Models;
 
 namespace CharlesNadejda.DAL
 {
+    // 📌 SCRIPT DEFENSE — Étape 3 : Insert — transaction (fiche + lignes), LastInsertedId
     public static class BomFicheDAL
     {
         private const string SELECT_HEADER = @"

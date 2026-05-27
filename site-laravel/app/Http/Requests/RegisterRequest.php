@@ -4,6 +4,7 @@ namespace App\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
 
+// 📌 SCRIPT DEFENSE — Étape 6.2 : FormRequest — règles de validation (required|email|unique, confirmed, min:8)
 class RegisterRequest extends FormRequest
 {
     public function authorize(): bool

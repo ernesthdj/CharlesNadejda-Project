@@ -7,6 +7,7 @@ use App\Models\CommandeWebLigne;
 use App\Models\ProduitWeb;
 use Illuminate\Http\Request;
 
+// 📌 SCRIPT DEFENSE — Étape 6.4 : Panier AJAX — vérif stock, ownership check (403), incrément si existant
 class PanierController extends Controller
 {
     public function index()

@@ -90,12 +90,15 @@ namespace CharlesNadejda.Forms
             _dgv.ColumnHeadersDefaultCellStyle.SelectionBackColor = AppColors.Creme;
             _dgv.DefaultCellStyle.SelectionBackColor        = AppColors.ChocoMed;
             _dgv.DefaultCellStyle.SelectionForeColor        = Color.White;
-            _dgv.CellDoubleClick += (s, e) => { if (e.RowIndex >= 0) Modifier(); };
+            _dgv.CellDoubleClick   += (s, e) => { if (e.RowIndex >= 0) Modifier(); };
+            _dgv.SelectionChanged += (s, e) => MajBoutonDesactiver();
 
             // Colonnes explicites
             _dgv.Columns.Add(new DataGridViewTextBoxColumn { Name = "Id",          HeaderText = "ID",          MinimumWidth = 40,  Visible = false });
+            _dgv.Columns.Add(new DataGridViewTextBoxColumn { Name = "Actif",       HeaderText = "Actif",       MinimumWidth = 40,  Visible = false });
             _dgv.Columns.Add(new DataGridViewTextBoxColumn { Name = "Nom",         HeaderText = "Nom",         MinimumWidth = 160 });
             _dgv.Columns.Add(new DataGridViewTextBoxColumn { Name = "Description",  HeaderText = "Description", MinimumWidth = 200 });
+            _dgv.Columns.Add(new DataGridViewTextBoxColumn { Name = "Statut",       HeaderText = "Statut",      MinimumWidth = 80 });
             _dgv.Columns.Add(new DataGridViewTextBoxColumn { Name = "DateCreation", HeaderText = "Créée le",    MinimumWidth = 100 });
 
             // ── Barre d'actions (Bottom) ──────────────────────────────────
@@ -150,8 +153,31 @@ namespace CharlesNadejda.Forms
         private void Charger()
         {
             _dgv.Rows.Clear();
-            foreach (var a in ActiviteDAL.GetAll())
-                _dgv.Rows.Add(a.Id, a.Nom, a.Description ?? "", a.DateCreation.ToString("dd/MM/yyyy"));
+            foreach (var a in ActiviteDAL.GetAll(includeInactifs: true))
+            {
+                int idx = _dgv.Rows.Add(a.Id, a.Actif, a.Nom, a.Description ?? "",
+                    a.Actif ? "Active" : "Inactive",
+                    a.DateCreation.ToString("dd/MM/yyyy"));
+
+                if (!a.Actif)
+                {
+                    var row = _dgv.Rows[idx];
+                    row.DefaultCellStyle.ForeColor = Color.Gray;
+                    row.DefaultCellStyle.Font = new Font("Segoe UI", 9.5F, FontStyle.Italic);
+                    row.DefaultCellStyle.SelectionForeColor = Color.LightGray;
+                }
+            }
+            MajBoutonDesactiver();
+        }
+
+        private void MajBoutonDesactiver()
+        {
+            if (_dgv.SelectedRows.Count == 0) return;
+            bool actif = (bool)_dgv.SelectedRows[0].Cells["Actif"].Value;
+            _btnDesactiver.Text = actif ? "✕  Désactiver" : "✓  Réactiver";
+            _btnDesactiver.BackColor = actif
+                ? Color.FromArgb(160, 120, 60)
+                : Color.FromArgb(60, 130, 80);
         }
 
         private void Nouveau()
@@ -173,26 +199,49 @@ namespace CharlesNadejda.Forms
             var activite = ActiviteSelectionnee();
             if (activite == null) return;
 
-            if (MessageBox.Show(
-                    $"Désactiver l'activité « {activite.Nom} » ?\n\n" +
-                    "Elle sera masquée mais ses données historiques seront conservées.",
-                    "Confirmation",
-                    MessageBoxButtons.YesNo,
-                    MessageBoxIcon.Warning,
-                    MessageBoxDefaultButton.Button2) != DialogResult.Yes) return;
+            if (activite.Actif)
+            {
+                // Désactiver
+                if (MessageBox.Show(
+                        $"Désactiver l'activité « {activite.Nom} » ?\n\n" +
+                        "Elle restera visible (grisée) mais ne sera plus sélectionnable dans les formulaires.",
+                        "Confirmation",
+                        MessageBoxButtons.YesNo,
+                        MessageBoxIcon.Warning,
+                        MessageBoxDefaultButton.Button2) != DialogResult.Yes) return;
 
-            try
-            {
-                ActiviteDAL.Desactiver(activite.Id);
-                Charger();
+                try
+                {
+                    ActiviteDAL.Desactiver(activite.Id);
+                    Charger();
+                }
+                catch (InvalidOperationException ex)
+                {
+                    MessageBox.Show(ex.Message, "Impossible", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show("Erreur : " + ex.Message, "Erreur", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                }
             }
-            catch (InvalidOperationException ex)
+            else
             {
-                MessageBox.Show(ex.Message, "Impossible", MessageBoxButtons.OK, MessageBoxIcon.Warning);
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show("Erreur : " + ex.Message, "Erreur", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                // Réactiver
+                if (MessageBox.Show(
+                        $"Réactiver l'activité « {activite.Nom} » ?",
+                        "Confirmation",
+                        MessageBoxButtons.YesNo,
+                        MessageBoxIcon.Question) != DialogResult.Yes) return;
+
+                try
+                {
+                    ActiviteDAL.Reactiver(activite.Id);
+                    Charger();
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show("Erreur : " + ex.Message, "Erreur", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                }
             }
         }
 

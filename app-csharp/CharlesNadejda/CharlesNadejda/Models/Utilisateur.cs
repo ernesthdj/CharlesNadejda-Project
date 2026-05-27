@@ -1,5 +1,6 @@
 namespace CharlesNadejda.Models
 {
+    // 📌 SCRIPT DEFENSE — Étape 0.1 : Modèle POCO + ToString() affiché dans StatusBar
     public class Utilisateur
     {
         public int    Id      { get; set; }

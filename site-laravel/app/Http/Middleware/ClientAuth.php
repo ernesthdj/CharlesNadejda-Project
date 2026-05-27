@@ -6,6 +6,7 @@ use App\Models\Client;
 use Closure;
 use Illuminate\Http\Request;
 
+// 📌 SCRIPT DEFENSE — Étape 6.4 : Middleware — session check + vérif client actif en base
 class ClientAuth
 {
     public function handle(Request $request, Closure $next)
