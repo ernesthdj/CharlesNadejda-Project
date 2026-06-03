@@ -16,6 +16,8 @@ namespace CharlesNadejda.Models
         public string   ConditionnementLabel    { get; set; }
         /// <summary>Quantité en unité de base par conditionnement (ex: 10000 pour Sac 10 kg en grammes).</summary>
         public decimal  QteParConditionnement   { get; set; } = 1m;
+        /// <summary>Nombre de conditionnements par lot d'achat (ex: 6 briques, 4 sacs). Défaut = 1.</summary>
+        public int      NbParLot                { get; set; } = 1;
         /// <summary>Prix de référence par conditionnement (€/sac, €/bouteille…).</summary>
         public decimal  PrixAchatReference      { get; set; }
         public decimal? SeuilAlerteStock        { get; set; }

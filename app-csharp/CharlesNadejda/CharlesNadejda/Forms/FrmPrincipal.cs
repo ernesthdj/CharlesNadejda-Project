@@ -89,6 +89,7 @@ namespace CharlesNadejda.Forms
             _router.OnProduction      = p => ShowProductionScreen(p);
             _router.OnPlaceholder     = p => ShowPlaceholder(null);
             _router.OnBoutiqueWeb     = p => ShowBoutiqueWebScreen();
+            _router.OnParametres      = p => ShowParametresScreen();
         }
 
         /// <summary>
@@ -121,6 +122,9 @@ namespace CharlesNadejda.Forms
             _sidebar.ActivityChanged          += OnActivityChanged;
             _sidebar.ManageActivitiesRequested += OnManageActivities;
             _sidebar.NewContextRequested       += OnNewContext;
+            _sidebar.ContextChanged            += OnContextChanged;
+            _sidebar.EditContextRequested      += OnEditContext;
+            _sidebar.DeleteContextRequested    += OnDeleteContext;
 
             _pnlDroit = new Panel
             {
@@ -209,6 +213,57 @@ namespace CharlesNadejda.Forms
             BtnNouveauContexte_Click(this, EventArgs.Empty);
         }
 
+        private void OnContextChanged(BomContexte ctx)
+        {
+            if (ctx == null || ctx.Id == _state.ActiveContexte?.Id) return;
+            _state.SetContexte(ctx);
+            ChargerNiveaux();
+            _router.Invalidate();
+            NavigateTo(ScreenId.ContexteNiveaux, forceRefresh: true);
+            UpdateTitleBar();
+            UpdateStatusBar();
+        }
+
+        private void OnEditContext(BomContexte ctx)
+        {
+            if (ctx == null) return;
+            using (var frm = new FrmBomContexteEdit(ctx, _state.ActiveActivite))
+            {
+                if (frm.ShowDialog() == DialogResult.OK)
+                {
+                    ChargerContextes();
+                    _router.Invalidate();
+                    NavigateTo(ScreenId.ContexteNiveaux, forceRefresh: true);
+                    UpdateTitleBar();
+                }
+            }
+        }
+
+        private void OnDeleteContext(BomContexte ctx)
+        {
+            if (ctx == null) return;
+            if (MessageBox.Show($"Supprimer « {ctx.Nom} » et toutes ses données ?",
+                    "Confirmation", MessageBoxButtons.YesNo, MessageBoxIcon.Warning,
+                    MessageBoxDefaultButton.Button2) != DialogResult.Yes) return;
+            try
+            {
+                BomContexteDAL.Delete(ctx.Id);
+                if (_state.ActiveContexte?.Id == ctx.Id)
+                    _state.SetContexte(null);
+                ChargerContextes();
+                var cible = _state.ActiveContexte != null ? ScreenId.ContexteNiveaux : ScreenId.Hub;
+                _router.Invalidate();
+                NavigateTo(cible, forceRefresh: true);
+                UpdateTitleBar();
+                UpdateStatusBar();
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("Impossible : " + ex.Message, "Erreur",
+                    MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+        }
+
         private void UpdateTitleBar()
         {
             if (_titleBar == null) return;
@@ -266,7 +321,12 @@ namespace CharlesNadejda.Forms
 
         private void ChargerContextes()
         {
-            if (_state.ActiveActivite == null) { _state.SetContexte(null); return; }
+            if (_state.ActiveActivite == null)
+            {
+                _state.SetContexte(null);
+                _sidebar.SetContextes(null);
+                return;
+            }
             var contextes = BomContexteDAL.GetAll(_state.ActiveActivite.Id);
             if (contextes.Count > 0 && _state.ActiveContexte == null)
                 _state.SetContexte(contextes[0]);
@@ -278,6 +338,11 @@ namespace CharlesNadejda.Forms
             }
             else
                 _state.SetContexte(null);
+
+            _sidebar.SetContextes(contextes);
+            if (_state.ActiveContexte != null)
+                _sidebar.SetSelectedContext(_state.ActiveContexte);
+
             ChargerNiveaux();
         }
 

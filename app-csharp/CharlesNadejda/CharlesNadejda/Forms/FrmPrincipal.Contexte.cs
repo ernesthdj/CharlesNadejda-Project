@@ -50,18 +50,6 @@ namespace CharlesNadejda.Forms
                 ForeColor = CHOCO_MED, AutoSize = true
             });
 
-            var btnModCtx = MakeActionButton("✎  Modifier",  CHOCO_MED, Color.White);
-            var btnSupCtx = MakeActionButton("✕  Supprimer", RED_CRIT,  Color.White);
-            btnModCtx.Click += BtnModifierContexte_Click;
-            btnSupCtx.Click += BtnSupprimerContexte_Click;
-            pnlHdr.Resize += (s, ev) =>
-            {
-                btnSupCtx.Location = new Point(pnlHdr.Width - 112, 16);
-                btnModCtx.Location = new Point(pnlHdr.Width - 222, 16);
-            };
-            pnlHdr.Controls.Add(btnModCtx);
-            pnlHdr.Controls.Add(btnSupCtx);
-
             // ══════════════════════════════════════════════════════════
             //  KANBAN — 3 colonnes : Niveaux | Fiches | Stock
             // ══════════════════════════════════════════════════════════

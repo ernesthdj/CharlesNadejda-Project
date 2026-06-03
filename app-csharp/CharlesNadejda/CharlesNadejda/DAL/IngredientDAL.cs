@@ -20,7 +20,7 @@ namespace CharlesNadejda.DAL
             {
                 cmd.CommandText = @"
                     SELECT fi.id, fi.nom, fi.marque, fi.description, fi.unite_mesure, fi.type_physique, fi.densite,
-                           fi.conditionnement_label, fi.qte_par_conditionnement,
+                           fi.conditionnement_label, fi.qte_par_conditionnement, fi.nb_par_lot,
                            fi.prix_achat_reference, fi.seuil_alerte_stock, fi.stock_cible,
                            fi.id_fournisseur_defaut, fi.actif,
                            f.nom  AS nom_fournisseur,
@@ -53,7 +53,7 @@ namespace CharlesNadejda.DAL
             {
                 cmd.CommandText = @"
                     SELECT fi.id, fi.nom, fi.marque, fi.description, fi.unite_mesure, fi.type_physique, fi.densite,
-                           fi.conditionnement_label, fi.qte_par_conditionnement,
+                           fi.conditionnement_label, fi.qte_par_conditionnement, fi.nb_par_lot,
                            fi.prix_achat_reference, fi.seuil_alerte_stock, fi.stock_cible,
                            fi.id_fournisseur_defaut, fi.actif,
                            f.nom  AS nom_fournisseur,
@@ -90,11 +90,11 @@ namespace CharlesNadejda.DAL
                 cmd.CommandText = @"
                     INSERT INTO fiches_ingredients
                         (nom, marque, description, unite_mesure, type_physique, densite,
-                         conditionnement_label, qte_par_conditionnement,
+                         conditionnement_label, qte_par_conditionnement, nb_par_lot,
                          prix_achat_reference, seuil_alerte_stock, stock_cible,
                          id_fournisseur_defaut, actif)
                     VALUES (@nom, @marque, @desc, @unite, @type_physique, @densite,
-                            @condLabel, @condQte,
+                            @condLabel, @condQte, @nbLot,
                             @prix, @seuil, @stockCible, @fournisseur, 1)";
                 Bind(cmd, i);
                 cmd.ExecuteNonQuery();
@@ -112,6 +112,7 @@ namespace CharlesNadejda.DAL
                     SET nom=@nom, marque=@marque, description=@desc, unite_mesure=@unite,
                         type_physique=@type_physique, densite=@densite,
                         conditionnement_label=@condLabel, qte_par_conditionnement=@condQte,
+                        nb_par_lot=@nbLot,
                         prix_achat_reference=@prix, seuil_alerte_stock=@seuil,
                         stock_cible=@stockCible,
                         id_fournisseur_defaut=@fournisseur
@@ -165,6 +166,7 @@ namespace CharlesNadejda.DAL
             cmd.Parameters.AddWithValue("@densite",      i.Densite.HasValue ? (object)i.Densite.Value : DBNull.Value);
             cmd.Parameters.AddWithValue("@condLabel",    i.ConditionnementLabel ?? "");
             cmd.Parameters.AddWithValue("@condQte",      i.QteParConditionnement);
+            cmd.Parameters.AddWithValue("@nbLot",        i.NbParLot);
             cmd.Parameters.AddWithValue("@prix",         i.PrixAchatReference);
             cmd.Parameters.AddWithValue("@seuil",        i.SeuilAlerteStock.HasValue ? (object)i.SeuilAlerteStock.Value : DBNull.Value);
             cmd.Parameters.AddWithValue("@stockCible",   i.StockCible.HasValue ? (object)i.StockCible.Value : DBNull.Value);
@@ -182,6 +184,7 @@ namespace CharlesNadejda.DAL
             Densite               = r["densite"]              == DBNull.Value ? (decimal?)null : (decimal)r["densite"],
             ConditionnementLabel  = r["conditionnement_label"].ToString(),
             QteParConditionnement = (decimal)r["qte_par_conditionnement"],
+            NbParLot              = (int)r["nb_par_lot"],
             PrixAchatReference    = (decimal)r["prix_achat_reference"],
             SeuilAlerteStock      = r["seuil_alerte_stock"]   == DBNull.Value ? (decimal?)null : (decimal)r["seuil_alerte_stock"],
             StockCible            = r["stock_cible"]           == DBNull.Value ? (decimal?)null : (decimal)r["stock_cible"],

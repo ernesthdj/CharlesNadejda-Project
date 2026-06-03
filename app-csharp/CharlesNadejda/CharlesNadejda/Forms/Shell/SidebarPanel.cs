@@ -16,13 +16,21 @@ namespace CharlesNadejda.Forms.Shell
     internal sealed class SidebarPanel : Panel
     {
         // ── Événements ──────────────────────────────────────────────
-        public event Action<NavItemId> NavigationRequested;
-        public event Action<Activite>  ActivityChanged;
-        public event Action            ManageActivitiesRequested;
-        public event Action            NewContextRequested;
+        public event Action<NavItemId>    NavigationRequested;
+        public event Action<Activite>    ActivityChanged;
+        public event Action              ManageActivitiesRequested;
+        public event Action              NewContextRequested;
+        public event Action<BomContexte> ContextChanged;
+        public event Action<BomContexte> EditContextRequested;
+        public event Action<BomContexte> DeleteContextRequested;
 
         // ── Contrôles ───────────────────────────────────────────────
         private readonly ComboBox _cboActivite;
+        private readonly ComboBox _cboContexte;
+        private readonly Button   _btnNewCtx;
+        private readonly Button   _btnEditCtx;
+        private readonly Button   _btnDelCtx;
+        private readonly Label    _lblCtxLabel;
         private readonly Panel    _pnlNav;
         private readonly Label    _lblVersion;
 
@@ -62,29 +70,33 @@ namespace CharlesNadejda.Forms.Shell
                 BackColor = BG_COLOR
             };
 
-            // ── Bandeau ATELIER + ActivitySwitcher ──────────────────
+            // ── Bandeau ATELIER + ActivitySwitcher + ContextSwitcher ─
             var pnlTop = new Panel
             {
                 Dock      = DockStyle.Top,
-                Height    = 94,
                 BackColor = BG_COLOR,
                 Padding   = new Padding(12, 10, 12, 8)
             };
 
+            int topY = 10;
+
+            // ── Label ATELIER ─────────────────────────────────────
             var lblAtelier = new Label
             {
                 Text      = "ATELIER",
                 Font      = new Font("Segoe UI", 7.5F, FontStyle.Bold),
                 ForeColor = FG_SECTION,
                 AutoSize  = true,
-                Location  = new Point(12, 10),
+                Location  = new Point(12, topY),
                 BackColor = Color.Transparent
             };
             pnlTop.Controls.Add(lblAtelier);
+            topY += 20;
 
+            // ── ComboBox Activité ─────────────────────────────────
             _cboActivite = new ComboBox
             {
-                Location      = new Point(12, 30),
+                Location      = new Point(12, topY),
                 Size          = new Size(SIDEBAR_WIDTH - 24, 50),
                 DropDownStyle = ComboBoxStyle.DropDownList,
                 DrawMode      = DrawMode.OwnerDrawFixed,
@@ -101,21 +113,93 @@ namespace CharlesNadejda.Forms.Shell
                     ActivityChanged?.Invoke(a);
             };
             pnlTop.Controls.Add(_cboActivite);
+            topY += 46;
 
-            // ── Boutons gestion activités ────────────────────────────
+            // ── Bouton gestion activités ──────────────────────────
             var btnGererAct = new Button
             {
                 Text = "⚙ Gérer les activités", Font = new Font("Segoe UI", 7.5F),
                 FlatStyle = FlatStyle.Flat, BackColor = Color.Transparent,
                 ForeColor = ACCENT_DIM, Size = new Size(130, 20),
-                Location = new Point(12, 73), Cursor = Cursors.Hand
+                Location = new Point(12, topY), Cursor = Cursors.Hand
             };
             btnGererAct.FlatAppearance.BorderSize = 0;
             btnGererAct.FlatAppearance.MouseOverBackColor = BG_HOVER;
             btnGererAct.Click += (s, e) => ManageActivitiesRequested?.Invoke();
             pnlTop.Controls.Add(btnGererAct);
+            topY += 28;
 
-            pnlTop.Height = 98;
+            // ── Séparateur ────────────────────────────────────────
+            var sep = new Panel
+            {
+                Location = new Point(12, topY),
+                Size     = new Size(SIDEBAR_WIDTH - 24, 1),
+                BackColor = Color.FromArgb(40, 245, 230, 211)
+            };
+            pnlTop.Controls.Add(sep);
+            topY += 8;
+
+            // ── Label CONTEXTE ────────────────────────────────────
+            _lblCtxLabel = new Label
+            {
+                Text      = "CONTEXTE",
+                Font      = new Font("Segoe UI", 7.5F, FontStyle.Bold),
+                ForeColor = FG_SECTION,
+                AutoSize  = true,
+                Location  = new Point(12, topY),
+                BackColor = Color.Transparent
+            };
+            pnlTop.Controls.Add(_lblCtxLabel);
+            topY += 18;
+
+            // ── ComboBox Contexte ─────────────────────────────────
+            _cboContexte = new ComboBox
+            {
+                Location      = new Point(12, topY),
+                Size          = new Size(SIDEBAR_WIDTH - 24, 24),
+                DropDownStyle = ComboBoxStyle.DropDownList,
+                Font          = new Font("Segoe UI", 9F),
+                FlatStyle     = FlatStyle.Flat,
+                BackColor     = Color.FromArgb(45, 30, 18),
+                ForeColor     = AppColors.SidebarTxt
+            };
+            _cboContexte.SelectedIndexChanged += (s, e) =>
+            {
+                if (_cboContexte.SelectedItem is BomContexte ctx)
+                    ContextChanged?.Invoke(ctx);
+            };
+            pnlTop.Controls.Add(_cboContexte);
+            topY += 28;
+
+            // ── Boutons contexte : + ✎ ✕ ──────────────────────────
+            int btnX = 12;
+            _btnNewCtx = MakeSidebarMiniButton("+", ACCENT, btnX);
+            _btnNewCtx.Click += (s, e) => NewContextRequested?.Invoke();
+            pnlTop.Controls.Add(_btnNewCtx);
+            _btnNewCtx.Location = new Point(btnX, topY);
+            btnX += 30;
+
+            _btnEditCtx = MakeSidebarMiniButton("✎", ACCENT_DIM, btnX);
+            _btnEditCtx.Click += (s, e) =>
+            {
+                if (_cboContexte.SelectedItem is BomContexte ctx)
+                    EditContextRequested?.Invoke(ctx);
+            };
+            pnlTop.Controls.Add(_btnEditCtx);
+            _btnEditCtx.Location = new Point(btnX, topY);
+            btnX += 30;
+
+            _btnDelCtx = MakeSidebarMiniButton("✕", Color.FromArgb(180, AppColors.RedCrit), btnX);
+            _btnDelCtx.Click += (s, e) =>
+            {
+                if (_cboContexte.SelectedItem is BomContexte ctx)
+                    DeleteContextRequested?.Invoke(ctx);
+            };
+            pnlTop.Controls.Add(_btnDelCtx);
+            _btnDelCtx.Location = new Point(btnX, topY);
+            topY += 26;
+
+            pnlTop.Height = topY + 6;
 
             // ── Version en bas ──────────────────────────────────────
             var pnlBottom = new Panel
@@ -179,6 +263,38 @@ namespace CharlesNadejda.Forms.Shell
             }
         }
 
+        public void SetContextes(List<BomContexte> contextes)
+        {
+            _cboContexte.SelectedIndexChanged -= CboContexte_OnChange;
+            _cboContexte.Items.Clear();
+            if (contextes != null)
+                foreach (var c in contextes)
+                    _cboContexte.Items.Add(c);
+            _cboContexte.SelectedIndexChanged += CboContexte_OnChange;
+
+            bool hasItems = _cboContexte.Items.Count > 0;
+            _btnEditCtx.Enabled = hasItems;
+            _btnDelCtx.Enabled  = hasItems;
+        }
+
+        public void SetSelectedContext(BomContexte ctx)
+        {
+            if (ctx == null) { _cboContexte.SelectedIndex = -1; return; }
+            _cboContexte.SelectedIndexChanged -= CboContexte_OnChange;
+            for (int i = 0; i < _cboContexte.Items.Count; i++)
+            {
+                if (_cboContexte.Items[i] is BomContexte c && c.Id == ctx.Id)
+                { _cboContexte.SelectedIndex = i; break; }
+            }
+            _cboContexte.SelectedIndexChanged += CboContexte_OnChange;
+        }
+
+        private void CboContexte_OnChange(object s, EventArgs e)
+        {
+            if (_cboContexte.SelectedItem is BomContexte ctx)
+                ContextChanged?.Invoke(ctx);
+        }
+
         public void SetActiveItem(NavItemId id)
         {
             _activeItem = id;
@@ -193,6 +309,22 @@ namespace CharlesNadejda.Forms.Shell
                 lbl.Text    = text ?? "";
                 lbl.Visible = !string.IsNullOrEmpty(text);
             }
+        }
+
+        // ── Helpers ────────────────────────────────────────────────
+
+        private static Button MakeSidebarMiniButton(string text, Color fg, int x)
+        {
+            var btn = new Button
+            {
+                Text = text, Font = new Font("Segoe UI", 9F, FontStyle.Bold),
+                FlatStyle = FlatStyle.Flat, BackColor = Color.Transparent,
+                ForeColor = fg, Size = new Size(26, 22),
+                Cursor = Cursors.Hand
+            };
+            btn.FlatAppearance.BorderSize = 0;
+            btn.FlatAppearance.MouseOverBackColor = BG_HOVER;
+            return btn;
         }
 
         // ── Construction des sections nav ───────────────────────────
@@ -388,11 +520,16 @@ namespace CharlesNadejda.Forms.Shell
                     new SolidBrush(AppColors.SidebarTxt),
                     e.Bounds.X + 36, e.Bounds.Y + 6);
 
-            // Sous-texte
-            using (var fSub = new Font("Segoe UI", 8F))
-                g.DrawString("Saint-Boniface · Bruxelles", fSub,
-                    new SolidBrush(Color.FromArgb(130, 245, 230, 211)),
-                    e.Bounds.X + 36, e.Bounds.Y + 24);
+            // Sous-texte — description de l'activité (ou rien)
+            var subText = act.Description ?? "";
+            if (subText.Length > 40) subText = subText.Substring(0, 37) + "…";
+            if (!string.IsNullOrWhiteSpace(subText))
+            {
+                using (var fSub = new Font("Segoe UI", 8F))
+                    g.DrawString(subText, fSub,
+                        new SolidBrush(Color.FromArgb(130, 245, 230, 211)),
+                        e.Bounds.X + 36, e.Bounds.Y + 24);
+            }
 
             // Bordure
             using (var pen = new Pen(Color.FromArgb(60, AppColors.Or)))
