@@ -6,8 +6,8 @@
 
 @if($commandes->isEmpty())
     <div class="text-center py-12">
-        <p class="text-(--color-text-light) text-lg mb-4">Vous n'avez pas encore passe de commande.</p>
-        <a href="{{ route('catalogue') }}" class="text-(--color-or) font-semibold hover:underline">Decouvrez notre catalogue &rarr;</a>
+        <p class="text-(--color-text-light) text-lg mb-4">Vous n'avez pas encore passé de commande.</p>
+        <a href="{{ route('catalogue') }}" class="text-(--color-or) font-semibold hover:underline">Découvrez notre catalogue &rarr;</a>
     </div>
 @else
     <div class="space-y-4">
@@ -23,7 +23,7 @@
                 <div class="flex items-center gap-4">
                     <span class="font-bold text-(--color-or)">{{ number_format($cmd->total_ttc, 2, ',', ' ') }} &euro;</span>
                     <span class="text-xs font-medium px-2 py-1 rounded-full bg-green-100 text-green-700 uppercase">{{ $cmd->statut }}</span>
-                    <a href="{{ route('commande.detail', $cmd->id) }}" class="text-sm text-(--color-or) font-semibold hover:underline">Voir detail</a>
+                    <a href="{{ route('commande.detail', $cmd->id) }}" class="text-sm text-(--color-or) font-semibold hover:underline">Voir détail</a>
                 </div>
             </div>
         @endforeach

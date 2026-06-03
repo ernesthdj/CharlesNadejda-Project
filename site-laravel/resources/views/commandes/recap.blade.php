@@ -1,8 +1,8 @@
 @extends('layouts.app')
-@section('title', 'Recapitulatif — ArtisaStock')
+@section('title', 'Récapitulatif — ArtisaStock')
 
 @section('content')
-<h1 class="text-2xl font-display font-bold text-(--color-choco) mb-6">Recapitulatif de commande</h1>
+<h1 class="text-2xl font-display font-bold text-(--color-choco) mb-6">Récapitulatif de commande</h1>
 
 <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
     {{-- Articles --}}
@@ -44,7 +44,7 @@
             </div>
 
             <div class="bg-blue-50 border border-blue-200 rounded-lg p-4 text-sm text-blue-800">
-                <strong>Simulation de paiement</strong> — Aucun paiement reel ne sera effectue.
+                <strong>Simulation de paiement</strong> — Aucun paiement réel ne sera effectué.
             </div>
 
             <button type="submit"

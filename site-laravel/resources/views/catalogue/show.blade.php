@@ -47,7 +47,7 @@
 
         @if(session('client_id') && $produit->en_stock)
             <div class="mt-6 flex items-center gap-3">
-                <label for="qte" class="text-sm font-medium">Quantite :</label>
+                <label for="qte" class="text-sm font-medium">Quantité :</label>
                 <input type="number" id="qte" value="1" min="1" max="{{ intval($produit->stock_disponible) }}"
                        class="w-20 px-3 py-2 border border-gray-300 rounded text-center focus:ring-2 focus:ring-(--color-or) outline-none">
             </div>

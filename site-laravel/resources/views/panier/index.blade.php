@@ -7,7 +7,7 @@
 @if(!$panier || $panier->lignes->isEmpty())
     <div class="text-center py-12">
         <p class="text-(--color-text-light) text-lg mb-4">Votre panier est vide.</p>
-        <a href="{{ route('catalogue') }}" class="text-(--color-or) font-semibold hover:underline">Decouvrez notre catalogue &rarr;</a>
+        <a href="{{ route('catalogue') }}" class="text-(--color-or) font-semibold hover:underline">Découvrez notre catalogue &rarr;</a>
     </div>
 @else
     <div class="bg-white rounded-lg shadow overflow-hidden">
@@ -26,10 +26,10 @@
                 {{-- Nom --}}
                 <div class="flex-1">
                     <h3 class="font-semibold">{{ $ligne->produit->nom_commercial }}</h3>
-                    <p class="text-sm text-(--color-text-light)">{{ number_format($ligne->prix_unitaire, 2, ',', ' ') }} &euro; / unite</p>
+                    <p class="text-sm text-(--color-text-light)">{{ number_format($ligne->prix_unitaire, 2, ',', ' ') }} &euro; / unité</p>
                 </div>
 
-                {{-- Quantite --}}
+                {{-- Quantité --}}
                 <div class="flex items-center gap-2">
                     <button onclick="updateQuantite({{ $ligne->id }}, {{ $ligne->quantite - 1 }})"
                             class="w-8 h-8 rounded bg-gray-200 hover:bg-gray-300 text-lg font-bold

@@ -10,7 +10,7 @@
         @method('PUT')
 
         <div>
-            <label class="block text-sm font-medium mb-1">Prenom <span class="text-red-500">*</span></label>
+            <label class="block text-sm font-medium mb-1">Prénom <span class="text-red-500">*</span></label>
             <input type="text" name="prenom" value="{{ old('prenom', $client->prenom) }}" required
                    class="w-full px-3 py-2 border rounded focus:ring-2 focus:ring-(--color-or) outline-none
                           {{ $errors->has('prenom') ? 'border-red-500' : 'border-gray-300' }}">
@@ -32,7 +32,7 @@
         </div>
 
         <div>
-            <label class="block text-sm font-medium mb-1">Telephone</label>
+            <label class="block text-sm font-medium mb-1">Téléphone</label>
             <input type="text" name="telephone" value="{{ old('telephone', $client->telephone) }}"
                    class="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-(--color-or) outline-none">
         </div>
@@ -81,7 +81,7 @@
         <button type="submit"
                 class="w-full bg-(--color-choco) text-(--color-creme) py-3 rounded font-semibold
                        hover:brightness-125 transition-all text-base">
-            Mettre a jour
+            Mettre à jour
         </button>
     </form>
 </div>

@@ -3,13 +3,13 @@
 
 @section('content')
 <div class="max-w-md mx-auto">
-    <h1 class="text-2xl font-display font-bold text-(--color-choco) mb-6 text-center">Creer votre compte</h1>
+    <h1 class="text-2xl font-display font-bold text-(--color-choco) mb-6 text-center">Créer votre compte</h1>
 
     <form method="POST" action="{{ route('register') }}" class="bg-white rounded-lg shadow p-8 space-y-4">
         @csrf
 
         <div>
-            <label for="prenom" class="block text-sm font-medium mb-1">Prenom <span class="text-red-500">*</span></label>
+            <label for="prenom" class="block text-sm font-medium mb-1">Prénom <span class="text-red-500">*</span></label>
             <input type="text" id="prenom" name="prenom" value="{{ old('prenom') }}" required
                    class="w-full px-3 py-2 border rounded focus:ring-2 focus:ring-(--color-or) outline-none
                           {{ $errors->has('prenom') ? 'border-red-500' : 'border-gray-300' }}">
@@ -49,7 +49,7 @@
         <hr class="border-(--color-border)">
 
         <div>
-            <label for="telephone" class="block text-sm font-medium mb-1">Telephone</label>
+            <label for="telephone" class="block text-sm font-medium mb-1">Téléphone</label>
             <input type="text" id="telephone" name="telephone" value="{{ old('telephone') }}"
                    class="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-(--color-or) outline-none">
         </div>
@@ -82,11 +82,11 @@
         <button type="submit"
                 class="w-full bg-(--color-choco) text-(--color-creme) py-3 rounded font-semibold
                        hover:brightness-125 transition-all text-base">
-            Creer mon compte
+            Créer mon compte
         </button>
 
         <p class="text-center text-sm text-(--color-text-light)">
-            Deja un compte ? <a href="{{ route('login') }}" class="text-(--color-or) font-semibold hover:underline">Se connecter</a>
+            Déjà un compte ? <a href="{{ route('login') }}" class="text-(--color-or) font-semibold hover:underline">Se connecter</a>
         </p>
     </form>
 </div>

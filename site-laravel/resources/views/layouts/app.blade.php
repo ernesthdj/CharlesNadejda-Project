@@ -5,6 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>@yield('title', 'ArtisaStock Boutique')</title>
+    <link rel="preconnect" href="https://fonts.bunny.net">
+    <link href="https://fonts.bunny.net/css?family=inter:400,500,600,700|playfair-display:400,500,600,700" rel="stylesheet">
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
 <body class="bg-(--color-bg) text-(--color-text-main) font-sans min-h-screen flex flex-col">
@@ -32,7 +34,7 @@
     @include('components.footer')
 
     {{-- Toast container for AJAX notifications --}}
-    <div id="toast-container" class="fixed top-4 right-4 z-50 space-y-2"></div>
+    <div id="toast-container" class="fixed top-4 right-4 z-[60] space-y-2"></div>
 
     @stack('scripts')
 </body>

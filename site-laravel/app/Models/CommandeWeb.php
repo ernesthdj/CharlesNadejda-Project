@@ -14,6 +14,12 @@ class CommandeWeb extends Model
         'adresse_livraison', 'date_commande',
     ];
 
+    protected $casts = [
+        'date_commande' => 'datetime',
+        'date_creation' => 'datetime',
+        'total_ttc'     => 'decimal:2',
+    ];
+
     public function client()
     {
         return $this->belongsTo(Client::class, 'id_client');

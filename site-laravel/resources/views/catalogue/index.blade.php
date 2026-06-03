@@ -24,9 +24,9 @@
 <div class="flex justify-end mb-4">
     <select onchange="window.location.href=this.value"
             class="text-sm border border-gray-300 rounded px-3 py-1.5 bg-white">
-        <option value="{{ route('catalogue', array_merge(request()->query(), ['tri' => 'defaut'])) }}" {{ $tri == 'defaut' ? 'selected' : '' }}>Par defaut</option>
+        <option value="{{ route('catalogue', array_merge(request()->query(), ['tri' => 'defaut'])) }}" {{ $tri == 'defaut' ? 'selected' : '' }}>Par défaut</option>
         <option value="{{ route('catalogue', array_merge(request()->query(), ['tri' => 'prix_asc'])) }}" {{ $tri == 'prix_asc' ? 'selected' : '' }}>Prix croissant</option>
-        <option value="{{ route('catalogue', array_merge(request()->query(), ['tri' => 'prix_desc'])) }}" {{ $tri == 'prix_desc' ? 'selected' : '' }}>Prix decroissant</option>
+        <option value="{{ route('catalogue', array_merge(request()->query(), ['tri' => 'prix_desc'])) }}" {{ $tri == 'prix_desc' ? 'selected' : '' }}>Prix décroissant</option>
     </select>
 </div>
 

@@ -30,7 +30,7 @@
                         <form method="POST" action="{{ route('logout') }}">
                             @csrf
                             <button class="block w-full text-left px-4 py-2 hover:bg-gray-100 text-sm">
-                                Deconnexion
+                                Déconnexion
                             </button>
                         </form>
                     </div>
