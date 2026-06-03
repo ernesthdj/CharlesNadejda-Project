@@ -29,6 +29,9 @@ RUN apt-get update && apt-get install -y \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
+# OPcache optimisé — élimine la lenteur du bind mount Windows/Docker
+COPY docker/php/opcache.ini /usr/local/etc/php/conf.d/opcache-custom.ini
+
 # Composer (copié depuis l'image officielle)
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 
