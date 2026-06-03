@@ -51,6 +51,24 @@ docker/**/.env
 docker/**/data/
 
 # ===========================
+# Visual Studio (racine)
+# ===========================
+.vs/
+
+# ===========================
+# Graphify (caches internes & dossiers dupliqués)
+# ===========================
+graphify-out/.graphify_*
+app-csharp/**/graphify-out/
+
+# ===========================
+# Dossiers accidentels
+# ===========================
+app-csharp/site-laravel/
+site-laravel/.config/
+site-laravel/package-lock.json
+
+# ===========================
 # Claude Code (configs locales)
 # ===========================
 .claude/

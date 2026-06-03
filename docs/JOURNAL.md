@@ -40,10 +40,26 @@
 | 28  | Pour les champs de saisie qui représentent des quantités en unité de base (ml, g) mais dont l'utilisateur pense en pièces/conditionnements, convertir à l'affichage (`valeurBase / qteParConditionnement`) et à la sauvegarde (`pièces × qteParConditionnement`). Ne jamais exposer l'unité de base brute à l'utilisateur. | `Forms/FrmIngredientEdit.cs` (nudStockCible) | 2026-05-14 |
 | 29  | Le symlink `storage:link` dans Docker pointe vers le chemin container (`/var/www/storage/app/public`). Les images uploadées depuis C# natif Windows doivent écrire au même emplacement physique (`site-laravel/storage/app/public/`). Configurer le chemin absolu dans `App.config` (`LaravelStoragePath`), jamais un chemin relatif fragile. | `App.config`, `Forms/FrmProduitWebEdit.cs` | 2026-05-19 |
 | 30  | `Path.Combine` sur Windows convertit les `/` en `\`. En DB, stocker les chemins d'image avec des slashes `/` (compatibles URL). Convertir en `\` uniquement pour les opérations filesystem Windows (`File.Copy`, `File.Move`, `File.Exists`). | `Forms/FrmProduitWebEdit.cs` | 2026-05-19 |
+| 31  | Laravel 11 utilise `CACHE_STORE` (pas `CACHE_DRIVER`) pour sélectionner le store de cache. Le défaut dans `config/cache.php` est `env('CACHE_STORE', 'database')`. Si `.env` ne définit que `CACHE_DRIVER=file`, le store reste `database` et plante si la table `cache` n'existe pas. | `site-laravel/.env` | 2026-05-20 |
+| 32  | `@vite()` dans les Blade templates nécessite un `public/build/manifest.json` généré par `npx vite build`. Sans build, toute page utilisant `@vite` retourne 500 (`ViteManifestNotFoundException`). En dev sans HMR, toujours builder avant de tester. | `site-laravel/resources/views/layouts/app.blade.php` | 2026-05-20 |
 
 ---
 
 ## Historique
+
+---
+
+### SESSION 21 — 2026-05-20
+> Test E2E complet du flux ERP → Boutique Web → Commande → Décrémentation FIFO stock. Fix infra (CACHE_STORE, Vite build).
+
+### [2026-05-20 14:00] TEST — Test E2E complet ERP → Boutique → Stock
+**Fichiers :** `site-laravel/.env`, `site-laravel/public/build/*` (Vite build)
+**Résumé :** Test end-to-end validé via curl HTTP. Flux : produit publié depuis ERP (Long Island Iced Tea, 10.50€) → catalogue web OK (200, badge "En stock") → inscription client (Jean Dupont, BCrypt) → ajout panier AJAX (4 unités, 42€) → validation commande #1 (statut payee) → FIFO vérifié (lot 10 mai vidé 3→0, lot 13 mai 425→424, lot 15 mai intact) → commande visible côté ERP (jointure complète). Stock total : 433→429 (−4, correct).
+
+### [2026-05-20 13:45] FIX — CACHE_STORE manquant + Vite build absent
+**Fichiers :** `site-laravel/.env` (+CACHE_STORE=file), `site-laravel/public/build/manifest.json`
+**Résumé :** Deux erreurs bloquantes corrigées : (1) Laravel 11 utilise `CACHE_STORE` (pas `CACHE_DRIVER`), le default `database` cherchait une table `cache` inexistante → 500 sur POST register. (2) `@vite()` dans le layout Blade nécessitait un build (`npx vite build`) pour générer `public/build/manifest.json` → 500 sur toutes les pages.
+**Erreur corrigée :** Symptôme : 500 sur /register et pages Blade / Cause : CACHE_STORE non défini (fallback database) + manifest.json absent / Fix : ajout `CACHE_STORE=file` dans .env + `npx vite build` / Règles retenues : #31, #32
 
 ---
 
