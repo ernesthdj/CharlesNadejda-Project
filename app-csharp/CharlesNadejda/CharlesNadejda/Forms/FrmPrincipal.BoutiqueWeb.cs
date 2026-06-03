@@ -11,12 +11,13 @@ namespace CharlesNadejda.Forms
     partial class FrmPrincipal
     {
         // ════════════════════════════════════════════════════════════════
-        //  BOUTIQUE WEB — Mini CMS (3 onglets)
+        //  BOUTIQUE WEB — Mini CMS (3 onglets, lazy init)
         // ════════════════════════════════════════════════════════════════
 
         private TabControl _tabBoutique;
         private DataGridView _dgvCategories, _dgvProduits, _dgvCommandes;
         private Panel _pnlDetailCommande;
+        private bool _tabProduitsBuilt, _tabCommandesBuilt;
 
         // ── Écran principal ─────────────────────────────────────────
 
@@ -24,6 +25,9 @@ namespace CharlesNadejda.Forms
         {
             _pnlDroit.SuspendLayout();
             ClearAndDisposePanel();
+
+            _tabProduitsBuilt = false;
+            _tabCommandesBuilt = false;
 
             // Header
             var pnlHeader = new Panel
@@ -56,15 +60,58 @@ namespace CharlesNadejda.Forms
             var tabProduits   = new TabPage("Produits");
             var tabCommandes  = new TabPage("Commandes");
 
-            BuildTabCategories(tabCategories);
-            BuildTabProduits(tabProduits);
-            BuildTabCommandes(tabCommandes);
-
             _tabBoutique.TabPages.AddRange(new[] { tabCategories, tabProduits, tabCommandes });
+            _tabBoutique.SelectedIndexChanged += TabBoutique_SelectedIndexChanged;
 
             _pnlDroit.Controls.Add(_tabBoutique);
             _pnlDroit.Controls.Add(pnlHeader);
-            _pnlDroit.ResumeLayout();
+            _pnlDroit.ResumeLayout(true);
+
+            // Seul l'onglet 0 est construit immédiatement (il est visible)
+            BuildTabCategories(tabCategories);
+        }
+
+        // ════════════════════════════════════════════════════════════════
+        //  TAB SWITCH — Lazy init des onglets 1 et 2
+        // ════════════════════════════════════════════════════════════════
+
+        private void TabBoutique_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            var tab = _tabBoutique.SelectedTab;
+            if (tab == null) return;
+
+            switch (_tabBoutique.SelectedIndex)
+            {
+                case 1:
+                    if (!_tabProduitsBuilt)
+                    {
+                        BuildTabProduits(tab);
+                        _tabProduitsBuilt = true;
+                    }
+                    break;
+                case 2:
+                    if (!_tabCommandesBuilt)
+                    {
+                        BuildTabCommandes(tab);
+                        _tabCommandesBuilt = true;
+                    }
+                    break;
+            }
+
+            // Force le re-layout complet de l'onglet actif
+            // Workaround WinForms : les DGV Dock=Fill ne se recalculent
+            // pas correctement quand on revient sur un onglet déjà visité.
+            tab.SuspendLayout();
+            foreach (Control ctrl in tab.Controls)
+            {
+                if (ctrl is DataGridView dgv)
+                {
+                    dgv.Visible = false;
+                    dgv.Visible = true;
+                }
+            }
+            tab.ResumeLayout(true);
+            tab.PerformLayout();
         }
 
         // ════════════════════════════════════════════════════════════════
@@ -73,6 +120,7 @@ namespace CharlesNadejda.Forms
 
         private void BuildTabCategories(TabPage tab)
         {
+            tab.SuspendLayout();
             tab.BackColor = CREME_WARM;
 
             // Boutons
@@ -89,17 +137,18 @@ namespace CharlesNadejda.Forms
             _dgvCategories = MakeBoutiqueDgv();
             _dgvCategories.Columns.AddRange(new DataGridViewColumn[]
             {
-                new DataGridViewTextBoxColumn { Name = "Id",          HeaderText = "ID",          Width = 50,  DataPropertyName = "Id" },
-                new DataGridViewTextBoxColumn { Name = "Nom",         HeaderText = "Nom",         Width = 180, DataPropertyName = "Nom" },
-                new DataGridViewTextBoxColumn { Name = "Description", HeaderText = "Description", Width = 250, DataPropertyName = "Description" },
-                new DataGridViewTextBoxColumn { Name = "Ordre",       HeaderText = "Ordre",       Width = 60,  DataPropertyName = "OrdreAffichage" },
-                new DataGridViewTextBoxColumn { Name = "NbProduits",  HeaderText = "Produits",    Width = 70,  DataPropertyName = "NbProduits" },
-                new DataGridViewCheckBoxColumn { Name = "Actif",      HeaderText = "Actif",       Width = 55,  DataPropertyName = "Actif" }
+                new DataGridViewTextBoxColumn  { Name = "Id",          HeaderText = "ID",          DataPropertyName = "Id",              FillWeight = 8,  MinimumWidth = 40 },
+                new DataGridViewTextBoxColumn  { Name = "Nom",         HeaderText = "Nom",         DataPropertyName = "Nom",             FillWeight = 30, MinimumWidth = 100 },
+                new DataGridViewTextBoxColumn  { Name = "Description", HeaderText = "Description", DataPropertyName = "Description",     FillWeight = 40, MinimumWidth = 120 },
+                new DataGridViewTextBoxColumn  { Name = "Ordre",       HeaderText = "Ordre",       DataPropertyName = "OrdreAffichage",  FillWeight = 8,  MinimumWidth = 50 },
+                new DataGridViewTextBoxColumn  { Name = "NbProduits",  HeaderText = "Produits",    DataPropertyName = "NbProduits",       FillWeight = 8,  MinimumWidth = 60 },
+                new DataGridViewCheckBoxColumn { Name = "Actif",       HeaderText = "Actif",       DataPropertyName = "Actif",            FillWeight = 6,  MinimumWidth = 50 }
             });
             _dgvCategories.DoubleClick += (s, e) => CatOuvrirForm(CatSelected());
 
             tab.Controls.Add(_dgvCategories);
             tab.Controls.Add(pnlBtnCat);
+            tab.ResumeLayout(true);
 
             CatRefresh();
         }
@@ -138,7 +187,7 @@ namespace CharlesNadejda.Forms
             {
                 CategorieWebDAL.Delete(cat.Id);
                 CatRefresh();
-                ProdRefresh();
+                if (_tabProduitsBuilt) ProdRefresh();
             }
         }
 
@@ -148,6 +197,7 @@ namespace CharlesNadejda.Forms
 
         private void BuildTabProduits(TabPage tab)
         {
+            tab.SuspendLayout();
             tab.BackColor = CREME_WARM;
 
             // Boutons
@@ -166,35 +216,37 @@ namespace CharlesNadejda.Forms
             _dgvProduits = MakeBoutiqueDgv();
             _dgvProduits.Columns.AddRange(new DataGridViewColumn[]
             {
-                new DataGridViewTextBoxColumn { Name = "Id",              HeaderText = "ID",        Width = 50,  DataPropertyName = "Id" },
-                new DataGridViewTextBoxColumn { Name = "NomCommercial",   HeaderText = "Produit",   Width = 200, DataPropertyName = "NomCommercial" },
-                new DataGridViewTextBoxColumn { Name = "NomCategorie",    HeaderText = "Catégorie", Width = 120, DataPropertyName = "NomCategorie" },
-                new DataGridViewTextBoxColumn { Name = "PrixVente",       HeaderText = "Prix (€)",  Width = 80,  DataPropertyName = "PrixVente",
+                new DataGridViewTextBoxColumn  { Name = "Id",              HeaderText = "ID",        DataPropertyName = "Id",              FillWeight = 6,  MinimumWidth = 40 },
+                new DataGridViewTextBoxColumn  { Name = "NomCommercial",   HeaderText = "Produit",   DataPropertyName = "NomCommercial",   FillWeight = 25, MinimumWidth = 120 },
+                new DataGridViewTextBoxColumn  { Name = "NomCategorie",    HeaderText = "Catégorie", DataPropertyName = "NomCategorie",    FillWeight = 15, MinimumWidth = 80 },
+                new DataGridViewTextBoxColumn  { Name = "PrixVente",       HeaderText = "Prix (€)",  DataPropertyName = "PrixVente",       FillWeight = 10, MinimumWidth = 70,
                     DefaultCellStyle = new DataGridViewCellStyle { Format = "N2", Alignment = DataGridViewContentAlignment.MiddleRight } },
-                new DataGridViewTextBoxColumn { Name = "StockDisponible", HeaderText = "Stock",     Width = 70,  DataPropertyName = "StockDisponible",
+                new DataGridViewTextBoxColumn  { Name = "StockDisponible", HeaderText = "Stock",     DataPropertyName = "StockDisponible", FillWeight = 10, MinimumWidth = 60,
                     DefaultCellStyle = new DataGridViewCellStyle { Format = "N2", Alignment = DataGridViewContentAlignment.MiddleRight } },
-                new DataGridViewCheckBoxColumn { Name = "EnVente",        HeaderText = "Publié",    Width = 60,  DataPropertyName = "EnVente" },
-                new DataGridViewTextBoxColumn { Name = "NomFiche",        HeaderText = "Fiche BOM", Width = 150, DataPropertyName = "NomFiche" }
+                new DataGridViewCheckBoxColumn { Name = "EnVente",         HeaderText = "Publié",    DataPropertyName = "EnVente",         FillWeight = 8,  MinimumWidth = 55 },
+                new DataGridViewTextBoxColumn  { Name = "NomFiche",        HeaderText = "Fiche BOM", DataPropertyName = "NomFiche",        FillWeight = 20, MinimumWidth = 100 }
             });
             _dgvProduits.CellFormatting += ProdDgvFormatting;
             _dgvProduits.DoubleClick    += (s, e) => ProdOuvrirForm(ProdSelected());
 
             tab.Controls.Add(_dgvProduits);
             tab.Controls.Add(pnlBtnProd);
+            tab.ResumeLayout(true);
 
             ProdRefresh();
         }
 
         private ProduitWeb ProdSelected()
         {
-            if (_dgvProduits.CurrentRow == null) return null;
+            if (_dgvProduits == null || _dgvProduits.CurrentRow == null) return null;
             return _dgvProduits.CurrentRow.DataBoundItem as ProduitWeb;
         }
 
         private void ProdRefresh()
         {
-            var data = ProduitWebDAL.GetAll();
+            if (_dgvProduits == null) return;
             _dgvProduits.DataSource = null;
+            var data = ProduitWebDAL.GetAll();
             _dgvProduits.DataSource = data;
             _dgvProduits.Columns["Id"].Visible = false;
         }
@@ -252,6 +304,7 @@ namespace CharlesNadejda.Forms
 
         private void BuildTabCommandes(TabPage tab)
         {
+            tab.SuspendLayout();
             tab.BackColor = CREME_WARM;
 
             // Filtre statut
@@ -293,31 +346,33 @@ namespace CharlesNadejda.Forms
             _dgvCommandes = MakeBoutiqueDgv();
             _dgvCommandes.Columns.AddRange(new DataGridViewColumn[]
             {
-                new DataGridViewTextBoxColumn { Name = "Id",          HeaderText = "N°",      Width = 50,  DataPropertyName = "Id" },
-                new DataGridViewTextBoxColumn { Name = "Client",      HeaderText = "Client",  Width = 180, DataPropertyName = "NomCompletClient" },
-                new DataGridViewTextBoxColumn { Name = "DateCmd",     HeaderText = "Date",    Width = 130, DataPropertyName = "DateCommande",
+                new DataGridViewTextBoxColumn { Name = "Id",          HeaderText = "N°",       DataPropertyName = "Id",              FillWeight = 8,  MinimumWidth = 45 },
+                new DataGridViewTextBoxColumn { Name = "Client",      HeaderText = "Client",   DataPropertyName = "NomCompletClient", FillWeight = 30, MinimumWidth = 120 },
+                new DataGridViewTextBoxColumn { Name = "DateCmd",     HeaderText = "Date",     DataPropertyName = "DateCommande",    FillWeight = 22, MinimumWidth = 120,
                     DefaultCellStyle = new DataGridViewCellStyle { Format = "dd/MM/yyyy HH:mm" } },
-                new DataGridViewTextBoxColumn { Name = "NbArticles",  HeaderText = "Articles", Width = 65, DataPropertyName = "NbArticles",
+                new DataGridViewTextBoxColumn { Name = "NbArticles",  HeaderText = "Articles", DataPropertyName = "NbArticles",      FillWeight = 10, MinimumWidth = 60,
                     DefaultCellStyle = new DataGridViewCellStyle { Alignment = DataGridViewContentAlignment.MiddleCenter } },
-                new DataGridViewTextBoxColumn { Name = "TotalTtc",    HeaderText = "Total (€)", Width = 90, DataPropertyName = "TotalTtc",
+                new DataGridViewTextBoxColumn { Name = "TotalTtc",    HeaderText = "Total (€)", DataPropertyName = "TotalTtc",       FillWeight = 15, MinimumWidth = 75,
                     DefaultCellStyle = new DataGridViewCellStyle { Format = "N2", Alignment = DataGridViewContentAlignment.MiddleRight } },
-                new DataGridViewTextBoxColumn { Name = "Statut",      HeaderText = "Statut",  Width = 80,  DataPropertyName = "Statut" }
+                new DataGridViewTextBoxColumn { Name = "Statut",      HeaderText = "Statut",   DataPropertyName = "Statut",          FillWeight = 12, MinimumWidth = 70 }
             });
             _dgvCommandes.SelectionChanged += (s, e) => CmdAfficherDetail();
 
             tab.Controls.Add(_dgvCommandes);
             tab.Controls.Add(_pnlDetailCommande);
             tab.Controls.Add(pnlFiltre);
+            tab.ResumeLayout(true);
 
             CmdRefresh(null);
         }
 
         private void CmdRefresh(string filtreStatut)
         {
-            var data = CommandeWebDAL.GetAll(filtreStatut);
+            if (_dgvCommandes == null) return;
             _dgvCommandes.DataSource = null;
+            var data = CommandeWebDAL.GetAll(filtreStatut);
             _dgvCommandes.DataSource = data;
-            _pnlDetailCommande.Visible = false;
+            if (_pnlDetailCommande != null) _pnlDetailCommande.Visible = false;
         }
 
         private void CmdAfficherDetail()

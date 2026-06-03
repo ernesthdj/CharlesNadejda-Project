@@ -26,6 +26,16 @@ namespace CharlesNadejda.Models
         public string NomContexte { get; set; }
         public string NomActivite { get; set; }
 
+        // Stock cible de la fiche parente (pour jauge)
+        public decimal? StockCible       { get; set; }
+        public decimal  TotalDispoFiche  { get; set; }
+
+        /// <summary>Ratio stock total de la fiche / stock cible (0..N). Null si pas de cible.</summary>
+        public double? StockRatio =>
+            StockCible.HasValue && StockCible.Value > 0
+                ? (double)(TotalDispoFiche / StockCible.Value)
+                : (double?)null;
+
         public bool    EstPerime  => DateDlc.HasValue && DateDlc.Value < DateTime.Today;
         public decimal CoutTotal  => QuantiteDisponible * CoutUnitaire;
 

@@ -116,6 +116,7 @@
     <Compile Include="DAL\CategorieWebDAL.cs" />
     <Compile Include="DAL\ProduitWebDAL.cs" />
     <Compile Include="DAL\CommandeWebDAL.cs" />
+    <Compile Include="DesignSpy.cs" />
     <Compile Include="Forms\FormHelper.cs" />
     <Compile Include="Helpers\UnitConvertisseur.cs" />
     <Compile Include="Forms\FrmListeBase.cs">

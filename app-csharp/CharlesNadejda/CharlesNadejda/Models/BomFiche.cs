@@ -13,6 +13,7 @@ namespace CharlesNadejda.Models
         public string   UniteOutput      { get; set; }   // kg, g, l, ml, cl, piece
         public decimal  QuantiteOutput   { get; set; }   // quantité produite par exécution
         public int?     TempsPreparation { get; set; }   // minutes
+        public decimal? StockCible       { get; set; }   // stock cible pour jauge vue stock
         public bool     Actif            { get; set; }
         public DateTime DateCreation     { get; set; }
 
