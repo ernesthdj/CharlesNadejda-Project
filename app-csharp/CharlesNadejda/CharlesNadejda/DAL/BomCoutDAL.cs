@@ -44,7 +44,7 @@ namespace CharlesNadejda.DAL
         /// <param name="idFiche">Id de la fiche BOM à évaluer.</param>
         /// <param name="nBatches">Nombre de batches à produire (peut être décimal).</param>
         public static RapportCout CalculerCout(int idFiche, decimal nBatches)
-            => CalculerCout(idFiche, nBatches, new HashSet<int>());
+            => CalculerCout(idFiche, nBatches, new HashSet<int>(), new Dictionary<int, BomFiche>());
 
         /// <summary>
         /// Surcharge privée avec détection de cycle.
@@ -54,7 +54,8 @@ namespace CharlesNadejda.DAL
         ///
         /// TICKET-09 : sans cette protection, une fiche A → B → A boucle à l'infini (StackOverflow).
         /// </summary>
-        private static RapportCout CalculerCout(int idFiche, decimal nBatches, HashSet<int> fichesVisitees)
+        private static RapportCout CalculerCout(int idFiche, decimal nBatches,
+            HashSet<int> fichesVisitees, Dictionary<int, BomFiche> cache)
         {
             // TICKET-09 : détection de cycle — stoppe la récursion infinie
             if (!fichesVisitees.Add(idFiche))
@@ -62,7 +63,12 @@ namespace CharlesNadejda.DAL
                     $"Cycle détecté dans les fiches BOM : la fiche (id={idFiche}) référence " +
                     "l'une de ses propres dépendances. Corrigez les liens entre fiches.");
 
-            var fiche = BomFicheDAL.GetById(idFiche, avecLignes: true);
+            // TICKET-24 : cache pour éviter N+1 requêtes sur les fiches déjà chargées
+            if (!cache.TryGetValue(idFiche, out var fiche))
+            {
+                fiche = BomFicheDAL.GetById(idFiche, avecLignes: true);
+                if (fiche != null) cache[idFiche] = fiche;
+            }
             if (fiche == null || fiche.Lignes == null)
                 return new RapportCout { NomFiche = "Inconnue", NbBatches = nBatches };
 
@@ -94,7 +100,7 @@ namespace CharlesNadejda.DAL
                 }
                 else
                 {
-                    lc = CalculerLigneFiche(ligne, qteStockage, fichesVisitees);
+                    lc = CalculerLigneFiche(ligne, qteStockage, fichesVisitees, cache);
                 }
 
                 rapport.Lignes.Add(lc);
@@ -140,9 +146,15 @@ namespace CharlesNadejda.DAL
         ///   prixUnit       = coût / qteStockage  (€ par unité de stockage de la fiche source)
         /// </summary>
         private static LigneCout CalculerLigneFiche(BomFicheLigne ligne, decimal qteStockage,
-                                                      HashSet<int> fichesVisitees)
+                                                      HashSet<int> fichesVisitees,
+                                                      Dictionary<int, BomFiche> cache)
         {
-            var ficheSrc = BomFicheDAL.GetById(ligne.IdInputFiche.Value, avecLignes: false);
+            // TICKET-24 : réutiliser la fiche depuis le cache si déjà chargée
+            if (!cache.TryGetValue(ligne.IdInputFiche.Value, out var ficheSrc))
+            {
+                ficheSrc = BomFicheDAL.GetById(ligne.IdInputFiche.Value, avecLignes: false);
+                if (ficheSrc != null) cache[ligne.IdInputFiche.Value] = ficheSrc;
+            }
 
             if (ficheSrc == null || ficheSrc.QuantiteOutput <= 0)
                 return new LigneCout
@@ -160,7 +172,7 @@ namespace CharlesNadejda.DAL
 
             // Calcul récursif du coût de la fiche source — passe le même HashSet pour détection de cycle
             RapportCout detail = CalculerCout(ligne.IdInputFiche.Value, nBatchesSrc,
-                                              new HashSet<int>(fichesVisitees));
+                                              new HashSet<int>(fichesVisitees), cache);
 
             decimal prixUnit = qteStockage > 0 ? detail.CoutTotal / qteStockage : 0m;
 

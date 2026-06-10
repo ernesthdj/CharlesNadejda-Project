@@ -150,14 +150,6 @@
       <DependentUpon>FrmPrincipal.cs</DependentUpon>
       <SubType>Form</SubType>
     </Compile>
-    <Compile Include="Forms\FrmPrincipal.Contexte.cs">
-      <DependentUpon>FrmPrincipal.cs</DependentUpon>
-      <SubType>Form</SubType>
-    </Compile>
-    <Compile Include="Forms\FrmPrincipal.KanbanDetail.cs">
-      <DependentUpon>FrmPrincipal.cs</DependentUpon>
-      <SubType>Form</SubType>
-    </Compile>
     <Compile Include="Forms\FrmPrincipal.Designer.cs">
       <DependentUpon>FrmPrincipal.cs</DependentUpon>
     </Compile>

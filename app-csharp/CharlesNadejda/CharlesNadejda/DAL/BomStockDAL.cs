@@ -60,6 +60,27 @@ namespace CharlesNadejda.DAL
         }
 
         /// <summary>
+        /// Surcharge transactionnelle avec verrou pessimiste (FOR UPDATE).
+        /// Utilisée par BomProductionDAL.Executer() pour garantir l'isolation FIFO.
+        /// </summary>
+        public static decimal GetDisponible(int idNiveau, int idFiche,
+            MySqlConnection conn, MySqlTransaction tx)
+        {
+            using (var cmd = conn.CreateCommand())
+            {
+                cmd.Transaction = tx;
+                cmd.CommandText = @"
+                    SELECT COALESCE(SUM(quantite_disponible), 0)
+                    FROM bom_stocks
+                    WHERE id_niveau = @idNiveau AND id_fiche = @idFiche
+                    FOR UPDATE";
+                cmd.Parameters.AddWithValue("@idNiveau", idNiveau);
+                cmd.Parameters.AddWithValue("@idFiche",  idFiche);
+                return Convert.ToDecimal(cmd.ExecuteScalar());
+            }
+        }
+
+        /// <summary>
         /// Retourne la quantité disponible réelle d'un ingrédient (tous lots confondus),
         /// déduction faite de toutes les réservations actives tous contextes.
         /// Formule : SUM(lot.quantite_disponible) - SUM(reservations actives)
@@ -80,6 +101,33 @@ namespace CharlesNadejda.DAL
                           ), 0)
                     FROM lots_ingredients l
                     WHERE l.id_fiche_ingredient = @idFi";
+                cmd.Parameters.AddWithValue("@idFi", idFicheIngredient);
+                return Convert.ToDecimal(cmd.ExecuteScalar());
+            }
+        }
+
+        /// <summary>
+        /// Surcharge transactionnelle avec verrou pessimiste (FOR UPDATE).
+        /// Verrouille les lignes lots_ingredients pour empêcher toute consommation concurrente.
+        /// </summary>
+        public static decimal GetDisponibleIngredient(int idFicheIngredient,
+            MySqlConnection conn, MySqlTransaction tx)
+        {
+            using (var cmd = conn.CreateCommand())
+            {
+                cmd.Transaction = tx;
+                cmd.CommandText = @"
+                    SELECT
+                        COALESCE(SUM(l.quantite_disponible), 0)
+                        - COALESCE((
+                            SELECT SUM(r.quantite_reservee)
+                            FROM bom_reservations r
+                            INNER JOIN lots_ingredients lr ON lr.id = r.id_lot
+                            WHERE lr.id_fiche_ingredient = @idFi AND r.actif = 1
+                          ), 0)
+                    FROM lots_ingredients l
+                    WHERE l.id_fiche_ingredient = @idFi
+                    FOR UPDATE";
                 cmd.Parameters.AddWithValue("@idFi", idFicheIngredient);
                 return Convert.ToDecimal(cmd.ExecuteScalar());
             }
@@ -117,6 +165,42 @@ namespace CharlesNadejda.DAL
         }
 
         /// <summary>
+        /// Surcharge transactionnelle avec verrou pessimiste (FOR UPDATE).
+        /// Verrouille les lots pour consommation FIFO exclusive dans la transaction.
+        /// Le filtrage dispo_nette &gt; 0 est fait côté C# pour compatibilité FOR UPDATE.
+        /// </summary>
+        public static List<(int IdLot, decimal DispoNette, decimal PrixUnitaire)> GetLotsDispoFIFO(
+            int idFicheIngredient, MySqlConnection conn, MySqlTransaction tx)
+        {
+            var result = new List<(int, decimal, decimal)>();
+            using (var cmd = conn.CreateCommand())
+            {
+                cmd.Transaction = tx;
+                cmd.CommandText = @"
+                    SELECT l.id,
+                           l.quantite_disponible
+                           - COALESCE((SELECT SUM(r.quantite_reservee)
+                                       FROM bom_reservations r
+                                       WHERE r.id_lot = l.id AND r.actif = 1), 0) AS dispo_nette,
+                           l.prix_unitaire / NULLIF(fi.qte_par_conditionnement, 0) AS prix_unitaire_base
+                    FROM lots_ingredients l
+                    INNER JOIN fiches_ingredients fi ON fi.id = l.id_fiche_ingredient
+                    WHERE l.id_fiche_ingredient = @idFi
+                    ORDER BY l.date_achat ASC
+                    FOR UPDATE";
+                cmd.Parameters.AddWithValue("@idFi", idFicheIngredient);
+                using (var r = cmd.ExecuteReader())
+                    while (r.Read())
+                    {
+                        decimal dispo = (decimal)r["dispo_nette"];
+                        if (dispo > 0)
+                            result.Add(((int)r["id"], dispo, (decimal)r["prix_unitaire_base"]));
+                    }
+            }
+            return result;
+        }
+
+        /// <summary>
         /// Retourne les lots de bom_stocks pour une fiche dans un niveau, triés FIFO.
         /// Utilisé pour la consommation au niveau N-1 lors d'une production au niveau N.
         /// </summary>
@@ -132,6 +216,33 @@ namespace CharlesNadejda.DAL
                     WHERE id_niveau = @idNiveau AND id_fiche = @idFiche
                       AND quantite_disponible > 0
                     ORDER BY date_production ASC";
+                cmd.Parameters.AddWithValue("@idNiveau", idNiveau);
+                cmd.Parameters.AddWithValue("@idFiche",  idFiche);
+                using (var r = cmd.ExecuteReader())
+                    while (r.Read())
+                        result.Add(((int)r["id"], (decimal)r["quantite_disponible"], (decimal)r["cout_unitaire"]));
+            }
+            return result;
+        }
+
+        /// <summary>
+        /// Surcharge transactionnelle avec verrou pessimiste (FOR UPDATE).
+        /// Verrouille les entrées bom_stocks pour consommation FIFO exclusive.
+        /// </summary>
+        public static List<(int IdStock, decimal Dispo, decimal CoutUnitaire)> GetBomStocksFIFO(
+            int idNiveau, int idFiche, MySqlConnection conn, MySqlTransaction tx)
+        {
+            var result = new List<(int, decimal, decimal)>();
+            using (var cmd = conn.CreateCommand())
+            {
+                cmd.Transaction = tx;
+                cmd.CommandText = @"
+                    SELECT id, quantite_disponible, cout_unitaire
+                    FROM bom_stocks
+                    WHERE id_niveau = @idNiveau AND id_fiche = @idFiche
+                      AND quantite_disponible > 0
+                    ORDER BY date_production ASC
+                    FOR UPDATE";
                 cmd.Parameters.AddWithValue("@idNiveau", idNiveau);
                 cmd.Parameters.AddWithValue("@idFiche",  idFiche);
                 using (var r = cmd.ExecuteReader())

@@ -221,8 +221,8 @@ namespace CharlesNadejda.Forms
                 new DataGridViewTextBoxColumn  { Name = "NomCategorie",    HeaderText = "Catégorie", DataPropertyName = "NomCategorie",    FillWeight = 15, MinimumWidth = 80 },
                 new DataGridViewTextBoxColumn  { Name = "PrixVente",       HeaderText = "Prix (€)",  DataPropertyName = "PrixVente",       FillWeight = 10, MinimumWidth = 70,
                     DefaultCellStyle = new DataGridViewCellStyle { Format = "N2", Alignment = DataGridViewContentAlignment.MiddleRight } },
-                new DataGridViewTextBoxColumn  { Name = "StockDisponible", HeaderText = "Stock",     DataPropertyName = "StockDisponible", FillWeight = 10, MinimumWidth = 60,
-                    DefaultCellStyle = new DataGridViewCellStyle { Format = "N2", Alignment = DataGridViewContentAlignment.MiddleRight } },
+                new DataGridViewTextBoxColumn  { Name = "StockUnites",     HeaderText = "Stock",     DataPropertyName = "StockUnites",     FillWeight = 10, MinimumWidth = 60,
+                    DefaultCellStyle = new DataGridViewCellStyle { Alignment = DataGridViewContentAlignment.MiddleRight } },
                 new DataGridViewCheckBoxColumn { Name = "EnVente",         HeaderText = "Publié",    DataPropertyName = "EnVente",         FillWeight = 8,  MinimumWidth = 55 },
                 new DataGridViewTextBoxColumn  { Name = "NomFiche",        HeaderText = "Fiche BOM", DataPropertyName = "NomFiche",        FillWeight = 20, MinimumWidth = 100 }
             });
@@ -290,9 +290,10 @@ namespace CharlesNadejda.Forms
 
         private void ProdDgvFormatting(object sender, DataGridViewCellFormattingEventArgs e)
         {
-            if (_dgvProduits.Columns[e.ColumnIndex].Name == "StockDisponible" && e.Value != null)
+            if (_dgvProduits.Columns[e.ColumnIndex].Name == "StockUnites" && e.Value != null)
             {
-                var val = Convert.ToDecimal(e.Value);
+                var val = Convert.ToInt32(e.Value);
+                e.Value = $"{val} unité{(val != 1 ? "s" : "")}";
                 e.CellStyle.ForeColor = val > 0 ? GREEN_OK : RED_CRIT;
                 e.CellStyle.Font = new Font("Segoe UI", 9F, FontStyle.Bold);
             }

@@ -42,6 +42,9 @@ namespace CharlesNadejda.DAL
             return null;
         }
 
+        /// <summary>Retourne l'ordre du prochain niveau à créer (max + 1).</summary>
+        public static int GetProchainOrdre(int idContexte) => GetOrdreMax(idContexte) + 1;
+
         /// <summary>Retourne l'ordre maximum des niveaux du contexte.</summary>
         public static int GetOrdreMax(int idContexte)
         {

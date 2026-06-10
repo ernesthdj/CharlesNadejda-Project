@@ -80,8 +80,50 @@ namespace CharlesNadejda.DAL
         {
             var result = new List<VueStockGlobal>();
 
-            // Produits fabriqués : pas d'agrégation
-            result.AddRange(source.Where(l => !l.EstLot));
+            // Produits fabriqués : grouper par IdFicheBom (ex: 3 lots de Baguette → 1 ligne)
+            var groupesProd = source
+                .Where(l => !l.EstLot && l.IdFicheBom.HasValue)
+                .GroupBy(l => l.IdFicheBom.Value);
+
+            foreach (var g in groupesProd)
+            {
+                var premier  = g.First();
+                var totalQte = g.Sum(l => l.QuantiteTotale);
+                var totalRes = g.Sum(l => l.QuantiteReservee);
+
+                decimal coutMoyen = totalQte > 0
+                    ? g.Sum(l => l.CoutUnitaire * l.QuantiteTotale) / totalQte
+                    : 0m;
+
+                result.Add(new VueStockGlobal
+                {
+                    TypeStock             = premier.TypeStock,
+                    IdEntree              = premier.IdEntree,
+                    Nom                   = premier.Nom,
+                    Unite                 = premier.Unite,
+                    QuantiteTotale        = totalQte,
+                    QuantiteReservee      = totalRes,
+                    QuantiteDispoReelle   = totalQte - totalRes,
+                    CoutUnitaire          = coutMoyen,
+                    PrixConditionnement   = null,
+                    QteParConditionnement = premier.QteParConditionnement,
+                    ConditionnementLabel  = premier.ConditionnementLabel,
+                    DateDlc               = g.Any(l => l.DateDlc.HasValue)
+                                             ? g.Where(l => l.DateDlc.HasValue).Min(l => l.DateDlc.Value)
+                                             : (DateTime?)null,
+                    IdStock               = premier.IdStock,
+                    StockNom              = premier.StockNom,
+                    IdFicheIngredient     = null,
+                    IdActivite            = premier.IdActivite,
+                    NomActivite           = premier.NomActivite,
+                    IdContexte            = premier.IdContexte,
+                    IdNiveau              = premier.IdNiveau,
+                    IdFicheBom            = g.Key
+                });
+            }
+
+            // Produits fabriqués sans fiche (cas improbable)
+            result.AddRange(source.Where(l => !l.EstLot && !l.IdFicheBom.HasValue));
 
             // Lots : grouper par IdFicheIngredient
             var groupes = source

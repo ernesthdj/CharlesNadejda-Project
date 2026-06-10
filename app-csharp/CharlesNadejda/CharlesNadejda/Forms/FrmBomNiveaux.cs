@@ -47,9 +47,8 @@ namespace CharlesNadejda.Forms
         {
             if (element == null)
             {
-                // Règle métier : ordre = max actuel + 1 pour éviter les trous de séquence
-                int ordreMax = BomNiveauDAL.GetOrdreMax(_contexte.Id);
-                var nouveau  = new BomNiveau { IdContexte = _contexte.Id, Ordre = ordreMax + 1 };
+                // TICKET-26 : logique centralisée dans le DAL
+                var nouveau = new BomNiveau { IdContexte = _contexte.Id, Ordre = BomNiveauDAL.GetProchainOrdre(_contexte.Id) };
                 return new FrmBomNiveauEdit(nouveau, false);
             }
             return new FrmBomNiveauEdit(element, true);

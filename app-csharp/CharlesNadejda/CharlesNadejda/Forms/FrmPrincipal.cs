@@ -15,16 +15,32 @@ namespace CharlesNadejda.Forms
     /// <summary>
     /// Hub principal — Single-Form Application (SFA).
     /// Ressources et production s'affichent inline dans Panel2 du SplitContainer.
-    /// Les CRUD BOM (contextes, niveaux, fiches) utilisent encore ShowDialog — migration partielle.
+    /// TICKET-22 : les CRUD BOM Edit (contextes, niveaux, achats) sont inline via ShowFormInline.
     /// </summary>
+    // C'est LE formulaire maître de toute l'app — il ne se ferme jamais tant que l'app tourne.
+    // L'idée du SFA (Single-Form Application), c'est qu'au lieu d'ouvrir plein de fenêtres
+    // séparées, j'intègre tous les écrans dans un seul Form avec un panneau droit qui change.
+    // Ça donne une vraie expérience "ERP" — sidebar à gauche, contenu à droite.
     public partial class FrmPrincipal : Form
     {
+        // L'utilisateur connecté — je le garde en readonly car il ne change jamais pendant la session.
+        // Si l'user veut changer de compte, c'est Application.Restart() → retour au login.
         private readonly Utilisateur  _utilisateur;
+
+        // AppState centralise TOUT l'état de navigation : activité active, contexte actif,
+        // écran courant, type de ressource, filtres... C'est le "cerveau" de l'état global.
+        // Chaque écran lit l'AppState pour savoir quoi afficher.
         private readonly AppState     _state = new AppState();
+
+        // Le router est le cerveau de la navigation — il décide quel écran afficher
+        // en fonction du ScreenId demandé. Il a aussi un guard anti-doublon :
+        // si je suis déjà sur Production et que je reclique Production, il ignore.
         private          ScreenRouter _router;
-        private List<BomNiveau>       _niveauxListe = new List<BomNiveau>();
+        // _niveauxListe supprimé — chargement local dans Production
 
         // ── Palette — alias locaux vers AppColors (source de vérité unique) ──
+        // J'utilise des alias static readonly pour éviter de taper AppColors.ChocoBrand partout.
+        // La source de vérité reste AppColors — si je change une couleur là-bas, ça se propage ici.
         private static readonly Color CHOCO_BRAND  = AppColors.ChocoBrand;
         private static readonly Color CHOCO_MED    = AppColors.ChocoMed;
         private static readonly Color CHOCO_ABYSS  = AppColors.ChocoAbyss;
@@ -41,27 +57,29 @@ namespace CharlesNadejda.Forms
         private static readonly Color ORG_WARN     = AppColors.OrgWarn;
 
         // ── Shell ERP ─────────────────────────────────────────────────────
+        // Les 3 composants du "shell" — le cadre fixe qui ne change jamais :
+        // - TitleBar : bandeau du haut avec nom utilisateur + titre écran
+        // - Sidebar : rail de navigation à gauche (activités, contextes, menu)
+        // - StatusBar : barre d'état en bas (activité courante, infos rapides)
         private TitleBarPanel            _titleBar;
         private SidebarPanel             _sidebar;
         private AppStatusBar     _statusBar;
 
         // ── Panneau droit ─────────────────────────────────────────────────
+        // C'est ICI que tout le contenu s'affiche — chaque écran (Hub, Production,
+        // Ressources, etc.) est injecté dans ce Panel via ClearAndDisposePanel() + Controls.Add().
+        // C'est le "viewport" de l'app.
         private Panel _pnlDroit;
 
-        // ── Contexte screen ───────────────────────────────────────────────
-        private Dictionary<int, Panel> _niveauPanels = new Dictionary<int, Panel>();
-        private DataGridView           _dgvStock;
-        private Label                  _lblStockHeader;
-        private Button                 _btnNouveauNiveau;
-        private Button                 _btnGererFiches;
-        private Button                 _btnAchatRapide;
-        private Panel                  _pnlKanbanDetail;
-        private Panel                  _pnlKanbanDetailContent;
+        // ── Contexte screen — supprimé (fusionné dans Production) ────────
 
         // ════════════════════════════════════════════════════════════════
         //  Constructeur / Load
         // ════════════════════════════════════════════════════════════════
 
+        // Le constructeur reçoit l'utilisateur authentifié depuis FrmLogin.
+        // Je crée le router ici (pas dans Load) parce que j'en ai besoin
+        // dès que le shell est construit — avant même que les données soient chargées.
         public FrmPrincipal(Utilisateur utilisateur)
         {
             _utilisateur = utilisateur;
@@ -69,6 +87,9 @@ namespace CharlesNadejda.Forms
             InitializeComponent();
         }
 
+        // FrmPrincipal_Load — c'est le vrai point de départ de l'app après le login.
+        // L'ordre est critique : 1) construire la coquille visuelle, 2) câbler le router,
+        // 3) charger les données (activités → contextes → navigation initiale).
         private void FrmPrincipal_Load(object sender, EventArgs e)
         {
             BuildShell();
@@ -80,11 +101,15 @@ namespace CharlesNadejda.Forms
         //  Router — câblage des écrans inline
         // ════════════════════════════════════════════════════════════════
 
+        // InitRouter câble chaque ScreenId à sa méthode d'affichage.
+        // C'est une table de dispatch : quand le router reçoit "Production",
+        // il appelle ShowProductionScreen. Quand il reçoit "Hub", ShowHubScreen, etc.
+        // Le paramètre NavigationParams (p) est passé systématiquement même si pas toujours utilisé.
         private void InitRouter()
         {
             _router.OnOnboarding      = p => ShowOnboarding();
             _router.OnHub             = p => ShowHubScreen();
-            _router.OnContexteNiveaux = p => ShowContexteScreen();
+            _router.OnContexteNiveaux = p => ShowProductionScreen(p);  // Fusionné → Production
             _router.OnRessources      = p => ShowRessourceScreen(_state.RessourceActive, p);
             _router.OnProduction      = p => ShowProductionScreen(p);
             _router.OnPlaceholder     = p => ShowPlaceholder(null);
@@ -101,10 +126,19 @@ namespace CharlesNadejda.Forms
         /// Le guard de re-navigation est centralisé dans <see cref="ScreenRouter"/> — si on est déjà
         /// sur le même écran avec le même état, l'appel est ignoré.
         /// </summary>
+        // NavigateTo est ma façade de navigation — TOUT passe par là.
+        // Le pattern stateSetup est malin : au lieu de faire 2 appels séparés
+        // (_state.SetRessource(X); _router.Navigate(Y)), je fais tout en un seul appel.
+        // forceRefresh sert après un CRUD (ajout/modif/suppression) pour reconstruire l'écran.
         private void NavigateTo(ScreenId screen, Action stateSetup = null, bool forceRefresh = false)
         {
+            // Si un stateSetup est fourni, je l'exécute AVANT la navigation
+            // pour que le state soit à jour quand l'écran se construit
             stateSetup?.Invoke();
+
+            // Invalider le guard = forcer la reconstruction même si on est "déjà" sur cet écran
             if (forceRefresh) _router.Invalidate();
+
             _router.Navigate(screen);
         }
 
@@ -112,20 +146,28 @@ namespace CharlesNadejda.Forms
         //  Construction du shell ERP
         // ════════════════════════════════════════════════════════════════
 
+        // BuildShell monte la structure fixe de l'interface — le cadre qui ne change jamais.
+        // L'ordre d'ajout dans Controls est crucial en WinForms avec DockStyle :
+        // WinForms dock en LIFO → Fill doit être ajouté EN PREMIER, puis Bottom, Left, Top.
+        // Si je me trompe dans l'ordre, la sidebar peut se retrouver SOUS la titlebar, etc.
         private void BuildShell()
         {
             _titleBar = new TitleBarPanel(_utilisateur);
             _statusBar = new AppStatusBar();
 
+            // La sidebar émet des événements que je câble ici —
+            // chaque événement correspond à une action utilisateur dans le rail gauche
             _sidebar = new SidebarPanel();
-            _sidebar.NavigationRequested      += OnSidebarNavigation;
-            _sidebar.ActivityChanged          += OnActivityChanged;
-            _sidebar.ManageActivitiesRequested += OnManageActivities;
-            _sidebar.NewContextRequested       += OnNewContext;
-            _sidebar.ContextChanged            += OnContextChanged;
-            _sidebar.EditContextRequested      += OnEditContext;
-            _sidebar.DeleteContextRequested    += OnDeleteContext;
+            _sidebar.NavigationRequested      += OnSidebarNavigation;   // Clic sur un item de menu
+            _sidebar.ActivityChanged          += OnActivityChanged;     // Changement d'activité dans le dropdown
+            _sidebar.ManageActivitiesRequested += OnManageActivities;   // Bouton "Gérer les activités"
+            _sidebar.NewContextRequested       += OnNewContext;         // Bouton "+" pour nouveau contexte
+            _sidebar.ContextChanged            += OnContextChanged;     // Sélection d'un autre contexte
+            _sidebar.EditContextRequested      += OnEditContext;        // Clic droit → Modifier un contexte
+            _sidebar.DeleteContextRequested    += OnDeleteContext;      // Clic droit → Supprimer un contexte
 
+            // Le panneau droit = le viewport principal. Dock Fill = il prend tout l'espace restant.
+            // AutoScroll = true pour que le contenu scrolle si trop grand.
             _pnlDroit = new Panel
             {
                 Dock = DockStyle.Fill, AutoScroll = true,
@@ -133,15 +175,21 @@ namespace CharlesNadejda.Forms
             };
 
             // WinForms DockStyle order: Fill first, then Bottom, Left, Top
-            Controls.Add(_pnlDroit);
-            Controls.Add(_sidebar);
-            Controls.Add(_statusBar);
-            Controls.Add(_titleBar);
+            // IMPORTANT : cet ordre est le contraire de l'intuition — Fill en premier !
+            Controls.Add(_pnlDroit);    // Fill   → prend tout l'espace restant
+            Controls.Add(_sidebar);     // Left   → rail gauche
+            Controls.Add(_statusBar);   // Bottom → barre d'état en bas
+            Controls.Add(_titleBar);    // Top    → bandeau titre en haut
         }
 
+        // OnSidebarNavigation — quand l'utilisateur clique sur un item dans la sidebar.
+        // C'est le gros switch de navigation : chaque NavItemId mappe vers un ScreenId.
+        // Pour les ressources, je prépare aussi le type de ressource dans le state (SetRessource).
         private void OnSidebarNavigation(NavItemId id)
         {
+            // D'abord, je mets à jour visuellement quel item est "actif" dans la sidebar
             _sidebar.SetActiveItem(id);
+
             switch (id)
             {
                 case NavItemId.Hub:
@@ -150,6 +198,9 @@ namespace CharlesNadejda.Forms
                 case NavItemId.Production:
                     NavigateTo(ScreenId.Production);
                     break;
+
+                // Chaque type de ressource navigue vers le même écran (Ressources)
+                // mais avec un RessourceType différent → l'écran s'adapte
                 case NavItemId.StocksLiaisons:
                     NavigateTo(ScreenId.Ressources, () => _state.SetRessource(RessourceType.Stocks));
                     break;
@@ -165,13 +216,17 @@ namespace CharlesNadejda.Forms
                 case NavItemId.Ingredients:
                     NavigateTo(ScreenId.Ressources, () => _state.SetRessource(RessourceType.Ingredients));
                     break;
+
+                // NiveauxContextes et FichesBom redirigent vers Production
+                // (ces items étaient séparés avant, maintenant fusionnés dans un seul écran)
                 case NavItemId.NiveauxContextes:
-                    NavigateTo(ScreenId.ContexteNiveaux);
+                    NavigateTo(ScreenId.Production);
                     break;
                 case NavItemId.FichesBom:
-                    // Redirige vers le même écran que NiveauxContextes (rétrocompat)
-                    NavigateTo(ScreenId.ContexteNiveaux);
+                    NavigateTo(ScreenId.Production);
                     break;
+
+                // Modules à venir — redirigent vers un placeholder pour l'instant
                 case NavItemId.Planning:
                     NavigateTo(ScreenId.Planning);
                     break;
@@ -188,42 +243,61 @@ namespace CharlesNadejda.Forms
                     NavigateTo(ScreenId.BoutiqueWeb);
                     break;
             }
+
+            // Après chaque navigation, je mets à jour le titre et la barre d'état
+            // pour refléter l'écran courant
             UpdateTitleBar();
             UpdateStatusBar();
         }
 
+        // OnActivityChanged — déclenché quand l'utilisateur change d'activité dans le dropdown de la sidebar.
+        // Une activité c'est le métier principal (ex: "Pâtisserie", "Boulangerie").
+        // Changer d'activité = recharger tous les contextes liés + rediriger vers le bon écran.
         private void OnActivityChanged(Activite act)
         {
+            // Guard : si null ou même activité déjà sélectionnée, je ne fais rien
             if (act == null || act.Id == _state.ActiveActivite?.Id) return;
+
             _state.SetActivite(act);
             ChargerContextes();
-            var cible = _state.ActiveContexte != null ? ScreenId.ContexteNiveaux : ScreenId.Hub;
+
+            // Si l'activité a au moins un contexte, je vais en Production. Sinon, retour au Hub.
+            var cible = _state.ActiveContexte != null ? ScreenId.Production : ScreenId.Hub;
             NavigateTo(cible, forceRefresh: true);
             UpdateStatusBar();
         }
 
+        // OnManageActivities — ouvre le formulaire de gestion des activités en mode modal (dialog).
+        // Après fermeture, je recharge la liste car l'user a pu ajouter/modifier/supprimer.
         private void OnManageActivities()
         {
             using (var frm = new FrmActivites()) frm.ShowDialog(this);
             ChargerActivites();
         }
 
+        // OnNewContext — quand l'utilisateur clique "+" pour créer un nouveau contexte de production.
+        // Je délègue à BtnNouveauContexte_Click qui contient la logique complète.
         private void OnNewContext()
         {
             BtnNouveauContexte_Click(this, EventArgs.Empty);
         }
 
+        // OnContextChanged — quand l'utilisateur sélectionne un autre contexte dans la sidebar.
+        // Un contexte de production = une "ligne" de production (ex: "Gâteaux au chocolat Q4 2025").
+        // Changer de contexte = reconstruire l'écran Production avec les fiches BOM de ce contexte.
         private void OnContextChanged(BomContexte ctx)
         {
             if (ctx == null || ctx.Id == _state.ActiveContexte?.Id) return;
             _state.SetContexte(ctx);
-            ChargerNiveaux();
             _router.Invalidate();
-            NavigateTo(ScreenId.ContexteNiveaux, forceRefresh: true);
+            NavigateTo(ScreenId.Production, forceRefresh: true);
             UpdateTitleBar();
             UpdateStatusBar();
         }
 
+        // OnEditContext — clic droit → "Modifier" sur un contexte dans la sidebar.
+        // Ouvre FrmBomContexteEdit en mode édition (ctx existant passé au constructeur).
+        // Si l'utilisateur valide (OK), je recharge les contextes et je reconstruis l'écran.
         private void OnEditContext(BomContexte ctx)
         {
             if (ctx == null) return;
@@ -233,25 +307,35 @@ namespace CharlesNadejda.Forms
                 {
                     ChargerContextes();
                     _router.Invalidate();
-                    NavigateTo(ScreenId.ContexteNiveaux, forceRefresh: true);
+                    NavigateTo(ScreenId.Production, forceRefresh: true);
                     UpdateTitleBar();
                 }
             }
         }
 
+        // OnDeleteContext — clic droit → "Supprimer" sur un contexte.
+        // Confirmation obligatoire (MessageBox avec focus par défaut sur "Non" — sécurité UX).
+        // Si le contexte supprimé était le contexte actif, je le reset à null et je redirige.
         private void OnDeleteContext(BomContexte ctx)
         {
             if (ctx == null) return;
+
+            // Confirmation avec Button2 (Non) par défaut — on ne supprime pas par accident
             if (MessageBox.Show($"Supprimer « {ctx.Nom} » et toutes ses données ?",
                     "Confirmation", MessageBoxButtons.YesNo, MessageBoxIcon.Warning,
                     MessageBoxDefaultButton.Button2) != DialogResult.Yes) return;
             try
             {
                 BomContexteDAL.Delete(ctx.Id);
+
+                // Si l'activité a été supprimée, je bascule sur la première disponible
                 if (_state.ActiveContexte?.Id == ctx.Id)
                     _state.SetContexte(null);
+
                 ChargerContextes();
-                var cible = _state.ActiveContexte != null ? ScreenId.ContexteNiveaux : ScreenId.Hub;
+
+                // Après suppression : si un contexte reste, aller en Production. Sinon → Hub.
+                var cible = _state.ActiveContexte != null ? ScreenId.Production : ScreenId.Hub;
                 _router.Invalidate();
                 NavigateTo(cible, forceRefresh: true);
                 UpdateTitleBar();
@@ -264,14 +348,18 @@ namespace CharlesNadejda.Forms
             }
         }
 
+        // UpdateTitleBar met à jour le titre affiché dans le bandeau du haut.
+        // Chaque ScreenId a son libellé — si aucun match, fallback sur "ArtisaStock".
         private void UpdateTitleBar()
         {
             if (_titleBar == null) return;
+
+            // Dictionnaire ScreenId → titre lisible — c'est plus propre qu'un switch
             var titles = new Dictionary<ScreenId, string>
             {
                 { ScreenId.Onboarding,      "Bienvenue" },
                 { ScreenId.Hub,             "Hub atelier" },
-                { ScreenId.ContexteNiveaux, _state.ActiveContexte?.Nom ?? "Niveaux & contextes" },
+                { ScreenId.ContexteNiveaux, "Production" },  // Rétrocompat — redirige vers Production
                 { ScreenId.Ressources,      _state.RessourceActive.ToString() },
                 { ScreenId.Production,      "Production" },
                 { ScreenId.Planning,        "Planning" },
@@ -284,6 +372,8 @@ namespace CharlesNadejda.Forms
             _titleBar.SetTitle(title ?? "ArtisaStock");
         }
 
+        // UpdateStatusBar propage l'état courant dans la barre d'état en bas.
+        // Le ?. est important — au démarrage, la statusBar peut ne pas encore exister.
         private void UpdateStatusBar()
         {
             _statusBar?.UpdateState(_state);
@@ -293,85 +383,118 @@ namespace CharlesNadejda.Forms
         //  Chargement des données
         // ════════════════════════════════════════════════════════════════
 
+        // ChargerActivites — charge toutes les activités depuis la DB et met à jour la sidebar.
+        // C'est le premier chargement de données au démarrage, et aussi appelé après chaque
+        // modification d'activité (ajout, suppression via FrmActivites).
+        // Si aucune activité n'existe, on affiche l'écran d'onboarding.
         private void ChargerActivites()
         {
             var acts = ActiviteDAL.GetAll();
+
+            // Pas d'activité du tout → première utilisation, on montre l'onboarding
             if (acts.Count == 0) { _state.SetActivite(null); ShowOnboarding(); return; }
 
+            // Je nourris la sidebar avec la liste complète des activités
             _sidebar.SetActivities(acts);
 
+            // Si une activité était déjà sélectionnée, je vérifie qu'elle existe encore
             if (_state.ActiveActivite != null)
             {
                 var match = acts.Find(a => a.Id == _state.ActiveActivite.Id);
-                if (match != null) _sidebar.SetSelectedActivity(match);
+                if (match != null)
+                    _sidebar.SetSelectedActivity(match);
+                else
+                {
+                    // L'activité a été supprimée entre-temps — fallback sur la première disponible
+                    _state.SetActivite(acts[0]);
+                    _sidebar.SetSelectedActivity(acts[0]);
+                }
             }
 
-            // If no activity set yet, trigger selection of first one
+            // Si aucune activité n'était encore sélectionnée (premier lancement), prendre la première
             if (_state.ActiveActivite == null)
             {
                 _state.SetActivite(acts[0]);
                 _sidebar.SetSelectedActivity(acts[0]);
             }
 
+            // Charger les contextes de l'activité sélectionnée, puis naviguer vers le bon écran
             ChargerContextes();
-            var cible = _state.ActiveContexte != null ? ScreenId.ContexteNiveaux : ScreenId.Hub;
+            var cible = _state.ActiveContexte != null ? ScreenId.Production : ScreenId.Hub;
             NavigateTo(cible);
             UpdateStatusBar();
         }
 
+        // ChargerContextes — charge les contextes de production liés à l'activité courante.
+        // Un contexte = une "campagne" de production (ex: "Collection Noël 2025").
+        // Si l'activité est nulle, je vide tout. Sinon je vérifie que le contexte actif
+        // existe encore (il a pu être supprimé), et je sélectionne le premier par défaut.
         private void ChargerContextes()
         {
+            // Pas d'activité → pas de contexte possible
             if (_state.ActiveActivite == null)
             {
                 _state.SetContexte(null);
                 _sidebar.SetContextes(null);
                 return;
             }
+
             var contextes = BomContexteDAL.GetAll(_state.ActiveActivite.Id);
+
+            // Logique de sélection du contexte actif :
+            // - Si j'ai des contextes et rien de sélectionné → prendre le premier
+            // - Si j'ai des contextes et un sélectionné → vérifier qu'il existe encore
+            // - Si plus de contexte → null
             if (contextes.Count > 0 && _state.ActiveContexte == null)
                 _state.SetContexte(contextes[0]);
             else if (contextes.Count > 0 && _state.ActiveContexte != null)
             {
-                // Verify current context still exists
+                // Le contexte actif a peut-être été supprimé → fallback sur le premier
                 if (!contextes.Any(c => c.Id == _state.ActiveContexte.Id))
                     _state.SetContexte(contextes[0]);
             }
             else
                 _state.SetContexte(null);
 
+            // Mettre à jour la sidebar avec les contextes disponibles + sélection courante
             _sidebar.SetContextes(contextes);
             if (_state.ActiveContexte != null)
                 _sidebar.SetSelectedContext(_state.ActiveContexte);
-
-            ChargerNiveaux();
         }
 
-        private void ChargerNiveaux()
-        {
-            if (_state.ActiveContexte == null) { _niveauxListe = new List<BomNiveau>(); return; }
-            _niveauxListe = BomNiveauDAL.GetByContexte(_state.ActiveContexte.Id);
-        }
+        // ChargerNiveaux supprimé — chargement local dans Production.cs
 
         // ════════════════════════════════════════════════════════════════
         //  Écrans du panneau droit
         // ════════════════════════════════════════════════════════════════
 
+        // ShowOnboarding — écran de bienvenue pour les nouveaux utilisateurs.
+        // S'affiche quand il n'y a AUCUNE activité dans la base.
+        // Guide l'utilisateur pas à pas : créer un stock → créer une activité → lier → contexte.
         private void ShowOnboarding()
         {
+            // SuspendLayout/ResumeLayout = j'empêche le redraw pendant que je construis l'UI
+            // Sinon l'utilisateur verrait un clignotement moche à chaque ajout de contrôle
             _pnlDroit.SuspendLayout();
+
+            // ClearAndDisposePanel() vide le panneau ET libère la mémoire des contrôles
             ClearAndDisposePanel();
 
+            // Panneau central fixe — pas de Dock, position absolue pour un look "carte" centrée
             var pnlCenter = new Panel
             {
                 Width = 480, Height = 300, Location = new Point(60, 60),
                 BackColor = CREME, Margin = new Padding(0), Anchor = AnchorStyles.None
             };
+
+            // Bordure dessinée manuellement via Paint — plus fin qu'un BorderStyle
             pnlCenter.Paint += (s, ev) =>
             {
                 using (var pen = new Pen(BORDER_CLR, 1))
                     ev.Graphics.DrawRectangle(pen, 0, 0, pnlCenter.Width - 1, pnlCenter.Height - 1);
             };
 
+            // Titre de bienvenue
             pnlCenter.Controls.Add(new Label
             {
                 Text = "Bienvenue dans ArtisaStock",
@@ -379,6 +502,8 @@ namespace CharlesNadejda.Forms
                 ForeColor = CHOCO_BRAND, Location = new Point(28, 24),
                 Size = new Size(420, 32), AutoSize = false
             });
+
+            // Instructions pas à pas — le workflow de premier lancement
             pnlCenter.Controls.Add(new Label
             {
                 Text = "Pour démarrer :\r\n\r\n" +
@@ -391,6 +516,7 @@ namespace CharlesNadejda.Forms
             });
 
             // US-10 : lien "créer un stock d'abord" — étape 1 du workflow
+            // C'est un raccourci qui navigue directement vers l'écran Stocks
             var lnkStock = new LinkLabel
             {
                 Text      = "\u2192 Créer un stock d'abord",
@@ -404,6 +530,7 @@ namespace CharlesNadejda.Forms
                 NavigateTo(ScreenId.Ressources, () => _state.SetRessource(RessourceType.Stocks));
             pnlCenter.Controls.Add(lnkStock);
 
+            // CTA principal (Call To Action) — le gros bouton doré pour créer sa première activité
             var btnCreer = new Button
             {
                 Text = "⚡  Créer ma première activité",
@@ -412,243 +539,50 @@ namespace CharlesNadejda.Forms
                 Location = new Point(28, 228), Size = new Size(264, 40), Cursor = Cursors.Hand
             };
             btnCreer.FlatAppearance.BorderColor = Color.FromArgb(168, 137, 30);
-            btnCreer.Click += (s, ev) => { using (var frm = new FrmActivites()) frm.ShowDialog(this); ChargerActivites(); };
+            // Au clic, ouvrir le formulaire de création d'activité en modal
+            // Si OK → recharger les activités (ce qui déclenchera la navigation vers le hub)
+            btnCreer.Click += (s, ev) => { using (var frm = new FrmActiviteEdit()) { if (frm.ShowDialog(this) == DialogResult.OK) ChargerActivites(); } };
             pnlCenter.Controls.Add(btnCreer);
 
             _pnlDroit.Controls.Add(pnlCenter);
             _pnlDroit.ResumeLayout();
         }
 
-        // ── Contexte screen, niveau selection → voir FrmPrincipal.Contexte.cs ──
+        // ── Actions contextes (absorbées de Contexte.cs) ─────────────────
 
-        private void DgvStock_CellFormatting(object sender, DataGridViewCellFormattingEventArgs e)
+        // BtnNouveauContexte_Click — crée un nouveau contexte de production.
+        // Vérifie d'abord qu'une activité est sélectionnée (sinon ça n'a pas de sens),
+        // puis ouvre FrmBomContexteEdit en mode création (null = pas de contexte existant).
+        private void BtnNouveauContexte_Click(object sender, EventArgs e)
         {
-            if (e.RowIndex < 0 || _dgvStock == null) return;
-            var col = _dgvStock.Columns[e.ColumnIndex];
-            var row = _dgvStock.Rows[e.RowIndex];
-
-            if (col.Name == "QuantiteDisponible" && row.DataBoundItem is BomStock bs)
-                e.Value = UnitConvertisseur.FormatQte(bs.QuantiteDisponible, bs.UniteOutput);
-            else if (col.Name == "StockActuel" && row.DataBoundItem is Ingredient ing2)
-                e.Value = UnitConvertisseur.FormatQte(ing2.StockActuel, ing2.UniteMesure);
-            else if (col.Name == "CoutUnitaire" && row.DataBoundItem is BomStock bs2)
-                e.Value = UnitConvertisseur.FormatPrix(bs2.CoutUnitaire);
-            else if (col.Name == "CoutTotal" && row.DataBoundItem is BomStock bs3)
-                e.Value = UnitConvertisseur.FormatPrix(bs3.CoutTotal);
-            else if (col.Name == "PrixAchatReference" && row.DataBoundItem is Ingredient ing4)
-                e.Value = UnitConvertisseur.FormatPrix(ing4.PrixAchatReference);
-            else if (col.Name == "StockPieces" && row.DataBoundItem is Ingredient ing5)
-                e.Value = ing5.StockPieces == 0 ? "—" : $"{ing5.StockPieces:0}";
-        }
-
-        /// <summary>Peint la barre jauge dans la colonne "Jauge" du DGV Stock.</summary>
-        private void DgvStock_CellPainting(object sender, DataGridViewCellPaintingEventArgs e)
-        {
-            if (e.RowIndex < 0 || _dgvStock == null) return;
-            if (_dgvStock.Columns[e.ColumnIndex].Name != "Jauge") return;
-
-            // Résoudre le ratio selon le type d'item (Ingredient ou BomStock)
-            double? ratio = null;
-            decimal? seuilAlerte = null;
-            decimal? stockCible = null;
-            var item = _dgvStock.Rows[e.RowIndex].DataBoundItem;
-            if (item is Ingredient ing)
+            if (_state.ActiveActivite == null)
+            { MessageBox.Show("Sélectionnez une activité.", "Info", MessageBoxButtons.OK, MessageBoxIcon.Information); return; }
+            using (var frm = new FrmBomContexteEdit(null, _state.ActiveActivite))
             {
-                ratio = ing.StockRatio;
-                seuilAlerte = ing.SeuilAlerteStock;
-                stockCible = ing.StockCible;
-            }
-            else if (item is BomStock bs)
-            {
-                ratio = bs.StockRatio;
-                stockCible = bs.StockCible;
-            }
-            else return;
-
-            e.Handled = true;
-            var g = e.Graphics;
-            g.SmoothingMode = SmoothingMode.AntiAlias;
-
-            // Fond de la cellule
-            bool sel = (e.State & DataGridViewElementStates.Selected) != 0;
-            Color bgColor = sel ? _dgvStock.DefaultCellStyle.SelectionBackColor
-                : (e.RowIndex % 2 == 1 ? Color.FromArgb(250, 246, 238) : Color.White);
-            using (var br = new SolidBrush(bgColor))
-                g.FillRectangle(br, e.CellBounds);
-
-            if (!ratio.HasValue)
-            {
-                // Pas de cible → tiret centré
-                using (var f = new Font("Segoe UI", 8F))
-                using (var br = new SolidBrush(CHOCO_MED))
+                if (frm.ShowDialog(this) == DialogResult.OK)
                 {
-                    var sz = g.MeasureString("—", f);
-                    g.DrawString("—", f, br,
-                        e.CellBounds.X + (e.CellBounds.Width - sz.Width) / 2,
-                        e.CellBounds.Y + (e.CellBounds.Height - sz.Height) / 2);
+                    ChargerContextes();
+                    UpdateStatusBar();
                 }
-                return;
-            }
-
-            // Dimensions de la barre
-            int pad = 6, barH = 14;
-            int barX = e.CellBounds.X + pad;
-            int barW = e.CellBounds.Width - pad * 2;
-            int barY = e.CellBounds.Y + (e.CellBounds.Height - barH) / 2;
-            int fillW = (int)(Math.Min(ratio.Value, 1.0) * barW);
-
-            // Couleur selon le ratio
-            double r = ratio.Value;
-            Color barColor;
-            if (r < 0.20)      barColor = Color.FromArgb(220, 60, 50);   // rouge
-            else if (r < 0.50) barColor = Color.FromArgb(230, 160, 40);  // orange
-            else if (r <= 1.0) barColor = Color.FromArgb(80, 165, 80);   // vert
-            else               barColor = Color.FromArgb(50, 130, 200);  // bleu (surplus)
-
-            // Fond gris de la barre
-            using (var path = RoundedRect(new Rectangle(barX, barY, barW, barH), 3))
-            using (var br = new SolidBrush(Color.FromArgb(230, 225, 218)))
-                g.FillPath(br, path);
-
-            // Remplissage
-            if (fillW > 2)
-            {
-                using (var path = RoundedRect(new Rectangle(barX, barY, fillW, barH), 3))
-                using (var br = new SolidBrush(barColor))
-                    g.FillPath(br, path);
-            }
-
-            // Marque du seuil d'alerte (ingrédients uniquement)
-            if (seuilAlerte.HasValue && stockCible.HasValue && stockCible.Value > 0)
-            {
-                double seuilRatio = (double)(seuilAlerte.Value / stockCible.Value);
-                if (seuilRatio > 0 && seuilRatio < 1)
-                {
-                    int sx = barX + (int)(seuilRatio * barW);
-                    using (var pen = new Pen(Color.FromArgb(180, 220, 60, 50), 1.5f))
-                        g.DrawLine(pen, sx, barY - 1, sx, barY + barH + 1);
-                }
-            }
-
-            // Label pourcentage
-            string pct = r > 9.99 ? ">999%" : $"{(int)(r * 100)}%";
-            using (var f = new Font("Segoe UI", 7F, FontStyle.Bold))
-            using (var br = new SolidBrush(sel ? Color.White : CHOCO_BRAND))
-            {
-                var sz = g.MeasureString(pct, f);
-                float tx = barX + barW + 2;
-                if (tx + sz.Width > e.CellBounds.Right - 2)
-                    tx = barX + fillW / 2f - sz.Width / 2f; // inside bar
-                g.DrawString(pct, f, br, tx, e.CellBounds.Y + (e.CellBounds.Height - sz.Height) / 2);
-            }
-
-            // Bordure cellule
-            e.PaintContent(e.CellBounds);
-        }
-
-        private void ChargerStockNiveau(BomNiveau niv, List<Ingredient> ingsCache = null)
-        {
-            if (_dgvStock == null) return;
-            try
-            {
-                _dgvStock.SuspendLayout();
-                _dgvStock.DataSource = null;
-                _dgvStock.Columns.Clear();
-
-                if (niv.Ordre == 1)
-                {
-                    // Charge les ingrédients pour le stock N1
-                    var ings = ingsCache ?? IngredientDAL.GetAll();
-                    _dgvStock.DataSource = ings.Where(i => i.StockActuel > 0).ToList();
-                    if (_dgvStock.Columns.Count > 0)
-                    {
-                        foreach (DataGridViewColumn col in _dgvStock.Columns)
-                            col.Visible = false;
-                        int di = 0;
-                        void ShowCol(string name, string header, int width)
-                        {
-                            var col = _dgvStock.Columns[name];
-                            if (col == null) return;
-                            col.Visible      = true;
-                            col.HeaderText   = header;
-                            col.Width        = width;
-                            col.DisplayIndex = di++;
-                        }
-                        ShowCol("Nom",                 "Ingrédient",     140);
-                        ShowCol("StockActuel",         "Dispo",           80);
-                        ShowCol("StockPieces",         "Pièces",          50);
-                        ShowCol("PrixAchatReference",  "€/cond.",         65);
-
-                        // Colonne jauge custom-drawn
-                        var colJauge = new DataGridViewTextBoxColumn
-                        {
-                            Name = "Jauge", HeaderText = "Niveau", Width = 80,
-                            ReadOnly = true, SortMode = DataGridViewColumnSortMode.NotSortable
-                        };
-                        colJauge.DefaultCellStyle.NullValue = "";
-                        _dgvStock.Columns.Add(colJauge);
-                        colJauge.DisplayIndex = di++;
-                    }
-                }
-                else
-                {
-                    _dgvStock.DataSource = BomStockDAL.GetByNiveau(niv.Id);
-                    if (_dgvStock.Columns.Count > 0)
-                    {
-                        foreach (DataGridViewColumn col in _dgvStock.Columns)
-                            col.Visible = false;
-                        int di = 0;
-                        void ShowCol(string name, string header, int width)
-                        {
-                            var col = _dgvStock.Columns[name];
-                            if (col == null) return;
-                            col.Visible      = true;
-                            col.HeaderText   = header;
-                            col.Width        = width;
-                            col.DisplayIndex = di++;
-                        }
-                        ShowCol("NomFiche",           "Fiche",        160);
-                        ShowCol("QuantiteDisponible", "Qté dispo",    100);
-                        ShowCol("DateProduction",     "Produit le",    90);
-                        ShowCol("DateDlc",            "DLC",           90);
-                        ShowCol("CoutUnitaire",       "Coût/u",        70);
-                        ShowCol("CoutTotal",          "Coût/prod",     80);
-
-                        // Colonne jauge custom-drawn (identique aux ingrédients)
-                        var colJauge = new DataGridViewTextBoxColumn
-                        {
-                            Name = "Jauge", HeaderText = "Niveau", Width = 80,
-                            ReadOnly = true, SortMode = DataGridViewColumnSortMode.NotSortable
-                        };
-                        colJauge.DefaultCellStyle.NullValue = "";
-                        _dgvStock.Columns.Add(colJauge);
-                        colJauge.DisplayIndex = di++;
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show("Erreur chargement stock niveau : " + ex.Message, "Erreur",
-                    MessageBoxButtons.OK, MessageBoxIcon.Error);
-            }
-            finally
-            {
-                _dgvStock.ResumeLayout();
             }
         }
-
-        // ── Actions contextes/niveaux, Kanban helpers → voir FrmPrincipal.Contexte.cs ──
 
         // ════════════════════════════════════════════════════════════════
         //  Écrans ressources & production — SFA (embed inline)
         // ════════════════════════════════════════════════════════════════
 
+        // ShowRessourceScreen — instancie le bon formulaire de ressource selon le type
+        // et l'intègre dans le panneau droit via EmbedForm.
+        // Chaque type de ressource a son propre Form dédié (Fournisseurs, Stocks, etc.)
         private void ShowRessourceScreen(RessourceType type, NavigationParams p)
         {
-            // US-08 : lire et réinitialiser le filtre alertes — évite la persistence entre navigations
+            // US-08 : lire et réinitialiser le filtre alertes — évite la persistence entre navigations.
+            // Si l'utilisateur a cliqué "alertes" dans le Hub, le flag est true → je le lis et le reset.
+            // Comme ça le filtre ne reste pas actif si l'user revient plus tard par la sidebar.
             bool filtreAlertes = _state.FiltreAlertesSeulement;
             _state.SetFiltreAlertes(false);
 
+            // Chaque RessourceType → un Form spécifique, avec ses paramètres propres
             Form frm;
             switch (type)
             {
@@ -659,6 +593,8 @@ namespace CharlesNadejda.Forms
                 case RessourceType.VueStock:     frm = new FrmVueStock();                         break;
                 default:                         return;
             }
+
+            // Intégrer le formulaire dans le panneau droit (SFA pattern)
             EmbedForm(frm);
         }
 
@@ -668,21 +604,103 @@ namespace CharlesNadejda.Forms
         /// Intègre un formulaire dans le panneau droit sans TopLevel (SFA).
         /// FormClosed déclenche le retour automatique à l'écran précédent.
         /// </summary>
+        // EmbedForm — le coeur du pattern SFA. Je prends un Form normal et je le transforme
+        // en contrôle intégré : TopLevel=false pour qu'il ne soit plus une fenêtre indépendante,
+        // FormBorderStyle=None pour virer la barre de titre, Dock=Fill pour remplir le panneau.
+        // À la fermeture du Form embarqué, je reviens automatiquement à l'écran logique précédent.
         private void EmbedForm(Form frm)
         {
             _pnlDroit.SuspendLayout();
             ClearAndDisposePanel();
-            frm.TopLevel        = false;
-            frm.FormBorderStyle = FormBorderStyle.None;
-            frm.Dock            = DockStyle.Fill;
+
+            // Ces 3 lignes transforment un Form classique en "contrôle embarqué"
+            frm.TopLevel        = false;       // Plus une fenêtre indépendante
+            frm.FormBorderStyle = FormBorderStyle.None;  // Pas de barre de titre
+            frm.Dock            = DockStyle.Fill;        // Remplir tout le panneau
+
+            // Quand le Form embarqué se ferme, je reviens automatiquement au bon écran
+            // La priorité : Production > Hub > Onboarding (selon ce qui existe dans le state)
             frm.FormClosed     += (s, ev) =>
             {
                 if (IsDisposed) return;
-                if (_state.ActiveContexte != null)      NavigateTo(ScreenId.ContexteNiveaux, forceRefresh: true);
+                if (_state.ActiveContexte != null)      NavigateTo(ScreenId.Production, forceRefresh: true);
                 else if (_state.ActiveActivite != null) NavigateTo(ScreenId.Hub,             forceRefresh: true);
                 else                                    NavigateTo(ScreenId.Onboarding,      forceRefresh: true);
             };
             _pnlDroit.Controls.Add(frm);
+            frm.Show();
+            _pnlDroit.ResumeLayout();
+        }
+
+        // ════════════════════════════════════════════════════════════════
+        //  TICKET-22 — SFA : chargement inline des formulaires d'édition
+        // ════════════════════════════════════════════════════════════════
+
+        /// <summary>
+        /// Charge un formulaire d'édition en mode inline (SFA) dans _pnlDroit,
+        /// avec un bandeau "Retour" en haut. Le formulaire est disposé automatiquement
+        /// à la fermeture. <paramref name="onClosed"/> est appelé avec le DialogResult
+        /// pour que l'appelant puisse rafraîchir les données si OK.
+        /// </summary>
+        // ShowFormInline — variante de EmbedForm pour les formulaires d'édition (CRUD).
+        // La différence : j'ajoute un bandeau "← Retour" en haut pour que l'utilisateur
+        // puisse annuler et revenir. C'est le pattern "page d'édition" dans un SFA.
+        // Le callback onClosed permet à l'appelant de savoir si l'user a validé (OK) ou annulé.
+        private void ShowFormInline(Form frm, Action<DialogResult> onClosed)
+        {
+            frm.TopLevel        = false;
+            frm.FormBorderStyle = FormBorderStyle.None;
+            frm.Dock            = DockStyle.Fill;
+
+            _pnlDroit.SuspendLayout();
+            ClearAndDisposePanel();
+
+            // ── Bandeau Retour — un petit panel docké en haut avec bouton + titre ──
+            var pnlRetour = new Panel { Dock = DockStyle.Top, Height = 40, BackColor = CREME_WARM };
+
+            // Ligne de séparation en bas du bandeau — dessinée via Paint
+            pnlRetour.Paint += (s, ev) =>
+            {
+                using (var pen = new Pen(BORDER_CLR, 1))
+                    ev.Graphics.DrawLine(pen, 0, pnlRetour.Height - 1, pnlRetour.Width, pnlRetour.Height - 1);
+            };
+
+            // Bouton "← Retour" — ferme le formulaire avec Cancel si rien n'a été validé
+            var btnRetour = new Button
+            {
+                Text = "←  Retour", Font = new Font("Segoe UI", 9F),
+                FlatStyle = FlatStyle.Flat, BackColor = AppColors.GreyBtn, ForeColor = CHOCO_BRAND,
+                Size = new Size(100, 30), Location = new Point(12, 5), Cursor = Cursors.Hand
+            };
+            btnRetour.FlatAppearance.BorderColor = BORDER_CLR;
+            btnRetour.Click += (s, ev) =>
+            {
+                // Si l'utilisateur n'a pas validé (DialogResult.None), c'est un Cancel
+                if (frm.DialogResult == DialogResult.None)
+                    frm.DialogResult = DialogResult.Cancel;
+                frm.Close();
+            };
+            pnlRetour.Controls.Add(btnRetour);
+
+            // Titre du formulaire affiché dans le bandeau (ex: "Modifier le contexte")
+            pnlRetour.Controls.Add(new Label
+            {
+                Text = frm.Text, Font = new Font("Segoe UI", 10F, FontStyle.Bold),
+                ForeColor = CHOCO_BRAND, Location = new Point(120, 10), AutoSize = true
+            });
+
+            // À la fermeture du Form : restaurer la vue précédente + notifier l'appelant
+            frm.FormClosed += (s, ev) =>
+            {
+                var result = frm.DialogResult;
+                // Revenir à l'écran qui était actif avant l'édition
+                NavigateTo(_state.ActiveScreen, forceRefresh: true);
+                onClosed?.Invoke(result);
+            };
+
+            // Ordre d'ajout : Fill en premier (le form), puis Top (le bandeau retour)
+            _pnlDroit.Controls.Add(frm);
+            _pnlDroit.Controls.Add(pnlRetour);
             frm.Show();
             _pnlDroit.ResumeLayout();
         }
@@ -692,8 +710,15 @@ namespace CharlesNadejda.Forms
         /// Sans Dispose, les Forms précédentes resteraient en mémoire avec leurs handlers DAL
         /// et seraient disposées en cascade à la fermeture de l'app (latence visible).
         /// </summary>
+        // ClearAndDisposePanel — nettoyage obligatoire avant d'afficher un nouvel écran.
+        // Controls.Clear() seul ne suffit PAS en WinForms : ça retire les contrôles du parent
+        // mais ne les dispose pas → fuite mémoire. Ici je retire ET dispose chaque contrôle.
+        // C'est critique parce que les Forms embarquées ont des connexions DAL ouvertes,
+        // des événements câblés, des DGV avec des DataSources... tout ça doit être libéré.
         private void ClearAndDisposePanel()
         {
+            // Boucle while au lieu de foreach — parce que je modifie la collection pendant l'itération
+            // (RemoveAt + Dispose à chaque tour)
             while (_pnlDroit.Controls.Count > 0)
             {
                 var c = _pnlDroit.Controls[0];
@@ -706,6 +731,9 @@ namespace CharlesNadejda.Forms
         //  Placeholder — module en développement
         // ════════════════════════════════════════════════════════════════
 
+        // ShowPlaceholder — écran générique "module pas encore codé".
+        // Affiché pour Planning, Devis, Mouvements, etc. qui ne sont pas encore implémentés.
+        // Donne un feedback clair à l'utilisateur au lieu d'un crash ou d'un écran vide.
         private void ShowPlaceholder(string moduleName)
         {
             _pnlDroit.SuspendLayout();
@@ -734,6 +762,8 @@ namespace CharlesNadejda.Forms
                 Font = new Font("Segoe UI", 10F), ForeColor = CHOCO_MED,
                 Location = new Point(28, 70), Size = new Size(340, 60)
             });
+
+            // Bouton retour au Hub — pour ne pas laisser l'utilisateur coincé
             var btnRetour = new Button
             {
                 Text = "\u2190 Retour au Hub", Font = new Font("Segoe UI", 10F, FontStyle.Bold),
@@ -752,20 +782,27 @@ namespace CharlesNadejda.Forms
         //  Menu / Session
         // ════════════════════════════════════════════════════════════════
 
-        // Modules du catalogue Web (Catégories, Parfums, Produits, Commandes) — à venir
+        // Modules du catalogue Web (Catégories, Parfums, Produits, Commandes) — à venir.
+        // Ces handlers existent déjà car câblés dans le Designer, mais ils ne font rien
+        // d'utile pour l'instant — juste un message "à venir".
         // Connectés à une future intégration avec le site Laravel.
         private void menuCatCategories_Click(object sender, EventArgs e) => PlaceholderWeb();
         private void menuCatParfums_Click(object sender, EventArgs e)    => PlaceholderWeb();
         private void menuCatProduits_Click(object sender, EventArgs e)   => PlaceholderWeb();
         private void menuCommandes_Click(object sender, EventArgs e)     => PlaceholderWeb();
 
+        // Raccourci menu → Fournisseurs (même effet que cliquer dans la sidebar)
         private void menuFournisseurs_Click(object sender, EventArgs e) =>
             NavigateTo(ScreenId.Ressources, () => _state.SetRessource(RessourceType.Fournisseurs));
 
+        // PlaceholderWeb — message générique pour les modules web pas encore connectés
         private static void PlaceholderWeb() =>
             MessageBox.Show("Module Catalogue Web — à venir.", "En développement",
                 MessageBoxButtons.OK, MessageBoxIcon.Information);
 
+        // menuDeconnexion_Click — déconnecte l'utilisateur et relance l'app.
+        // Application.Restart() kill le process actuel et en relance un nouveau,
+        // ce qui fait réapparaître FrmLogin. C'est brutal mais efficace.
         private void menuDeconnexion_Click(object sender, EventArgs e)
         {
             if (MessageBox.Show("Se déconnecter ?", "Confirmation",
@@ -777,27 +814,39 @@ namespace CharlesNadejda.Forms
             }
         }
 
+        // OnFormClosed — quand le formulaire principal se ferme, toute l'app s'arrête.
+        // Application.Exit() ferme proprement tous les threads et libère les ressources.
         protected override void OnFormClosed(FormClosedEventArgs e)
         {
             base.OnFormClosed(e);
             Application.Exit();
         }
 
+        // Handler Resize vide — câblé dans le Designer mais pas utilisé pour l'instant.
+        // Je le garde pour éviter un crash si le Designer essaie de l'appeler.
         private void FrmPrincipal_Resize(object sender, EventArgs e) { }
 
         // ════════════════════════════════════════════════════════════════
         //  Renderer menu sombre
         // ════════════════════════════════════════════════════════════════
 
+        // DarkMenuRenderer — personnalise le rendu visuel du menu principal (si utilisé).
+        // Au lieu du look Windows classique bleu/gris, j'ai un menu chocolat/doré
+        // qui s'intègre avec la palette de l'app.
+        // Hérite de ToolStripProfessionalRenderer pour ne surcharger que ce qui m'intéresse.
         public class DarkMenuRenderer : ToolStripProfessionalRenderer
         {
             public DarkMenuRenderer() : base(new DarkColorTable()) { }
+
+            // Fond de l'item : doré si survolé/pressé, chocolat sinon
             protected override void OnRenderMenuItemBackground(ToolStripItemRenderEventArgs e)
             {
                 using (var br = new SolidBrush((e.Item.Selected || e.Item.Pressed)
                     ? AppColors.Or : AppColors.ChocoBrand))
                     e.Graphics.FillRectangle(br, new Rectangle(Point.Empty, e.Item.Size));
             }
+
+            // Texte : chocolat foncé sur fond doré (hover), blanc sur fond chocolat (normal)
             protected override void OnRenderItemText(ToolStripItemTextRenderEventArgs e)
             {
                 e.TextColor = (e.Item.Selected || e.Item.Pressed) ? AppColors.ChocoBrand : Color.White;
@@ -805,6 +854,9 @@ namespace CharlesNadejda.Forms
             }
         }
 
+        // DarkColorTable — table de couleurs pour le menu sombre.
+        // Override les couleurs par défaut de ProfessionalColorTable
+        // pour que les sous-menus, bordures, etc. soient aussi dans la palette chocolat.
         private class DarkColorTable : ProfessionalColorTable
         {
             public override Color MenuItemSelected              => AppColors.Or;

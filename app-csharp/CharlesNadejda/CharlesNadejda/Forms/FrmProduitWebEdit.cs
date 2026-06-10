@@ -40,10 +40,12 @@ namespace CharlesNadejda.Forms
             _laravelStoragePath = System.Configuration.ConfigurationManager.AppSettings["LaravelStoragePath"];
             if (string.IsNullOrEmpty(_laravelStoragePath))
             {
-                // Fallback : remonter depuis bin/Debug jusqu'à la racine du projet
+                // Chemin fixe relatif depuis bin/Debug :
+                // bin/Debug(1) → CharlesNadejda(2) → CharlesNadejda(3) → app-csharp(4) → CharlesNadejda_Project(5)
+                // CharlesNadejda_Project/site-laravel/storage/app/public/
                 var exeDir = AppDomain.CurrentDomain.BaseDirectory;
                 _laravelStoragePath = Path.GetFullPath(
-                    Path.Combine(exeDir, @"..\..\..\..\..\..\site-laravel\storage\app\public\"));
+                    Path.Combine(exeDir, @"..\..\..\..\..\site-laravel\storage\app\public\"));
             }
 
             int y = 16;
@@ -273,9 +275,14 @@ namespace CharlesNadejda.Forms
             // Copie de l'image vers le storage Laravel
             if (!string.IsNullOrEmpty(_selectedImagePath))
             {
+                if (string.IsNullOrEmpty(_laravelStoragePath) || !Directory.Exists(_laravelStoragePath))
+                {
+                    MessageBox.Show($"Chemin Laravel introuvable :\n{_laravelStoragePath}\n\nL'image ne sera pas copiée.",
+                        "Erreur chemin", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                }
                 var ext = Path.GetExtension(_selectedImagePath).ToLower();
-                var fileName = $"produits/{(_isEdit ? _prod.Id : 0)}_{DateTime.Now:yyyyMMddHHmmss}{ext}";
-                var destDir  = Path.Combine(_laravelStoragePath, "produits");
+                var fileName = $"images/{(_isEdit ? _prod.Id : 0)}_{DateTime.Now:yyyyMMddHHmmss}{ext}";
+                var destDir  = Path.Combine(_laravelStoragePath, "images");
                 if (!Directory.Exists(destDir)) Directory.CreateDirectory(destDir);
 
                 // Path.Combine + remplacement pour compatibilité Windows
@@ -294,7 +301,7 @@ namespace CharlesNadejda.Forms
                 if (!string.IsNullOrEmpty(_selectedImagePath))
                 {
                     var ext = Path.GetExtension(_selectedImagePath).ToLower();
-                    var newFileName = $"produits/{newId}_{DateTime.Now:yyyyMMddHHmmss}{ext}";
+                    var newFileName = $"images/{newId}_{DateTime.Now:yyyyMMddHHmmss}{ext}";
                     var oldPath = Path.Combine(_laravelStoragePath, _prod.ImagePath.Replace('/', '\\'));
                     var newPath = Path.Combine(_laravelStoragePath, newFileName.Replace('/', '\\'));
                     if (File.Exists(oldPath))

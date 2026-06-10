@@ -73,29 +73,12 @@ namespace CharlesNadejda.Forms
             ChargerContextes();
             btnLancerProduction.Enabled = false;
 
+            // TICKET-27 : pré-sélection via helper générique
             if (_contexteInitial != null)
-            {
-                for (int i = 0; i < cboContexte.Items.Count; i++)
-                {
-                    if (((BomContexte)cboContexte.Items[i]).Id == _contexteInitial.Id)
-                    {
-                        cboContexte.SelectedIndex = i;
-                        break;
-                    }
-                }
-            }
+                FormHelper.SelectionnerParId<BomContexte>(cboContexte, c => c.Id, _contexteInitial.Id);
 
             if (_niveauInitial != null)
-            {
-                for (int i = 0; i < cboNiveau.Items.Count; i++)
-                {
-                    if (((BomNiveau)cboNiveau.Items[i]).Id == _niveauInitial.Id)
-                    {
-                        cboNiveau.SelectedIndex = i;
-                        break;
-                    }
-                }
-            }
+                FormHelper.SelectionnerParId<BomNiveau>(cboNiveau, n => n.Id, _niveauInitial.Id);
         }
 
         // ── Chargement en cascade Contexte → Niveau → Fiche ─────────────

@@ -80,6 +80,7 @@ namespace CharlesNadejda.Forms
             this.AutoScaleMode       = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize          = new System.Drawing.Size(1200, 700);
             this.MinimumSize         = new System.Drawing.Size(900, 580);
+            this.WindowState         = System.Windows.Forms.FormWindowState.Maximized;
             this.Controls.Add(this.menuStrip);
             this.MainMenuStrip   = this.menuStrip;
             this.Name            = "FrmPrincipal";

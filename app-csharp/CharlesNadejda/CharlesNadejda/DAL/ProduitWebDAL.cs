@@ -14,8 +14,10 @@ namespace CharlesNadejda.DAL
             SELECT p.id, p.id_bom_fiche, p.id_categorie, p.nom_commercial,
                    p.description, p.prix_vente, p.image_path, p.en_vente,
                    p.ordre_affichage, p.date_creation,
-                   f.nom          AS nom_fiche,
-                   c.nom          AS nom_categorie,
+                   f.nom             AS nom_fiche,
+                   f.quantite_output AS quantite_output_batch,
+                   f.unite_output    AS unite_output,
+                   c.nom             AS nom_categorie,
                    COALESCE(SUM(bs.quantite_disponible), 0) AS stock_disponible
             FROM produits_web p
             INNER JOIN bom_fiches f       ON f.id = p.id_bom_fiche
@@ -208,9 +210,11 @@ namespace CharlesNadejda.DAL
             EnVente         = Convert.ToBoolean(r["en_vente"]),
             OrdreAffichage  = Convert.ToInt32(r["ordre_affichage"]),
             DateCreation    = (DateTime)r["date_creation"],
-            NomFiche        = r["nom_fiche"].ToString(),
-            NomCategorie    = r["nom_categorie"]   == DBNull.Value ? null : r["nom_categorie"].ToString(),
-            StockDisponible = Convert.ToDecimal(r["stock_disponible"])
+            NomFiche             = r["nom_fiche"].ToString(),
+            QuantiteOutputBatch  = Convert.ToDecimal(r["quantite_output_batch"]),
+            UniteOutput          = r["unite_output"] == DBNull.Value ? "" : r["unite_output"].ToString(),
+            NomCategorie         = r["nom_categorie"]   == DBNull.Value ? null : r["nom_categorie"].ToString(),
+            StockDisponible      = Convert.ToDecimal(r["stock_disponible"])
         };
     }
 }

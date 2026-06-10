@@ -26,6 +26,24 @@ namespace CharlesNadejda.Forms
         }
 
         /// <summary>
+        /// TICKET-27 : Sélectionne dans un ComboBox l'élément dont l'Id correspond à idCible.
+        /// Remplace le pattern for/if/SelectedIndex copié-collé dans les formulaires.
+        /// Retourne true si l'élément a été trouvé et sélectionné.
+        /// </summary>
+        internal static bool SelectionnerParId<T>(ComboBox cbo, System.Func<T, int> getId, int idCible)
+        {
+            for (int i = 0; i < cbo.Items.Count; i++)
+            {
+                if (cbo.Items[i] is T item && getId(item) == idCible)
+                {
+                    cbo.SelectedIndex = i;
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        /// <summary>
         /// Sélectionne tout le texte à la prise de focus — le premier caractère saisi
         /// remplace immédiatement la valeur existante, sans avoir à effacer manuellement.
         /// </summary>

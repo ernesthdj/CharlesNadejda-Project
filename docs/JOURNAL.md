@@ -5,6 +5,13 @@
 
 ---
 
+### [2026-06-04 23:00] SESSION — End
+**Résumé :** Refonte complète du système de prix dans FrmIngredientEdit — synchronisation tripartite €/unité de base ↔ €/conditionnement ↔ €/lot. Ajout du champ `nb_par_lot` (Model, DAL, DB migration v19) pour persister le nombre de conditionnements par lot. Ajout du champ label conditionnement. Label dynamique "Prix / kg (€)" s'adapte à l'unité sélectionnée. Améliorations sidebar, DesignSpy, ScreenRouter, FrmPrincipal.
+**Branche :** feat/refactoring-sprints-p0-p3
+**Commits pushés :** 1
+
+---
+
 ## Règles apprises
 > Section cumulative — chaque erreur corrigée y laisse une trace permanente.
 
