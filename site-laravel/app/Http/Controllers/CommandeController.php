@@ -99,6 +99,9 @@ class CommandeController extends Controller
 
             DB::commit();
 
+            // Reset le compteur panier en session (le panier vient d'être converti en commande)
+            session(['panier_count' => 0]);
+
             return redirect()->route('commande.detail', $panier->id)
                 ->with('success', 'Commande validée avec succès !');
 

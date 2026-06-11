@@ -40,6 +40,7 @@ class CatalogueController extends Controller
         $produit = ProduitWeb::where('id', $id)
             ->where('en_vente', 1)
             ->with('categorie')
+            ->withStockDisponible()
             ->firstOrFail();
 
         return view('catalogue.show', compact('produit'));

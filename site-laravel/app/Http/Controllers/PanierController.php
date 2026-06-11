@@ -27,7 +27,7 @@ class PanierController extends Controller
             'quantite'   => 'required|integer|min:1',
         ]);
 
-        $produit = ProduitWeb::findOrFail($request->id_produit);
+        $produit = ProduitWeb::withStockDisponible()->findOrFail($request->id_produit);
 
         // Vérifier stock
         if ($produit->stock_disponible < $request->quantite) {
@@ -59,10 +59,12 @@ class PanierController extends Controller
             ]);
         }
 
+        $count = $this->refreshPanierCount($panier);
+
         return response()->json([
             'success'      => true,
             'message'      => $produit->nom_commercial . ' ajouté au panier.',
-            'panier_count' => $this->getPanierCount(),
+            'panier_count' => $count,
         ]);
     }
 
@@ -94,13 +96,16 @@ class PanierController extends Controller
         }
 
         $ligne->update(['quantite' => $request->quantite]);
-        $ligne->refresh();
+
+        // Recharger les lignes pour avoir les totaux à jour
+        $panier->load('lignes');
+        $count = $this->refreshPanierCount($panier);
 
         return response()->json([
             'success'      => true,
-            'sous_total'   => number_format($ligne->sous_total, 2, ',', ' '),
-            'total'        => number_format($panier->lignes()->sum('sous_total'), 2, ',', ' '),
-            'panier_count' => $this->getPanierCount(),
+            'sous_total'   => number_format($ligne->fresh()->sous_total, 2, ',', ' '),
+            'total'        => number_format($panier->lignes->sum('sous_total'), 2, ',', ' '),
+            'panier_count' => $count,
         ]);
     }
 
@@ -120,10 +125,14 @@ class PanierController extends Controller
 
         $ligne->delete();
 
+        // Recharger les lignes après suppression
+        $panier->load('lignes');
+        $count = $this->refreshPanierCount($panier);
+
         return response()->json([
             'success'      => true,
-            'total'        => number_format($panier->lignes()->sum('sous_total'), 2, ',', ' '),
-            'panier_count' => $this->getPanierCount(),
+            'total'        => number_format($panier->lignes->sum('sous_total'), 2, ',', ' '),
+            'panier_count' => $count,
         ]);
     }
 
@@ -132,7 +141,7 @@ class PanierController extends Controller
      */
     public function count()
     {
-        return response()->json(['count' => $this->getPanierCount()]);
+        return response()->json(['count' => (int) session('panier_count', 0)]);
     }
 
     // ── Helpers ──────────────────────────────────────────────
@@ -153,12 +162,21 @@ class PanierController extends Controller
         );
     }
 
-    private function getPanierCount(): int
+    /**
+     * Rafraîchit le compteur panier en session depuis un panier déjà chargé.
+     * Élimine les requêtes DB redondantes (anciennement getPanierCount).
+     */
+    private function refreshPanierCount(?CommandeWeb $panier = null): int
     {
-        $panier = CommandeWeb::where('id_client', session('client_id'))
-            ->where('statut', 'panier')
-            ->first();
+        if (!$panier) {
+            $panier = CommandeWeb::where('id_client', session('client_id'))
+                ->where('statut', 'panier')
+                ->first();
+        }
 
-        return $panier ? (int) $panier->lignes()->sum('quantite') : 0;
+        $count = $panier ? (int) $panier->lignes()->sum('quantite') : 0;
+        session(['panier_count' => $count]);
+
+        return $count;
     }
 }

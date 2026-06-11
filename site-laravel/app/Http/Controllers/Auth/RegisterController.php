@@ -33,9 +33,11 @@ class RegisterController extends Controller
         ]);
 
         session([
-            'client_id'     => $client->id,
-            'client_nom'    => $client->nom,
-            'client_prenom' => $client->prenom,
+            'client_id'          => $client->id,
+            'client_nom'         => $client->nom,
+            'client_prenom'      => $client->prenom,
+            'panier_count'       => 0,
+            'client_verified_at' => time(),
         ]);
         session()->regenerate();
 

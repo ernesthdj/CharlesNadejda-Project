@@ -15,16 +15,10 @@ class AppServiceProvider extends ServiceProvider
 
     public function boot(): void
     {
-        // QA-01 : View Composer pour le compteur panier dans le header
+        // Compteur panier via session (mis à jour par PanierController)
+        // Élimine 2 requêtes DB par page pour les utilisateurs connectés
         View::composer('components.header', function ($view) {
-            $count = 0;
-            if (session()->has('client_id')) {
-                $panier = CommandeWeb::where('id_client', session('client_id'))
-                    ->where('statut', 'panier')
-                    ->first();
-                $count = $panier ? (int) $panier->lignes()->sum('quantite') : 0;
-            }
-            $view->with('panierCount', $count);
+            $view->with('panierCount', (int) session('panier_count', 0));
         });
     }
 }

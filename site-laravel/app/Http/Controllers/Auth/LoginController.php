@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
 use App\Models\Client;
+use App\Models\CommandeWeb;
 use Illuminate\Http\Request;
 
 // 📌 SCRIPT DEFENSE — Étape 6.3 : Login — password_verify, message générique, session regenerate
@@ -35,10 +36,18 @@ class LoginController extends Controller
                 ->with('error', 'Email ou mot de passe incorrect.');
         }
 
+        // Charger le compteur panier existant pour le cache session
+        $panier = CommandeWeb::where('id_client', $client->id)
+            ->where('statut', 'panier')
+            ->first();
+        $panierCount = $panier ? (int) $panier->lignes()->sum('quantite') : 0;
+
         session([
-            'client_id'     => $client->id,
-            'client_nom'    => $client->nom,
-            'client_prenom' => $client->prenom,
+            'client_id'          => $client->id,
+            'client_nom'         => $client->nom,
+            'client_prenom'      => $client->prenom,
+            'panier_count'       => $panierCount,
+            'client_verified_at' => time(),
         ]);
         session()->regenerate();
 
