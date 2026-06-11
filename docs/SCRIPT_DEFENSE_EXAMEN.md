@@ -1,7 +1,7 @@
 # SCRIPT DE DEFENSE -- EXAMEN ORAL PDSGBD + PDWEB
 
 > **Projet** : ArtisaStock (C# WinForms) + Boutique Web (Laravel 11)
-> **Etudiant** : mentalyas -- 2e annee Bachelier Informatique
+> **Etudiant** : Ernest -- 2e annee Bachelier Informatique
 > **Format** : Discord screen share, demo live end-to-end
 > **Deux examens en une session** : PDSGBD (C#/SQL) et PDWEB (Laravel/PHP)
 
@@ -787,11 +787,15 @@ WHERE f.actif = 1
   AND f.id NOT IN (SELECT id_bom_fiche FROM produits_web)
 ORDER BY f.nom
 
--- Calcul stock temps reel dans la liste produits
-SELECT p.*, COALESCE(SUM(bs.quantite_disponible), 0) AS stock_disponible
-FROM produits_web p
-LEFT JOIN bom_stocks bs ON bs.id_fiche = p.id_bom_fiche AND bs.quantite_disponible > 0
-GROUP BY p.id
+-- Calcul stock en unites vendables (aligne avec le C#)
+SELECT p.*, (
+    SELECT FLOOR(COALESCE(SUM(bs.quantite_disponible), 0) / bf.quantite_output)
+    FROM bom_stocks bs
+    INNER JOIN bom_fiches bf ON bf.id = bs.id_fiche
+    WHERE bs.id_fiche = p.id_bom_fiche AND bs.quantite_disponible > 0
+    GROUP BY bf.quantite_output
+) AS stock_calc
+FROM produits_web p WHERE p.en_vente = 1
 ```
 
 #### Questions probables
@@ -847,10 +851,11 @@ GROUP BY p.id
 >
 > [Ouvre ProduitWeb.php, montre l'accessor]
 >
-> Le stock est calcule via un accessor Laravel. C'est une methode `getStockDisponibleAttribute()`
-> qui est appelee automatiquement quand on accede a `$produit->stock_disponible` dans le Blade.
-> Elle fait un `SUM(quantite_disponible)` sur la table `bom_stocks`.
-> C'est le meme stock que dans le C# -- la meme table, la meme base.
+> Le stock est calcule via un scope `withStockDisponible()` qui injecte une sous-requete SQL
+> directement dans le SELECT. Ca fait un `FLOOR(SUM(quantite_disponible) / quantite_output)` --
+> c'est-a-dire le stock en unites vendables, pas en quantite brute.
+> C'est exactement le meme calcul que dans le C# avec `ProduitWebDAL` -- la meme table, la meme formule.
+> Si le scope n'est pas applique, un accessor de fallback fait la meme requete unitairement.
 >
 > [Montre la vue Blade]
 >
@@ -861,17 +866,32 @@ GROUP BY p.id
 ```php
 // ProduitWeb.php -- scope qui calcule le stock en unites vendables
 // FLOOR(SUM(bom_stocks.quantite_disponible) / bom_fiches.quantite_output)
-// Aligne avec le calcul C# : on divise le stock brut par la quantite par batch
-public function scopeWithStockDisponible($query)
+// Aligne avec le calcul C# dans ProduitWebDAL : on divise le stock brut par la quantite par batch
+public function scopeWithStockDisponible(Builder $query): Builder
 {
-    return $query->addSelect([
-        'stock_disponible' => BomStock::selectRaw(
-            'FLOOR(SUM(bom_stocks.quantite_disponible) / bom_fiches.quantite_output)'
-        )
-        ->join('bom_fiches', 'bom_fiches.id', '=', 'bom_stocks.id_fiche')
-        ->whereColumn('bom_stocks.id_fiche', 'produits_web.id_bom_fiche')
-        ->where('bom_stocks.quantite_disponible', '>', 0)
-    ]);
+    return $query->selectRaw('produits_web.*, (
+        SELECT FLOOR(COALESCE(SUM(bs.quantite_disponible), 0) / bf.quantite_output)
+        FROM bom_stocks bs
+        INNER JOIN bom_fiches bf ON bf.id = bs.id_fiche
+        WHERE bs.id_fiche = produits_web.id_bom_fiche
+          AND bs.quantite_disponible > 0
+        GROUP BY bf.quantite_output
+    ) AS stock_calc');
+}
+
+// Accessor avec fallback si scope non charge
+public function getStockDisponibleAttribute(): float
+{
+    if (array_key_exists('stock_calc', $this->attributes) && $this->attributes['stock_calc'] !== null) {
+        return (float) $this->attributes['stock_calc'];
+    }
+    // Fallback : requete unitaire (pour les cas ou le scope n'est pas applique)
+    return (float) DB::selectOne('
+        SELECT FLOOR(COALESCE(SUM(bs.quantite_disponible), 0) / bf.quantite_output) AS stock
+        FROM bom_stocks bs INNER JOIN bom_fiches bf ON bf.id = bs.id_fiche
+        WHERE bs.id_fiche = ? AND bs.quantite_disponible > 0
+        GROUP BY bf.quantite_output
+    ', [$this->id_bom_fiche])?->stock ?? 0;
 }
 // Utilise dans index() ET show() du CatalogueController
 ```
@@ -1275,7 +1295,7 @@ ORDER BY cmd.date_commande DESC
 
 #### Ce que tu montres
 
-Ouvre `sql/schema_complet.sql` et montre la structure des modules :
+Ouvre `sql/create_database.sql` (source de verite, post-v21) et montre la structure des modules :
 
 ```
   MODULE Referentiels         MODULE Catalogue           MODULE BOM
