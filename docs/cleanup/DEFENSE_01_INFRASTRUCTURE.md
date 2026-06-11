@@ -27,15 +27,29 @@ La liaison M:N entre Stock et Activite (table `activites_stocks`) permet a un me
 
 ### FrmStocks — Ecran principal
 
+**Classe** : `FrmStocks : FrmListeBase<Stock>`
+
+Herite de `FrmListeBase<Stock>` pour le layout et le workflow CRUD standard. La particularite : un `SplitContainer` remplace le DGV simple de la base. Le DGV herite est retire des Controls, puis place dans `Panel1`. `Panel2` contient la CheckedListBox des activites liees.
+
+```csharp
+// Reconstruction du layout dans le constructeur FrmStocks
+Controls.Remove(dgv);                        // Retire le DGV du layout FrmListeBase
+_split.Panel1.Controls.Add(dgv);             // Panel1 : DGV herite (liste des stocks)
+_split.Panel2.Controls.Add(grpLiaison);      // Panel2 : GroupBox + CheckedListBox
+Controls.Add(_split);                        // Le SplitContainer remplace le DGV
+```
+
 | Zone | Contenu |
 |------|---------|
-| Header (48px, chocolat fonce) | Titre "STOCKS" + hint "Contenants physiques ou logiques" |
-| SplitContainer (Fill) | Panel1: DGV liste stocks / Panel2: CheckedListBox activites liees |
-| Footer (52px) | Boutons: "+ Nouveau stock", "Modifier", "Supprimer" |
+| Label titre (FrmListeBase) | "Stocks" |
+| SplitContainer (Fill) | Panel1: DGV herite de FrmListeBase / Panel2: GroupBox "Activites liees" |
+| Boutons CRUD (FrmListeBase) | Ajouter, Modifier, Supprimer, Fermer |
 
-**Colonnes DGV** : Id (masque), Nom, Description, Date creation.
+**Colonnes DGV** (via `ConfigurerColonnes()`) : Id (masque), Actif (masque), Nom (200px), Description (220px), Cree le (100px).
 
-**Panel de liaison** (droite, 280px) : GroupBox "Activites liees" avec `CheckedListBox`. Cocher/decocher une activite persiste immediatement en DB via `StockDAL.LierActivite()` / `StockDAL.DelierActivite()`.
+**Panel de liaison** (droite, ~250px) : GroupBox "Activites liees" avec `CheckedListBox`. `SplitterDistance` fixe au premier layout via `_split.Width - 250`. Cocher/decocher une activite persiste immediatement en DB via `StockDAL.LierActivite()` / `StockDAL.DelierActivite()`. Un verrou `_chargeantLiaisons` empeche les faux evenements `ItemCheck` pendant le chargement.
+
+**Bouton Supprimer** : desactive dynamiquement via `StockDAL.ContientDonnees(idStock)` avec tooltip explicatif.
 
 ### FrmStockEdit — Formulaire creation/modification
 
@@ -121,17 +135,30 @@ SELECT id_activite FROM activites_stocks WHERE id_stock = @id
 
 ### FrmActivites — Ecran principal
 
+**Classe** : `FrmActivites : FrmListeBase<Activite>`
+
+Herite de `FrmListeBase<Activite>` pour le layout et le workflow CRUD standard. Deux boutons supplementaires sont ajoutes via les constantes `BtnX` et `BtnYExtra` de la base :
+
+```csharp
+// Boutons supplementaires positionnes via les constantes de FrmListeBase
+_btnDesactiver = new Button { Location = new Point(BtnX, BtnYExtra), ... };
+_btnStocks     = new Button { Location = new Point(BtnX, BtnYExtra + 44), ... };
+```
+
 | Zone | Contenu |
 |------|---------|
-| Header (48px, chocolat fonce) | Titre "ACTIVITES" + hint "Chaque activite possede son propre stock" |
-| DGV (Fill) | Colonnes: Id (masque), Nom, Description, Date creation |
-| Footer (52px) | 5 boutons: Nouvelle activite, Modifier, Desactiver, Supprimer, Stocks lies |
+| Label titre (FrmListeBase) | "Activites" |
+| DGV (FrmListeBase) | Colonnes: Id (masque), Nom (200px), Description (220px), Actif (60px), Creee le (100px) |
+| Boutons CRUD (FrmListeBase) | Ajouter, Modifier, Supprimer, Fermer |
+| Boutons supplementaires | Desactiver/Reactiver (toggle), Stocks lies |
+
+`ChargerDonnees()` appelle `ActiviteDAL.GetAll(includeInactifs: true)` — les inactifs sont visibles mais grises en italique via `AppliquerStylesLignes()`.
 
 **Actions disponibles** :
-- **+ Nouvelle activite** → ouvre `FrmActiviteEdit(null)`
-- **Modifier** → ouvre `FrmActiviteEdit(activite)`
-- **Desactiver** → soft delete avec gardes (contextes actifs, ingredients actifs)
-- **Supprimer** → hard delete avec cascade (FK CASCADE en DB)
+- **Ajouter** (FrmListeBase) → ouvre `FrmActiviteEdit(null)`
+- **Modifier** (FrmListeBase) → ouvre `FrmActiviteEdit(activite)`
+- **Desactiver/Reactiver** (toggle) → soft delete avec gardes (contextes actifs, ingredients actifs) / reactivation
+- **Supprimer** (FrmListeBase) → hard delete via `ActiviteDAL.Delete()` avec cascade (FK CASCADE en DB)
 - **Stocks lies** → ouvre `FrmActiviteStocks(activite)`
 
 ### FrmActiviteEdit — Formulaire creation/modification
@@ -434,10 +461,10 @@ Utilisateur                    Sidebar/FrmPrincipal         Forms              D
 
 | Fichier | Role |
 |---------|------|
-| `Forms/FrmStocks.cs` | Liste + liaison M:N stocks-activites |
+| `Forms/FrmStocks.cs` | Liste stocks (FrmListeBase) + SplitContainer liaison M:N |
 | `Forms/FrmStockEdit.cs` | CRUD stock (FrmEditBase) |
 | `DAL/StockDAL.cs` | Persistance stocks + liaison activites_stocks |
-| `Forms/FrmActivites.cs` | Liste CRUD activites |
+| `Forms/FrmActivites.cs` | Liste activites (FrmListeBase) + Desactiver/Reactiver + Stocks lies |
 | `Forms/FrmActiviteEdit.cs` | CRUD activite (FrmEditBase) |
 | `Forms/FrmActiviteStocks.cs` | Liaison M:N depuis activite |
 | `DAL/ActiviteDAL.cs` | Persistance activites + desactivation transactionnelle |
@@ -447,16 +474,78 @@ Utilisateur                    Sidebar/FrmPrincipal         Forms              D
 | `Forms/FrmBomNiveaux.cs` | Liste niveaux d'un contexte (FrmListeBase) |
 | `Forms/FrmBomNiveauEdit.cs` | CRUD niveau (FrmEditBase) |
 | `DAL/BomNiveauDAL.cs` | Persistance niveaux + gardes suppression |
-| `Forms/FrmEditBase.cs` | Classe abstraite : ErrorProvider + boutons + cycle Valider/Sauvegarder |
+| `Forms/FrmEditBase.cs` | Classe abstraite : ErrorProvider + boutons + cycle Valider/Sauvegarder + AcceptButton/CancelButton |
+
+---
+
+## Raccourcis clavier et ergonomie
+
+### FrmListeBase — Raccourcis clavier (ProcessCmdKey)
+
+Tous les formulaires heritant de `FrmListeBase<T>` disposent des raccourcis suivants :
+
+```csharp
+// FrmListeBase.ProcessCmdKey — raccourcis clavier natifs
+Ctrl+N   → Ajouter (OnAjouter)
+Ctrl+E   → Modifier (OnModifier)
+Delete   → Supprimer (OnSupprimer)
+Escape   → Fermer (Close)
+```
+
+Nielsen #7 (flexibilite) : les power users n'ont pas besoin de la souris pour les operations CRUD.
+
+### FrmEditBase — AcceptButton / CancelButton
+
+Tous les formulaires heritant de `FrmEditBase` disposent des raccourcis Enter et Escape :
+
+```csharp
+// FrmEditBase constructeur — mapping touches standard
+AcceptButton = btnEnregistrer;   // Enter → Enregistrer
+CancelButton = btnAnnuler;       // Escape → Annuler
+```
+
+Convention Windows standard : Enter valide le formulaire, Escape l'annule (Jakob's Law).
+
+---
+
+## Transactions atomiques dans les Delete
+
+### BomContexteDAL.Delete — Transaction avec gardes
+
+La suppression d'un contexte est enveloppee dans une transaction atomique avec deux gardes metier :
+
+```csharp
+using (var tx = conn.BeginTransaction())
+{
+    // Garde 1 : productions existantes dans les niveaux du contexte
+    SELECT COUNT(*) FROM bom_productions p
+    INNER JOIN bom_niveaux n ON n.id = p.id_niveau
+    WHERE n.id_contexte = @id
+    // → InvalidOperationException si > 0
+
+    // Garde 2 : stocks BOM avec quantite disponible
+    SELECT COUNT(*) FROM bom_stocks
+    WHERE id_contexte = @id AND quantite_disponible > 0
+    // → InvalidOperationException si > 0
+
+    // Si OK :
+    DELETE FROM bom_contextes WHERE id = @id
+    tx.Commit();
+}
+// catch → tx.Rollback() + throw
+```
 
 ---
 
 ## Points forts pour la defense
 
-1. **Transaction atomique** : la creation contexte+niveaux est dans un `BeginTransaction()` — soit tout passe, soit rollback complet.
-2. **Gardes metier dans la DAL** : suppression stock bloquee si ingredients rattaches, suppression niveau bloquee si pas le dernier, desactivation activite bloquee si contextes actifs.
+1. **Transactions atomiques** : la creation contexte+niveaux (`InsertAvecNiveaux`) ET la suppression contexte (`Delete`) sont dans un `BeginTransaction()` — soit tout passe, soit rollback complet.
+2. **Gardes metier dans la DAL** : suppression stock bloquee si ingredients rattaches, suppression contexte bloquee si productions ou stocks actifs, suppression niveau bloquee si pas le dernier, desactivation activite bloquee si contextes actifs.
 3. **Unicite scopee** : le nom du contexte est unique par activite (pas globalement), ce qui est la bonne granularite metier.
 4. **Deux points d'acces liaison M:N** : depuis le stock (persistance immediate, UX rapide) et depuis l'activite (batch, UX deliberee). Meme table pivot `activites_stocks`.
-5. **Pattern FrmEditBase** : cycle standardise `errorProvider.Clear() → Valider() → Sauvegarder() → DialogResult.OK` — zero duplication entre les 4 formulaires d'edition.
-6. **INSERT IGNORE** sur la table pivot : pas d'exception si la liaison existe deja.
-7. **Auto-calcul de l'ordre** : `COALESCE(MAX(ordre),0)+1` dans un sous-SELECT garantit la sequence sans trous meme en cas de suppressions intermediaires.
+5. **Pattern FrmEditBase** : cycle standardise `errorProvider.Clear() → Valider() → Sauvegarder() → DialogResult.OK` — zero duplication. `AcceptButton`/`CancelButton` mappes a Enter/Escape.
+6. **Pattern FrmListeBase<T>** : DGV + boutons CRUD generiques + raccourcis clavier (Ctrl+N/E, Delete, Escape) — la sous-classe ne fournit que la logique metier.
+7. **Heritage reussi FrmStocks** : le SplitContainer remplace le DGV de la base en le deplacant dans Panel1 — zero duplication du layout.
+8. **Heritage reussi FrmActivites** : les boutons supplementaires (Desactiver, Stocks lies) sont positionnes via `BtnX`/`BtnYExtra` exposes par la base.
+9. **INSERT IGNORE** sur la table pivot : pas d'exception si la liaison existe deja.
+10. **Auto-calcul de l'ordre** : `COALESCE(MAX(ordre),0)+1` dans un sous-SELECT garantit la sequence sans trous meme en cas de suppressions intermediaires.

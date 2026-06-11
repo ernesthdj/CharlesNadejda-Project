@@ -63,9 +63,8 @@ protected override List<Ingredient> ChargerDonnees()
 | `Densite`            | Densite           | 70 px   | 55  |
 | `NomFournisseur`     | Fournisseur       | 140 px  | 90  |
 | `Description`        | Description       | 180 px  | 100 |
-| `StockNom`           | Stock (lieu)      | 110 px  | 75  |
 
-**Colonnes cachees :** `Id`, `IdFournisseurDefaut`, `IdStock`, `Actif`, `EstEnAlerte`, `Marque`, `SeuilAlerteStock`, `QteParConditionnement`, `PrixParUniteBase`, `StockActuel`, `PrixAchatReference`, `UniteMesure`.
+**Colonnes cachees :** `Id`, `IdFournisseurDefaut`, `Actif`, `EstEnAlerte`, `Marque`, `SeuilAlerteStock`, `QteParConditionnement`, `NbParLot`, `PrixParUniteBase`, `StockActuel`, `PrixAchatReference`, `UniteMesure`, `DlcJoursReference`, `QualiteLabel`.
 
 #### Indicateur d'alerte stock
 
@@ -182,16 +181,17 @@ Retourne `true` si le nom existe deja (en excluant l'enregistrement courant en e
 ```sql
 INSERT INTO fiches_ingredients
     (nom, marque, description, unite_mesure, type_physique, densite,
-     conditionnement_label, qte_par_conditionnement,
+     conditionnement_label, qte_par_conditionnement, nb_par_lot,
      prix_achat_reference, seuil_alerte_stock, stock_cible,
-     id_fournisseur_defaut, id_stock, actif)
+     id_fournisseur_defaut, dlc_jours_reference, qualite_label, actif)
 VALUES (@nom, @marque, @desc, @unite, @type_physique, @densite,
-        @condLabel, @condQte,
-        @prix, @seuil, @stockCible, @fournisseur, @idStock, 1)
+        @condLabel, @condQte, @nbLot,
+        @prix, @seuil, @stockCible, @fournisseur, @dlcJours, @qualite, 1)
 ```
 
 - `actif` est toujours insere a `1` (soft delete pattern).
 - Retourne `cmd.LastInsertedId` (ID auto-increment MySQL).
+- `dlc_jours_reference` et `qualite_label` sont les deux nouvelles colonnes (nullable).
 
 #### Update -- SQL exact
 
@@ -200,9 +200,11 @@ UPDATE fiches_ingredients
 SET nom=@nom, marque=@marque, description=@desc, unite_mesure=@unite,
     type_physique=@type_physique, densite=@densite,
     conditionnement_label=@condLabel, qte_par_conditionnement=@condQte,
+    nb_par_lot=@nbLot,
     prix_achat_reference=@prix, seuil_alerte_stock=@seuil,
     stock_cible=@stockCible,
-    id_fournisseur_defaut=@fournisseur, id_stock=@idStock
+    id_fournisseur_defaut=@fournisseur,
+    dlc_jours_reference=@dlcJours, qualite_label=@qualite
 WHERE id=@id
 ```
 
@@ -211,20 +213,17 @@ WHERE id=@id
 ```sql
 SELECT fi.id, fi.nom, fi.marque, fi.description, fi.unite_mesure,
        fi.type_physique, fi.densite,
-       fi.conditionnement_label, fi.qte_par_conditionnement,
+       fi.conditionnement_label, fi.qte_par_conditionnement, fi.nb_par_lot,
        fi.prix_achat_reference, fi.seuil_alerte_stock, fi.stock_cible,
-       fi.id_fournisseur_defaut, fi.id_stock, fi.actif,
+       fi.id_fournisseur_defaut, fi.dlc_jours_reference, fi.qualite_label, fi.actif,
        f.nom  AS nom_fournisseur,
-       s.nom  AS nom_stock,
        COALESCE(SUM(l.quantite_disponible), 0) AS stock_actuel
 FROM fiches_ingredients fi
 LEFT  JOIN fournisseurs      f ON f.id = fi.id_fournisseur_defaut
-INNER JOIN stocks            s ON s.id = fi.id_stock
 LEFT  JOIN lots_ingredients  l ON l.id_fiche_ingredient = fi.id
 WHERE fi.actif = 1
-  [AND fi.id_stock = @idStock]                           -- filtre par stock
-  [AND fi.id_stock IN (SELECT id_stock FROM activites_stocks
-                       WHERE id_activite = @idActivite)]  -- filtre par activite
+  [AND fi.id IN (SELECT DISTINCT id_fiche_ingredient
+                 FROM lots_ingredients WHERE id_stock = @idStock)]  -- filtre par stock
 GROUP BY fi.id
 ORDER BY fi.nom
 ```
@@ -232,11 +231,37 @@ ORDER BY fi.nom
 Points cles :
 - Le `stock_actuel` est calcule par `SUM(lots_ingredients.quantite_disponible)` -- aggregation directe en SQL.
 - Filtre `actif = 1` : soft delete, les ingredients desactives n'apparaissent jamais.
+- Filtre par stock : via sous-requete sur `lots_ingredients.id_stock` (le stock est sur le lot, pas sur la fiche).
+- `dlc_jours_reference` et `qualite_label` sont charges et mappes dans le Model.
 - Requetes parametrees (`@param`) : securite injection SQL.
 
 #### Bind -- Parametres MySqlCommand
 
-Gere les `DBNull.Value` pour tous les champs nullables : `marque`, `description`, `densite`, `seuil_alerte_stock`, `stock_cible`, `id_fournisseur_defaut`.
+Gere les `DBNull.Value` pour tous les champs nullables : `marque`, `description`, `densite`, `seuil_alerte_stock`, `stock_cible`, `id_fournisseur_defaut`, `dlc_jours_reference`, `qualite_label`. Inclut aussi `nb_par_lot`.
+
+#### Delete -- Transaction atomique avec gardes
+
+```csharp
+using (var tx = conn.BeginTransaction())
+{
+    // Garde 1 : lots actifs (quantite_disponible > 0)
+    SELECT COUNT(*) FROM lots_ingredients
+    WHERE id_fiche_ingredient = @id AND quantite_disponible > 0
+    // → InvalidOperationException si > 0
+
+    // Garde 2 : references dans les fiches BOM
+    SELECT COUNT(*) FROM bom_fiches_lignes
+    WHERE id_input_ingredient = @id
+    // → InvalidOperationException si > 0
+
+    // Si OK :
+    DELETE FROM fiches_ingredients WHERE id = @id
+    tx.Commit();
+}
+// catch → tx.Rollback() + throw
+```
+
+La suppression est bloquee si des lots avec du stock disponible existent, ou si l'ingredient est utilise dans des fiches BOM. Les deux gardes sont executees dans la meme transaction.
 
 ---
 
@@ -257,11 +282,13 @@ Gere les `DBNull.Value` pour tous les champs nullables : `marque`, `description`
 | `Densite`             | decimal?  | g/ml -- obligatoire si liquide/poudre          |
 | `ConditionnementLabel`| string    | Label commercial (ex: "Sac 10 kg")             |
 | `QteParConditionnement`| decimal  | Quantite en unite de base par conditionnement  |
+| `NbParLot`            | int       | Nombre de conditionnements par lot (defaut 1)  |
 | `PrixAchatReference`  | decimal   | Prix de reference par conditionnement (EUR)       |
 | `SeuilAlerteStock`    | decimal?  | Seuil en dessous duquel l'alerte se declenche  |
 | `StockCible`          | decimal?  | Stock cible (100% de la jauge) en unite de base|
 | `IdFournisseurDefaut` | int?      | FK vers fournisseurs (nullable)                |
-| `IdStock`             | int       | FK vers stocks (obligatoire)                   |
+| `DlcJoursReference`   | int?      | Duree de conservation par defaut en jours (nullable) |
+| `QualiteLabel`        | string?   | Label qualite (ex: "Bio", "AOP", "Grand Cru") (nullable) |
 | `Actif`               | bool      | Soft delete flag                               |
 
 #### Proprietes calculees (computed en C#)
@@ -335,7 +362,7 @@ protected override List<Lot> ChargerDonnees()
 | `PrixAchatReel`     | Total HTVA       | 95 px   | 75  |
 | `ReferenceFacture`  | Ref. facture     | 100 px  | 80  |
 
-**Colonnes cachees :** `Id`, `IdFicheIngredient`, `IdFournisseur`, `QuantiteDisponible`, `Notes`, `TvaPct`, `UniteMesure`, `ConditionnementLabel`, `QteParConditionnement`, `NbConditionnements`, `PrixUnitaireBase`.
+**Colonnes cachees :** `Id`, `IdFicheIngredient`, `IdStock`, `StockNom`, `IdFournisseur`, `QuantiteDisponible`, `Notes`, `TvaPct`, `UniteMesure`, `ConditionnementLabel`, `QteParConditionnement`, `NbConditionnements`, `PrixUnitaireBase`.
 
 #### Formatage des cellules (CellFormatting)
 
@@ -471,11 +498,11 @@ Puis :
 
 ```sql
 INSERT INTO lots_ingredients
-    (id_fiche_ingredient, nb_conditionnements,
+    (id_fiche_ingredient, id_stock, nb_conditionnements,
      numero_lot, id_fournisseur, date_achat,
      date_peremption, quantite_initiale, quantite_disponible,
      prix_unitaire, prix_achat_reel, tva_pct, reference_facture, notes)
-VALUES (@idFi, @nbCond,
+VALUES (@idFi, @idStock, @nbCond,
         @numeroLot, @idFourn, @dateAchat, @datePer,
         @qteInit, @qteInit, @prixUnit, @prixTotal, @tvaPct, @refFact, @notes)
 ```
@@ -487,6 +514,7 @@ VALUES (@idFi, @nbCond,
 ```sql
 UPDATE lots_ingredients SET
     id_fiche_ingredient = @idFi,
+    id_stock            = @idStock,
     nb_conditionnements = @nbCond,
     numero_lot          = @numeroLot,
     id_fournisseur      = @idFourn,
@@ -513,20 +541,42 @@ Cela permet de modifier la quantite achetee sans perdre le suivi de consommation
 #### GetAll -- SQL avec jointures
 
 ```sql
-SELECT l.id, l.id_fiche_ingredient, fi.nom AS nom_ingredient,
+SELECT l.id, l.id_fiche_ingredient, l.id_stock, fi.nom AS nom_ingredient,
        fi.unite_mesure, fi.conditionnement_label, fi.qte_par_conditionnement,
        l.nb_conditionnements,
        l.numero_lot, l.id_fournisseur, f.nom AS nom_fournisseur,
        l.date_achat, l.date_peremption, l.quantite_initiale,
        l.quantite_disponible, l.prix_unitaire, l.prix_achat_reel,
-       l.tva_pct, l.reference_facture, l.notes
+       l.tva_pct, l.reference_facture, l.notes,
+       s.nom AS nom_stock
 FROM lots_ingredients l
 INNER JOIN fiches_ingredients fi ON fi.id = l.id_fiche_ingredient
+INNER JOIN stocks s ON s.id = l.id_stock
 LEFT JOIN fournisseurs f ON f.id = l.id_fournisseur
-[WHERE fi.id_stock IN (SELECT id_stock FROM activites_stocks
-                       WHERE id_activite = @idActivite)]
+[WHERE l.id_stock IN (SELECT id_stock FROM activites_stocks
+                      WHERE id_activite = @idActivite)]
 ORDER BY l.date_achat DESC
 ```
+
+#### Delete -- Transaction atomique avec garde tracabilite
+
+```csharp
+using (var tx = conn.BeginTransaction())
+{
+    // Garde : lot partiellement consomme (tracabilite)
+    SELECT quantite_initiale - quantite_disponible AS consomme
+    FROM lots_ingredients WHERE id = @id
+    // → InvalidOperationException si consomme > 0
+    //   "Ce lot a ete partiellement consomme en production."
+
+    // Si OK :
+    DELETE FROM lots_ingredients WHERE id = @id
+    tx.Commit();
+}
+// catch → tx.Rollback() + throw
+```
+
+La suppression est bloquee si le lot a ete partiellement consomme. La formule `quantite_initiale - quantite_disponible` calcule la consommation reelle. Les donnees de tracabilite ne peuvent pas etre perdues.
 
 #### GetByFicheIngredient -- Lots d'un ingredient
 
@@ -549,6 +599,7 @@ Tri par date de peremption ascendante = **FIFO** (First Expired, First Out) pour
 |-----------------------|------------|-----------------------------------------------------|
 | `Id`                  | int        | PK auto-increment                                   |
 | `IdFicheIngredient`   | int        | FK vers fiches_ingredients                           |
+| `IdStock`             | int        | FK vers stocks (lieu physique du lot)                |
 | `NbConditionnements`  | decimal    | Nombre de colis achetes (ex: 5 sacs)                |
 | `NumeroLot`           | string?    | Numero de lot fabricant (tracabilite)                |
 | `IdFournisseur`       | int?       | FK vers fournisseurs (nullable)                     |
@@ -571,6 +622,7 @@ Tri par date de peremption ascendante = **FIFO** (First Expired, First Out) pour
 | `ConditionnementLabel`| `fiches_ingredients.conditionnement_label` |
 | `QteParConditionnement`| `fiches_ingredients.qte_par_conditionnement` |
 | `NomFournisseur`      | `fournisseurs.nom`                    |
+| `StockNom`            | `stocks.nom`                          |
 
 #### Propriete calculee
 
@@ -606,16 +658,57 @@ Formules cles :
 
 ---
 
+## Infrastructure transversale
+
+### DbHelper.GetConnection -- Securisation de la connexion
+
+```csharp
+public static MySqlConnection GetConnection()
+{
+    string cs = ConfigurationManager.ConnectionStrings["charlesnadejda"].ConnectionString;
+    var conn = new MySqlConnection(cs);
+    try
+    {
+        conn.Open();
+        return conn;
+    }
+    catch
+    {
+        conn.Dispose();    // Evite une fuite de connexion si Open() echoue
+        throw;
+    }
+}
+```
+
+Le `try/catch` sur `Open()` garantit que la connexion est `Dispose()` meme si l'ouverture echoue (erreur reseau, serveur indisponible). Sans ce guard, une exception dans `Open()` laisserait l'objet `MySqlConnection` en memoire sans etre dispose.
+
+### Constantes metier -- BomFiche
+
+```csharp
+public class BomFiche
+{
+    public const string TypeInputIngredient = "ingredient";
+    public const string TypeInputFiche      = "fiche";
+}
+```
+
+Ces constantes remplacent les magic strings dans le code. Quand une ligne BOM reference un ingredient, on utilise `BomFiche.TypeInputIngredient` au lieu de `"ingredient"` en dur. Avantages :
+- **Refactoring safe** : renommer la constante met a jour tous les usages.
+- **Autocompletion** : l'IDE propose les constantes, evite les typos.
+- **Lisibilite** : `if (type == BomFiche.TypeInputFiche)` est plus clair que `if (type == "fiche")`.
+
+---
+
 ## Heritage et architecture des formulaires
 
 ```
 Form (WinForms)
   |
-  +-- FrmListeBase<T>          -- DGV + boutons CRUD generiques
+  +-- FrmListeBase<T>          -- DGV + boutons CRUD + raccourcis (Ctrl+N/E, Delete, Escape)
   |     |-- FrmIngredients      -- liste ingredients + chip filter + alerte
   |     |-- FrmAchats           -- liste achats + formatage prix/qte
   |
-  +-- FrmEditBase              -- ErrorProvider + Enregistrer/Annuler
-        |-- FrmIngredientEdit   -- 11 champs, densite conditionnelle
+  +-- FrmEditBase              -- ErrorProvider + Enregistrer/Annuler + AcceptButton/CancelButton
+        |-- FrmIngredientEdit   -- 11+ champs, densite conditionnelle, DLC, qualite
         |-- FrmAchatEdit        -- prix HTVA/TVAC, calcul temps reel
 ```

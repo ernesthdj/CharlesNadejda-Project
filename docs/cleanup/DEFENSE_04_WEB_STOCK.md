@@ -21,7 +21,19 @@ L'ecran "Boutique en ligne" est un partial class de `FrmPrincipal`, defini dans 
 
 **Fichier :** `Forms/FrmPrincipal.BoutiqueWeb.cs`
 
-L'utilisateur clique sur l'entree "Boutique Web" dans la sidebar. Cela appelle `ShowBoutiqueWebScreen()` qui construit un `TabControl` avec **3 onglets** :
+L'utilisateur clique sur l'entree "Boutique Web" dans la sidebar. Cela appelle `ShowBoutiqueWebScreen()` qui construit un `TabControl` avec **3 onglets**.
+
+**Titre de l'ecran :** Le dictionnaire des titres dans `FrmPrincipal` contient l'entree `ScreenId.BoutiqueWeb → "Boutique Web"`.
+
+**Guard re-render :** Le `ScreenRouter` couvre maintenant `BoutiqueWeb` et `Parametres` dans son guard anti-doublon. Si l'utilisateur reclique sur "Boutique Web" alors qu'il y est deja, le `ScreenRouter` ignore la navigation :
+```csharp
+if (screen == ScreenId.Hub
+    || screen == ScreenId.BoutiqueWeb
+    || screen == ScreenId.Parametres)
+    return;  // pas de reconstruction inutile
+```
+
+**Onglets :**
 
 | Onglet | Index | Construction | Contenu |
 |--------|-------|-------------|---------|
@@ -311,17 +323,21 @@ L'utilisateur accede a la Vue Stock Global depuis la sidebar. Elle s'ouvre comme
 
 La vue lit une **VIEW SQL** nommee `vue_stock_global` qui unifie deux sources :
 
-| type_stock | Source DB | Description |
-|-----------|----------|-------------|
-| `lot_ingredient` | `lots_ingredients` | Matieres premieres (lots d'achat) |
-| `produit_fabrique` | `bom_stocks` | Produits issus de la production BOM |
+| type_stock | Constante | Source DB | Description |
+|-----------|-----------|----------|-------------|
+| `lot_ingredient` | `VueStockGlobal.TypeLotIngredient` | `lots_ingredients` | Matieres premieres (lots d'achat) |
+| `produit_fabrique` | `VueStockGlobal.TypeProduitFabrique` | `bom_stocks` | Produits issus de la production BOM |
 
 #### Model VueStockGlobal
 
 ```csharp
 public class VueStockGlobal
 {
-    public string    TypeStock           { get; set; } // "lot_ingredient" | "produit_fabrique"
+    // Constantes de type stock (remplacent les magic strings)
+    public const string TypeLotIngredient   = "lot_ingredient";
+    public const string TypeProduitFabrique = "produit_fabrique";
+
+    public string    TypeStock           { get; set; } // TypeLotIngredient | TypeProduitFabrique
     public int       IdEntree            { get; set; }
     public string    Nom                 { get; set; }
     public string    Unite               { get; set; }
@@ -346,11 +362,13 @@ public class VueStockGlobal
     public int?      IdNiveau            { get; set; }
     public int?      IdFicheBom          { get; set; }
 
-    public bool EstLot           => TypeStock == "lot_ingredient";
-    public bool EstEnAlerte      => QuantiteDispoReelle <= 0;
+    public bool EstLot           => TypeStock == TypeLotIngredient;
+    public bool EstEnRupture     => QuantiteDispoReelle <= 0;   // rename EstEnAlerte → EstEnRupture
     public bool ADesReservations => QuantiteReservee > 0;
 }
 ```
+
+> **Rename `EstEnAlerte` → `EstEnRupture`** : La propriete s'appelle desormais `EstEnRupture` car elle teste la rupture de stock (`QuantiteDispoReelle <= 0`). La propriete `Ingredient.EstEnAlerte` existe toujours dans le model Ingredient (c'est un seuil d'alerte configurable, correctement nomme).
 
 ### 2.3 Interface utilisateur
 
@@ -458,7 +476,7 @@ Les lignes sont reparties en 3 sections avec **headers de section** colores (fon
 
 | Section | Critere |
 |---------|---------|
-| INGREDIENTS | `EstLot == true` (type_stock = 'lot_ingredient') |
+| INGREDIENTS | `EstLot == true` (TypeStock == TypeLotIngredient) |
 | PRODUITS INTERMEDIAIRES | `EstLot == false` ET `Ordre du niveau < OrdreMax du contexte` |
 | PRODUITS FINALS | `EstLot == false` ET `Ordre du niveau >= OrdreMax du contexte` |
 
@@ -475,11 +493,11 @@ Les ordres de niveaux sont mis en cache (`_cacheOrdreNiveau`) pour eviter des re
 
 #### Couleur de fond de la ligne entiere
 
-| Condition | Couleur | Constante |
-|-----------|---------|-----------|
-| `QuantiteDispoReelle <= 0` | Rouge | `AppColors.RougePenur` |
-| `QuantiteReservee > 0` | Orange | `AppColors.OrangeReserv` |
-| Sinon | Vert | `AppColors.VertDispo` |
+| Condition | Propriete | Couleur | Constante |
+|-----------|-----------|---------|-----------|
+| `EstEnRupture` (QuantiteDispoReelle <= 0) | `VueStockGlobal.EstEnRupture` | Rouge | `AppColors.RougePenur` |
+| `QuantiteReservee > 0` | `VueStockGlobal.ADesReservations` | Orange | `AppColors.OrangeReserv` |
+| Sinon | -- | Vert | `AppColors.VertDispo` |
 
 > Priorite : rouge > orange > vert (la premiere condition vraie l'emporte).
 
@@ -544,7 +562,7 @@ Bouton "Exporter CSV" en bas a gauche de la fenetre.
 ### 2.10 Barre du bas -- Legende + Stats
 
 - **Legende** : 3 carres colores avec labels (Disponible / Reserve / Penurie/DLC)
-- **Stats** : `{N} entrees -- {M} penuries`
+- **Stats** : `{N} entrees · {M} penuries` (calcule via `_lignes.Count(x => x.EstEnRupture)`)
 - **Bouton Fermer** : ferme la fenetre (aligne a droite, repositionne au Resize)
 
 ---
@@ -565,9 +583,14 @@ Bouton "Exporter CSV" en bas a gauche de la fenetre.
 ```csharp
 public class CommandeWeb
 {
+    // Constantes de statut (remplacent les magic strings)
+    public const string StatutPanier  = "panier";
+    public const string StatutPayee   = "payee";
+    public const string StatutAnnulee = "annulee";
+
     public int       Id                 { get; set; }
     public int       IdClient           { get; set; }
-    public string    Statut             { get; set; }   // "panier", "payee", "annulee"
+    public string    Statut             { get; set; }   // StatutPanier | StatutPayee | StatutAnnulee
     public decimal   TotalTtc           { get; set; }
     public string    AdresseLivraison   { get; set; }
     public DateTime? DateCommande       { get; set; }
@@ -578,7 +601,8 @@ public class CommandeWeb
     public string PrenomClient { get; set; }
     public string EmailClient  { get; set; }
 
-    public int NbArticles { get; set; }  // sous-requete COUNT
+    public int    NbArticles     { get; set; }  // sous-requete COUNT
+    public string ResumeArticles { get; set; }  // GROUP_CONCAT (ex: "Baguette x11, Pain x2")
     public List<CommandeWebLigne> Lignes { get; set; }
 
     public string NomCompletClient => $"{PrenomClient} {NomClient}";
@@ -613,14 +637,27 @@ En haut de l'onglet, un ComboBox avec 3 options :
 
 #### DGV Commandes -- Colonnes
 
-| Colonne | DataPropertyName | Format | Description |
-|---------|-----------------|--------|-------------|
-| N | Id | Entier | Numero de commande |
-| Client | NomCompletClient | Texte | "Prenom Nom" |
-| Date | DateCommande | dd/MM/yyyy HH:mm | Date de validation |
-| Articles | NbArticles | Centre | Nombre de lignes |
-| Total (EUR) | TotalTtc | N2, droite | Montant total TTC |
-| Statut | Statut | Texte | "payee" ou "annulee" |
+| Colonne | DataPropertyName | FillWeight | Description |
+|---------|-----------------|------------|-------------|
+| N° | Id | 6 | Numero de commande |
+| Client | NomCompletClient | 16 | "Prenom Nom" |
+| Date | DateCommande | 14 | Format dd/MM/yyyy HH:mm |
+| Articles | ResumeArticles | 28 | **GROUP_CONCAT** : "Baguette x11, Pain x2" (remplace NbArticles) |
+| Adresse | AdresseLivraison | 20 | Adresse de livraison directement dans le DGV |
+| Total (EUR) | TotalTtc | 10 | N2, aligne droite |
+| Statut | Statut | 8 | "payee" ou "annulee" |
+
+> **Changements :** La colonne `NbArticles` (simple comptage) est remplacee par `ResumeArticles` (GROUP_CONCAT detaille). La colonne `Adresse` est ajoutee directement dans le DGV (plus besoin d'aller dans le panneau de detail).
+
+#### DGV figes
+
+Tous les DGV de l'onglet Boutique Web utilisent `MakeBoutiqueDgv()` qui force :
+```csharp
+AllowUserToResizeColumns = false,
+AllowUserToResizeRows    = false,
+AllowUserToOrderColumns  = false
+```
+Cela garantit un rendu uniforme et empeche l'utilisateur de casser la mise en page.
 
 #### Panneau de detail (bas, 160px)
 
@@ -637,7 +674,7 @@ Le detail est charge via `CommandeWebDAL.GetById(id)` qui execute **deux requete
 
 ### 3.5 CommandeWebDAL -- Requetes SQL
 
-**GetAll** (liste des commandes) :
+**SELECT_BASE** (constante SQL partagee par GetAll et GetById) :
 
 ```sql
 SELECT cmd.id, cmd.id_client, cmd.statut, cmd.total_ttc,
@@ -646,18 +683,30 @@ SELECT cmd.id, cmd.id_client, cmd.statut, cmd.total_ttc,
        cl.prenom    AS prenom_client,
        cl.email     AS email_client,
        (SELECT COUNT(*) FROM commandes_web_lignes l
-        WHERE l.id_commande = cmd.id) AS nb_articles
+        WHERE l.id_commande = cmd.id) AS nb_articles,
+       (SELECT GROUP_CONCAT(CONCAT(p.nom_commercial, ' ×', l.quantite)
+                            ORDER BY l.id SEPARATOR ', ')
+        FROM commandes_web_lignes l
+        INNER JOIN produits_web p ON p.id = l.id_produit_web
+        WHERE l.id_commande = cmd.id) AS resume_articles
 FROM commandes_web cmd
 INNER JOIN clients cl ON cl.id = cmd.id_client
+```
+
+> **GROUP_CONCAT** : sous-requete correlee qui genere un resume lisible des articles (ex: "Baguette x11, Pain x2"). Mappe vers `CommandeWeb.ResumeArticles`.
+
+**GetAll** (liste des commandes) : `SELECT_BASE` + filtre :
+
+```sql
 WHERE cmd.statut <> 'panier'
 [AND cmd.statut = @statut]  -- optionnel
 ORDER BY cmd.date_commande DESC
 ```
 
-**GetById** (commande + lignes) :
+**GetById** (commande + lignes) : reutilise `SELECT_BASE` pour le header :
 
 ```sql
--- Header
+-- Header (SELECT_BASE + WHERE)
 SELECT ... FROM commandes_web cmd
 INNER JOIN clients cl ON cl.id = cmd.id_client
 WHERE cmd.id = @id
@@ -734,4 +783,10 @@ SELECT COUNT(*) FROM commandes_web WHERE statut = @statut
 
 6. **3 niveaux de stock** : ingredients (lots d'achat), intermediaires (sous-produits BOM), finals (produits vendables) -- determines dynamiquement par l'ordre des niveaux BOM.
 
-7. **Color coding triple** : rouge (penurie), orange (reservation active), vert (disponible) + DLC independante (rouge expire, orange < 7 jours).
+7. **Color coding triple** : rouge (`EstEnRupture`), orange (reservation active), vert (disponible) + DLC independante (rouge expire, orange < 7 jours).
+
+8. **Constantes metier** : `CommandeWeb.StatutPanier/StatutPayee/StatutAnnulee` et `VueStockGlobal.TypeLotIngredient/TypeProduitFabrique` eliminent les magic strings.
+
+9. **DGV Commandes enrichi** : la colonne `NbArticles` (simple comptage) est remplacee par `ResumeArticles` (GROUP_CONCAT detaille) + colonne `Adresse` directement dans le DGV. Les DGV sont figes (pas de redimensionnement utilisateur).
+
+10. **Guard re-render** : le `ScreenRouter` empeche la reconstruction inutile des ecrans `Hub`, `BoutiqueWeb` et `Parametres` lors d'un clic sur un ecran deja actif.

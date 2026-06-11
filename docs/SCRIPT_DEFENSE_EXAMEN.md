@@ -49,7 +49,15 @@ Ouvre un schema (dessine-le a l'avance ou montre le texte ci-dessous) :
 >
 > Cote Laravel, j'utilise l'ORM Eloquent qui genere automatiquement des requetes parametrees via PDO.
 > Les deux applications partagent la meme base MySQL, donc quand je produis un lot dans le C#,
-> le stock est immediatement visible sur le site web."
+> le stock est immediatement visible sur le site web.
+>
+> Le code a fait l'objet d'un audit systematique -- 120 findings identifies, 104 corriges --
+> organise en sprints de refactoring par priorite : P0 pour la securite et les bugs critiques,
+> P1 pour la qualite et la maintenabilite, P2 pour les optimisations.
+> Ca a donne lieu a des patterns clean code appliques partout : les magic strings sont extraites
+> en constantes metier (`BomFiche.TypeInputIngredient`, `CommandeWeb.StatutPayee`, etc.),
+> chaque methode publique a son XML summary, et le code est organise en sections logiques
+> (constantes, proprietes, methodes publiques, methodes privees)."
 
 ### Questions probables
 
@@ -135,7 +143,13 @@ if (!BCrypt.Net.BCrypt.Verify(motDePasse, hash))
 > - Le message d'erreur est generique ('Email ou mot de passe incorrect') -- on ne dit jamais a l'attaquant
 >   si c'est l'email ou le mot de passe qui est faux.
 > - Les exceptions sont capturees mais le detail technique (`ex.Message`) n'est affiche
->   qu'en mode Debug, jamais expose a l'utilisateur final."
+>   qu'en mode Debug, jamais expose a l'utilisateur final.
+> - La connexion DB utilise `DbHelper.GetConnection()` qui est securise : si la connexion est ouverte
+>   mais echoue, elle est dispose proprement pour ne pas laisser de handles ouverts.
+>
+> Au niveau ergonomie, `FrmEditBase` configure automatiquement `AcceptButton` et `CancelButton` --
+> donc sur le login comme sur tous les formulaires d'edition, Entree valide et Echap annule.
+> C'est un standard Windows que les utilisateurs attendent."
 
 > "Le modele `Utilisateur` est une classe POCO simple avec des proprietes auto-implementees.
 > Le `ToString()` est surcharge pour afficher 'Prenom Nom (Role)' -- c'est ce qu'on voit dans la barre de statut
@@ -192,7 +206,8 @@ public class Utilisateur
 #### Ce que tu montres
 
 1. Dans ArtisaStock, clique sur **"Stock & Liaisons"** dans la sidebar gauche
-2. L'ecran `FrmStocks` s'affiche avec un DataGridView (DGV) et un panel de liaison a droite
+2. L'ecran `FrmStocks` s'affiche -- il herite de `FrmListeBase<Stock>`, une classe generique
+   qui fournit automatiquement le DGV, les boutons CRUD et les raccourcis clavier -- avec un panel de liaison a droite
 3. Clique sur **"+ Nouveau stock"**
 4. Le formulaire modal `FrmStockEdit` s'ouvre
 5. Tape "Frigo Atelier" dans le champ Nom
@@ -235,7 +250,8 @@ cmd.Parameters.AddWithValue("@desc", (object)s.Description ?? DBNull.Value);
 **Q : C'est quoi FrmEditBase exactement ?**
 > "C'est une classe abstraite -- on ne peut pas l'instancier directement, on doit en heriter.
 > Elle fournit le squelette commun : un `ErrorProvider` pour afficher les erreurs de validation,
-> les boutons Enregistrer/Annuler, et le cycle `Valider()` puis `Sauvegarder()`.
+> les boutons Enregistrer/Annuler avec `AcceptButton`/`CancelButton` (Entree valide, Echap annule),
+> le focus initial automatique sur le champ Nom, et le cycle `Valider()` puis `Sauvegarder()`.
 > Chaque formulaire concret comme `FrmStockEdit` ou `FrmIngredientEdit` override ces methodes
 > avec ses propres regles. Ca evite de dupliquer le code dans chaque formulaire."
 
@@ -252,7 +268,8 @@ cmd.Parameters.AddWithValue("@desc", (object)s.Description ?? DBNull.Value);
 #### Ce que tu montres
 
 1. Dans la sidebar, clique sur l'icone engrenage **"Gerer les activites"**
-2. Le formulaire modal `FrmActivites` s'ouvre (c'est une liste modale)
+2. Le formulaire modal `FrmActivites` s'ouvre -- comme `FrmStocks`, il herite de `FrmListeBase<Activite>`
+   (c'est une liste modale avec DGV, boutons CRUD et raccourcis clavier integres)
 3. Clique **"+ Nouvelle activite"**
 4. `FrmActiviteEdit` s'ouvre -- tape "Chocolaterie" comme nom
 5. Clique Enregistrer -- retour a la liste, la ligne apparait
@@ -634,14 +651,22 @@ WHERE l.id_fiche = @idFiche
 >
 > [Ouvre BomProductionDAL.cs, montre Executer()]
 >
-> 1. D'abord je re-verifie la disponibilite DANS la transaction -- c'est une double verification
+> 1. D'abord je charge le niveau et la fiche DANS la transaction via `BomNiveauDAL.GetById(id, conn, tx)`
+>    et `BomFicheDAL.GetById(id, conn, tx)`. Ca elimine la race condition TOCTOU --
+>    Time Of Check to Time Of Use -- les donnees sont lues et utilisees dans le meme contexte transactionnel.
+> 2. Je re-verifie la disponibilite DANS la transaction -- double verification
 >    pour eviter les problemes de concurrence. Quelqu'un pourrait avoir consomme du stock entre
 >    le moment de la simulation et le lancement.
-> 2. J'insere la production avec un cout a zero provisoirement.
-> 3. Pour chaque ligne, j'appelle `ConsumeStock()` qui fait le FIFO.
-> 4. Apres la consommation, je mets a jour le cout reel de la production.
-> 5. Je cree le stock produit dans `bom_stocks`.
-> 6. COMMIT. Si quoi que ce soit echoue, ROLLBACK complet.
+> 3. J'insere la production avec un cout a zero provisoirement.
+> 4. Pour chaque ligne, j'appelle `ConsumeStock()` qui fait le FIFO.
+> 5. Apres la consommation, je mets a jour le cout reel de la production.
+> 6. Je cree le stock produit dans `bom_stocks`.
+> 7. COMMIT. Si quoi que ce soit echoue, ROLLBACK complet.
+>
+> Au niveau code, les methodes DAL sont factorisees en version tx/non-tx.
+> Par exemple `BomNiveauDAL.GetById()` pour un appel simple, et `BomNiveauDAL.GetById(id, conn, tx)`
+> quand on est deja dans une transaction. En interne c'est une methode `*Internal` qui fait le travail.
+> Ca evite la duplication et garantit que la meme requete est utilisee dans les deux cas.
 >
 > **Le FIFO** -- First In First Out -- c'est-a-dire que les lots les plus anciens sont consommes en premier.
 >
@@ -682,11 +707,14 @@ foreach (var lot in lotsFIFO)
 #### Questions probables
 
 **Q : Pourquoi tu re-verifies la disponibilite dans la transaction ?**
-> "C'est pour la securite des donnees. Imaginons que deux productions se lancent en meme temps.
+> "C'est pour la securite des donnees -- on appelle ca la race condition TOCTOU,
+> Time Of Check to Time Of Use. Imaginons que deux productions se lancent en meme temps.
 > La premiere simulation montre que le stock est OK, mais entre la simulation et l'execution,
 > l'autre production a deja consomme une partie du stock. La double verification dans la transaction
 > detecte ca et fait un rollback si le stock n'est plus suffisant.
-> C'est un pattern classique en programmation concurrente : 'check-then-act' dans une transaction."
+> En plus, le niveau et la fiche sont charges DANS la transaction via des methodes DAL
+> qui acceptent la connexion et la transaction en parametre. Tout est lu et modifie
+> dans le meme contexte transactionnel, pas de lecture stale."
 
 **Q : C'est quoi la tracabilite dont tu parles ?**
 > "Chaque production genere des lignes dans `bom_productions_lignes`. Chaque ligne dit :
@@ -807,10 +835,13 @@ GROUP BY p.id
 >
 > [Ouvre CatalogueController.php]
 >
-> La requete `ProduitWeb::where('en_vente', 1)->with('categorie')` fait deux choses :
-> elle filtre les produits publies, et le `with('categorie')` c'est du eager loading --
-> ca evite le probleme N+1. Sans `with`, chaque produit ferait une requete separee pour charger
+> La requete `ProduitWeb::where('en_vente', 1)->withStockDisponible()->with('categorie')` fait trois choses :
+> elle filtre les produits publies, le `withStockDisponible()` calcule le stock en unites vendables
+> directement dans la requete SQL -- `FLOOR(SUM(quantite) / quantite_output)` -- et le `with('categorie')`
+> c'est du eager loading qui evite le probleme N+1.
+> Sans `with`, chaque produit ferait une requete separee pour charger
 > sa categorie. Avec `with`, Laravel fait une seule requete supplementaire pour toutes les categories.
+> Le scope `withStockDisponible()` est aussi utilise dans la methode `show()` pour la page detail produit.
 >
 > Le tri utilise `match` de PHP 8 -- c'est comme un switch mais en plus propre.
 >
@@ -828,13 +859,21 @@ GROUP BY p.id
 > Si quelqu'un mettait du JavaScript dans un nom de produit, Blade le transformerait en texte visible, pas en code executable."
 
 ```php
-// ProduitWeb.php -- accessor qui calcule le stock en temps reel
-public function getStockDisponibleAttribute(): float
+// ProduitWeb.php -- scope qui calcule le stock en unites vendables
+// FLOOR(SUM(bom_stocks.quantite_disponible) / bom_fiches.quantite_output)
+// Aligne avec le calcul C# : on divise le stock brut par la quantite par batch
+public function scopeWithStockDisponible($query)
 {
-    return (float) BomStock::where('id_fiche', $this->id_bom_fiche)
-        ->where('quantite_disponible', '>', 0)
-        ->sum('quantite_disponible');
+    return $query->addSelect([
+        'stock_disponible' => BomStock::selectRaw(
+            'FLOOR(SUM(bom_stocks.quantite_disponible) / bom_fiches.quantite_output)'
+        )
+        ->join('bom_fiches', 'bom_fiches.id', '=', 'bom_stocks.id_fiche')
+        ->whereColumn('bom_stocks.id_fiche', 'produits_web.id_bom_fiche')
+        ->where('bom_stocks.quantite_disponible', '>', 0)
+    ]);
 }
+// Utilise dans index() ET show() du CatalogueController
 ```
 
 #### Questions probables
@@ -953,6 +992,11 @@ session()->regenerate();  // Anti session fixation
 > C'est une comparaison en temps constant -- elle prend toujours le meme temps que le mot de passe
 > soit bon ou mauvais, ce qui empeche les attaques par timing.
 >
+> A la connexion, je mets en session non seulement le `client_id` et le `client_prenom`,
+> mais aussi le `panier_count` (pour le badge panier dans le header sans requete DB)
+> et le `client_verified_at` (un timestamp qui permet au middleware `ClientAuth` de cacher
+> le statut actif pendant 5 minutes -- ca evite de requeter la table clients a chaque page).
+>
 > J'ai aussi un `throttle:5,1` sur la route POST login. Ca limite a 5 tentatives par minute par IP.
 > Apres 5 echecs, l'utilisateur doit attendre avant de reessayer.
 > C'est une protection contre le brute force."
@@ -1008,10 +1052,16 @@ session()->regenerate();  // Anti session fixation
 > Si success est true, je mets a jour le badge dans le header et j'affiche un toast.
 > Si c'est false -- par exemple stock insuffisant -- j'affiche le message d'erreur.
 >
+> Pour le compteur panier dans le header, j'utilise un cache session : `session('panier_count')`.
+> Le View Composer qui injecte le compteur dans le layout ne fait plus de requete DB --
+> il lit directement la session. C'est le `PanierController` qui met a jour cette valeur
+> via `refreshPanierCount($panier)` apres chaque ajout, modification ou suppression.
+> Ca evite une requete COUNT a chaque page.
+>
 > [Ouvre PanierController.php, montre ajouter()]
 >
 > Cote serveur, le controleur fait plusieurs verifications :
-> 1. Validation des entrees avec `$request->validate()`
+> 1. Validation des entrees via un FormRequest (`CheckoutRequest` pour le checkout, `LoginRequest` pour l'auth)
 > 2. Verification du stock : `$produit->stock_disponible < $request->quantite`
 > 3. Si le produit est deja en panier, on incremente au lieu d'ajouter une nouvelle ligne
 > 4. On re-verifie le stock avec la nouvelle quantite totale
@@ -1042,9 +1092,11 @@ const res = await fetch('/panier/ajouter', {
 > C'est plus fluide et plus moderne."
 
 **Q : Comment tu securises les routes du panier ?**
-> "Avec un middleware `client.auth` qui verifie deux choses : que la session contient un `client_id`,
-> et que le client existe toujours en base et est actif. Si un admin desactive un client dans l'ERP,
-> la prochaine requete du client le deconnecte automatiquement.
+> "Avec un middleware `ClientAuth` qui verifie deux choses : que la session contient un `client_id`,
+> et que le client existe toujours en base et est actif. Pour la performance, le middleware cache
+> le statut actif pendant 5 minutes via `client_verified_at` en session -- ca evite une requete DB
+> a chaque page chargee. Si un admin desactive un client dans l'ERP,
+> la prochaine verification (apres expiration du cache) deconnecte le client automatiquement.
 > En plus, chaque action sur une ligne de panier verifie l'ownership --
 > `$ligne->id_commande !== $panier->id` retourne 403 si la ligne n'appartient pas au client."
 
@@ -1181,13 +1233,23 @@ try {
 
 ```sql
 -- CommandeWebDAL.GetAll -- commandes creees par Laravel, lues par C#
+-- Affiche directement les articles (GROUP_CONCAT), l'adresse et le total dans le DGV
 SELECT cmd.*, cl.nom AS nom_client, cl.prenom AS prenom_client,
-       (SELECT COUNT(*) FROM commandes_web_lignes l WHERE l.id_commande = cmd.id) AS nb_articles
+       cl.adresse_rue, cl.adresse_cp, cl.adresse_ville,
+       GROUP_CONCAT(CONCAT(pw.nom_commercial, ' x', cwl.quantite) SEPARATOR ', ') AS articles,
+       cmd.total_ttc AS total
 FROM commandes_web cmd
 INNER JOIN clients cl ON cl.id = cmd.id_client
+LEFT JOIN commandes_web_lignes cwl ON cwl.id_commande = cmd.id
+LEFT JOIN produits_web pw ON pw.id = cwl.id_produit_web
 WHERE cmd.statut <> 'panier'
+GROUP BY cmd.id
 ORDER BY cmd.date_commande DESC
 ```
+
+> Note : les DGV de l'onglet Commandes sont figes -- `AllowUserToResizeColumns`, `AllowUserToResizeRows`
+> et `AllowUserToOrderColumns` sont tous a `false`. L'utilisateur consulte, il ne reorganise pas.
+> C'est une vue en lecture seule, l'interface le reflete.
 
 #### Questions probables
 
@@ -1343,8 +1405,11 @@ actif TINYINT(1) NOT NULL DEFAULT 1,
 -- GENERATED column : calcul automatique
 sous_total DECIMAL(10,2) GENERATED ALWAYS AS (quantite * prix_unitaire) STORED,
 
--- CHECK constraint
-CONSTRAINT chk_cmdligne_qte_positive CHECK (quantite >= 1)
+-- CHECK constraints (8 au total apres migration v21)
+CONSTRAINT chk_cmdligne_qte_positive CHECK (quantite >= 1),
+CONSTRAINT chk_prix_positif          CHECK (prix_vente >= 0),
+CONSTRAINT chk_qte_disponible        CHECK (quantite_disponible >= 0),
+-- ... et d'autres CHECK sur quantite_initiale, tva_pct, conditionnement, etc.
 ```
 
 #### Ce que tu dis
@@ -1609,8 +1674,10 @@ sql/
 ├── migration_v15_boutique_web.sql -- Module e-commerce
 ├── migration_v16_bom_stock_cible.sql
 ├── migration_v17_vue_stock_global_fiche.sql
-├── migration_v18_stock_sur_lot.sql  -- Derniere : id_stock fiche → lot
-└── schema_complet.sql           -- Export post-v18 (reference)
+├── migration_v18_stock_sur_lot.sql  -- id_stock fiche → lot
+├── migration_v20_index_fifo_fk.sql  -- Index FIFO + FK manquantes
+├── migration_v21_check_unique.sql   -- 8 CHECK + 2 UNIQUE supplementaires
+└── schema_complet.sql           -- Export post-v21 (reference)
 ```
 
 Puis montre un extrait de la migration v18 :
@@ -1639,7 +1706,7 @@ ALTER TABLE fiches_ingredients DROP FOREIGN KEY fk_fi_stock, DROP COLUMN id_stoc
 
 #### Ce que tu dis
 
-> "Le schema a evolue en 18 migrations incrementales. Chaque migration est un fichier SQL
+> "Le schema a evolue en 21 migrations incrementales. Chaque migration est un fichier SQL
 > qui utilise ALTER TABLE pour modifier la structure sans tout recrer.
 > Ca permet de garder les donnees existantes entre les versions.
 >
@@ -1651,8 +1718,13 @@ ALTER TABLE fiches_ingredients DROP FOREIGN KEY fk_fi_stock, DROP COLUMN id_stoc
 > et enfin supprimer l'ancienne colonne.
 > La vue `vue_stock_global` a aussi ete recree pour pointer sur le nouveau chemin.
 >
+> Les migrations v20 et v21 sont issues du sprint de refactoring :
+> v20 ajoute des index sur les colonnes utilisees par l'algorithme FIFO et des FK manquantes,
+> v21 ajoute 8 contraintes CHECK (quantites positives, prix >= 0, etc.)
+> et 2 contraintes UNIQUE supplementaires pour renforcer l'integrite au niveau schema.
+>
 > Le fichier `schema_complet.sql` est une reference exportee apres la derniere migration.
-> C'est utile pour voir l'etat final sans rejouer les 18 migrations."
+> C'est utile pour voir l'etat final sans rejouer les 21 migrations."
 
 #### Questions probables
 
@@ -1668,6 +1740,20 @@ ALTER TABLE fiches_ingredients DROP FOREIGN KEY fk_fi_stock, DROP COLUMN id_stoc
 
 ---
 
+### 8.9 Infrastructure Docker et Nginx
+
+#### Ce que tu dis (si on te pose la question)
+
+> "Le site Laravel tourne dans Docker avec Nginx comme reverse proxy et PHP-FPM.
+> La config Nginx est optimisee : gzip active pour les assets (CSS, JS, JSON),
+> fastcgi buffers augmentes pour eviter les buffering disk sur les reponses lourdes,
+> et les assets Vite sont servis avec un cache d'un an immutable (`Cache-Control: max-age=31536000, immutable`)
+> parce que Vite genere des noms de fichiers avec un hash -- si le fichier change, le hash change, donc le cache est invalide automatiquement.
+> Les fonts utilisent `font-display: swap` pour eviter le FOIT -- Flash Of Invisible Text --
+> le texte s'affiche immediatement avec une police systeme puis switch quand la fonte custom est chargee."
+
+---
+
 ## CONCLUSION (1 minute)
 
 ### Ce que tu dis
@@ -1675,12 +1761,16 @@ ALTER TABLE fiches_ingredients DROP FOREIGN KEY fk_fi_stock, DROP COLUMN id_stoc
 > "Pour resumer, le projet montre un workflow complet de bout en bout :
 > de la creation de l'infrastructure jusqu'a la commande client.
 >
-> Cote C#, j'ai utilise des patterns solides : FrmEditBase pour eviter la duplication,
-> des DAL statiques avec des requetes parametrees, des transactions pour la coherence des donnees,
+> Cote C#, j'ai utilise des patterns solides : `FrmEditBase` pour les formulaires d'edition
+> avec AcceptButton/CancelButton et focus initial, `FrmListeBase<T>` pour les ecrans de liste
+> avec DGV, boutons CRUD et raccourcis clavier (Ctrl+N nouveau, Ctrl+E editer, Delete supprimer, Echap fermer),
+> des DAL statiques avec des requetes parametrees et factorisation tx/non-tx,
+> des transactions pour la coherence des donnees avec elimination de la race condition TOCTOU,
 > et un algorithme FIFO pour la consommation de stock.
+> Les magic strings sont extraites en constantes metier et chaque methode publique a son XML summary.
 >
 > Cote Laravel, j'ai l'authentification avec bcrypt et sessions securisees,
-> un panier AJAX avec protection CSRF et verification de stock,
+> un panier AJAX avec protection CSRF, compteur en cache session et FormRequests,
 > et un checkout transactionnel avec locks pessimistes.
 >
 > Ce qui pourrait etre ameliore :
@@ -1728,7 +1818,15 @@ ALTER TABLE fiches_ingredients DROP FOREIGN KEY fk_fi_stock, DROP COLUMN id_stoc
 | **UNIQUE KEY composite** | Etape 8.4 | `uq_bom_niveau_ordre`, `uq_fiche_nom_niveau` |
 | **FK polymorphique** | Etape 8.5 | `bom_fiches_lignes.type_input` + 2 FK |
 | **VIEW / UNION ALL** | Etape 8.6 | `vue_stock_global` -- lots + produits fabriques |
-| **Migrations incrementales** | Etape 8.8 | `sql/migration_v01..v18` -- ALTER TABLE |
+| **Migrations incrementales** | Etape 8.8 | `sql/migration_v01..v21` -- ALTER TABLE |
+| **CHECK / UNIQUE contraintes** | Etape 8.8 | `migration_v21` -- 8 CHECK + 2 UNIQUE |
+| **Index FIFO** | Etape 8.8 | `migration_v20` -- index sur colonnes FIFO |
+| **Raccourcis clavier** | Etape 1 | `FrmListeBase.ProcessCmdKey()` -- Ctrl+N/E, Del, Esc |
+| **Constantes metier** | Architecture | `BomFiche.TypeInputIngredient`, `CommandeWeb.StatutPayee` |
+| **TOCTOU / race condition** | Etape 4 | `BomProductionDAL.Executer()` -- charge dans la tx |
+| **Infrastructure Docker/Nginx** | Etape 8.9 | gzip, fastcgi buffers, cache Vite 1y immutable |
+| **Cache session panier** | Etape 6.4 | `session('panier_count')` + `refreshPanierCount()` |
+| **FormRequests** | Etape 6.4-6.5 | `CheckoutRequest`, `LoginRequest` |
 
 ---
 
@@ -1739,7 +1837,7 @@ ALTER TABLE fiches_ingredients DROP FOREIGN KEY fk_fi_stock, DROP COLUMN id_stoc
 app-csharp/CharlesNadejda/CharlesNadejda/
   Forms/
     FrmEditBase.cs              -- classe abstraite (cycle Valider/Sauvegarder)
-    FrmListeBase.cs             -- classe generique (DGV + CRUD)
+    FrmListeBase.cs             -- classe generique (DGV + CRUD + ProcessCmdKey raccourcis)
     FrmStockEdit.cs             -- CRUD stock
     FrmActiviteEdit.cs          -- CRUD activite
     FrmBomContexteEdit.cs       -- creation contexte + niveaux
@@ -1765,12 +1863,14 @@ app-csharp/CharlesNadejda/CharlesNadejda/
     CommandeWebDAL.cs           -- lecture seule (commandes web)
     VueStockGlobalDAL.cs        -- VIEW SQL + agregation
   Models/
-    Ingredient.cs               -- proprietes calculees (StockRatio, EstEnAlerte)
+    Ingredient.cs               -- proprietes calculees (StockRatio, EstEnAlerte, DlcJoursReference, QualiteLabel)
     Lot.cs                      -- PrixUnitaireBase calcule
-    BomFiche.cs                 -- CoutBatch, CoutUnitaire
-    BomFicheLigne.cs            -- FK polymorphiques (ingredient/fiche)
+    BomFiche.cs                 -- CoutBatch, CoutUnitaire, const TypeInputIngredient/TypeInputFiche
+    BomFicheLigne.cs            -- FK polymorphiques (ingredient/fiche), const SourceLotIngredient
+    BomProductionLigne.cs       -- const SourceLotIngredient
     ProduitWeb.cs               -- StockDisponible, EstEnStock
-    CommandeWeb.cs              -- NomCompletClient
+    CommandeWeb.cs              -- NomCompletClient, const StatutPayee/StatutAnnulee
+    VueStockGlobal.cs           -- EstEnRupture (rupture de stock), const TypeLotIngredient
   Helpers/
     UnitConvertisseur.cs        -- conversion masse/volume/piece
 ```
@@ -1779,17 +1879,19 @@ app-csharp/CharlesNadejda/CharlesNadejda/
 ```
 site-laravel/
   app/Http/Controllers/
-    CatalogueController.php     -- index (eager loading) + show (404)
+    CatalogueController.php     -- index + show (eager loading + withStockDisponible)
     Auth/RegisterController.php -- inscription + bcrypt + session
     Auth/LoginController.php    -- connexion + password_verify + throttle
     PanierController.php        -- 5 methodes AJAX + ownership check
     CommandeController.php      -- recap + valider (FIFO transactionnel)
   app/Http/Requests/
-    RegisterRequest.php         -- regles validation + messages FR
+    RegisterRequest.php         -- regles validation inscription + messages FR
+    CheckoutRequest.php         -- validation checkout (adresse, acceptation CGV)
+    LoginRequest.php            -- validation connexion (email, mot de passe)
   app/Http/Middleware/
     ClientAuth.php              -- session + compte actif
   app/Models/
-    ProduitWeb.php              -- accessor stock_disponible
+    ProduitWeb.php              -- scope withStockDisponible (unites vendables)
     Client.php                  -- fillable + hidden
     CommandeWeb.php             -- relation lignes
     BomStock.php                -- table bom_stocks
@@ -1832,3 +1934,8 @@ A utiliser dans les phrases pour montrer la maitrise du vocabulaire :
 | **Accessor** | Methode Laravel qui ajoute une propriete calculee a un modele |
 | **Session fixation** | Attaque ou l'attaquant impose un session ID avant la connexion |
 | **Soft delete** | Marquer comme inactif au lieu de supprimer physiquement (champ `actif`) |
+| **TOCTOU** | Time Of Check to Time Of Use -- race condition entre verification et utilisation |
+| **Magic string** | Chaine de caracteres codee en dur -- a extraire en constante pour la maintenabilite |
+| **XML summary** | Commentaire structure C# (`/// <summary>`) qui documente les methodes publiques |
+| **View Composer** | Service Laravel qui injecte des donnees dans les vues sans passer par le controleur |
+| **FormRequest** | Classe Laravel dediee a la validation, separee du controleur |

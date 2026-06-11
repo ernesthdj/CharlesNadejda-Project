@@ -13,6 +13,7 @@
    - [7.3 TypeInput : ingredient vs fiche](#73-typeinput--ingredient-vs-fiche)
    - [7.4 UnitConvertisseur](#74-unitconvertisseur)
    - [7.5 DAL : BomFicheDAL.Insert() -- Transaction](#75-dal--bomfichedalinsert--transaction)
+   - [7.5b DAL : BomFicheDAL.Delete() -- Transaction atomique](#75b-dal--bomfichelaldelete--transaction-atomique)
    - [7.6 DAL : BomFicheLigneDAL.GetByFiche() -- SQL jointure](#76-dal--bomfichelignedalgetbyfiche--sql-jointure)
 2. [Etape 8 -- Production](#etape-8--production)
    - [8.1 Ecran principal : FrmPrincipal.Production.cs](#81-ecran-principal--frmprincipalprodictioncs)
@@ -79,7 +80,7 @@ ORDER BY f.nom
 **Actions CRUD :**
 - **Ajouter** : ouvre `FrmBomFicheEdit(null, _niveau)` -- mode creation
 - **Modifier** : ouvre `FrmBomFicheEdit(BomFicheDAL.GetById(element.Id), _niveau)` -- avec lignes chargees
-- **Supprimer** : `BomFicheDAL.Delete(element.Id)` -- pas de soft delete, SQL `DELETE FROM bom_fiches WHERE id = @id`
+- **Supprimer** : `BomFicheDAL.Delete(element.Id)` -- transaction atomique (voir 7.5b)
 
 ---
 
@@ -301,13 +302,15 @@ VALUES (@idFiche, @type, @idIngr, @idFicheInput, @qte, @unite)
 
 Chaque ligne est inseree individuellement dans une boucle `foreach`. Les champs `id_input_ingredient` et `id_input_fiche` sont mutuellement exclusifs (l'un est `DBNull.Value`).
 
-**Validation pre-insert :**
+**Validation pre-insert (utilise les constantes metier) :**
 ```csharp
-if (l.TypeInput == "ingredient" && !l.IdInputIngredient.HasValue)
+if (l.TypeInput == BomFiche.TypeInputIngredient && !l.IdInputIngredient.HasValue)
     throw new ArgumentException("...");
-if (l.TypeInput == "fiche" && !l.IdInputFiche.HasValue)
+if (l.TypeInput == BomFiche.TypeInputFiche && !l.IdInputFiche.HasValue)
     throw new ArgumentException("...");
 ```
+
+> **Constantes metier** (`BomFiche.TypeInputIngredient = "ingredient"`, `BomFiche.TypeInputFiche = "fiche"`) : utilisees dans tout le code au lieu de magic strings.
 
 **Update() suit le meme pattern :**
 1. `BEGIN TRANSACTION`
@@ -320,6 +323,43 @@ if (l.TypeInput == "fiche" && !l.IdInputFiche.HasValue)
 - Charge la fiche source avec lignes
 - Genere un nom unique ("Copie de X", "Copie de X (2)", ...)
 - Appelle `Insert()` avec les memes lignes
+
+### 7.5b DAL : BomFicheDAL.Delete() -- Transaction atomique
+
+**Fichier :** `DAL/BomFicheDAL.cs`
+
+La suppression est transactionnelle avec verification referentielle prealable :
+
+```csharp
+public static void Delete(int id)
+{
+    using (var conn = DbHelper.GetConnection())
+    using (var tx = conn.BeginTransaction())
+    {
+        try
+        {
+            // 1. Verifier si cette fiche est consommee par des fiches de niveau superieur
+            //    SELECT COUNT(*) FROM bom_fiches_lignes WHERE id_input_fiche = @id
+            //    => Si nbRef > 0 : throw InvalidOperationException
+
+            // 2. Verifier les productions existantes
+            //    SELECT COUNT(*) FROM bom_productions WHERE id_fiche = @id
+            //    => Si nbProd > 0 : throw InvalidOperationException
+
+            // 3. Supprimer
+            //    DELETE FROM bom_fiches WHERE id = @id
+
+            tx.Commit();
+        }
+        catch { tx.Rollback(); throw; }
+    }
+}
+```
+
+**3 verifications dans la meme transaction :**
+1. Pas de reference dans `bom_fiches_lignes.id_input_fiche` (fiche consommee par un niveau superieur)
+2. Pas de productions enregistrees dans `bom_productions`
+3. Si OK : `DELETE FROM bom_fiches WHERE id = @id`
 
 ---
 
@@ -455,26 +495,94 @@ Version modale alternative de la production (ouverte depuis FrmArtisaStock). Mem
 
 Retourne une liste de `BomManque` (vide si tout est disponible).
 
-**Algorithme :**
+**Factorisation tx/non-tx :** Les methodes `VerifierDisponibiliteLignes` et `GetIdNiveauDeFiche` sont factorisees via des methodes `*Internal`. Les versions publiques sont des wrappers :
+
+```csharp
+// Version publique (hors transaction) — cree sa propre connexion
+public static List<BomManque> VerifierDisponibilite(int idNiveau, int idFiche, decimal quantiteCible)
+{
+    var niveau = BomNiveauDAL.GetById(idNiveau);
+    var fiche  = BomFicheDAL.GetById(idFiche);
+    if (niveau == null || fiche == null) return new List<BomManque>();
+    return VerifierDisponibiliteLignes(fiche.Lignes, quantiteCible);
+}
+
+// Surcharge sans transaction — appelle Internal avec conn/tx = null
+private static List<BomManque> VerifierDisponibiliteLignes(
+    List<BomFicheLigne> lignes, decimal quantiteCible)
+    => VerifierDisponibiliteLignesInternal(lignes, quantiteCible, null, null);
+
+// Surcharge transactionnelle — avec verrou pessimiste (FOR UPDATE)
+// TICKET-01 FIX : c'est cette version qui est utilisee dans Executer()
+private static List<BomManque> VerifierDisponibiliteLignes(
+    List<BomFicheLigne> lignes, decimal quantiteCible,
+    MySqlConnection conn, MySqlTransaction tx)
+    => VerifierDisponibiliteLignesInternal(lignes, quantiteCible, conn, tx);
+```
+
+**Logique unique dans `VerifierDisponibiliteLignesInternal` :**
 
 ```
+bool enTransaction = conn != null && tx != null;
+
 Pour chaque ligne de la fiche :
     qteNecessaire = ligne.Quantite * quantiteCible (multiplicateur = nb batches)
 
-    SI type = "ingredient" :
+    SI type = BomFiche.TypeInputIngredient :
         Convertir qteNecessaire de ligne.UniteMesure vers ligne.UniteMesureInput
-        qteDisponible = BomStockDAL.GetDisponibleIngredient(idIngredient)
-            => SUM(lots.quantite_disponible) - SUM(reservations actives)
+        qteDisponible = enTransaction
+            ? BomStockDAL.GetDisponibleIngredient(idIngredient, conn, tx)  // FOR UPDATE
+            : BomStockDAL.GetDisponibleIngredient(idIngredient)            // connexion separee
 
-    SI type = "fiche" :
-        Trouver le niveau source de la fiche (GetIdNiveauDeFiche)
-        qteDisponible = BomStockDAL.GetDisponible(idNiveauSource, idFiche)
-            => SUM(bom_stocks.quantite_disponible)
+    SI type = BomFiche.TypeInputFiche :
+        idNiveauSource = enTransaction
+            ? GetIdNiveauDeFiche(idInputFiche, conn, tx)
+            : GetIdNiveauDeFiche(idInputFiche)
+        qteDisponible = enTransaction
+            ? BomStockDAL.GetDisponible(idNiveauSource, idInputFiche, conn, tx)
+            : BomStockDAL.GetDisponible(idNiveauSource, idInputFiche)
         Convertir qteNecessaire vers unite native
 
     SI qteDisponible < qteNecessaire :
         Ajouter BomManque { NomInput, Unite, QuantiteNecessaire, QuantiteDisponible }
 ```
+
+> Les constantes `BomFiche.TypeInputIngredient` et `BomFiche.TypeInputFiche` remplacent les magic strings `"ingredient"` et `"fiche"` dans tout le code.
+
+**Factorisation identique pour `GetIdNiveauDeFiche` :**
+
+```csharp
+// Version publique sans transaction
+private static int GetIdNiveauDeFiche(int idFiche)
+{
+    using (var conn = DbHelper.GetConnection())
+        return GetIdNiveauDeFicheInternal(idFiche, conn, null);
+}
+
+// Surcharge transactionnelle
+private static int GetIdNiveauDeFiche(int idFiche, MySqlConnection conn, MySqlTransaction tx)
+    => GetIdNiveauDeFicheInternal(idFiche, conn, tx);
+
+// Logique unique
+private static int GetIdNiveauDeFicheInternal(int idFiche, MySqlConnection conn, MySqlTransaction tx)
+{
+    // SELECT id_niveau FROM bom_fiches WHERE id = @id
+    // Retourne 0 si la fiche n'existe pas
+}
+```
+
+**BomStockDAL -- 4 paires factorisees :**
+
+`BomStockDAL` suit exactement le meme pattern de factorisation. Chaque methode a 3 versions : publique autonome, publique transactionnelle (conn, tx), et `*Internal` privee :
+
+| Methode | Description | SQL FOR UPDATE |
+|---------|-------------|----------------|
+| `GetDisponible` | Stock total dispo pour une fiche dans un niveau | `SELECT COALESCE(SUM(quantite_disponible), 0) FROM bom_stocks ... FOR UPDATE` |
+| `GetDisponibleIngredient` | Stock ingredient net (moins reservations) | `SELECT SUM(l.quantite_disponible) - SUM(reservations) FROM lots_ingredients ... FOR UPDATE` |
+| `GetLotsDispoFIFO` | Lots ingredient tries FIFO avec dispo nette | `SELECT ... FROM lots_ingredients ... ORDER BY date_achat ASC FOR UPDATE` |
+| `GetBomStocksFIFO` | Stocks bom tries FIFO | `SELECT ... FROM bom_stocks ... ORDER BY date_production ASC FOR UPDATE` |
+
+> **FOR UPDATE** : verrou pessimiste MySQL. Hors transaction, sans effet. En transaction, bloque les lignes verouillees pour les autres sessions jusqu'au COMMIT/ROLLBACK.
 
 **BomStockDAL.GetDisponibleIngredient() -- SQL :**
 ```sql
@@ -488,6 +596,7 @@ SELECT
       ), 0)
 FROM lots_ingredients l
 WHERE l.id_fiche_ingredient = @idFi
+FOR UPDATE
 ```
 
 Cette formule deduit les reservations actives de la quantite physique.
@@ -532,9 +641,15 @@ Le DGV affiche chaque ligne avec code couleur :
 ```
 BEGIN TRANSACTION
 |
-|-- 1. Charger niveau + fiche (une seule fois)
+|-- 1. Charger niveau + fiche dans la transaction (appels transactionnels)
+|      var niveau = BomNiveauDAL.GetById(idNiveau, conn, tx);
+|      var fiche  = BomFicheDAL.GetById(idFiche, conn, tx);
+|      Guards : si null → throw InvalidOperationException (supprime entre-temps)
 |
-|-- 2. Verifier disponibilite (avec les lignes deja chargees)
+|-- 2. Verifier disponibilite (avec les lignes deja chargees, dans la meme TX)
+|      VerifierDisponibiliteLignes(fiche.Lignes, quantiteCible, conn, tx)
+|      => Toutes les lectures de stock avec FOR UPDATE (verrou pessimiste)
+|      => Elimine la race condition TOCTOU
 |      SI penuries > 0 : ROLLBACK + throw InvalidOperationException
 |
 |-- 3. Calculer quantiteProduite = quantiteCible * fiche.QuantiteOutput
@@ -580,7 +695,7 @@ C'est le coeur de la production. Consomme le stock en FIFO (First In First Out -
 
 **Constante :** `TOLERANCE_ARRONDI = 0.0001m` (evite les faux negatifs sur reste decimal)
 
-#### Cas 1 : TypeInput = "ingredient"
+#### Cas 1 : TypeInput = BomFiche.TypeInputIngredient ("ingredient")
 
 ```
 1. Convertir aConommer de ligne.UniteMesure vers ligne.UniteMesureInput
@@ -591,7 +706,7 @@ C'est le coeur de la production. Consomme le stock en FIFO (First In First Out -
    BomStockDAL.GetLotsDispoFIFO(idFicheIngredient)
 ```
 
-**SQL FIFO ingredients :**
+**SQL FIFO ingredients (BomStockDAL.GetLotsDispoFIFOInternal) :**
 ```sql
 SELECT l.id,
        l.quantite_disponible
@@ -602,9 +717,10 @@ SELECT l.id,
 FROM lots_ingredients l
 INNER JOIN fiches_ingredients fi ON fi.id = l.id_fiche_ingredient
 WHERE l.id_fiche_ingredient = @idFi
-HAVING dispo_nette > 0
 ORDER BY l.date_achat ASC    -- <== FIFO : le plus ancien d'abord
+FOR UPDATE                   -- verrou pessimiste en transaction
 ```
+> Le filtrage `dispo_nette > 0` est fait cote C# (compatibilite FOR UPDATE). Le HAVING a ete supprime.
 
 ```
 3. Pour chaque lot (du plus ancien au plus recent) :
@@ -623,10 +739,8 @@ ORDER BY l.date_achat ASC    -- <== FIFO : le plus ancien d'abord
       WHERE id_lot = @idLot AND actif = 1
 
    c) Inserer la ligne de tracabilite :
-      INSERT INTO bom_productions_lignes
-          (id_production, type_source, id_lot_ingredient, id_bom_stock,
-           quantite_consommee, cout_unitaire_moment)
-      VALUES (@idProd, 'lot_ingredient', @idLot, NULL, @qte, @cout)
+      InsertLigne(conn, tx, idProduction, BomProductionLigne.SourceLotIngredient,
+                  idLot, null, pris, prixUnit)
 
    coutLigne += pris * prixUnitaire
    restant -= pris
@@ -636,24 +750,25 @@ ORDER BY l.date_achat ASC    -- <== FIFO : le plus ancien d'abord
    => ROLLBACK de toute la transaction
 ```
 
-#### Cas 2 : TypeInput = "fiche" (produit intermediaire)
+#### Cas 2 : TypeInput = BomFiche.TypeInputFiche ("fiche") (produit intermediaire)
 
 Meme logique, mais consomme depuis `bom_stocks` au lieu de `lots_ingredients` :
 
 ```
-1. Trouver le niveau source : GetIdNiveauDeFiche(idInputFiche)
+1. Trouver le niveau source : GetIdNiveauDeFiche(idInputFiche, conn, tx)
 
 2. Charger les stocks FIFO :
-   BomStockDAL.GetBomStocksFIFO(idNiveauSource, idInputFiche)
+   BomStockDAL.GetBomStocksFIFO(idNiveauSource, idInputFiche, conn, tx)
 ```
 
-**SQL FIFO bom_stocks :**
+**SQL FIFO bom_stocks (BomStockDAL.GetBomStocksFIFOInternal) :**
 ```sql
 SELECT id, quantite_disponible, cout_unitaire
 FROM bom_stocks
 WHERE id_niveau = @idNiveau AND id_fiche = @idFiche
   AND quantite_disponible > 0
 ORDER BY date_production ASC    -- <== FIFO
+FOR UPDATE                      -- verrou pessimiste en transaction
 ```
 
 ```
@@ -666,10 +781,8 @@ ORDER BY date_production ASC    -- <== FIFO
       WHERE id = @id
 
    b) Inserer la ligne de tracabilite :
-      INSERT INTO bom_productions_lignes
-          (id_production, type_source, id_lot_ingredient, id_bom_stock,
-           quantite_consommee, cout_unitaire_moment)
-      VALUES (@idProd, 'bom_stock', NULL, @idStock, @qte, @cout)
+      InsertLigne(conn, tx, idProduction, BomProductionLigne.SourceBomStock,
+                  null, idStock, pris, coutUnit)
 
    coutLigne += pris * coutUnitaire
    restant -= pris
@@ -763,6 +876,10 @@ UTILISATEUR                         APPLICATION                          BASE DE
 ```csharp
 public class BomFiche
 {
+    // Constantes metier (remplacent les magic strings dans tout le code)
+    const string TypeInputIngredient = "ingredient";
+    const string TypeInputFiche      = "fiche";
+
     int      Id, IdNiveau
     string   Nom, Description, UniteOutput      // piece, kg, g, l, ml, cl
     decimal  QuantiteOutput                      // qte produite par batch
@@ -809,12 +926,18 @@ public class BomProduction
 ```csharp
 public class BomProductionLigne
 {
+    // Constantes de type source (remplacent les magic strings)
+    const string SourceLotIngredient = "lot_ingredient";
+    const string SourceBomStock      = "bom_stock";
+
     int     Id, IdProduction
-    string  TypeSource           // "lot_ingredient" | "bom_stock"
+    string  TypeSource           // SourceLotIngredient | SourceBomStock
     int?    IdLotIngredient      // FK lots_ingredients
     int?    IdBomStock           // FK bom_stocks
     decimal QuantiteConsommee
     decimal CoutUnitaireMoment   // prix au moment de la consommation
+    string  NomSource            // jointure — nom de l'ingredient ou de la fiche source
+    string  UniteSource          // jointure — unite de la source
     decimal SousTotal => QuantiteConsommee * CoutUnitaireMoment
 }
 ```
@@ -856,7 +979,7 @@ public class BomManque
 
 2. **FIFO strict** : `ORDER BY date_achat ASC` (ingredients) ou `ORDER BY date_production ASC` (bom_stocks). Les lots les plus anciens sont toujours consommes en premier.
 
-3. **Double verification** : La disponibilite est verifiee une premiere fois pour l'affichage (Simuler), puis une seconde fois DANS la transaction (Executer) pour eviter les conditions de concurrence.
+3. **Double verification transactionnelle** : La disponibilite est verifiee une premiere fois pour l'affichage (Simuler, hors transaction), puis une seconde fois DANS la transaction (Executer) avec `FOR UPDATE` pour verrouiller les lignes. Cela elimine la race condition TOCTOU (Time Of Check To Time Of Use). Les appels `BomNiveauDAL.GetById(id, conn, tx)` et `BomFicheDAL.GetById(id, conn, tx)` sont egalement transactionnels.
 
 4. **Conversion d'unites** : Toutes les comparaisons et consommations passent par `UnitConvertisseur.Convertir()`. Une fiche peut demander 500g mais le stock est en kg -- la conversion est automatique.
 
@@ -867,3 +990,9 @@ public class BomManque
 7. **Cout reel** : Le cout unitaire est calcule a posteriori (apres consommation FIFO), base sur les prix reels des lots consommes, pas les prix de reference.
 
 8. **Multi-niveaux generique** : Un niveau N peut consommer n'importe quel niveau inferieur (pas seulement N-1). `GetIdNiveauDeFiche()` determine dynamiquement le niveau source.
+
+9. **Factorisation tx/non-tx** : Toutes les methodes critiques (`VerifierDisponibiliteLignes`, `GetIdNiveauDeFiche`, et les 4 methodes de `BomStockDAL`) sont factorisees via des methodes `*Internal`. La version publique cree sa propre connexion ; la version transactionnelle reutilise `conn/tx` avec `FOR UPDATE`.
+
+10. **Constantes metier** : Les magic strings sont extraites en constantes : `BomFiche.TypeInputIngredient`, `BomFiche.TypeInputFiche`, `BomProductionLigne.SourceLotIngredient`, `BomProductionLigne.SourceBomStock`. Cela elimine les risques de faute de frappe et centralise les valeurs.
+
+11. **BomFicheDAL.Delete transactionnel** : La suppression d'une fiche est atomique avec verification referentielle prealable (fiches consommatrices + productions existantes) dans la meme transaction.

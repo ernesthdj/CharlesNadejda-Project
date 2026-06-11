@@ -29,10 +29,11 @@
 ### CatalogueController@index — Requete & Filtres
 
 ```php
-public function index()
+public function index(): \Illuminate\Contracts\View\View
 {
     $query = ProduitWeb::where('en_vente', 1)
-        ->with('categorie');  // Eager loading — evite N+1
+        ->with('categorie')           // Eager loading — evite N+1
+        ->withStockDisponible();      // Sous-requete FLOOR(SUM/output)
 
     // Filtre par categorie (query string ?categorie=X)
     if (request('categorie')) {
@@ -58,11 +59,21 @@ public function index()
 
 **SQL genere (simplifie) :**
 ```sql
-SELECT * FROM produits_web WHERE en_vente = 1 [AND id_categorie = ?]
+SELECT produits_web.*, (
+    SELECT FLOOR(COALESCE(SUM(bs.quantite_disponible), 0) / bf.quantite_output)
+    FROM bom_stocks bs
+    INNER JOIN bom_fiches bf ON bf.id = bs.id_fiche
+    WHERE bs.id_fiche = produits_web.id_bom_fiche
+      AND bs.quantite_disponible > 0
+    GROUP BY bf.quantite_output
+) AS stock_calc
+FROM produits_web WHERE en_vente = 1 [AND id_categorie = ?]
 ORDER BY ordre_affichage, nom_commercial;
 
 SELECT * FROM categories_web WHERE actif = 1 ORDER BY ordre_affichage;
 ```
+
+**Principe stock_calc** : La sous-requete divise le stock brut (somme des lots disponibles) par `quantite_output` de la fiche BOM, puis arrondit vers le bas avec `FLOOR`. Cela donne le nombre d'unites vendables reelles — aligne avec le calcul cote ERP C#.
 
 ### Vue catalogue/index.blade.php — Structure
 
@@ -80,12 +91,13 @@ SELECT * FROM categories_web WHERE actif = 1 ORDER BY ordre_affichage;
 ### CatalogueController@show — Page detail
 
 ```php
-public function show(int $id)
+public function show(int $id): \Illuminate\Contracts\View\View
 {
     $produit = ProduitWeb::where('id', $id)
         ->where('en_vente', 1)
         ->with('categorie')
-        ->firstOrFail();  // 404 si introuvable
+        ->withStockDisponible()   // Stock vendable pre-charge (evite requete N+1)
+        ->firstOrFail();          // 404 si introuvable
 
     return view('catalogue.show', compact('produit'));
 }
@@ -100,15 +112,44 @@ public function show(int $id)
   2. `!session('client_id')` → lien vers login "Connectez-vous pour commander".
   3. Sinon (rupture) → bouton disabled "Indisponible".
 
-### Calcul du stock — Model accessor
+### Calcul du stock — Scope + Accessor
 
+**Approche double** : un scope SQL pour les listings (0 requete supplementaire), un accessor avec fallback pour les appels unitaires.
+
+**1. Scope `withStockDisponible` (listing — 0 requete N+1) :**
 ```php
 // ProduitWeb.php
+public function scopeWithStockDisponible(Builder $query): Builder
+{
+    return $query->selectRaw('produits_web.*, (
+        SELECT FLOOR(COALESCE(SUM(bs.quantite_disponible), 0) / bf.quantite_output)
+        FROM bom_stocks bs
+        INNER JOIN bom_fiches bf ON bf.id = bs.id_fiche
+        WHERE bs.id_fiche = produits_web.id_bom_fiche
+          AND bs.quantite_disponible > 0
+        GROUP BY bf.quantite_output
+    ) AS stock_calc');
+}
+```
+
+**2. Accessor `stock_disponible` (utilise stock_calc si charge, sinon fallback DB) :**
+```php
 public function getStockDisponibleAttribute(): float
 {
-    return (float) BomStock::where('id_fiche', $this->id_bom_fiche)
-        ->where('quantite_disponible', '>', 0)
-        ->sum('quantite_disponible');
+    // Utilise le cache du scope si disponible
+    if (array_key_exists('stock_calc', $this->attributes) && $this->attributes['stock_calc'] !== null) {
+        return (float) $this->attributes['stock_calc'];
+    }
+
+    // Fallback : requete unitaire (meme formule FLOOR)
+    return (float) DB::selectOne('
+        SELECT FLOOR(COALESCE(SUM(bs.quantite_disponible), 0) / bf.quantite_output) AS stock
+        FROM bom_stocks bs
+        INNER JOIN bom_fiches bf ON bf.id = bs.id_fiche
+        WHERE bs.id_fiche = ?
+          AND bs.quantite_disponible > 0
+        GROUP BY bf.quantite_output
+    ', [$this->id_bom_fiche])?->stock ?? 0;
 }
 
 public function getEnStockAttribute(): bool
@@ -117,7 +158,7 @@ public function getEnStockAttribute(): bool
 }
 ```
 
-**Principe** : Le produit web est lie a une `bom_fiche` (fiche de production ERP). Le stock disponible est la somme de tous les lots (`bom_stocks`) dont `quantite_disponible > 0` pour cette fiche. Le stock est calcule en temps reel depuis la table geree par l'ERP C#.
+**Principe** : Le produit web est lie a une `bom_fiche` (fiche de production ERP). Le stock vendable = `FLOOR(SUM(quantite_disponible) / quantite_output)` — c'est le nombre d'unites finies realisables a partir du stock brut, aligne avec le calcul cote ERP C#. Le scope charge cette valeur en une seule requete pour le listing ; l'accessor la reutilise ou la recalcule en fallback.
 
 ---
 
@@ -173,7 +214,7 @@ public function messages(): array
 ### RegisterController@register — Creation du client
 
 ```php
-public function register(RegisterRequest $request)
+public function register(RegisterRequest $request): \Illuminate\Http\RedirectResponse
 {
     $client = Client::create([
         'prenom'       => $request->prenom,
@@ -188,14 +229,16 @@ public function register(RegisterRequest $request)
     ]);
 
     session([
-        'client_id'     => $client->id,
-        'client_nom'    => $client->nom,
-        'client_prenom' => $client->prenom,
+        'client_id'          => $client->id,
+        'client_nom'         => $client->nom,
+        'client_prenom'      => $client->prenom,
+        'panier_count'       => 0,          // Nouveau compte = panier vide
+        'client_verified_at' => time(),     // Timestamp pour cache middleware
     ]);
     session()->regenerate();  // Securite : session fixation
 
     return redirect()->route('catalogue')
-        ->with('success', 'Bienvenue ' . $client->prenom . ' !');
+        ->with('success', 'Bienvenue ' . $client->prenom . ' ! Votre compte a été créé.');
 }
 ```
 
@@ -237,6 +280,7 @@ protected $hidden = ['mot_de_passe'];  // Jamais expose
 | Couche | Fichier |
 |--------|---------|
 | Controller | `app/Http/Controllers/Auth/LoginController.php` |
+| FormRequest | `app/Http/Requests/LoginRequest.php` |
 | View | `resources/views/auth/login.blade.php` |
 | Route | `GET /login` (form), `POST /login` (submit), `POST /logout` |
 | Middleware | `throttle:5,1` sur POST login |
@@ -244,13 +288,8 @@ protected $hidden = ['mot_de_passe'];  // Jamais expose
 ### LoginController@login — Authentification
 
 ```php
-public function login(Request $request)
+public function login(LoginRequest $request): \Illuminate\Http\RedirectResponse
 {
-    $request->validate([
-        'email'    => 'required|email',
-        'password' => 'required|string',
-    ]);
-
     $client = Client::where('email', $request->email)
         ->where('actif', 1)   // Seuls les comptes actifs
         ->first();
@@ -261,10 +300,18 @@ public function login(Request $request)
             ->with('error', 'Email ou mot de passe incorrect.');
     }
 
+    // Charger le compteur panier existant pour le cache session
+    $panier = CommandeWeb::where('id_client', $client->id)
+        ->where('statut', 'panier')
+        ->first();
+    $panierCount = $panier ? (int) $panier->lignes()->sum('quantite') : 0;
+
     session([
-        'client_id'     => $client->id,
-        'client_nom'    => $client->nom,
-        'client_prenom' => $client->prenom,
+        'client_id'          => $client->id,
+        'client_nom'         => $client->nom,
+        'client_prenom'      => $client->prenom,
+        'panier_count'       => $panierCount,       // Cache depuis DB au login
+        'client_verified_at' => time(),             // Timestamp pour cache middleware
     ]);
     session()->regenerate();  // Securite : session fixation
 
@@ -273,7 +320,20 @@ public function login(Request $request)
 }
 ```
 
+La validation est extraite dans un `LoginRequest` (FormRequest) :
+```php
+// app/Http/Requests/LoginRequest.php
+public function rules(): array
+{
+    return [
+        'email'    => 'required|email',
+        'password' => 'required|string',
+    ];
+}
+```
+
 **Points de securite :**
+- `LoginRequest` — validation via FormRequest (separation des responsabilites).
 - `password_verify()` — comparaison bcrypt constante-time.
 - Message d'erreur generique (ne revele pas si l'email existe).
 - `where('actif', 1)` — comptes desactives refuses.
@@ -299,6 +359,8 @@ public function logout()
 | `client_id` | `int` | Identification dans les requetes Eloquent |
 | `client_nom` | `string` | Affichage header |
 | `client_prenom` | `string` | Affichage header + messages flash |
+| `panier_count` | `int` | Badge panier header (cache session, evite 2 requetes DB/page) |
+| `client_verified_at` | `int` (timestamp) | Cache middleware — re-verifie en DB apres 5 min |
 
 ### Vue login.blade.php
 
@@ -323,7 +385,7 @@ Formulaire minimal : email + password + bouton submit. Message flash `session('e
 #### 1. `index()` — Affichage du panier
 
 ```php
-public function index()
+public function index(): \Illuminate\Contracts\View\View
 {
     $panier = $this->getPanierActif();
     return view('panier.index', compact('panier'));
@@ -333,16 +395,16 @@ public function index()
 #### 2. `ajouter(Request $request)` — Ajout AJAX
 
 ```php
-public function ajouter(Request $request)
+public function ajouter(Request $request): \Illuminate\Http\JsonResponse
 {
     $request->validate([
         'id_produit' => 'required|integer|exists:produits_web,id',
         'quantite'   => 'required|integer|min:1',
     ]);
 
-    $produit = ProduitWeb::findOrFail($request->id_produit);
+    $produit = ProduitWeb::withStockDisponible()->findOrFail($request->id_produit);
 
-    // VERIFICATION STOCK
+    // VERIFICATION STOCK (stock vendable = FLOOR(brut / output))
     if ($produit->stock_disponible < $request->quantite) {
         return response()->json([
             'success' => false,
@@ -359,7 +421,7 @@ public function ajouter(Request $request)
         if ($newQte > $produit->stock_disponible) {
             return response()->json([
                 'success' => false,
-                'message' => 'Quantite maximale atteinte (stock : ' . $produit->stock_disponible . ').',
+                'message' => 'Quantité maximale atteinte (stock : ' . $produit->stock_disponible . ').',
             ]);
         }
         $ligne->update(['quantite' => $newQte]);
@@ -372,10 +434,12 @@ public function ajouter(Request $request)
         ]);
     }
 
+    $count = $this->refreshPanierCount($panier);
+
     return response()->json([
         'success'      => true,
-        'message'      => $produit->nom_commercial . ' ajoute au panier.',
-        'panier_count' => $this->getPanierCount(),
+        'message'      => $produit->nom_commercial . ' ajouté au panier.',
+        'panier_count' => $count,
     ]);
 }
 ```
@@ -383,7 +447,7 @@ public function ajouter(Request $request)
 #### 3. `updateQuantite(Request $request)` — Modification AJAX
 
 ```php
-public function updateQuantite(Request $request)
+public function updateQuantite(Request $request): \Illuminate\Http\JsonResponse
 {
     $request->validate([
         'id_ligne' => 'required|integer',
@@ -395,7 +459,7 @@ public function updateQuantite(Request $request)
     // OWNERSHIP CHECK
     $panier = $this->getPanierActif();
     if (!$panier || $ligne->id_commande !== $panier->id) {
-        return response()->json(['success' => false, 'message' => 'Acces non autorise.'], 403);
+        return response()->json(['success' => false, 'message' => 'Accès non autorisé.'], 403);
     }
 
     // STOCK CHECK
@@ -408,14 +472,26 @@ public function updateQuantite(Request $request)
     }
 
     $ligne->update(['quantite' => $request->quantite]);
-    // ...
+
+    // Recharger les lignes pour avoir les totaux a jour
+    $panier->load('lignes');
+    $count = $this->refreshPanierCount($panier);
+
+    return response()->json([
+        'success'      => true,
+        'sous_total'   => number_format($ligne->fresh()->sous_total, 2, ',', ' '),
+        'total'        => number_format($panier->lignes->sum('sous_total'), 2, ',', ' '),
+        'panier_count' => $count,
+    ]);
 }
 ```
+
+**Note** : `$panier->lignes->sum('sous_total')` utilise la collection chargee (pas de requete supplementaire), tandis que `$panier->lignes()->sum(...)` declencherait un nouveau `SELECT SUM(...)`. La collection est preferee car les lignes sont deja en memoire apres `load('lignes')`.
 
 #### 4. `supprimer(Request $request)` — Suppression AJAX
 
 ```php
-public function supprimer(Request $request)
+public function supprimer(Request $request): \Illuminate\Http\JsonResponse
 {
     $request->validate(['id_ligne' => 'required|integer']);
     $ligne = CommandeWebLigne::findOrFail($request->id_ligne);
@@ -423,22 +499,33 @@ public function supprimer(Request $request)
     // OWNERSHIP CHECK
     $panier = $this->getPanierActif();
     if (!$panier || $ligne->id_commande !== $panier->id) {
-        return response()->json(['success' => false, 'message' => 'Acces non autorise.'], 403);
+        return response()->json(['success' => false, 'message' => 'Accès non autorisé.'], 403);
     }
 
     $ligne->delete();
-    // ...
+
+    // Recharger les lignes apres suppression
+    $panier->load('lignes');
+    $count = $this->refreshPanierCount($panier);
+
+    return response()->json([
+        'success'      => true,
+        'total'        => number_format($panier->lignes->sum('sous_total'), 2, ',', ' '),
+        'panier_count' => $count,
+    ]);
 }
 ```
 
 #### 5. `count()` — Badge header AJAX
 
 ```php
-public function count()
+public function count(): \Illuminate\Http\JsonResponse
 {
-    return response()->json(['count' => $this->getPanierCount()]);
+    return response()->json(['count' => (int) session('panier_count', 0)]);
 }
 ```
+
+Le compteur est lu directement depuis la session — aucune requete DB. Il est mis a jour par `refreshPanierCount()` a chaque operation sur le panier.
 
 ### Helpers prives
 
@@ -459,14 +546,26 @@ private function getOrCreatePanier(): CommandeWeb
     );
 }
 
-private function getPanierCount(): int
+/**
+ * Rafraichit le compteur panier en session depuis un panier deja charge.
+ * Elimine les requetes DB redondantes (remplace l'ancien getPanierCount).
+ */
+private function refreshPanierCount(?CommandeWeb $panier = null): int
 {
-    $panier = CommandeWeb::where('id_client', session('client_id'))
-        ->where('statut', 'panier')
-        ->first();
-    return $panier ? (int) $panier->lignes()->sum('quantite') : 0;
+    if (!$panier) {
+        $panier = CommandeWeb::where('id_client', session('client_id'))
+            ->where('statut', 'panier')
+            ->first();
+    }
+
+    $count = $panier ? (int) $panier->lignes()->sum('quantite') : 0;
+    session(['panier_count' => $count]);
+
+    return $count;
 }
 ```
+
+**Difference avec l'ancien `getPanierCount()`** : La methode accepte un panier deja charge en parametre (evite une requete supplementaire), et persiste le compteur en session. Toutes les methodes AJAX (`ajouter`, `updateQuantite`, `supprimer`) appellent `refreshPanierCount($panier)` apres modification.
 
 ### JavaScript — public/js/panier.js
 
@@ -531,21 +630,16 @@ function showToast(message, type = 'success') {
 
 Le panier est simplement une `commandes_web` avec `statut = 'panier'`. La transition vers commande confirmee ne cree pas de nouvelle ligne — elle change le statut. Design pattern : "Shopping Cart as Order Draft".
 
-### View Composer — Badge panier
+### View Composer — Badge panier (cache session)
 
 ```php
 // AppServiceProvider::boot()
 View::composer('components.header', function ($view) {
-    $count = 0;
-    if (session()->has('client_id')) {
-        $panier = CommandeWeb::where('id_client', session('client_id'))
-            ->where('statut', 'panier')
-            ->first();
-        $count = $panier ? (int) $panier->lignes()->sum('quantite') : 0;
-    }
-    $view->with('panierCount', $count);
+    $view->with('panierCount', (int) session('panier_count', 0));
 });
 ```
+
+**Avant** : 2 requetes DB a chaque page (SELECT commande + SUM lignes). **Apres** : lecture session uniquement. Le compteur est maintenu par `refreshPanierCount()` dans PanierController et initialise au login/register.
 
 ### sous_total — Colonne SQL calculee
 
@@ -565,6 +659,7 @@ Le `sous_total` est une **colonne GENERATED STORED** au niveau MySQL. Pas d'acce
 | Couche | Fichier |
 |--------|---------|
 | Controller | `app/Http/Controllers/CommandeController.php` |
+| FormRequest | `app/Http/Requests/CheckoutRequest.php` |
 | Models | `CommandeWeb`, `BomStock` |
 | Views | `recap.blade.php`, `confirmation.blade.php`, `historique.blade.php` |
 | Routes | `GET /commande/recap`, `POST /commande/valider`, `GET /mes-commandes`, `GET /commande/{id}` |
@@ -573,7 +668,7 @@ Le `sous_total` est une **colonne GENERATED STORED** au niveau MySQL. Pas d'acce
 ### CommandeController@recap — Recapitulatif
 
 ```php
-public function recap()
+public function recap(): \Illuminate\Contracts\View\View|\Illuminate\Http\RedirectResponse
 {
     $panier = CommandeWeb::where('id_client', session('client_id'))
         ->where('statut', 'panier')
@@ -597,16 +692,31 @@ public function recap()
 
 ### CommandeController@valider — TRANSACTION COMPLETE FIFO
 
+La validation utilise un `CheckoutRequest` (FormRequest) au lieu de validation inline :
 ```php
-public function valider(Request $request)
+// app/Http/Requests/CheckoutRequest.php
+class CheckoutRequest extends FormRequest
 {
-    $request->validate([
-        'adresse_rue'   => 'nullable|string|max:255',
-        'adresse_cp'    => 'nullable|string|max:10',
-        'adresse_ville' => 'nullable|string|max:100',
-        'adresse_pays'  => 'nullable|string|max:100',
-    ]);
+    public function authorize(): bool
+    {
+        return session()->has('client_id');
+    }
 
+    public function rules(): array
+    {
+        return [
+            'adresse_rue'   => 'nullable|string|max:255',
+            'adresse_cp'    => 'nullable|string|max:10',
+            'adresse_ville' => 'nullable|string|max:100',
+            'adresse_pays'  => 'nullable|string|max:100',
+        ];
+    }
+}
+```
+
+```php
+public function valider(CheckoutRequest $request): \Illuminate\Http\RedirectResponse
+{
     DB::beginTransaction();
     try {
         // 1. LOCK le panier (evite double-submit)
@@ -639,7 +749,7 @@ public function valider(Request $request)
             if ($totalDispo < $restant) {
                 DB::rollBack();
                 return redirect()->route('panier')
-                    ->with('error', 'Stock insuffisant pour ...');
+                    ->with('error', 'Stock insuffisant pour « ' . $ligne->produit->nom_commercial . ' ». Veuillez ajuster votre panier.');
             }
 
             // Consommer lot par lot
@@ -670,13 +780,16 @@ public function valider(Request $request)
 
         DB::commit();
 
+        // 5. Reset le compteur panier en session (apres commit)
+        session(['panier_count' => 0]);
+
         return redirect()->route('commande.detail', $panier->id)
-            ->with('success', 'Commande validee avec succes !');
+            ->with('success', 'Commande validée avec succès !');
 
     } catch (\Exception $e) {
         DB::rollBack();
         return redirect()->route('panier')
-            ->with('error', 'Une erreur est survenue. Veuillez reessayer.');
+            ->with('error', 'Une erreur est survenue. Veuillez réessayer.');
     }
 }
 ```
@@ -714,7 +827,7 @@ Le panier **n'est pas supprime**. Son statut passe de `'panier'` a `'payee'`. La
 ### CommandeController@historique — Liste des commandes
 
 ```php
-public function historique()
+public function historique(): \Illuminate\Contracts\View\View
 {
     $commandes = CommandeWeb::where('id_client', session('client_id'))
         ->where('statut', '!=', 'panier')  // Exclut le panier actif
@@ -729,7 +842,7 @@ public function historique()
 ### CommandeController@detail — Detail + Ownership (QA-04)
 
 ```php
-public function detail(int $id)
+public function detail(int $id): \Illuminate\Contracts\View\View
 {
     // QA-04 : ownership check obligatoire
     $commande = CommandeWeb::where('id', $id)
@@ -755,40 +868,75 @@ public function detail(int $id)
 | **Session fixation** | `session()->regenerate()` apres login/register |
 | **Rate limiting** | `throttle:5,1` sur login et register |
 | **Ownership** | `where('id_client', session('client_id'))` systematique |
-| **Middleware auth** | `client.auth` verifie session + compte actif |
+| **Middleware auth** | `client.auth` verifie session + compte actif (cache 5 min) |
 | **Lock pessimiste** | `lockForUpdate()` sur stock + panier pendant checkout |
 | **Transaction ACID** | `DB::beginTransaction()` / commit / rollBack |
-| **Validation entrees** | FormRequest (register) + `$request->validate()` (login, panier, commande) |
+| **Validation entrees** | FormRequest (register, login, checkout) + `$request->validate()` (panier AJAX) |
 | **Message generique** | "Email ou mot de passe incorrect" — ne revele pas si l'email existe |
 | **XSS** | Blade echappe par defaut avec `{{ }}` |
 | **Mass assignment** | `$fillable` defini sur les models |
 
 ---
 
-## Middleware client.auth — Garde de session
+## Middleware client.auth — Garde de session (cache 5 min)
 
 ```php
 // app/Http/Middleware/ClientAuth.php
-public function handle(Request $request, Closure $next)
+public function handle(Request $request, Closure $next): mixed
 {
     if (!session()->has('client_id')) {
         return redirect()->route('login')
-            ->with('error', 'Connectez-vous pour acceder a cette page.');
+            ->with('error', 'Connectez-vous pour accéder à cette page.');
     }
 
-    // Verifie que le compte existe toujours et est actif
-    $client = Client::where('id', session('client_id'))
-        ->where('actif', 1)
-        ->first();
+    // Re-verifier en DB toutes les 5 minutes (pas a chaque requete)
+    $lastCheck = session('client_verified_at', 0);
+    if (time() - $lastCheck > 300) {
+        $client = Client::where('id', session('client_id'))
+            ->where('actif', 1)
+            ->first();
 
-    if (!$client) {
-        session()->flush();
-        return redirect()->route('login')
-            ->with('error', 'Compte desactive ou introuvable.');
+        if (!$client) {
+            session()->flush();
+            return redirect()->route('login')
+                ->with('error', 'Compte désactivé ou introuvable.');
+        }
+
+        session(['client_verified_at' => time()]);
     }
 
     return $next($request);
 }
 ```
 
-Double verification : session presente ET compte toujours actif en DB. Si un admin desactive un client cote ERP, la prochaine requete le deconnecte.
+**Optimisation** : Au lieu de verifier le compte en DB a chaque requete (1 SELECT/page), le middleware ne re-verifie que si `client_verified_at` date de plus de 300 secondes (5 minutes). Le timestamp est initialise au login/register. Cela elimine ~1 requete DB par page pour les clients actifs, tout en gardant la detection de comptes desactives avec un delai maximal de 5 minutes.
+
+---
+
+## Pages d'erreur personnalisees
+
+Les pages 404 et 500 sont personnalisees dans `resources/views/errors/` :
+- `404.blade.php` — affichee automatiquement par Laravel quand `firstOrFail()` echoue ou quand une route n'existe pas.
+- `500.blade.php` — affichee en cas d'erreur serveur inattendue (mode production).
+
+Ces pages utilisent le layout de la boutique (`@extends('layouts.app')`) pour une experience coherente meme en cas d'erreur.
+
+---
+
+## PHPDoc — Documentation du code
+
+Toutes les classes et methodes publiques du site Laravel ont des PHPDoc complets :
+- **Classes** : description du role, proprietes `@property`/`@property-read` sur les models.
+- **Methodes** : description, `@param` pour les parametres, `@return` avec le type exact.
+- **Return types PHP 8** : toutes les methodes publiques ont des return types natifs (`\Illuminate\Contracts\View\View`, `\Illuminate\Http\JsonResponse`, `\Illuminate\Http\RedirectResponse`, `mixed`).
+
+---
+
+## Configuration Nginx — Performance
+
+Le serveur Nginx est configure avec plusieurs optimisations :
+- **gzip** active pour les assets texte (HTML, CSS, JS, JSON).
+- **fastcgi_buffers** `16 16k` — buffers agrandis pour eviter les ecritures temporaires sur disque.
+- **Cache Vite** — assets `build/` servis avec `Cache-Control: max-age=31536000, immutable` (1 an, hash dans le nom).
+- **Cache images** — fichiers statiques servis avec `max-age=604800` (7 jours).
+- **Font display** — `font-display: swap` pour eviter le FOIT (Flash of Invisible Text).
