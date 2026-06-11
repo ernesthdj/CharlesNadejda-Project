@@ -18,8 +18,9 @@ namespace CharlesNadejda.Models
         public string PrenomClient { get; set; }   // clients.prenom
         public string EmailClient  { get; set; }   // clients.email
 
-        // Calculé
-        public int NbArticles { get; set; }
+        // Calculés
+        public int    NbArticles     { get; set; }
+        public string ResumeArticles { get; set; }   // GROUP_CONCAT("Baguette ×11, Pain ×2")
 
         // Chargées optionnellement
         public List<CommandeWebLigne> Lignes { get; set; } = new List<CommandeWebLigne>();

@@ -19,7 +19,11 @@ namespace CharlesNadejda.DAL
                    cl.nom       AS nom_client,
                    cl.prenom    AS prenom_client,
                    cl.email     AS email_client,
-                   (SELECT COUNT(*) FROM commandes_web_lignes l WHERE l.id_commande = cmd.id) AS nb_articles
+                   (SELECT COUNT(*) FROM commandes_web_lignes l WHERE l.id_commande = cmd.id) AS nb_articles,
+                   (SELECT GROUP_CONCAT(CONCAT(p.nom_commercial, ' ×', l.quantite) ORDER BY l.id SEPARATOR ', ')
+                    FROM commandes_web_lignes l
+                    INNER JOIN produits_web p ON p.id = l.id_produit_web
+                    WHERE l.id_commande = cmd.id) AS resume_articles
             FROM commandes_web cmd
             INNER JOIN clients cl ON cl.id = cmd.id_client";
 
@@ -117,7 +121,8 @@ namespace CharlesNadejda.DAL
             NomClient        = r["nom_client"].ToString(),
             PrenomClient     = r["prenom_client"].ToString(),
             EmailClient      = r["email_client"].ToString(),
-            NbArticles       = Convert.ToInt32(r["nb_articles"])
+            NbArticles       = Convert.ToInt32(r["nb_articles"]),
+            ResumeArticles   = r["resume_articles"] == DBNull.Value ? "" : r["resume_articles"].ToString()
         };
 
         private static CommandeWebLigne MapLigne(MySqlDataReader r) => new CommandeWebLigne

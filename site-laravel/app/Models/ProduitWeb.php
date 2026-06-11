@@ -26,20 +26,24 @@ class ProduitWeb extends Model
     }
 
     /**
-     * Scope : ajoute une sous-requête stock_disponible pour éviter le N+1.
+     * Scope : ajoute le stock en unités vendables (brut / quantite_output de la fiche BOM).
+     * Aligné avec le calcul ArtisaStock C# : FLOOR(SUM(dispo) / quantite_output).
      * Usage : ProduitWeb::withStockDisponible()->get()
      */
     public function scopeWithStockDisponible(Builder $query): Builder
     {
-        return $query->addSelect([
-            'stock_calc' => BomStock::selectRaw('COALESCE(SUM(quantite_disponible), 0)')
-                ->whereColumn('id_fiche', 'produits_web.id_bom_fiche')
-                ->where('quantite_disponible', '>', 0),
-        ]);
+        return $query->selectRaw('produits_web.*, (
+            SELECT FLOOR(COALESCE(SUM(bs.quantite_disponible), 0) / bf.quantite_output)
+            FROM bom_stocks bs
+            INNER JOIN bom_fiches bf ON bf.id = bs.id_fiche
+            WHERE bs.id_fiche = produits_web.id_bom_fiche
+              AND bs.quantite_disponible > 0
+            GROUP BY bf.quantite_output
+        ) AS stock_calc');
     }
 
     /**
-     * Stock calculé dynamiquement depuis bom_stocks.
+     * Stock en unités vendables, calculé depuis bom_stocks / quantite_output.
      * Utilise stock_calc si chargé via scope, sinon requête unitaire (fallback).
      */
     public function getStockDisponibleAttribute(): float
@@ -48,9 +52,14 @@ class ProduitWeb extends Model
             return (float) $this->attributes['stock_calc'];
         }
 
-        return (float) BomStock::where('id_fiche', $this->id_bom_fiche)
-            ->where('quantite_disponible', '>', 0)
-            ->sum('quantite_disponible');
+        return (float) DB::selectOne('
+            SELECT FLOOR(COALESCE(SUM(bs.quantite_disponible), 0) / bf.quantite_output) AS stock
+            FROM bom_stocks bs
+            INNER JOIN bom_fiches bf ON bf.id = bs.id_fiche
+            WHERE bs.id_fiche = ?
+              AND bs.quantite_disponible > 0
+            GROUP BY bf.quantite_output
+        ', [$this->id_bom_fiche])?->stock ?? 0;
     }
 
     public function getEnStockAttribute(): bool

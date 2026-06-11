@@ -347,15 +347,15 @@ namespace CharlesNadejda.Forms
             _dgvCommandes = MakeBoutiqueDgv();
             _dgvCommandes.Columns.AddRange(new DataGridViewColumn[]
             {
-                new DataGridViewTextBoxColumn { Name = "Id",          HeaderText = "N°",       DataPropertyName = "Id",              FillWeight = 8,  MinimumWidth = 45 },
-                new DataGridViewTextBoxColumn { Name = "Client",      HeaderText = "Client",   DataPropertyName = "NomCompletClient", FillWeight = 30, MinimumWidth = 120 },
-                new DataGridViewTextBoxColumn { Name = "DateCmd",     HeaderText = "Date",     DataPropertyName = "DateCommande",    FillWeight = 22, MinimumWidth = 120,
+                new DataGridViewTextBoxColumn { Name = "Id",          HeaderText = "N°",        DataPropertyName = "Id",               FillWeight = 6,  MinimumWidth = 40 },
+                new DataGridViewTextBoxColumn { Name = "Client",      HeaderText = "Client",    DataPropertyName = "NomCompletClient",  FillWeight = 16, MinimumWidth = 100 },
+                new DataGridViewTextBoxColumn { Name = "DateCmd",     HeaderText = "Date",      DataPropertyName = "DateCommande",     FillWeight = 14, MinimumWidth = 110,
                     DefaultCellStyle = new DataGridViewCellStyle { Format = "dd/MM/yyyy HH:mm" } },
-                new DataGridViewTextBoxColumn { Name = "NbArticles",  HeaderText = "Articles", DataPropertyName = "NbArticles",      FillWeight = 10, MinimumWidth = 60,
-                    DefaultCellStyle = new DataGridViewCellStyle { Alignment = DataGridViewContentAlignment.MiddleCenter } },
-                new DataGridViewTextBoxColumn { Name = "TotalTtc",    HeaderText = "Total (€)", DataPropertyName = "TotalTtc",       FillWeight = 15, MinimumWidth = 75,
+                new DataGridViewTextBoxColumn { Name = "Articles",    HeaderText = "Articles",  DataPropertyName = "ResumeArticles",   FillWeight = 28, MinimumWidth = 180 },
+                new DataGridViewTextBoxColumn { Name = "Adresse",     HeaderText = "Adresse",   DataPropertyName = "AdresseLivraison", FillWeight = 20, MinimumWidth = 140 },
+                new DataGridViewTextBoxColumn { Name = "TotalTtc",    HeaderText = "Total (€)", DataPropertyName = "TotalTtc",         FillWeight = 10, MinimumWidth = 65,
                     DefaultCellStyle = new DataGridViewCellStyle { Format = "N2", Alignment = DataGridViewContentAlignment.MiddleRight } },
-                new DataGridViewTextBoxColumn { Name = "Statut",      HeaderText = "Statut",   DataPropertyName = "Statut",          FillWeight = 12, MinimumWidth = 70 }
+                new DataGridViewTextBoxColumn { Name = "Statut",      HeaderText = "Statut",    DataPropertyName = "Statut",           FillWeight = 8,  MinimumWidth = 65 }
             });
             _dgvCommandes.SelectionChanged += (s, e) => CmdAfficherDetail();
 
@@ -472,7 +472,10 @@ namespace CharlesNadejda.Forms
                 AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill,
                 ColumnHeadersHeightSizeMode = DataGridViewColumnHeadersHeightSizeMode.DisableResizing,
                 ColumnHeadersHeight = 34,
-                RowTemplate = { Height = 30, MinimumHeight = 28 }
+                RowTemplate = { Height = 30, MinimumHeight = 28 },
+                AllowUserToResizeColumns = false,
+                AllowUserToResizeRows = false,
+                AllowUserToOrderColumns = false
             };
         }
 
