@@ -55,6 +55,7 @@ namespace CharlesNadejda.Forms
             Controls.Add(chkActif);
 
             PositionnerBoutons(210);
+            Load += (s, e) => txtNom.Focus();
 
             // Pré-remplir si édition
             if (_isEdit)

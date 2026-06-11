@@ -53,5 +53,7 @@ namespace CharlesNadejda.Models
 
         /// <summary>Prix par unité de base (€/g, €/ml, €/pce) = PrixUnitaire / QteParConditionnement. Protégé division par zéro.</summary>
         public decimal  PrixUnitaireBase        => QteParConditionnement > 0 ? PrixUnitaire / QteParConditionnement : 0;
+
+        public override string ToString() => $"Lot #{Id} — {NomIngredient} ({QuantiteDisponible} {UniteMesure})";
     }
 }

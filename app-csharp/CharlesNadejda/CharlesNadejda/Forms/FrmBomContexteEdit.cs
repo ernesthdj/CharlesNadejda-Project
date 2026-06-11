@@ -75,6 +75,7 @@ namespace CharlesNadejda.Forms
 
             Text = _isEdit ? "Modifier le contexte" : "Nouveau contexte de production";
             Load += FrmBomContexteEdit_Load;
+            Load += (s, e) => txtNom.Focus();
         }
 
         private void FrmBomContexteEdit_Load(object sender, EventArgs e)

@@ -1,7 +1,7 @@
 -- ============================================================
 -- CharlesNadejda — Schema complet de la base de donnees
 -- GENERE automatiquement depuis create_database.sql
--- Date de regeneration : 2026-06-11 (post migration v20)
+-- Date de regeneration : 2026-06-11 (post migration v21)
 -- ============================================================
 --
 -- IMPORTANT : Ce fichier est un MIROIR de create_database.sql.
@@ -9,7 +9,7 @@
 -- Si une modification schema est necessaire, modifier create_database.sql
 -- et regenerer ce fichier.
 --
--- 20 tables, 1 VIEW, 5 CHECK constraints
+-- 20 tables, 1 VIEW, 8 CHECK constraints, 2 UNIQUE keys supplementaires
 -- Modules : Referentiels, Ingredients/Lots, BOM, Production/Stock, Boutique Web, Utilisateurs
 -- ============================================================
 
@@ -89,7 +89,9 @@ CREATE TABLE IF NOT EXISTS fournisseurs (
     email     VARCHAR(255),
     telephone VARCHAR(20),
     adresse   VARCHAR(255),
-    notes     TEXT
+    notes     TEXT,
+    -- Unicite metier : un seul fournisseur par nom
+    UNIQUE KEY uk_fournisseur_nom (nom)
 ) ENGINE=InnoDB;
 
 -- ============================================================
@@ -201,6 +203,8 @@ CREATE TABLE IF NOT EXISTS bom_contextes (
     id_activite   INT NOT NULL,
     actif         TINYINT(1) NOT NULL DEFAULT 1,
     date_creation DATETIME DEFAULT CURRENT_TIMESTAMP,
+    -- Unicite metier : un seul contexte BOM par (nom, activite)
+    UNIQUE KEY uq_bomctx_nom_activite (nom, id_activite),
     -- Un contexte appartient a une activite ; RESTRICT empeche la suppression d'une activite utilisee
     CONSTRAINT fk_bc_activite
         FOREIGN KEY (id_activite) REFERENCES activites(id)
@@ -245,7 +249,10 @@ CREATE TABLE IF NOT EXISTS bom_fiches (
     -- Une fiche appartient a un niveau ; RESTRICT empeche la suppression d'un niveau qui a des fiches
     CONSTRAINT fk_bf_niveau
         FOREIGN KEY (id_niveau) REFERENCES bom_niveaux(id)
-        ON DELETE RESTRICT ON UPDATE CASCADE
+        ON DELETE RESTRICT ON UPDATE CASCADE,
+    -- Empeche un output a zero (evite division par zero dans le calcul de stock vendable)
+    CONSTRAINT chk_bf_output_positive
+        CHECK (quantite_output > 0)
 ) ENGINE=InnoDB;
 
 -- ============================================================
@@ -306,7 +313,10 @@ CREATE TABLE IF NOT EXISTS bom_productions (
     -- Fiche (recette) qui a ete executee ; RESTRICT car un historique de production ne doit pas etre orphelin
     CONSTRAINT fk_bp_fiche
         FOREIGN KEY (id_fiche) REFERENCES bom_fiches(id)
-        ON DELETE RESTRICT ON UPDATE CASCADE
+        ON DELETE RESTRICT ON UPDATE CASCADE,
+    -- Empeche une production a zero ou negative
+    CONSTRAINT chk_bomprod_qte_positive
+        CHECK (quantite_produite > 0)
 ) ENGINE=InnoDB;
 
 -- ============================================================
@@ -397,7 +407,10 @@ CREATE TABLE IF NOT EXISTS bom_reservations (
     -- Contexte de production qui a pose la reservation
     CONSTRAINT fk_br_contexte
         FOREIGN KEY (id_contexte) REFERENCES bom_contextes(id)
-        ON DELETE CASCADE ON UPDATE CASCADE
+        ON DELETE CASCADE ON UPDATE CASCADE,
+    -- Empeche une reservation a zero ou negative
+    CONSTRAINT chk_bomres_qte_positive
+        CHECK (quantite_reservee > 0)
 ) ENGINE=InnoDB;
 
 -- ============================================================
@@ -604,5 +617,5 @@ UNION ALL
     JOIN bom_fiches bf ON bf.id = bs.id_fiche;
 
 -- ============================================================
--- FIN — 20 tables + 1 VIEW + 5 CHECK constraints
+-- FIN — 20 tables + 1 VIEW + 8 CHECK constraints + 2 UNIQUE keys supplementaires
 -- ============================================================

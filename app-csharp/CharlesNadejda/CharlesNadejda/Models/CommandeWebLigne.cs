@@ -22,5 +22,7 @@ namespace CharlesNadejda.Models
 
         /// <summary>Chargé par CommandeWebDAL via JOIN produits_web.nom_commercial.</summary>
         public string NomProduit { get; set; }
+
+        public override string ToString() => $"{NomProduit} x{Quantite} — {SousTotal:N2} €";
     }
 }

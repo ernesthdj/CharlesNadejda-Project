@@ -5,7 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\BomStock;
 use App\Models\Client;
 use App\Models\CommandeWeb;
-use Illuminate\Http\Request;
+use App\Http\Requests\CheckoutRequest;
 use Illuminate\Support\Facades\DB;
 
 /**
@@ -51,15 +51,8 @@ class CommandeController extends Controller
      *
      * @return \Illuminate\Http\RedirectResponse
      */
-    public function valider(Request $request): \Illuminate\Http\RedirectResponse
+    public function valider(CheckoutRequest $request): \Illuminate\Http\RedirectResponse
     {
-        $request->validate([
-            'adresse_rue'   => 'nullable|string|max:255',
-            'adresse_cp'    => 'nullable|string|max:10',
-            'adresse_ville' => 'nullable|string|max:100',
-            'adresse_pays'  => 'nullable|string|max:100',
-        ]);
-
         DB::beginTransaction();
         try {
             $panier = CommandeWeb::where('id_client', session('client_id'))

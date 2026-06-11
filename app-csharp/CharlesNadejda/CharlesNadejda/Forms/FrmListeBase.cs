@@ -351,5 +351,28 @@ namespace CharlesNadejda.Forms
         /// Ex: FrmStocks l'utilise pour colorer les lignes en alerte de stock bas en rouge.
         /// </summary>
         protected virtual void AppliquerStylesLignes() { }
+
+        // ── Raccourcis clavier ──────────────────────────────────────────────
+        // Ctrl+N : Nouveau | Ctrl+E : Modifier | Suppr : Supprimer | Échap : Fermer
+
+        protected override bool ProcessCmdKey(ref Message msg, Keys keyData)
+        {
+            switch (keyData)
+            {
+                case Keys.Control | Keys.N:
+                    OnAjouter();
+                    return true;
+                case Keys.Control | Keys.E:
+                    OnModifier();
+                    return true;
+                case Keys.Delete:
+                    OnSupprimer();
+                    return true;
+                case Keys.Escape:
+                    Close();
+                    return true;
+            }
+            return base.ProcessCmdKey(ref msg, keyData);
+        }
     }
 }

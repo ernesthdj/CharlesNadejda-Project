@@ -209,6 +209,7 @@ namespace CharlesNadejda.Forms
             PositionnerBoutons(535);
 
             Load += FrmBomFicheEdit_Load;
+            Load += (s, e) => txtNom.Focus();
         }
 
         private void FrmBomFicheEdit_Load(object sender, EventArgs e)

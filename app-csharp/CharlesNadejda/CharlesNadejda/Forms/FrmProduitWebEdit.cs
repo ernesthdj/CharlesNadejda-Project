@@ -187,6 +187,7 @@ namespace CharlesNadejda.Forms
             y += 38;
 
             PositionnerBoutons(y);
+            Load += (s, e) => txtNom.Focus();
 
             // ── Pré-remplir si édition ────────
             if (_isEdit)

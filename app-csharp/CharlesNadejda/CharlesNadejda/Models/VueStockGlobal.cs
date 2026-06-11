@@ -55,9 +55,11 @@ namespace CharlesNadejda.Models
 
         /// <summary>Vrai si c'est un lot d'ingrédient (vs produit fabriqué).</summary>
         public bool EstLot              => TypeStock == TypeLotIngredient;
-        /// <summary>Vrai si la quantité disponible réelle est épuisée.</summary>
-        public bool EstEnAlerte         => QuantiteDispoReelle <= 0;
+        /// <summary>Vrai si la quantité disponible réelle est épuisée (rupture de stock).</summary>
+        public bool EstEnRupture        => QuantiteDispoReelle <= 0;
         /// <summary>Vrai si des réservations sont actives sur cette entrée.</summary>
         public bool ADesReservations    => QuantiteReservee > 0;
+
+        public override string ToString() => $"{Nom} — {QuantiteDispoReelle} {Unite}";
     }
 }

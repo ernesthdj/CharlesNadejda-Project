@@ -5,7 +5,7 @@ namespace App\Http\Controllers\Auth;
 use App\Http\Controllers\Controller;
 use App\Models\Client;
 use App\Models\CommandeWeb;
-use Illuminate\Http\Request;
+use App\Http\Requests\LoginRequest;
 
 /**
  * Authentification client — connexion et deconnexion.
@@ -40,13 +40,8 @@ class LoginController extends Controller
      *
      * @return \Illuminate\Http\RedirectResponse
      */
-    public function login(Request $request): \Illuminate\Http\RedirectResponse
+    public function login(LoginRequest $request): \Illuminate\Http\RedirectResponse
     {
-        $request->validate([
-            'email'    => 'required|email',
-            'password' => 'required|string',
-        ]);
-
         $client = Client::where('email', $request->email)
             ->where('actif', 1)
             ->first();

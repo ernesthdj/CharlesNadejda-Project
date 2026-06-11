@@ -81,8 +81,10 @@ namespace CharlesNadejda.Navigation
                     && _lastRessource == _state.RessourceActive)
                     return;
 
-                // Le Hub est toujours le même, pas besoin de reconstruire
-                if (screen == ScreenId.Hub)
+                // Le Hub, la BoutiqueWeb et les Parametres sont toujours les memes, pas besoin de reconstruire
+                if (screen == ScreenId.Hub
+                    || screen == ScreenId.BoutiqueWeb
+                    || screen == ScreenId.Parametres)
                     return;
             }
 

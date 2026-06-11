@@ -194,6 +194,7 @@ namespace CharlesNadejda.Forms
             PositionnerBoutons(470);
 
             Load += FrmIngredientEdit_Load;
+            Load += (s, e) => txtNom.Focus();
         }
 
         private void FrmIngredientEdit_Load(object sender, EventArgs e)

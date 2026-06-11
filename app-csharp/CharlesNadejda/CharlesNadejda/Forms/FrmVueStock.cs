@@ -350,7 +350,7 @@ namespace CharlesNadejda.Forms
             foreach (var l in finaux) AjouterLigne(l, "Produit final");
 
             _lblTotal.Text = $"{_lignes.Count} entrée{(_lignes.Count > 1 ? "s" : "")} " +
-                             $"· {_lignes.Count(x => x.EstEnAlerte)} pénurie{(_lignes.Count(x => x.EstEnAlerte) > 1 ? "s" : "")}";
+                             $"· {_lignes.Count(x => x.EstEnRupture)} pénurie{(_lignes.Count(x => x.EstEnRupture) > 1 ? "s" : "")}";
         }
 
         private void AjouterSectionHeader(string titre)
@@ -783,7 +783,7 @@ namespace CharlesNadejda.Forms
 
             // Couleur de fond de la ligne entière
             Color fond;
-            if (l.EstEnAlerte)
+            if (l.EstEnRupture)
                 fond = AppColors.RougePenur;
             else if (l.QuantiteReservee > 0)
                 fond = AppColors.OrangeReserv;

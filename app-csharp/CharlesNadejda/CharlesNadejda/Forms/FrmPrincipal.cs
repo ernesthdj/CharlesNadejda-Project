@@ -367,6 +367,7 @@ namespace CharlesNadejda.Forms
                 { ScreenId.Planning,        "Planning" },
                 { ScreenId.DevisPatisserie, "Devis pâtisserie" },
                 { ScreenId.Mouvements,      "Mouvements" },
+                { ScreenId.BoutiqueWeb,     "Boutique Web" },
                 { ScreenId.Parametres,      "Paramètres" },
             };
             string title;
@@ -780,42 +781,6 @@ namespace CharlesNadejda.Forms
             _pnlDroit.ResumeLayout();
         }
 
-        // ════════════════════════════════════════════════════════════════
-        //  Menu / Session
-        // ════════════════════════════════════════════════════════════════
-
-        // Modules du catalogue Web (Catégories, Parfums, Produits, Commandes) — à venir.
-        // Ces handlers existent déjà car câblés dans le Designer, mais ils ne font rien
-        // d'utile pour l'instant — juste un message "à venir".
-        // Connectés à une future intégration avec le site Laravel.
-        private void menuCatCategories_Click(object sender, EventArgs e) => PlaceholderWeb();
-        private void menuCatParfums_Click(object sender, EventArgs e)    => PlaceholderWeb();
-        private void menuCatProduits_Click(object sender, EventArgs e)   => PlaceholderWeb();
-        private void menuCommandes_Click(object sender, EventArgs e)     => PlaceholderWeb();
-
-        // Raccourci menu → Fournisseurs (même effet que cliquer dans la sidebar)
-        private void menuFournisseurs_Click(object sender, EventArgs e) =>
-            NavigateTo(ScreenId.Ressources, () => _state.SetRessource(RessourceType.Fournisseurs));
-
-        // PlaceholderWeb — message générique pour les modules web pas encore connectés
-        private static void PlaceholderWeb() =>
-            MessageBox.Show("Module Catalogue Web — à venir.", "En développement",
-                MessageBoxButtons.OK, MessageBoxIcon.Information);
-
-        // menuDeconnexion_Click — déconnecte l'utilisateur et relance l'app.
-        // Application.Restart() kill le process actuel et en relance un nouveau,
-        // ce qui fait réapparaître FrmLogin. C'est brutal mais efficace.
-        private void menuDeconnexion_Click(object sender, EventArgs e)
-        {
-            if (MessageBox.Show("Se déconnecter ?", "Confirmation",
-                    MessageBoxButtons.YesNo, MessageBoxIcon.Question) == DialogResult.Yes)
-            {
-                // Application.Restart() relance le processus complet → FrmLogin s'affiche à nouveau.
-                // Toute donnée non persistée est perdue — acceptable pour ArtisaStock (pas de session mémoire critique).
-                Application.Restart();
-            }
-        }
-
         // OnFormClosed — quand le formulaire principal se ferme, toute l'app s'arrête.
         // Application.Exit() ferme proprement tous les threads et libère les ressources.
         protected override void OnFormClosed(FormClosedEventArgs e)
@@ -827,49 +792,5 @@ namespace CharlesNadejda.Forms
         // Handler Resize vide — câblé dans le Designer mais pas utilisé pour l'instant.
         // Je le garde pour éviter un crash si le Designer essaie de l'appeler.
         private void FrmPrincipal_Resize(object sender, EventArgs e) { }
-
-        // ════════════════════════════════════════════════════════════════
-        //  Renderer menu sombre
-        // ════════════════════════════════════════════════════════════════
-
-        // DarkMenuRenderer — personnalise le rendu visuel du menu principal (si utilisé).
-        // Au lieu du look Windows classique bleu/gris, j'ai un menu chocolat/doré
-        // qui s'intègre avec la palette de l'app.
-        // Hérite de ToolStripProfessionalRenderer pour ne surcharger que ce qui m'intéresse.
-        public class DarkMenuRenderer : ToolStripProfessionalRenderer
-        {
-            public DarkMenuRenderer() : base(new DarkColorTable()) { }
-
-            // Fond de l'item : doré si survolé/pressé, chocolat sinon
-            protected override void OnRenderMenuItemBackground(ToolStripItemRenderEventArgs e)
-            {
-                using (var br = new SolidBrush((e.Item.Selected || e.Item.Pressed)
-                    ? AppColors.Or : AppColors.ChocoBrand))
-                    e.Graphics.FillRectangle(br, new Rectangle(Point.Empty, e.Item.Size));
-            }
-
-            // Texte : chocolat foncé sur fond doré (hover), blanc sur fond chocolat (normal)
-            protected override void OnRenderItemText(ToolStripItemTextRenderEventArgs e)
-            {
-                e.TextColor = (e.Item.Selected || e.Item.Pressed) ? AppColors.ChocoBrand : Color.White;
-                base.OnRenderItemText(e);
-            }
-        }
-
-        // DarkColorTable — table de couleurs pour le menu sombre.
-        // Override les couleurs par défaut de ProfessionalColorTable
-        // pour que les sous-menus, bordures, etc. soient aussi dans la palette chocolat.
-        private class DarkColorTable : ProfessionalColorTable
-        {
-            public override Color MenuItemSelected              => AppColors.Or;
-            public override Color MenuItemBorder                => Color.Transparent;
-            public override Color MenuBorder                    => Color.FromArgb(80, 55, 30);
-            public override Color ToolStripDropDownBackground   => Color.FromArgb(50, 32, 18);
-            public override Color ImageMarginGradientBegin      => Color.FromArgb(50, 32, 18);
-            public override Color ImageMarginGradientMiddle     => Color.FromArgb(50, 32, 18);
-            public override Color ImageMarginGradientEnd        => Color.FromArgb(50, 32, 18);
-            public override Color MenuItemSelectedGradientBegin => AppColors.Or;
-            public override Color MenuItemSelectedGradientEnd   => AppColors.Or;
-        }
     }
 }
