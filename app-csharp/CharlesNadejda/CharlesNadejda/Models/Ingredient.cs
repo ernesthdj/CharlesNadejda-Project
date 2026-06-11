@@ -2,16 +2,25 @@ using System;
 
 namespace CharlesNadejda.Models
 {
+    /// <summary>
+    /// Fiche ingrédient (matière première).
+    /// Représente la définition d'un ingrédient dans le référentiel — pas un lot physique.
+    /// Le stock réel est agrégé depuis les lots_ingredients via le DAL.
+    /// </summary>
     public class Ingredient
     {
+        // ── Colonnes DB (table fiches_ingredients) ────────────────
+
         public int      Id                      { get; set; }
         public string   Nom                     { get; set; }
         public string   Marque                  { get; set; }
         public string   Description             { get; set; }
         /// <summary>Unité de base atomique : 'g', 'ml' ou 'piece'. Toujours l'unité de stockage interne.</summary>
         public string   UniteMesure             { get; set; }
-        public string   TypePhysique            { get; set; }   // solide | liquide | poudre | piece
-        public decimal? Densite                 { get; set; }   // g/ml — obligatoire si liquide ou poudre
+        /// <summary>Nature physique : solide, liquide, poudre ou piece. Conditionne la densité obligatoire.</summary>
+        public string   TypePhysique            { get; set; }
+        /// <summary>Densité en g/ml — obligatoire si liquide ou poudre, pour les conversions de volume.</summary>
+        public decimal? Densite                 { get; set; }
         /// <summary>Label du conditionnement commercial (ex: "Sac 10 kg", "Brique 1 L").</summary>
         public string   ConditionnementLabel    { get; set; }
         /// <summary>Quantité en unité de base par conditionnement (ex: 10000 pour Sac 10 kg en grammes).</summary>
@@ -20,24 +29,32 @@ namespace CharlesNadejda.Models
         public int      NbParLot                { get; set; } = 1;
         /// <summary>Prix de référence par conditionnement (€/sac, €/bouteille…).</summary>
         public decimal  PrixAchatReference      { get; set; }
+        /// <summary>Seuil en unité de base en dessous duquel l'alerte stock se déclenche.</summary>
         public decimal? SeuilAlerteStock        { get; set; }
         /// <summary>Stock cible (100% de la jauge) en unité de base. Paramétré par l'utilisateur.</summary>
         public decimal? StockCible              { get; set; }
         public int?     IdFournisseurDefaut      { get; set; }
-        public string   NomFournisseur          { get; set; }   // jointure fournisseurs
         public bool     Actif                   { get; set; }
 
-        /// <summary>Coût par unité de base (€/g, €/ml, €/pce), calculé depuis le prix de référence.</summary>
+        // ── Propriétés de jointure (chargées par le DAL) ──────────
+
+        /// <summary>Chargé par IngredientDAL via LEFT JOIN fournisseurs.</summary>
+        public string   NomFournisseur          { get; set; }
+
+        /// <summary>Chargé par IngredientDAL via COALESCE(SUM(lots_ingredients.quantite_disponible)).</summary>
+        public decimal StockActuel { get; set; }
+
+        // ── Propriétés calculées ──────────────────────────────────
+
+        /// <summary>Prix par unité de base = PrixAchatReference / QteParConditionnement. Protégé contre division par zéro.</summary>
         public decimal PrixParUniteBase =>
             QteParConditionnement > 0 ? PrixAchatReference / QteParConditionnement : PrixAchatReference;
 
+        /// <summary>Vrai si le stock actuel est inférieur ou égal au seuil d'alerte configuré.</summary>
         public bool EstEnAlerte =>
             SeuilAlerteStock.HasValue && StockActuel <= SeuilAlerteStock.Value;
 
-        // Calculé depuis les lots — rempli par le DAL si besoin
-        public decimal StockActuel { get; set; }
-
-        /// <summary>Nombre de pièces (conditionnements) en stock, arrondi vers le bas.</summary>
+        /// <summary>Nombre de conditionnements complets en stock = Floor(StockActuel / QteParConditionnement).</summary>
         public decimal StockPieces =>
             QteParConditionnement > 0 ? Math.Floor(StockActuel / QteParConditionnement) : 0;
 

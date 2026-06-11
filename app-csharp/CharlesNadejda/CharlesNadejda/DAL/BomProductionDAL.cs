@@ -157,7 +157,7 @@ namespace CharlesNadejda.DAL
                 decimal qteNecessaire = ligne.Quantite * multiplicateur;
                 decimal qteDisponible;
 
-                if (ligne.TypeInput == "ingredient")
+                if (ligne.TypeInput == BomFiche.TypeInputIngredient)
                 {
                     // Conversion de l'unité de la recette vers l'unité de base du stock
                     // Ex: la recette dit 500g mais le stock est en kg → je convertis
@@ -222,7 +222,7 @@ namespace CharlesNadejda.DAL
                 decimal qteNecessaire = ligne.Quantite * multiplicateur;
                 decimal qteDisponible;
 
-                if (ligne.TypeInput == "ingredient")
+                if (ligne.TypeInput == BomFiche.TypeInputIngredient)
                 {
                     decimal qteNecessaireBase = UnitConvertisseur.Convertir(
                         qteNecessaire, ligne.UniteMesure, ligne.UniteMesureInput);
@@ -299,7 +299,7 @@ namespace CharlesNadejda.DAL
                 decimal qteNecessaireConv = UnitConvertisseur.Convertir(
                     qteNecessaire, ligne.UniteMesure, ligne.UniteMesureInput);
 
-                if (ligne.TypeInput == "ingredient")
+                if (ligne.TypeInput == BomFiche.TypeInputIngredient)
                 {
                     // Lecture du stock ingrédient (somme de tous les lots disponibles)
                     qteDisponible = BomStockDAL.GetDisponibleIngredient(ligne.IdInputIngredient.Value);
@@ -485,7 +485,7 @@ namespace CharlesNadejda.DAL
             decimal restant = UnitConvertisseur.Convertir(
                 aConommer, ligne.UniteMesure, ligne.UniteMesureInput);
 
-            if (ligne.TypeInput == "ingredient")
+            if (ligne.TypeInput == BomFiche.TypeInputIngredient)
             {
                 // FIFO : je récupère les lots triés par date_achat ASC (les plus anciens d'abord)
                 var lots = BomStockDAL.GetLotsDispoFIFO(ligne.IdInputIngredient.Value, conn, tx);
@@ -524,7 +524,7 @@ namespace CharlesNadejda.DAL
                     }
 
                     // InsertLigne() — traçabilité : j'enregistre quel lot a fourni combien
-                    InsertLigne(conn, tx, idProduction, "lot_ingredient", idLot, null, pris, prixUnit);
+                    InsertLigne(conn, tx, idProduction, BomProductionLigne.SourceLotIngredient, idLot, null, pris, prixUnit);
 
                     // Accumulation du coût : quantité prise × prix unitaire du lot
                     coutLigne += pris * prixUnit;
@@ -565,7 +565,7 @@ namespace CharlesNadejda.DAL
                     }
 
                     // Traçabilité : quel stock intermédiaire a fourni combien
-                    InsertLigne(conn, tx, idProduction, "bom_stock", null, idStock, pris, coutUnit);
+                    InsertLigne(conn, tx, idProduction, BomProductionLigne.SourceBomStock, null, idStock, pris, coutUnit);
 
                     coutLigne += pris * coutUnit;
                     restant   -= pris;
@@ -582,7 +582,7 @@ namespace CharlesNadejda.DAL
 
         // InsertLigne() — insère une ligne de traçabilité dans bom_productions_lignes
         // Chaque ligne dit : "pour cette production, j'ai pris X unités du lot/stock Y au prix Z"
-        // typeSource = "lot_ingredient" ou "bom_stock" selon la source
+        // typeSource = BomProductionLigne.SourceLotIngredient ou .SourceBomStock selon la source
         private static void InsertLigne(MySqlConnection conn, MySqlTransaction tx,
                                          int idProduction, string typeSource,
                                          int? idLot, int? idStock,

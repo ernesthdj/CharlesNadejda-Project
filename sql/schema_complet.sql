@@ -14,7 +14,7 @@
 -- ============================================================
 
 -- ============================================================
--- CONTENU IDENTIQUE A create_database.sql
+-- CONTENU IDENTIQUE A create_database.sql (commentaires inclus)
 -- ============================================================
 
 CREATE DATABASE IF NOT EXISTS charlesnadejda
@@ -23,6 +23,13 @@ CREATE DATABASE IF NOT EXISTS charlesnadejda
 
 USE charlesnadejda;
 SET FOREIGN_KEY_CHECKS = 0;
+
+-- ============================================================
+-- MODULE : REFERENTIELS (tables de base partagees par tout l'ERP)
+-- Activites = branches metier du patissier (ex: "Pralines", "Boulangerie").
+-- Stocks = emplacements physiques de rangement (ex: "Frigo 1", "Reserve seche").
+-- La table de jonction activites_stocks lie les deux en M:N.
+-- ============================================================
 
 -- ============================================================
 -- 1. activites (v07)
@@ -49,17 +56,28 @@ CREATE TABLE IF NOT EXISTS stocks (
 -- ============================================================
 -- 3. activites_stocks (v10) — jonction M:N
 -- ============================================================
+-- Lie une activite a un ou plusieurs stocks physiques.
+-- Permet de filtrer les lots visibles par activite dans l'UI.
 CREATE TABLE IF NOT EXISTS activites_stocks (
     id_activite INT NOT NULL,
     id_stock    INT NOT NULL,
     PRIMARY KEY (id_activite, id_stock),
+    -- Une liaison disparait si l'activite est supprimee
     CONSTRAINT fk_as_activite
         FOREIGN KEY (id_activite) REFERENCES activites(id)
         ON DELETE CASCADE ON UPDATE CASCADE,
+    -- Une liaison disparait si le stock est supprime
     CONSTRAINT fk_as_stock
         FOREIGN KEY (id_stock) REFERENCES stocks(id)
         ON DELETE CASCADE ON UPDATE CASCADE
 ) ENGINE=InnoDB;
+
+-- ============================================================
+-- MODULE : INGREDIENTS & LOTS (gestion des matieres premieres)
+-- Fournisseurs → Fiches ingredients (catalogue) → Lots (achats physiques).
+-- Les lots suivent un modele FIFO : quantite_disponible diminue
+-- au fur et a mesure des consommations en production.
+-- ============================================================
 
 -- ============================================================
 -- 4. fournisseurs
@@ -96,6 +114,7 @@ CREATE TABLE IF NOT EXISTS fiches_ingredients (
     stock_cible             DECIMAL(10,4) DEFAULT NULL,
     actif                   TINYINT(1) NOT NULL DEFAULT 1,
     date_creation           DATETIME DEFAULT CURRENT_TIMESTAMP,
+    -- Fournisseur par defaut pour les reapprovisionnements ; mis a NULL si le fournisseur est supprime
     CONSTRAINT fk_fi_fournisseur
         FOREIGN KEY (id_fournisseur_defaut) REFERENCES fournisseurs(id)
         ON DELETE SET NULL ON UPDATE CASCADE
@@ -122,17 +141,27 @@ CREATE TABLE IF NOT EXISTS lots_ingredients (
     date_creation       DATETIME DEFAULT CURRENT_TIMESTAMP,
     tva_pct             DECIMAL(5,2) NOT NULL DEFAULT 0
                         COMMENT 'Taux de TVA en % (0 = exonere). Prix stocke toujours en HTVA.',
+    -- Un lot est lie a UNE fiche ingredient ; suppression en cascade si la fiche disparait
     CONSTRAINT fk_lot_fiche
         FOREIGN KEY (id_fiche_ingredient) REFERENCES fiches_ingredients(id)
         ON DELETE CASCADE ON UPDATE CASCADE,
+    -- Emplacement physique ou le lot est range
     CONSTRAINT fk_lots_stock
         FOREIGN KEY (id_stock) REFERENCES stocks(id),
+    -- Fournisseur effectif de cet achat (peut differer du fournisseur par defaut de la fiche)
     CONSTRAINT fk_lot_fournisseur
         FOREIGN KEY (id_fournisseur) REFERENCES fournisseurs(id)
         ON DELETE SET NULL ON UPDATE CASCADE,
+    -- Empeche un stock negatif : la quantite disponible ne peut jamais descendre sous zero
     CONSTRAINT chk_lot_qte_positive
         CHECK (quantite_disponible >= 0)
 ) ENGINE=InnoDB;
+
+-- ============================================================
+-- MODULE : UTILISATEURS (authentification app C# WinForms)
+-- Comptes admin/client pour l'application desktop.
+-- Mots de passe hashes en BCrypt (compatible PHP <-> C#).
+-- ============================================================
 
 -- ============================================================
 -- 7. utilisateurs
@@ -153,6 +182,15 @@ CREATE TABLE IF NOT EXISTS utilisateurs (
 ) ENGINE=InnoDB;
 
 -- ============================================================
+-- MODULE : BOM (Bill of Materials — nomenclature de fabrication)
+-- Gere la structure hierarchique des recettes :
+--   Contexte (ex: "Pralines") → Niveaux (ex: "Ganaches", "Enrobage")
+--     → Fiches (ex: "Ganache Praline") → Lignes (ingredients ou fiches)
+-- Un contexte appartient a une activite. Les niveaux ordonnent les
+-- etapes de fabrication. Les fiches sont les recettes detaillees.
+-- ============================================================
+
+-- ============================================================
 -- 8. bom_contextes (FK -> activites)
 -- ============================================================
 CREATE TABLE IF NOT EXISTS bom_contextes (
@@ -162,6 +200,7 @@ CREATE TABLE IF NOT EXISTS bom_contextes (
     id_activite   INT NOT NULL,
     actif         TINYINT(1) NOT NULL DEFAULT 1,
     date_creation DATETIME DEFAULT CURRENT_TIMESTAMP,
+    -- Un contexte appartient a une activite ; RESTRICT empeche la suppression d'une activite utilisee
     CONSTRAINT fk_bc_activite
         FOREIGN KEY (id_activite) REFERENCES activites(id)
         ON DELETE RESTRICT ON UPDATE CASCADE
@@ -177,7 +216,9 @@ CREATE TABLE IF NOT EXISTS bom_niveaux (
     nom           VARCHAR(200) NOT NULL,
     description   TEXT,
     date_creation DATETIME DEFAULT CURRENT_TIMESTAMP,
+    -- Unicite : un seul niveau par position dans un contexte donne
     UNIQUE KEY uq_bom_niveau_ordre (id_contexte, ordre),
+    -- Un niveau appartient a un contexte ; CASCADE car supprimer un contexte supprime ses niveaux
     CONSTRAINT fk_bn_contexte
         FOREIGN KEY (id_contexte) REFERENCES bom_contextes(id)
         ON DELETE CASCADE ON UPDATE CASCADE
@@ -198,7 +239,9 @@ CREATE TABLE IF NOT EXISTS bom_fiches (
     stock_cible       DECIMAL(10,4) DEFAULT NULL,
     actif             TINYINT(1) NOT NULL DEFAULT 1,
     date_creation     DATETIME DEFAULT CURRENT_TIMESTAMP,
+    -- Unicite : un seul nom de fiche par niveau (ex: pas deux "Ganache Praline" dans le meme niveau)
     UNIQUE KEY uq_fiche_nom_niveau (nom, id_niveau),
+    -- Une fiche appartient a un niveau ; RESTRICT empeche la suppression d'un niveau qui a des fiches
     CONSTRAINT fk_bf_niveau
         FOREIGN KEY (id_niveau) REFERENCES bom_niveaux(id)
         ON DELETE RESTRICT ON UPDATE CASCADE
@@ -215,21 +258,33 @@ CREATE TABLE IF NOT EXISTS bom_fiches_lignes (
     id_input_fiche      INT DEFAULT NULL,
     quantite            DECIMAL(12,4) NOT NULL,
     unite_mesure        ENUM('mg','g','kg','ml','cl','dl','l','piece') NOT NULL,
+    -- Fiche parente (la recette qui contient cette ligne)
     CONSTRAINT fk_bfl_fiche
         FOREIGN KEY (id_fiche) REFERENCES bom_fiches(id)
         ON DELETE CASCADE ON UPDATE CASCADE,
+    -- Si la ligne est de type 'ingredient' : reference vers la fiche ingredient (matiere premiere)
     CONSTRAINT fk_bfl_ingredient
         FOREIGN KEY (id_input_ingredient) REFERENCES fiches_ingredients(id)
         ON DELETE CASCADE ON UPDATE CASCADE,
+    -- Si la ligne est de type 'fiche' : reference vers une autre fiche BOM (sous-recette)
     CONSTRAINT fk_bfl_fiche_input
         FOREIGN KEY (id_input_fiche) REFERENCES bom_fiches(id)
         ON DELETE CASCADE ON UPDATE CASCADE,
+    -- Exclusion mutuelle : une ligne est SOIT un ingredient SOIT une sous-fiche, jamais les deux
     CONSTRAINT chk_bfl_input CHECK (
         (type_input = 'ingredient' AND id_input_ingredient IS NOT NULL AND id_input_fiche IS NULL)
         OR
         (type_input = 'fiche' AND id_input_fiche IS NOT NULL AND id_input_ingredient IS NULL)
     )
 ) ENGINE=InnoDB;
+
+-- ============================================================
+-- MODULE : PRODUCTION & STOCK BOM (execution des recettes et suivi des produits fabriques)
+-- bom_productions      = un acte de fabrication d'une fiche (quantite, cout, date)
+-- bom_productions_lignes = detail des matieres consommees (lots ou stocks BOM)
+-- bom_stocks           = stock des produits fabriques (output d'une production)
+-- bom_reservations     = quantites reservees sur un lot pour un contexte de production
+-- ============================================================
 
 -- ============================================================
 -- 12. bom_productions
@@ -243,9 +298,11 @@ CREATE TABLE IF NOT EXISTS bom_productions (
     cout_unitaire     DECIMAL(10,4) NOT NULL DEFAULT 0.0000,
     date_production   DATETIME DEFAULT CURRENT_TIMESTAMP,
     notes             TEXT,
+    -- Niveau dans lequel cette production a eu lieu (tracabilite)
     CONSTRAINT fk_bp_niveau
         FOREIGN KEY (id_niveau) REFERENCES bom_niveaux(id)
         ON DELETE RESTRICT ON UPDATE CASCADE,
+    -- Fiche (recette) qui a ete executee ; RESTRICT car un historique de production ne doit pas etre orphelin
     CONSTRAINT fk_bp_fiche
         FOREIGN KEY (id_fiche) REFERENCES bom_fiches(id)
         ON DELETE RESTRICT ON UPDATE CASCADE
@@ -266,6 +323,8 @@ CREATE TABLE IF NOT EXISTS bom_stocks (
     date_production     DATE NOT NULL,
     date_dlc            DATE DEFAULT NULL,
     date_creation       DATETIME DEFAULT CURRENT_TIMESTAMP,
+    -- Denormalisation volontaire : niveau, contexte et activite sont stockes
+    -- pour permettre des filtres rapides sans jointures dans la vue stock global.
     CONSTRAINT fk_bs_niveau
         FOREIGN KEY (id_niveau) REFERENCES bom_niveaux(id)
         ON DELETE RESTRICT ON UPDATE CASCADE,
@@ -275,12 +334,15 @@ CREATE TABLE IF NOT EXISTS bom_stocks (
     CONSTRAINT fk_bs_activite
         FOREIGN KEY (id_activite) REFERENCES activites(id)
         ON DELETE RESTRICT ON UPDATE CASCADE,
+    -- Fiche qui a produit ce stock (permet de connaitre le nom du produit fabrique)
     CONSTRAINT fk_bs_fiche
         FOREIGN KEY (id_fiche) REFERENCES bom_fiches(id)
         ON DELETE RESTRICT ON UPDATE CASCADE,
+    -- Production d'origine (tracabilite : quel acte de fabrication a cree ce lot)
     CONSTRAINT fk_bs_production
         FOREIGN KEY (id_production) REFERENCES bom_productions(id)
         ON DELETE RESTRICT ON UPDATE CASCADE,
+    -- Empeche un stock BOM negatif
     CONSTRAINT chk_bomstock_qte_positive
         CHECK (quantite_disponible >= 0)
 ) ENGINE=InnoDB;
@@ -296,15 +358,19 @@ CREATE TABLE IF NOT EXISTS bom_productions_lignes (
     id_bom_stock         INT DEFAULT NULL,
     quantite_consommee   DECIMAL(12,4) NOT NULL,
     cout_unitaire_moment DECIMAL(10,4) NOT NULL,
+    -- Production parente ; CASCADE car les lignes n'ont pas de sens sans la production
     CONSTRAINT fk_bpl_production
         FOREIGN KEY (id_production) REFERENCES bom_productions(id)
         ON DELETE CASCADE ON UPDATE CASCADE,
+    -- Si source = 'lot_ingredient' : lot de matiere premiere consomme (FIFO)
     CONSTRAINT fk_bpl_lot
         FOREIGN KEY (id_lot_ingredient) REFERENCES lots_ingredients(id)
         ON DELETE RESTRICT ON UPDATE CASCADE,
+    -- Si source = 'bom_stock' : stock de produit fabrique consomme (sous-recette)
     CONSTRAINT fk_bpl_stock
         FOREIGN KEY (id_bom_stock) REFERENCES bom_stocks(id)
         ON DELETE RESTRICT ON UPDATE CASCADE,
+    -- Exclusion mutuelle : une ligne consomme SOIT un lot ingredient SOIT un stock BOM
     CONSTRAINT chk_bpl_source CHECK (
         (type_source = 'lot_ingredient' AND id_lot_ingredient IS NOT NULL AND id_bom_stock IS NULL)
         OR
@@ -323,13 +389,23 @@ CREATE TABLE IF NOT EXISTS bom_reservations (
     date_reservation  DATETIME DEFAULT CURRENT_TIMESTAMP,
     notes             TEXT,
     actif             TINYINT(1) NOT NULL DEFAULT 1,
+    -- Lot dont une quantite est reservee pour une production future
     CONSTRAINT fk_br_lot
         FOREIGN KEY (id_lot) REFERENCES lots_ingredients(id)
         ON DELETE CASCADE ON UPDATE CASCADE,
+    -- Contexte de production qui a pose la reservation
     CONSTRAINT fk_br_contexte
         FOREIGN KEY (id_contexte) REFERENCES bom_contextes(id)
         ON DELETE CASCADE ON UPDATE CASCADE
 ) ENGINE=InnoDB;
+
+-- ============================================================
+-- MODULE : BOUTIQUE WEB (e-commerce Laravel)
+-- Categories → Produits (lies a une fiche BOM) → Commandes → Lignes.
+-- Les clients web ont leur propre table (separee de utilisateurs)
+-- car le site Laravel gere son authentification independamment.
+-- Les prix sont TTC cote boutique (contrairement aux prix HTVA des lots).
+-- ============================================================
 
 -- ============================================================
 -- 16. categories_web (v15)
@@ -379,10 +455,13 @@ CREATE TABLE IF NOT EXISTS produits_web (
     ordre_affichage   INT          NOT NULL DEFAULT 0,
     date_creation     DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
     date_modification DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    -- Lien vers la fiche BOM dont ce produit est la version commerciale (1:1)
     CONSTRAINT fk_prodweb_bomfiche
         FOREIGN KEY (id_bom_fiche) REFERENCES bom_fiches(id) ON DELETE RESTRICT,
+    -- Categorie d'affichage sur le site ; mise a NULL si la categorie est supprimee
     CONSTRAINT fk_prodweb_categorie
         FOREIGN KEY (id_categorie) REFERENCES categories_web(id) ON DELETE SET NULL,
+    -- Un produit web correspond a exactement une fiche BOM (pas de doublons)
     CONSTRAINT uk_prodweb_fiche UNIQUE (id_bom_fiche)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
@@ -398,6 +477,7 @@ CREATE TABLE IF NOT EXISTS commandes_web (
     adresse_livraison   TEXT,
     date_commande       DATETIME,
     date_creation       DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    -- Un client ne peut pas etre supprime s'il a des commandes (RESTRICT = protection historique)
     CONSTRAINT fk_cmdweb_client
         FOREIGN KEY (id_client) REFERENCES clients(id) ON DELETE RESTRICT
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
@@ -412,16 +492,21 @@ CREATE TABLE IF NOT EXISTS commandes_web_lignes (
     quantite        INT          NOT NULL DEFAULT 1,
     prix_unitaire   DECIMAL(10,2) NOT NULL,
     sous_total      DECIMAL(10,2) GENERATED ALWAYS AS (quantite * prix_unitaire) STORED,
+    -- Les lignes suivent le cycle de vie de la commande (CASCADE)
     CONSTRAINT fk_cmdligne_cmd
         FOREIGN KEY (id_commande) REFERENCES commandes_web(id) ON DELETE CASCADE,
+    -- Un produit ne peut pas etre supprime s'il est reference dans une commande
     CONSTRAINT fk_cmdligne_prodweb
         FOREIGN KEY (id_produit_web) REFERENCES produits_web(id) ON DELETE RESTRICT,
+    -- Quantite minimale = 1 (pas de ligne a zero article)
     CONSTRAINT chk_cmdligne_qte_positive
         CHECK (quantite >= 1)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- ============================================================
 -- Index de performance (v15)
+-- Optimisent les requetes les plus frequentes du site Laravel :
+-- catalogue (en_vente + tri), filtrage par categorie, panier client.
 -- ============================================================
 CREATE INDEX idx_prodweb_envente ON produits_web (en_vente, ordre_affichage);
 CREATE INDEX idx_prodweb_categorie ON produits_web (id_categorie);
@@ -434,9 +519,25 @@ SET FOREIGN_KEY_CHECKS = 1;
 -- ============================================================
 -- VIEW : vue_stock_global (v11, maj v17, maj v18)
 -- ============================================================
+-- Vue unifiee de TOUT le stock de l'atelier, qu'il s'agisse
+-- de matieres premieres achetees ou de produits fabriques en interne.
+--
+-- Structure UNION ALL en deux parties :
+--   PARTIE 1 — Lots ingredients (matieres premieres) :
+--     Source = lots_ingredients + fiches_ingredients + stocks.
+--     Inclut le calcul des reservations actives (LEFT JOIN bom_reservations)
+--     pour obtenir la quantite_dispo_reelle = disponible - reservee.
+--
+--   PARTIE 2 — Produits fabriques (output BOM) :
+--     Source = bom_stocks + bom_fiches.
+--     Pas de reservations (quantite_reservee = 0 en dur).
+--
+-- Les colonnes sont alignees pour que les deux parties aient le meme schema.
+-- Les colonnes non applicables sont remplies par NULL (ex: id_stock pour les produits fabriques).
+-- ============================================================
 CREATE OR REPLACE VIEW vue_stock_global AS
 
-    -- Matieres premieres (lots achetes)
+    -- PARTIE 1 : Matieres premieres (lots achetes)
     SELECT
         'lot_ingredient'        AS type_stock,
         li.id                   AS id_entree,
@@ -471,7 +572,7 @@ CREATE OR REPLACE VIEW vue_stock_global AS
 
 UNION ALL
 
-    -- Produits fabriques (output BOM)
+    -- PARTIE 2 : Produits fabriques (output des productions BOM)
     SELECT
         'produit_fabrique'      AS type_stock,
         bs.id                   AS id_entree,

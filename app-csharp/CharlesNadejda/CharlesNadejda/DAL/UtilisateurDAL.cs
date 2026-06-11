@@ -3,9 +3,17 @@ using CharlesNadejda.Models;
 
 namespace CharlesNadejda.DAL
 {
-    // 📌 SCRIPT DEFENSE — Étape 0.1 : Authentification (requête paramétrée + BCrypt.Verify)
+    /// <summary>
+    /// Authentification des utilisateurs admin de l'ERP (table utilisateurs).
+    /// Utilise BCrypt pour la vérification du mot de passe — compatible avec le hash Laravel.
+    /// </summary>
     public static class UtilisateurDAL
     {
+        /// <summary>
+        /// Authentifie un administrateur par email + mot de passe BCrypt.
+        /// Retourne l'utilisateur si les credentials sont valides, null sinon.
+        /// Seuls les utilisateurs actifs avec le rôle "admin" peuvent se connecter.
+        /// </summary>
         public static Utilisateur Authenticate(string email, string motDePasse)
         {
             using (var conn = DbHelper.GetConnection())

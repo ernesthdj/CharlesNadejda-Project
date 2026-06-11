@@ -6,10 +6,21 @@ use App\Models\Client;
 use Closure;
 use Illuminate\Http\Request;
 
-// 📌 SCRIPT DEFENSE — Étape 6.4 : Middleware — session check + vérif client actif en base
+/**
+ * Middleware d'authentification client custom (pas de Laravel Auth guard).
+ *
+ * Verifie que le client est connecte (session client_id) et actif en base.
+ * Cache le statut en session pendant 5 minutes pour eviter une requete DB a chaque page.
+ * Si le compte est desactive entre-temps, le client est deconnecte au prochain check.
+ */
 class ClientAuth
 {
-    public function handle(Request $request, Closure $next)
+    /**
+     * Verifier l'authentification et le statut actif du client.
+     *
+     * @return \Illuminate\Http\RedirectResponse|mixed
+     */
+    public function handle(Request $request, Closure $next): mixed
     {
         if (!session()->has('client_id')) {
             return redirect()->route('login')

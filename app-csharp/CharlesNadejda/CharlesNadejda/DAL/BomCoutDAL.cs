@@ -94,7 +94,7 @@ namespace CharlesNadejda.DAL
 
                 LigneCout lc;
 
-                if (ligne.TypeInput == "ingredient")
+                if (ligne.TypeInput == BomFiche.TypeInputIngredient)
                 {
                     lc = CalculerLigneIngredient(ligne, qteStockage);
                 }
@@ -130,7 +130,7 @@ namespace CharlesNadejda.DAL
             return new LigneCout
             {
                 NomInput   = ligne.NomInput,
-                TypeInput  = "ingredient",
+                TypeInput  = BomFiche.TypeInputIngredient,
                 Quantite   = qteStockage,
                 Unite      = ligne.UniteMesureInput,
                 PrixUnit   = prixUnit,
@@ -160,7 +160,7 @@ namespace CharlesNadejda.DAL
                 return new LigneCout
                 {
                     NomInput  = ligne.NomInput,
-                    TypeInput = "fiche",
+                    TypeInput = BomFiche.TypeInputFiche,
                     Quantite  = qteStockage,
                     Unite     = ligne.UniteMesureInput,
                     PrixUnit  = 0m,
@@ -179,7 +179,7 @@ namespace CharlesNadejda.DAL
             return new LigneCout
             {
                 NomInput    = ligne.NomInput,
-                TypeInput   = "fiche",
+                TypeInput   = BomFiche.TypeInputFiche,
                 Quantite    = qteStockage,
                 Unite       = ligne.UniteMesureInput,
                 PrixUnit    = prixUnit,

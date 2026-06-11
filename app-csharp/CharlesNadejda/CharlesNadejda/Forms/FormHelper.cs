@@ -3,7 +3,13 @@ using System.Windows.Forms;
 namespace CharlesNadejda.Forms
 {
     /// <summary>
-    /// Utilitaires UI réutilisables pour tous les formulaires.
+    /// Utilitaires UI reutilisables pour tous les formulaires.
+    ///
+    /// Regroupe les helpers transverses qui evitent la duplication
+    /// de code dans les FrmEdit* et autres formulaires :
+    ///   - ActiverPointDecimal : conversion "." → "," pour NumericUpDown
+    ///   - SelectionnerParId   : selection combo par ID (remplace for/if copie-colle)
+    ///   - ActiverSelectionAuFocus : select-all au focus sur NumericUpDown
     /// </summary>
     internal static class FormHelper
     {

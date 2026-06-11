@@ -6,8 +6,25 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\DB;
 
-// 📌 SCRIPT DEFENSE — Étape 6.1 : Accessor getStockDisponibleAttribute — stock calculé depuis bom_stocks
-//                     Étape 6.1 : scopeWithStockDisponible — sous-requête pour éviter N+1
+/**
+ * Produit mis en vente sur la boutique web.
+ *
+ * Lie a une fiche BOM (Bill of Materials) via id_bom_fiche.
+ * Le stock vendable est calcule dynamiquement depuis bom_stocks / quantite_output.
+ *
+ * @property int    $id
+ * @property string $nom_commercial
+ * @property float  $prix_vente
+ * @property int    $en_vente
+ * @property int    $id_bom_fiche
+ * @property int    $id_categorie
+ * @property int    $ordre_affichage
+ *
+ * @property-read float $stock_disponible  Stock en unites vendables (accessor).
+ * @property-read bool  $en_stock          True si stock_disponible > 0 (accessor).
+ * @property-read CategorieWeb|null $categorie
+ * @property-read BomFiche|null     $bomFiche
+ */
 class ProduitWeb extends Model
 {
     protected $table = 'produits_web';
@@ -15,12 +32,14 @@ class ProduitWeb extends Model
     const CREATED_AT = 'date_creation';
     const UPDATED_AT = 'date_modification';
 
-    public function categorie()
+    /** Categorie d'affichage sur la boutique (nullable). */
+    public function categorie(): \Illuminate\Database\Eloquent\Relations\BelongsTo
     {
         return $this->belongsTo(CategorieWeb::class, 'id_categorie');
     }
 
-    public function bomFiche()
+    /** Fiche BOM (Bill of Materials) liee — source du calcul de stock. */
+    public function bomFiche(): \Illuminate\Database\Eloquent\Relations\BelongsTo
     {
         return $this->belongsTo(BomFiche::class, 'id_bom_fiche');
     }
@@ -62,6 +81,7 @@ class ProduitWeb extends Model
         ', [$this->id_bom_fiche])?->stock ?? 0;
     }
 
+    /** Indique si le produit est disponible a la vente (stock > 0). */
     public function getEnStockAttribute(): bool
     {
         return $this->stock_disponible > 0;

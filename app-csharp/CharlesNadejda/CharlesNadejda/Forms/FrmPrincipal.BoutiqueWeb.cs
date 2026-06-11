@@ -8,11 +8,22 @@ using CharlesNadejda.Models;
 
 namespace CharlesNadejda.Forms
 {
+    // ════════════════════════════════════════════════════════════════
+    //  FrmPrincipal.BoutiqueWeb — Mini CMS de la boutique en ligne
+    //
+    //  Responsabilite : gestion des categories, produits et commandes
+    //  du site e-commerce Laravel, depuis l'interface desktop C#.
+    //
+    //  Architecture : TabControl a 3 onglets avec lazy init (chaque
+    //  onglet n'est construit qu'a sa premiere visite pour eviter
+    //  les requetes SQL inutiles au chargement).
+    //
+    //  Onglet 1 — Categories : CRUD categories web (nom, ordre, actif)
+    //  Onglet 2 — Produits   : publication fiches BOM, prix, toggle
+    //  Onglet 3 — Commandes  : lecture seule, filtre statut, detail
+    // ════════════════════════════════════════════════════════════════
     partial class FrmPrincipal
     {
-        // ════════════════════════════════════════════════════════════════
-        //  BOUTIQUE WEB — Mini CMS (3 onglets, lazy init)
-        // ════════════════════════════════════════════════════════════════
 
         private TabControl _tabBoutique;
         private DataGridView _dgvCategories, _dgvProduits, _dgvCommandes;

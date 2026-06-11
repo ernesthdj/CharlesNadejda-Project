@@ -3,10 +3,11 @@ using System.Collections.Generic;
 
 namespace CharlesNadejda.Models
 {
-    // BomProduction — représente un enregistrement de production dans le système BOM
-    // (Bill of Materials — nomenclature de fabrication).
-    // Chaque instance = "j'ai produit X unités de la fiche Y dans le niveau Z à telle date".
-    // C'est le résultat de l'appel à BomProductionDAL.Executer().
+    /// <summary>
+    /// Enregistrement de production dans le système BOM (Bill of Materials — nomenclature de fabrication).
+    /// Chaque instance = "j'ai produit X unités de la fiche Y dans le niveau Z à telle date".
+    /// Créé par BomProductionDAL.Executer() dans une transaction atomique.
+    /// </summary>
     public class BomProduction
     {
         // ── Champs de la table bom_productions ──────────────────────

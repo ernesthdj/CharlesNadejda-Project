@@ -5,7 +5,10 @@ using CharlesNadejda.Models;
 
 namespace CharlesNadejda.DAL
 {
-    // 📌 SCRIPT DEFENSE — Étape 3 : Insert — transaction (fiche + lignes), LastInsertedId
+    /// <summary>
+    /// CRUD sur les fiches de production BOM (table bom_fiches).
+    /// Les opérations d'écriture (Insert, Update) sont transactionnelles : fiche + lignes en atomique.
+    /// </summary>
     public static class BomFicheDAL
     {
         private const string SELECT_HEADER = @"
@@ -275,10 +278,10 @@ namespace CharlesNadejda.DAL
         {
             foreach (var l in lignes)
             {
-                if (l.TypeInput == "ingredient" && !l.IdInputIngredient.HasValue)
-                    throw new ArgumentException($"Ligne '{l.NomInput}' : type_input='ingredient' mais IdInputIngredient est null.");
-                if (l.TypeInput == "fiche" && !l.IdInputFiche.HasValue)
-                    throw new ArgumentException($"Ligne '{l.NomInput}' : type_input='fiche' mais IdInputFiche est null.");
+                if (l.TypeInput == BomFiche.TypeInputIngredient && !l.IdInputIngredient.HasValue)
+                    throw new ArgumentException($"Ligne '{l.NomInput}' : type_input='{BomFiche.TypeInputIngredient}' mais IdInputIngredient est null.");
+                if (l.TypeInput == BomFiche.TypeInputFiche && !l.IdInputFiche.HasValue)
+                    throw new ArgumentException($"Ligne '{l.NomInput}' : type_input='{BomFiche.TypeInputFiche}' mais IdInputFiche est null.");
 
                 using (var ins = conn.CreateCommand())
                 {

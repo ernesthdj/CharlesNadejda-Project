@@ -5,8 +5,11 @@ using System;
 
 namespace CharlesNadejda.DAL
 {
-    // 📌 SCRIPT DEFENSE — Étape 3 : GetByFiche — COALESCE résout le polymorphisme (ingredient OU fiche)
-    //                     Étape 8.5 : FK polymorphique (type_input + 2 FK mutuellement exclusives)
+    /// <summary>
+    /// Lecture des lignes de fiches BOM (table bom_fiches_lignes).
+    /// Gère la FK polymorphique : COALESCE résout le nom/unité que l'input soit un ingrédient ou une fiche.
+    /// L'écriture passe par BomFicheDAL.InsertLignes() dans la transaction de la fiche parente.
+    /// </summary>
     public static class BomFicheLigneDAL
     {
         /// <summary>
@@ -87,6 +90,8 @@ namespace CharlesNadejda.DAL
             }
             return list;
         }
+
+        // ── Helpers privés ───────────────────────────────────────────
 
         private static BomFicheLigne Map(MySqlDataReader r) => new BomFicheLigne
         {

@@ -6,10 +6,22 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\RegisterRequest;
 use App\Models\Client;
 
-// 📌 SCRIPT DEFENSE — Étape 6.2 : Inscription — password_hash(BCrypt), session(), regenerate()
+/**
+ * Inscription client — creation de compte sur la boutique.
+ *
+ * Le mot de passe est hashe en BCrypt (compatible avec l'ERP C#).
+ * La session est initialisee et regeneree immediatement apres inscription.
+ */
 class RegisterController extends Controller
 {
-    public function showForm()
+    /**
+     * GET /register — Afficher le formulaire d'inscription.
+     *
+     * Redirige vers le catalogue si le client est deja connecte.
+     *
+     * @return \Illuminate\Contracts\View\View|\Illuminate\Http\RedirectResponse
+     */
+    public function showForm(): \Illuminate\Contracts\View\View|\Illuminate\Http\RedirectResponse
     {
         if (session()->has('client_id')) {
             return redirect()->route('catalogue');
@@ -18,7 +30,15 @@ class RegisterController extends Controller
         return view('auth.register');
     }
 
-    public function register(RegisterRequest $request)
+    /**
+     * POST /register — Creer un nouveau compte client.
+     *
+     * Validation via RegisterRequest (FormRequest).
+     * Hash BCrypt du mot de passe, creation en DB, puis auto-login.
+     *
+     * @return \Illuminate\Http\RedirectResponse
+     */
+    public function register(RegisterRequest $request): \Illuminate\Http\RedirectResponse
     {
         $client = Client::create([
             'prenom'       => $request->prenom,

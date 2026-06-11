@@ -12,15 +12,28 @@ using CharlesNadejda.Navigation;
 
 namespace CharlesNadejda.Forms
 {
+    // ════════════════════════════════════════════════════════════════
+    //  FrmPrincipal — Shell principal, Single-Form Application (SFA)
+    //
+    //  Ce fichier partial contient : constructeur, layout shell
+    //  (sidebar, toolbar, status bar, panneau droit), palette locale,
+    //  helpers UI partages, et branchement du ScreenRouter.
+    //
+    //  Les ecrans metier sont dans les fichiers partial dedies :
+    //    .Hub.cs         — Dashboard / tableau de bord
+    //    .Production.cs  — Production BOM (3 colonnes Kanban)
+    //    .BoutiqueWeb.cs — Mini CMS boutique en ligne
+    //    .Parametres.cs  — Configuration utilisateur
+    //
+    //  Architecture SFA : au lieu d'ouvrir plusieurs fenetres,
+    //  tous les ecrans s'affichent dans _pnlDroit (Panel2 du SplitContainer).
+    //  La sidebar a gauche pilote la navigation via ScreenRouter.
+    // ════════════════════════════════════════════════════════════════
     /// <summary>
     /// Hub principal — Single-Form Application (SFA).
     /// Ressources et production s'affichent inline dans Panel2 du SplitContainer.
     /// TICKET-22 : les CRUD BOM Edit (contextes, niveaux, achats) sont inline via ShowFormInline.
     /// </summary>
-    // C'est LE formulaire maître de toute l'app — il ne se ferme jamais tant que l'app tourne.
-    // L'idée du SFA (Single-Form Application), c'est qu'au lieu d'ouvrir plein de fenêtres
-    // séparées, j'intègre tous les écrans dans un seul Form avec un panneau droit qui change.
-    // Ça donne une vraie expérience "ERP" — sidebar à gauche, contenu à droite.
     public partial class FrmPrincipal : Form
     {
         // L'utilisateur connecté — je le garde en readonly car il ne change jamais pendant la session.

@@ -5,9 +5,14 @@ using CharlesNadejda.Models;
 
 namespace CharlesNadejda.DAL
 {
-    // 📌 SCRIPT DEFENSE — Étape 2.1 : GetAll — LEFT/INNER JOIN, COALESCE(SUM), GROUP BY, filtre WHERE dynamique
+    /// <summary>
+    /// CRUD sur les fiches d'ingrédients (table fiches_ingredients).
+    /// Chaque SELECT agrège le stock actuel depuis lots_ingredients via COALESCE(SUM).
+    /// </summary>
     public static class IngredientDAL
     {
+        // ── SELECT ──────────────────────────────────────────────────
+
         /// <summary>
         /// idStock : 0 = tous / filtre par stock physique (via lots_ingredients)
         /// Les fiches sont globales — le stock est assigné au lot, pas à la fiche.
@@ -69,6 +74,7 @@ namespace CharlesNadejda.DAL
             }
         }
 
+        /// <summary>Vérifie l'unicité du nom dans le référentiel ingrédients.</summary>
         public static bool NomExiste(string nom, int excludeId = 0)
         {
             using (var conn = DbHelper.GetConnection())
@@ -80,6 +86,8 @@ namespace CharlesNadejda.DAL
                 return Convert.ToInt32(cmd.ExecuteScalar()) > 0;
             }
         }
+
+        // ── INSERT / UPDATE / DELETE ─────────────────────────────────
 
         /// <summary>Insère un ingrédient et retourne son ID généré.</summary>
         public static int Insert(Ingredient i)
@@ -102,6 +110,7 @@ namespace CharlesNadejda.DAL
             }
         }
 
+        /// <summary>Met à jour toutes les colonnes d'un ingrédient existant.</summary>
         public static void Update(Ingredient i)
         {
             using (var conn = DbHelper.GetConnection())
@@ -123,6 +132,7 @@ namespace CharlesNadejda.DAL
             }
         }
 
+        /// <summary>Supprime un ingrédient. Bloqué si des lots actifs ou des références BOM existent.</summary>
         public static void Delete(int id)
         {
             using (var conn = DbHelper.GetConnection())
@@ -156,6 +166,9 @@ namespace CharlesNadejda.DAL
             }
         }
 
+        // ── Helpers privés ───────────────────────────────────────────
+
+        /// <summary>Lie les paramètres SQL communs à INSERT et UPDATE.</summary>
         private static void Bind(MySqlCommand cmd, Ingredient i)
         {
             cmd.Parameters.AddWithValue("@nom",          i.Nom);

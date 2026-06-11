@@ -5,8 +5,14 @@ using CharlesNadejda.Models;
 
 namespace CharlesNadejda.DAL
 {
+    /// <summary>
+    /// CRUD sur les fournisseurs (table fournisseurs).
+    /// </summary>
     public static class FournisseurDAL
     {
+        // ── SELECT ──────────────────────────────────────────────────
+
+        /// <summary>Retourne tous les fournisseurs triés par nom.</summary>
         public static List<Fournisseur> GetAll()
         {
             var list = new List<Fournisseur>();
@@ -20,6 +26,7 @@ namespace CharlesNadejda.DAL
             return list;
         }
 
+        /// <summary>Vérifie l'unicité du nom fournisseur.</summary>
         public static bool NomExiste(string nom, int excludeId = 0)
         {
             using (var conn = DbHelper.GetConnection())
@@ -31,6 +38,8 @@ namespace CharlesNadejda.DAL
                 return Convert.ToInt32(cmd.ExecuteScalar()) > 0;
             }
         }
+
+        // ── INSERT / UPDATE / DELETE ─────────────────────────────────
 
         /// <summary>Insère un fournisseur et retourne son ID généré.</summary>
         public static int Insert(Fournisseur f)
@@ -46,6 +55,7 @@ namespace CharlesNadejda.DAL
             }
         }
 
+        /// <summary>Met à jour un fournisseur existant.</summary>
         public static void Update(Fournisseur f)
         {
             using (var conn = DbHelper.GetConnection())
@@ -59,6 +69,7 @@ namespace CharlesNadejda.DAL
             }
         }
 
+        /// <summary>Supprime un fournisseur. Les FK en cascade gèrent les références.</summary>
         public static void Delete(int id)
         {
             using (var conn = DbHelper.GetConnection())
@@ -69,6 +80,8 @@ namespace CharlesNadejda.DAL
                 cmd.ExecuteNonQuery();
             }
         }
+
+        // ── Helpers privés ───────────────────────────────────────────
 
         private static void Bind(MySqlCommand cmd, Fournisseur f)
         {

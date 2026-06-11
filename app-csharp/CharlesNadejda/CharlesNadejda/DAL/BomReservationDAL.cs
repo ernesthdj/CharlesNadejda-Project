@@ -5,8 +5,16 @@ using CharlesNadejda.Models;
 
 namespace CharlesNadejda.DAL
 {
+    /// <summary>
+    /// CRUD sur les réservations de stock (table bom_reservations).
+    /// Les réservations bloquent du stock avant la production effective.
+    /// La libération se fait par soft delete (actif = 0) — jamais de suppression physique.
+    /// </summary>
     public static class BomReservationDAL
     {
+        // ── SELECT ──────────────────────────────────────────────────
+
+        /// <summary>Retourne toutes les réservations actives d'un contexte de production.</summary>
         public static List<BomReservation> GetByContexte(int idContexte)
         {
             var list = new List<BomReservation>();
@@ -49,6 +57,9 @@ namespace CharlesNadejda.DAL
             }
         }
 
+        // ── INSERT / UPDATE ──────────────────────────────────────────
+
+        /// <summary>Insère une réservation active et retourne son ID.</summary>
         public static int Insert(BomReservation res)
         {
             using (var conn = DbHelper.GetConnection())
@@ -63,6 +74,7 @@ namespace CharlesNadejda.DAL
             }
         }
 
+        /// <summary>Met à jour la quantité et les notes d'une réservation existante.</summary>
         public static void Update(BomReservation res)
         {
             using (var conn = DbHelper.GetConnection())
@@ -78,6 +90,8 @@ namespace CharlesNadejda.DAL
                 cmd.ExecuteNonQuery();
             }
         }
+
+        // ── Libération (soft delete) ─────────────────────────────────
 
         /// <summary>Désactive une réservation (soft delete — libère la quantité réservée).</summary>
         public static void Liberer(int id)
@@ -102,6 +116,8 @@ namespace CharlesNadejda.DAL
                 cmd.ExecuteNonQuery();
             }
         }
+
+        // ── Helpers privés ───────────────────────────────────────────
 
         private static void Bind(MySqlCommand cmd, BomReservation res)
         {

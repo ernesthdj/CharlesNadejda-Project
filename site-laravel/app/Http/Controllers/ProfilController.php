@@ -5,16 +5,33 @@ namespace App\Http\Controllers;
 use App\Http\Requests\ProfilUpdateRequest;
 use App\Models\Client;
 
+/**
+ * Gestion du profil client — consultation et mise a jour des informations personnelles.
+ */
 class ProfilController extends Controller
 {
-    public function edit()
+    /**
+     * GET /profil — Afficher le formulaire d'edition du profil.
+     *
+     * @return \Illuminate\Contracts\View\View
+     */
+    public function edit(): \Illuminate\Contracts\View\View
     {
         $client = Client::findOrFail(session('client_id'));
 
         return view('profil.edit', compact('client'));
     }
 
-    public function update(ProfilUpdateRequest $request)
+    /**
+     * PUT /profil — Mettre a jour les informations du profil client.
+     *
+     * Met a jour nom, prenom, adresse, telephone. Le mot de passe n'est
+     * modifie que s'il est renseigne (champ optionnel).
+     * La session est synchronisee apres modification.
+     *
+     * @return \Illuminate\Http\RedirectResponse
+     */
+    public function update(ProfilUpdateRequest $request): \Illuminate\Http\RedirectResponse
     {
         $client = Client::findOrFail(session('client_id'));
 

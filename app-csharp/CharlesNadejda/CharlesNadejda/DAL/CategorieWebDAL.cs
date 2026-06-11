@@ -5,6 +5,10 @@ using CharlesNadejda.Models;
 
 namespace CharlesNadejda.DAL
 {
+    /// <summary>
+    /// CRUD sur les catégories de la boutique web (table categories_web).
+    /// La suppression met les produits liés à id_categorie = NULL (FK SET NULL en DB).
+    /// </summary>
     public static class CategorieWebDAL
     {
         // ── SELECT ──────────────────────────────────────────────

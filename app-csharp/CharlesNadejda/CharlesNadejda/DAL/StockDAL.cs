@@ -5,11 +5,14 @@ using CharlesNadejda.Models;
 
 namespace CharlesNadejda.DAL
 {
-    // 📌 SCRIPT DEFENSE — Étape 1.1 : Insert (requête paramétrée @nom, @desc)
-    //                     Étape 1.1 : NomExiste (unicité, excludeId pour mode édition)
-    //                     Étape 1.2 : LierActivite (INSERT IGNORE — jonction M:N activites_stocks)
+    /// <summary>
+    /// CRUD sur les emplacements de stockage physiques (table stocks).
+    /// Gère aussi la liaison M:N avec les activités via activites_stocks (LierActivite/DelierActivite).
+    /// </summary>
     public static class StockDAL
     {
+        // ── SELECT ──────────────────────────────────────────────────
+
         public static List<Stock> GetAll(bool includeInactifs = false)
         {
             var list = new List<Stock>();
@@ -70,6 +73,9 @@ namespace CharlesNadejda.DAL
             }
         }
 
+        // ── INSERT / UPDATE / DELETE ─────────────────────────────────
+
+        /// <summary>Insère un stock et retourne son ID généré.</summary>
         public static int Insert(Stock s)
         {
             using (var conn = DbHelper.GetConnection())
@@ -127,6 +133,8 @@ namespace CharlesNadejda.DAL
                 cmd.ExecuteNonQuery();
             }
         }
+
+        // ── Liaison M:N activites_stocks ─────────────────────────────
 
         /// <summary>Lie une activité à un stock (jonction M:N).</summary>
         public static void LierActivite(int idActivite, int idStock)
@@ -194,6 +202,8 @@ namespace CharlesNadejda.DAL
                 return Convert.ToInt32(cmd.ExecuteScalar()) > 0;
             }
         }
+
+        // ── Helpers privés ───────────────────────────────────────────
 
         private static void Bind(MySqlCommand cmd, Stock s)
         {

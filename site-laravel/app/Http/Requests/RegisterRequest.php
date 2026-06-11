@@ -4,14 +4,21 @@ namespace App\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
 
-// 📌 SCRIPT DEFENSE — Étape 6.2 : FormRequest — règles de validation (required|email|unique, confirmed, min:8)
+/**
+ * Validation du formulaire d'inscription client.
+ *
+ * Regles : email unique, mot de passe 8 chars min + confirmation,
+ * prenom et nom obligatoires. Messages d'erreur en francais.
+ */
 class RegisterRequest extends FormRequest
 {
+    /** Toujours autorise — pas de controle d'acces sur l'inscription. */
     public function authorize(): bool
     {
         return true;
     }
 
+    /** @return array<string, string> Regles de validation par champ. */
     public function rules(): array
     {
         return [
@@ -27,6 +34,7 @@ class RegisterRequest extends FormRequest
         ];
     }
 
+    /** @return array<string, string> Messages d'erreur personnalises en francais. */
     public function messages(): array
     {
         return [

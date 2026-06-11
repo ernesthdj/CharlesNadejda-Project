@@ -5,7 +5,10 @@ using CharlesNadejda.Models;
 
 namespace CharlesNadejda.DAL
 {
-    // 📌 SCRIPT DEFENSE — Étape 1.3 : InsertAvecNiveaux — transaction atomique (BeginTransaction/Commit/Rollback)
+    /// <summary>
+    /// CRUD sur les contextes de production BOM (table bom_contextes).
+    /// InsertAvecNiveaux crée le contexte et ses niveaux dans une transaction atomique.
+    /// </summary>
     public static class BomContexteDAL
     {
         private const string SELECT_BASE = @"
@@ -34,6 +37,7 @@ namespace CharlesNadejda.DAL
             return list;
         }
 
+        /// <summary>Retourne un contexte par son ID, ou null si introuvable.</summary>
         public static BomContexte GetById(int id)
         {
             using (var conn = DbHelper.GetConnection())
@@ -117,8 +121,12 @@ namespace CharlesNadejda.DAL
             }
         }
 
+        // ── INSERT / UPDATE / DELETE ─────────────────────────────────
+
+        /// <summary>Insère un contexte sans niveaux supplémentaires (niveau "Ingrédients" créé par défaut).</summary>
         public static int Insert(BomContexte c) => InsertAvecNiveaux(c, null);
 
+        /// <summary>Met à jour le nom, la description et l'activité d'un contexte.</summary>
         public static void Update(BomContexte c)
         {
             using (var conn = DbHelper.GetConnection())
@@ -134,6 +142,7 @@ namespace CharlesNadejda.DAL
             }
         }
 
+        /// <summary>Supprime un contexte. Bloqué si des productions ou stocks actifs existent.</summary>
         public static void Delete(int id)
         {
             using (var conn = DbHelper.GetConnection())
@@ -167,6 +176,8 @@ namespace CharlesNadejda.DAL
                 cmd.ExecuteNonQuery();
             }
         }
+
+        // ── Helpers privés ───────────────────────────────────────────
 
         private static void Bind(MySqlCommand cmd, BomContexte c)
         {

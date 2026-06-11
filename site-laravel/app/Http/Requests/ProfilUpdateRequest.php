@@ -4,13 +4,21 @@ namespace App\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
 
+/**
+ * Validation du formulaire de mise a jour du profil client.
+ *
+ * Regles : prenom et nom obligatoires, mot de passe optionnel (8 chars min si renseigne).
+ * Pas de modification d'email (champ non editable cote formulaire).
+ */
 class ProfilUpdateRequest extends FormRequest
 {
+    /** Toujours autorise — le middleware ClientAuth protege deja la route. */
     public function authorize(): bool
     {
         return true;
     }
 
+    /** @return array<string, string> Regles de validation par champ. */
     public function rules(): array
     {
         return [
@@ -25,6 +33,7 @@ class ProfilUpdateRequest extends FormRequest
         ];
     }
 
+    /** @return array<string, string> Messages d'erreur personnalises en francais. */
     public function messages(): array
     {
         return [

@@ -10,9 +10,17 @@ using CharlesNadejda.Navigation;
 
 namespace CharlesNadejda.Forms
 {
-    // Partial class — cette partie de FrmPrincipal gère uniquement l'écran Hub (dashboard).
-    // Le Hub est la vue d'ensemble de l'activité : stats, alertes stock, productions récentes.
-    // C'est le premier écran que l'utilisateur voit après avoir créé une activité.
+    // ════════════════════════════════════════════════════════════════
+    //  FrmPrincipal.Hub — Dashboard / tableau de bord de l'activite
+    //
+    //  Responsabilite : vue d'ensemble apres selection d'une activite.
+    //  Affiche 4 StatCards KPI, les productions recentes (7 jours),
+    //  et les alertes de stock bas avec navigation contextuelle.
+    //
+    //  Layout : Header (titre+actions) → Stats (4 KPI) → Corps 62/38
+    //    Gauche (62%) : DGV productions recentes
+    //    Droite (38%) : liste alertes stock avec clic → ecran Ingredients
+    // ════════════════════════════════════════════════════════════════
     public partial class FrmPrincipal
     {
         // ShowHubScreen — construit l'écran Hub (dashboard) dans le panneau droit.

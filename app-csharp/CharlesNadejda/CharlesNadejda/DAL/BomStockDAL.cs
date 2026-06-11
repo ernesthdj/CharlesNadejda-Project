@@ -5,8 +5,15 @@ using CharlesNadejda.Models;
 
 namespace CharlesNadejda.DAL
 {
+    /// <summary>
+    /// Accès aux stocks de produits fabriqués (table bom_stocks).
+    /// Fournit les méthodes de lecture, les requêtes FIFO pour la consommation,
+    /// et les surcharges transactionnelles avec verrou pessimiste (FOR UPDATE).
+    /// </summary>
     public static class BomStockDAL
     {
+        // ── SELECT ──────────────────────────────────────────────────
+
         /// <summary>Liste tout le stock d'un niveau donné.</summary>
         public static List<BomStock> GetByNiveau(int idNiveau)
         {
@@ -40,6 +47,8 @@ namespace CharlesNadejda.DAL
             }
             return list;
         }
+
+        // ── Disponibilité ────────────────────────────────────────────
 
         /// <summary>
         /// Retourne la quantité totale disponible pour une fiche dans un niveau.
@@ -132,6 +141,8 @@ namespace CharlesNadejda.DAL
                 return Convert.ToDecimal(cmd.ExecuteScalar());
             }
         }
+
+        // ── FIFO (consommation triée par ancienneté) ────────────────
 
         /// <summary>
         /// Retourne les lots d'un ingrédient triés FIFO (date_achat ASC),
@@ -251,6 +262,8 @@ namespace CharlesNadejda.DAL
             }
             return result;
         }
+
+        // ── Helpers privés ───────────────────────────────────────────
 
         private static BomStock Map(MySqlDataReader r) => new BomStock
         {

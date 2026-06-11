@@ -2,12 +2,20 @@ using System;
 
 namespace CharlesNadejda.Navigation
 {
-    // ScreenRouter — mon routeur de navigation central pour l'ERP
-    // C'est lui qui décide quel écran afficher quand on clique dans la sidebar.
-    // Il utilise un pattern "delegate callbacks" : chaque écran a un Action<NavigationParams>
-    // que le MainForm enregistre, et le routeur l'invoque au bon moment.
-    // Le guard singleton empêche de reconstruire un écran déjà affiché — optimisation importante
-    // parce que chaque écran fait des requêtes SQL au chargement.
+    /// <summary>
+    /// Router centralise — mappe chaque ScreenId vers un callback de construction d'ecran.
+    ///
+    /// Flux de navigation :
+    ///   SidebarPanel.Click → NavItemId → ScreenId → ScreenRouter.Navigate() → callback → ecran construit
+    ///
+    /// Pattern "delegate callbacks" : chaque ecran a un <see cref="Action{NavigationParams}"/>
+    /// que FrmPrincipal enregistre au demarrage, et le routeur l'invoque au bon moment.
+    ///
+    /// Guard anti-doublon : empeche de reconstruire un ecran deja affiche
+    /// (chaque construction implique des requetes SQL). Le guard compare le ScreenId,
+    /// le contexte actif et le type de ressource avant de decider si un rebuild est necessaire.
+    /// Appeler <see cref="Invalidate"/> pour forcer un rebuild au prochain Navigate.
+    /// </summary>
     public class ScreenRouter
     {
         // AppState contient l'état global de l'app (activité courante, contexte actif, écran actif)
@@ -51,8 +59,12 @@ namespace CharlesNadejda.Navigation
         /// </summary>
         public void Invalidate() => _lastScreen = null;
 
-        // Navigate() — le coeur du routeur. Reçoit un ScreenId et des params optionnels.
-        // Vérifie le guard, met à jour l'état, et invoque le bon callback.
+        /// <summary>
+        /// Navigue vers l'ecran demande. Verifie le guard anti-doublon, met a jour l'etat global,
+        /// et invoque le callback correspondant au <paramref name="screen"/>.
+        /// </summary>
+        /// <param name="screen">Ecran cible a afficher.</param>
+        /// <param name="parms">Parametres optionnels (scroll, entite, filtre alertes, etc.).</param>
         public void Navigate(ScreenId screen, NavigationParams parms = null)
         {
             // Guard singleton : si on demande le même écran que celui déjà affiché,

@@ -6,11 +6,14 @@ using CharlesNadejda.DAL;
 
 namespace CharlesNadejda.Forms
 {
+    // ════════════════════════════════════════════════════════════════
+    //  FrmPrincipal.Parametres — Ecran de configuration utilisateur
+    //
+    //  Responsabilite : modification mot de passe, preferences,
+    //  informations compte. Accessible via la sidebar "Parametres".
+    // ════════════════════════════════════════════════════════════════
     public partial class FrmPrincipal
     {
-        // ════════════════════════════════════════════════════════════════
-        //  PARAMÈTRES — Écran de configuration
-        // ════════════════════════════════════════════════════════════════
 
         private void ShowParametresScreen()
         {

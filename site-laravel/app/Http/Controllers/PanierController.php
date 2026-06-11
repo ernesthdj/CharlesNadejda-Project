@@ -7,10 +7,21 @@ use App\Models\CommandeWebLigne;
 use App\Models\ProduitWeb;
 use Illuminate\Http\Request;
 
-// 📌 SCRIPT DEFENSE — Étape 6.4 : Panier AJAX — vérif stock, ownership check (403), incrément si existant
+/**
+ * Gestion du panier client — operations CRUD en AJAX.
+ *
+ * Le panier est une CommandeWeb avec statut = 'panier'.
+ * Chaque operation verifie l'ownership (le panier appartient au client connecte)
+ * et le stock disponible avant modification.
+ */
 class PanierController extends Controller
 {
-    public function index()
+    /**
+     * GET /panier — Afficher le contenu du panier.
+     *
+     * @return \Illuminate\Contracts\View\View
+     */
+    public function index(): \Illuminate\Contracts\View\View
     {
         $panier = $this->getPanierActif();
 
@@ -18,9 +29,14 @@ class PanierController extends Controller
     }
 
     /**
-     * Ajouter un produit au panier (AJAX).
+     * POST /panier/ajouter — Ajouter un produit au panier (AJAX).
+     *
+     * Verifie le stock disponible avant ajout. Incremente la quantite si le produit
+     * est deja present dans le panier. Cree le panier si inexistant.
+     *
+     * @return \Illuminate\Http\JsonResponse
      */
-    public function ajouter(Request $request)
+    public function ajouter(Request $request): \Illuminate\Http\JsonResponse
     {
         $request->validate([
             'id_produit' => 'required|integer|exists:produits_web,id',
@@ -69,9 +85,14 @@ class PanierController extends Controller
     }
 
     /**
-     * Modifier la quantité d'une ligne (AJAX).
+     * PATCH /panier/quantite — Modifier la quantite d'une ligne du panier (AJAX).
+     *
+     * Verifie l'ownership de la ligne (403 si le panier ne lui appartient pas)
+     * et le stock disponible avant mise a jour.
+     *
+     * @return \Illuminate\Http\JsonResponse
      */
-    public function updateQuantite(Request $request)
+    public function updateQuantite(Request $request): \Illuminate\Http\JsonResponse
     {
         $request->validate([
             'id_ligne' => 'required|integer',
@@ -110,9 +131,13 @@ class PanierController extends Controller
     }
 
     /**
-     * Supprimer une ligne du panier (AJAX).
+     * DELETE /panier/supprimer — Retirer une ligne du panier (AJAX).
+     *
+     * Verifie l'ownership de la ligne avant suppression.
+     *
+     * @return \Illuminate\Http\JsonResponse
      */
-    public function supprimer(Request $request)
+    public function supprimer(Request $request): \Illuminate\Http\JsonResponse
     {
         $request->validate(['id_ligne' => 'required|integer']);
 
@@ -137,15 +162,20 @@ class PanierController extends Controller
     }
 
     /**
-     * Compteur panier pour le badge header (AJAX).
+     * GET /panier/count — Compteur panier pour le badge du header (AJAX).
+     *
+     * Retourne le nombre d'articles en session (pas de requete DB).
+     *
+     * @return \Illuminate\Http\JsonResponse
      */
-    public function count()
+    public function count(): \Illuminate\Http\JsonResponse
     {
         return response()->json(['count' => (int) session('panier_count', 0)]);
     }
 
-    // ── Helpers ──────────────────────────────────────────────
+    // -- Helpers privees -----------------------------------------------
 
+    /** Recuperer le panier actif du client connecte avec ses lignes (ou null). */
     private function getPanierActif(): ?CommandeWeb
     {
         return CommandeWeb::where('id_client', session('client_id'))
@@ -154,6 +184,7 @@ class PanierController extends Controller
             ->first();
     }
 
+    /** Recuperer ou creer le panier actif du client connecte. */
     private function getOrCreatePanier(): CommandeWeb
     {
         return CommandeWeb::firstOrCreate(

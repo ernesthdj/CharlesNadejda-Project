@@ -7,10 +7,23 @@ use App\Models\Client;
 use App\Models\CommandeWeb;
 use Illuminate\Http\Request;
 
-// 📌 SCRIPT DEFENSE — Étape 6.3 : Login — password_verify, message générique, session regenerate
+/**
+ * Authentification client — connexion et deconnexion.
+ *
+ * Utilise password_verify() contre le hash BCrypt stocke en base.
+ * Message d'erreur generique (pas de distinction email/password) pour la securite.
+ * Session regeneree apres connexion pour prevenir le session fixation.
+ */
 class LoginController extends Controller
 {
-    public function showForm()
+    /**
+     * GET /login — Afficher le formulaire de connexion.
+     *
+     * Redirige vers le catalogue si le client est deja connecte.
+     *
+     * @return \Illuminate\Contracts\View\View|\Illuminate\Http\RedirectResponse
+     */
+    public function showForm(): \Illuminate\Contracts\View\View|\Illuminate\Http\RedirectResponse
     {
         if (session()->has('client_id')) {
             return redirect()->route('catalogue');
@@ -19,7 +32,15 @@ class LoginController extends Controller
         return view('auth.login');
     }
 
-    public function login(Request $request)
+    /**
+     * POST /login — Authentifier le client.
+     *
+     * Verifie email + mot de passe BCrypt + compte actif.
+     * Initialise la session avec les infos client et le compteur panier.
+     *
+     * @return \Illuminate\Http\RedirectResponse
+     */
+    public function login(Request $request): \Illuminate\Http\RedirectResponse
     {
         $request->validate([
             'email'    => 'required|email',
@@ -55,7 +76,12 @@ class LoginController extends Controller
             ->with('success', 'Bon retour, ' . $client->prenom . ' !');
     }
 
-    public function logout()
+    /**
+     * POST /logout — Deconnecter le client et vider la session.
+     *
+     * @return \Illuminate\Http\RedirectResponse
+     */
+    public function logout(): \Illuminate\Http\RedirectResponse
     {
         session()->flush();
 

@@ -10,6 +10,12 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 
+/**
+ * Modele User par defaut de Laravel — non utilise dans ArtisaStock.
+ *
+ * L'authentification client passe par le modele Client + session custom.
+ * Conserve pour compatibilite avec les packages Laravel qui l'attendent.
+ */
 #[Fillable(['name', 'email', 'password'])]
 #[Hidden(['password', 'remember_token'])]
 class User extends Authenticatable

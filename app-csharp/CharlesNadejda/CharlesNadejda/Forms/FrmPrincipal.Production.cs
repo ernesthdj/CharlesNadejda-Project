@@ -11,18 +11,39 @@ using CharlesNadejda.Navigation;
 
 namespace CharlesNadejda.Forms
 {
+    // ════════════════════════════════════════════════════════════════
+    //  FrmPrincipal.Production — Ecran de production BOM unifie
+    //
+    //  Responsabilite : selection contexte/niveau, gestion fiches recettes,
+    //  visualisation stock compact, simulation de faisabilite (penurie),
+    //  lancement FIFO, affichage historique et journal de production.
+    //
+    //  Layout Kanban 3 colonnes :
+    //    Col1 (220px Left)  : combo contexte + cards niveaux + cards fiches
+    //    Col2 (Fill)        : stock compact + panel simulation (DGV + inputs)
+    //    Col3 (260px Right) : historique productions + mini-journal
+    //
+    //  Flux principal :
+    //    Contexte → Niveaux → [N2+] Fiches → Simuler → Lancer → Historique
+    // ════════════════════════════════════════════════════════════════
     partial class FrmPrincipal
     {
-        // ════════════════════════════════════════════════════════════════
-        //  Écran Production unifié — 3 colonnes
-        //  Col1: Niveaux+Fiches (220px L) | Col2: Stock+Simulation (Fill) | Col3: Historique+Journal (260px R)
-        //
-        //  C'est l'écran principal de production : je sélectionne un niveau BOM,
-        //  une fiche recette, je simule si le stock suffit, et je lance la prod.
-        //  Layout Kanban en 3 colonnes pour avoir tout sous les yeux d'un coup.
-        // ════════════════════════════════════════════════════════════════
 
-        // ── État local de la production ──────────────────────────────────
+        // ── Constantes de layout (Kanban 3 colonnes) ──────────────────────
+        // Largeurs fixes des colonnes laterales — la centrale est en Dock.Fill
+        private const int PROD_COL_NIVEAUX_W   = 220;  // Colonne gauche (niveaux + fiches)
+        private const int PROD_COL_HISTORIQUE_W = 260;  // Colonne droite (historique + journal)
+        // Largeur interne des cards dans la colonne gauche (220 - padding 8*2 - marge)
+        private const int PROD_CARD_W           = 196;
+        // Hauteurs de sections recurrentes
+        private const int PROD_HEADER_H         = 52;
+        private const int PROD_KPI_BAR_H        = 92;
+        private const int PROD_SECTION_HEADER_H = 26;
+        // Dimensions des boutons d'action (Simuler, Lancer)
+        private const int PROD_BTN_ACTION_W     = 130;
+        private const int PROD_BTN_ACTION_H     = 32;
+
+        // ── Etat local de la production ──────────────────────────────────
 
         // Contrôles de saisie pour la simulation : quantité de batches et délai en jours
         private NumericUpDown _prodNudQuantite, _prodNudDelai;
@@ -149,7 +170,7 @@ namespace CharlesNadejda.Forms
         {
             var pnl = new Panel
             {
-                Dock = DockStyle.Top, Height = 52,
+                Dock = DockStyle.Top, Height = PROD_HEADER_H,
                 BackColor = CREME_WARM, Padding = new Padding(20, 0, 20, 0)
             };
             // Je dessine une ligne fine en bas du header pour séparer visuellement
@@ -184,7 +205,7 @@ namespace CharlesNadejda.Forms
         {
             var pnl = new Panel
             {
-                Dock = DockStyle.Top, Height = 92,
+                Dock = DockStyle.Top, Height = PROD_KPI_BAR_H,
                 BackColor = CREME_WARM, Padding = new Padding(16, 12, 16, 8)
             };
 
@@ -275,7 +296,7 @@ namespace CharlesNadejda.Forms
         // Construit toute la colonne gauche avec le SplitContainer niveaux/fiches
         private Panel BuildProdColNiveaux()
         {
-            var col = new Panel { Dock = DockStyle.Left, Width = 220, BackColor = CREME_WARM };
+            var col = new Panel { Dock = DockStyle.Left, Width = PROD_COL_NIVEAUX_W, BackColor = CREME_WARM };
 
             var lblHeader = MakeKanbanHeader("NIVEAUX", CHOCO_BRAND);
 
@@ -330,7 +351,7 @@ namespace CharlesNadejda.Forms
             // Les 3 boutons (ajouter, modifier, supprimer) sont alignés à droite du header
             var pnlNivHeader = new Panel
             {
-                Dock = DockStyle.Top, Height = 26, BackColor = CREME_WARM
+                Dock = DockStyle.Top, Height = PROD_SECTION_HEADER_H, BackColor = CREME_WARM
             };
             var lblNivHdr = new Label
             {
@@ -398,7 +419,7 @@ namespace CharlesNadejda.Forms
             // Header + boutons CRUD figés (Dock Top) — même pattern que les niveaux
             var pnlFicheHeader = new Panel
             {
-                Dock = DockStyle.Top, Height = 26, BackColor = CREME_WARM
+                Dock = DockStyle.Top, Height = PROD_SECTION_HEADER_H, BackColor = CREME_WARM
             };
             var lblFicheHdr = new Label
             {
@@ -460,7 +481,7 @@ namespace CharlesNadejda.Forms
 
             var card = new Panel
             {
-                Size   = new Size(196, 64),
+                Size   = new Size(PROD_CARD_W, 64),
                 Margin = new Padding(0, 0, 0, 4),
                 Cursor = Cursors.Hand
             };
@@ -833,7 +854,7 @@ namespace CharlesNadejda.Forms
         {
             var card = new Panel
             {
-                Size   = new Size(196, 56),
+                Size   = new Size(PROD_CARD_W, 56),
                 Margin = new Padding(0, 0, 0, 4),
                 Cursor = Cursors.Hand
             };
@@ -1131,7 +1152,8 @@ namespace CharlesNadejda.Forms
             {
                 Text = "⚡  Simuler", Font = new Font("Segoe UI", 9.5F, FontStyle.Bold),
                 FlatStyle = FlatStyle.Flat, BackColor = AppColors.Info, ForeColor = Color.White,
-                Size = new Size(130, 32), Location = new Point(0, y), Cursor = Cursors.Hand
+                Size = new Size(PROD_BTN_ACTION_W, PROD_BTN_ACTION_H),
+                Location = new Point(0, y), Cursor = Cursors.Hand
             };
             _prodBtnSimuler.FlatAppearance.BorderColor = Color.FromArgb(40, 85, 160);
             _prodBtnSimuler.Click += ProdBtnSimuler_Click;
@@ -1144,7 +1166,8 @@ namespace CharlesNadejda.Forms
                 Text = "▶  Lancer",
                 Font = new Font("Segoe UI", 9.5F, FontStyle.Bold),
                 FlatStyle = FlatStyle.Flat, BackColor = AppColors.Success, ForeColor = Color.White,
-                Size = new Size(130, 32), Location = new Point(140, y),
+                Size = new Size(PROD_BTN_ACTION_W, PROD_BTN_ACTION_H),
+                Location = new Point(PROD_BTN_ACTION_W + 10, y),
                 Enabled = false, Cursor = Cursors.Hand
             };
             _prodBtnLancer.FlatAppearance.BorderColor = Color.FromArgb(20, 100, 50);
@@ -1375,7 +1398,7 @@ namespace CharlesNadejda.Forms
         // Construit la colonne droite : flow historique en haut, journal en bas
         private Panel BuildProdColHistorique()
         {
-            var col = new Panel { Dock = DockStyle.Right, Width = 260, BackColor = CREME_WARM };
+            var col = new Panel { Dock = DockStyle.Right, Width = PROD_COL_HISTORIQUE_W, BackColor = CREME_WARM };
             var lblHeader = MakeKanbanHeader("HISTORIQUE", OR);
 
             // Flow scrollable pour les cards d'historique de production

@@ -5,6 +5,10 @@ using CharlesNadejda.Models;
 
 namespace CharlesNadejda.DAL
 {
+    /// <summary>
+    /// CRUD sur les niveaux de la hiérarchie BOM (table bom_niveaux).
+    /// La suppression est restreinte au dernier niveau (ordre le plus élevé) pour préserver l'intégrité.
+    /// </summary>
     public static class BomNiveauDAL
     {
         private const string SELECT_BASE = @"
@@ -15,6 +19,9 @@ namespace CharlesNadejda.DAL
             INNER JOIN bom_contextes c ON c.id = n.id_contexte
             INNER JOIN activites     a ON a.id = c.id_activite";
 
+        // ── SELECT ──────────────────────────────────────────────────
+
+        /// <summary>Retourne les niveaux d'un contexte, triés par ordre croissant.</summary>
         public static List<BomNiveau> GetByContexte(int idContexte)
         {
             var list = new List<BomNiveau>();
@@ -29,6 +36,7 @@ namespace CharlesNadejda.DAL
             return list;
         }
 
+        /// <summary>Retourne un niveau par son ID, ou null si introuvable.</summary>
         public static BomNiveau GetById(int id)
         {
             using (var conn = DbHelper.GetConnection())
@@ -71,6 +79,9 @@ namespace CharlesNadejda.DAL
             }
         }
 
+        // ── INSERT / UPDATE / DELETE ─────────────────────────────────
+
+        /// <summary>Insère un niveau avec ordre auto-incrémenté (MAX + 1).</summary>
         public static int Insert(BomNiveau n)
         {
             using (var conn = DbHelper.GetConnection())
@@ -87,6 +98,7 @@ namespace CharlesNadejda.DAL
             }
         }
 
+        /// <summary>Met à jour le nom et la description d'un niveau.</summary>
         public static void Update(BomNiveau n)
         {
             using (var conn = DbHelper.GetConnection())
@@ -128,6 +140,7 @@ namespace CharlesNadejda.DAL
             }
         }
 
+        /// <summary>Retourne un niveau par son contexte et son ordre, ou null.</summary>
         public static BomNiveau GetByContexteEtOrdre(int idContexte, int ordre)
         {
             using (var conn = DbHelper.GetConnection())
@@ -141,6 +154,8 @@ namespace CharlesNadejda.DAL
             }
             return null;
         }
+
+        // ── Helpers privés ───────────────────────────────────────────
 
         private static void Bind(MySqlCommand cmd, BomNiveau n)
         {

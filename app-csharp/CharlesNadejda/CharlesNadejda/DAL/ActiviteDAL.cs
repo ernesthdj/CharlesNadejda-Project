@@ -5,8 +5,15 @@ using CharlesNadejda.Models;
 
 namespace CharlesNadejda.DAL
 {
+    /// <summary>
+    /// CRUD sur les activités artisanales (table activites).
+    /// La désactivation est bloquée si des contextes actifs ou lots avec stock sont rattachés.
+    /// La suppression hard est en cascade via les FK MySQL (migration v9).
+    /// </summary>
     public static class ActiviteDAL
     {
+        // ── SELECT ──────────────────────────────────────────────────
+
         /// <summary>Retourne toutes les activités actives, triées par nom.</summary>
         public static List<Activite> GetAll(bool includeInactifs = false)
         {
@@ -23,6 +30,7 @@ namespace CharlesNadejda.DAL
             return list;
         }
 
+        /// <summary>Retourne une activité par son ID, ou null si introuvable.</summary>
         public static Activite GetById(int id)
         {
             using (var conn = DbHelper.GetConnection())
@@ -36,6 +44,7 @@ namespace CharlesNadejda.DAL
             return null;
         }
 
+        /// <summary>Vérifie l'unicité du nom d'activité.</summary>
         public static bool NomExiste(string nom, int excludeId = 0)
         {
             using (var conn = DbHelper.GetConnection())
@@ -48,6 +57,9 @@ namespace CharlesNadejda.DAL
             }
         }
 
+        // ── INSERT / UPDATE / DELETE ─────────────────────────────────
+
+        /// <summary>Insère une activité et retourne son ID généré.</summary>
         public static int Insert(Activite a)
         {
             using (var conn = DbHelper.GetConnection())
@@ -62,6 +74,7 @@ namespace CharlesNadejda.DAL
             }
         }
 
+        /// <summary>Met à jour le nom et la description d'une activité.</summary>
         public static void Update(Activite a)
         {
             using (var conn = DbHelper.GetConnection())
@@ -152,6 +165,8 @@ namespace CharlesNadejda.DAL
                 }
             }
         }
+
+        // ── Helpers privés ───────────────────────────────────────────
 
         private static void Bind(MySqlCommand cmd, Activite a)
         {

@@ -5,9 +5,11 @@ using CharlesNadejda.Models;
 
 namespace CharlesNadejda.DAL
 {
-    // 📌 SCRIPT DEFENSE — Étape 5 : GetFichesNonPubliees (NOT IN — filtre fiches déjà publiées)
-    //                     Étape 5 : GetAll — COALESCE(SUM(bs.quantite_disponible)) stock temps réel
-    //                     Étape 5 : PeutSupprimer — FK check avant DELETE
+    /// <summary>
+    /// CRUD sur les produits de la boutique web (table produits_web).
+    /// Le stock est calculé en temps réel via COALESCE(SUM(bom_stocks.quantite_disponible)).
+    /// La suppression est bloquée si des commandes référencent le produit.
+    /// </summary>
     public static class ProduitWebDAL
     {
         private const string SELECT_BASE = @"

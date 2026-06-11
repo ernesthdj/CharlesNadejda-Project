@@ -5,8 +5,11 @@ using CharlesNadejda.Models;
 
 namespace CharlesNadejda.DAL
 {
-    // 📌 SCRIPT DEFENSE — Étape 2.2 : Insert (quantite_initiale = nb_cond × qte_par_cond)
-    //                     Étape 2.2 : Update — GREATEST(0, ...) conservation de la consommation
+    /// <summary>
+    /// CRUD sur les lots d'ingrédients (table lots_ingredients).
+    /// L'Update préserve la consommation déjà effectuée via GREATEST(0, nouvelle_initiale - consommé).
+    /// Le Delete est bloqué si le lot a été partiellement consommé (traçabilité).
+    /// </summary>
     public static class LotDAL
     {
         private const string SELECT_BASE = @"
@@ -64,6 +67,7 @@ namespace CharlesNadejda.DAL
             return list;
         }
 
+        /// <summary>Retourne un lot par son ID, ou null si introuvable.</summary>
         public static Lot GetById(int id)
         {
             using (var conn = DbHelper.GetConnection())
@@ -76,6 +80,9 @@ namespace CharlesNadejda.DAL
             }
         }
 
+        // ── INSERT / UPDATE / DELETE ─────────────────────────────────
+
+        /// <summary>Insère un nouveau lot. quantite_disponible = quantite_initiale à la création.</summary>
         public static void Insert(Lot lot)
         {
             using (var conn = DbHelper.GetConnection())
@@ -96,6 +103,7 @@ namespace CharlesNadejda.DAL
             }
         }
 
+        /// <summary>Met à jour un lot. Préserve la quantité déjà consommée via formule SQL.</summary>
         public static void Update(Lot lot)
         {
             using (var conn = DbHelper.GetConnection())
@@ -127,6 +135,7 @@ namespace CharlesNadejda.DAL
             }
         }
 
+        /// <summary>Supprime un lot. Bloqué si partiellement consommé (données de traçabilité).</summary>
         public static void Delete(int id)
         {
             using (var conn = DbHelper.GetConnection())

@@ -3,11 +3,25 @@ using System.Drawing;
 namespace CharlesNadejda.Forms
 {
     /// <summary>
-    /// Palette de couleurs centralisée de l'application ArtisaStock.
+    /// Palette de couleurs centralisee de l'application ArtisaStock.
     ///
-    /// TICKET-12 : remplace les constantes Color private dupliquées dans chaque Form.
-    /// Source de vérité unique — toute modification de charte graphique ici
-    /// se propage automatiquement à l'ensemble de l'interface.
+    /// TICKET-12 : remplace les constantes Color private dupliquees dans chaque Form.
+    /// Source de verite unique — toute modification de charte graphique ici
+    /// se propage automatiquement a l'ensemble de l'interface.
+    ///
+    /// Organisation par groupes semantiques :
+    ///   Chocolat    — couleurs de marque (brand, textes, profondeur)
+    ///   Creme       — fonds de panneaux et zones de contenu
+    ///   Or          — CTA principal, accents dores
+    ///   Neutres     — boutons secondaires, bordures, separateurs
+    ///   Sidebar     — textes et fonds du rail de navigation
+    ///   Statuts     — vert/rouge/orange pour etats metier
+    ///   Fonds ligne — coloration conditionnelle des DGV (stock)
+    ///   Shell ERP   — title bar, status bar, navigation
+    ///   Grille/DGV  — lignes de grille, chips, selection
+    ///
+    /// Usage dans FrmPrincipal : alias locaux (CHOCO_BRAND, etc.) pour brevete.
+    /// Usage dans FrmEditBase/FrmListeBase : reference directe (AppColors.X).
     /// </summary>
     internal static class AppColors
     {

@@ -8,10 +8,22 @@ use App\Models\CommandeWeb;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
-// 📌 SCRIPT DEFENSE — Étape 6.5 : Checkout — DB::beginTransaction, lockForUpdate, FIFO décrémentation
+/**
+ * Gestion des commandes — recap, validation (checkout) et historique.
+ *
+ * La validation utilise une transaction DB avec lockForUpdate pour garantir
+ * la coherence du stock lors de la decrementation FIFO.
+ */
 class CommandeController extends Controller
 {
-    public function recap()
+    /**
+     * GET /commande/recap — Afficher le recapitulatif avant paiement.
+     *
+     * Redirige vers le panier si celui-ci est vide.
+     *
+     * @return \Illuminate\Contracts\View\View|\Illuminate\Http\RedirectResponse
+     */
+    public function recap(): \Illuminate\Contracts\View\View|\Illuminate\Http\RedirectResponse
     {
         $panier = CommandeWeb::where('id_client', session('client_id'))
             ->where('statut', 'panier')
@@ -29,9 +41,17 @@ class CommandeController extends Controller
     }
 
     /**
-     * Valider la commande — simulation paiement + décrémentation FIFO.
+     * POST /commande/valider — Valider la commande (checkout).
+     *
+     * Deroule dans une transaction DB :
+     * 1. Verrouille le panier (lockForUpdate) pour eviter les race conditions.
+     * 2. Decremente le stock FIFO lot par lot pour chaque ligne de commande.
+     * 3. Snapshot l'adresse de livraison et finalise la commande (statut = payee).
+     * Rollback complet si le stock est insuffisant ou en cas d'erreur.
+     *
+     * @return \Illuminate\Http\RedirectResponse
      */
-    public function valider(Request $request)
+    public function valider(Request $request): \Illuminate\Http\RedirectResponse
     {
         $request->validate([
             'adresse_rue'   => 'nullable|string|max:255',
@@ -112,7 +132,14 @@ class CommandeController extends Controller
         }
     }
 
-    public function historique()
+    /**
+     * GET /mes-commandes — Afficher l'historique des commandes du client.
+     *
+     * Exclut les paniers en cours (statut != 'panier'), tri antéchronologique.
+     *
+     * @return \Illuminate\Contracts\View\View
+     */
+    public function historique(): \Illuminate\Contracts\View\View
     {
         $commandes = CommandeWeb::where('id_client', session('client_id'))
             ->where('statut', '!=', 'panier')
@@ -123,7 +150,15 @@ class CommandeController extends Controller
         return view('commandes.historique', compact('commandes'));
     }
 
-    public function detail(int $id)
+    /**
+     * GET /commande/{id} — Afficher le detail/confirmation d'une commande.
+     *
+     * Ownership check : seul le client proprietaire peut voir sa commande.
+     * Retourne 404 si la commande n'appartient pas au client connecte.
+     *
+     * @return \Illuminate\Contracts\View\View
+     */
+    public function detail(int $id): \Illuminate\Contracts\View\View
     {
         // QA-04 : ownership check obligatoire
         $commande = CommandeWeb::where('id', $id)
