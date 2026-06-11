@@ -271,6 +271,7 @@ namespace CharlesNadejda.Forms
 
         private void BuildChips()
         {
+            foreach (Control c in _flowChips.Controls) c.Dispose();
             _flowChips.Controls.Clear();
             AjouterChip("Tous", 0, selected: _idActiviteFiltre == 0);
             foreach (var act in _activites)
@@ -468,6 +469,7 @@ namespace CharlesNadejda.Forms
         private void AfficherDetail(VueStockGlobal item)
         {
             _pnlDetailContent.SuspendLayout();
+            foreach (Control c in _pnlDetailContent.Controls) c.Dispose();
             _pnlDetailContent.Controls.Clear();
 
             int y = 0;

@@ -347,8 +347,8 @@ namespace CharlesNadejda.DAL
                 {
                     // Charger niveau et fiche UNE SEULE FOIS — évite de refaire 2 requêtes
                     // dans VerifierDisponibilite + ConsumeStock
-                    var niveau = BomNiveauDAL.GetById(idNiveau);
-                    var fiche  = BomFicheDAL.GetById(idFiche);
+                    var niveau = BomNiveauDAL.GetById(idNiveau, conn, tx);
+                    var fiche  = BomFicheDAL.GetById(idFiche, conn, tx);
 
                     // Guards : si le niveau ou la fiche ont été supprimés entre-temps
                     if (niveau == null)

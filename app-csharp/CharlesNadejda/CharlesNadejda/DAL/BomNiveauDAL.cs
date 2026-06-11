@@ -42,6 +42,20 @@ namespace CharlesNadejda.DAL
             return null;
         }
 
+        /// <summary>Surcharge transactionnelle — lit dans la transaction appelante (évite TOCTOU).</summary>
+        public static BomNiveau GetById(int id, MySqlConnection conn, MySqlTransaction tx)
+        {
+            using (var cmd = conn.CreateCommand())
+            {
+                cmd.Transaction = tx;
+                cmd.CommandText = SELECT_BASE + " WHERE n.id = @id";
+                cmd.Parameters.AddWithValue("@id", id);
+                using (var r = cmd.ExecuteReader())
+                    if (r.Read()) return Map(r);
+            }
+            return null;
+        }
+
         /// <summary>Retourne l'ordre du prochain niveau à créer (max + 1).</summary>
         public static int GetProchainOrdre(int idContexte) => GetOrdreMax(idContexte) + 1;
 

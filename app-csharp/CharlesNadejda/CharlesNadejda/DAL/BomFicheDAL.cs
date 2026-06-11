@@ -82,6 +82,23 @@ namespace CharlesNadejda.DAL
             return fiche;
         }
 
+        /// <summary>Surcharge transactionnelle — lit dans la transaction appelante (évite TOCTOU).</summary>
+        public static BomFiche GetById(int id, MySqlConnection conn, MySqlTransaction tx, bool avecLignes = true)
+        {
+            BomFiche fiche = null;
+            using (var cmd = conn.CreateCommand())
+            {
+                cmd.Transaction = tx;
+                cmd.CommandText = SELECT_HEADER + " WHERE f.id = @id";
+                cmd.Parameters.AddWithValue("@id", id);
+                using (var r = cmd.ExecuteReader())
+                    if (r.Read()) fiche = MapHeader(r);
+            }
+            if (fiche != null && avecLignes)
+                fiche.Lignes = BomFicheLigneDAL.GetByFiche(fiche.Id);
+            return fiche;
+        }
+
         /// <summary>Vérifie l'unicité du nom dans le scope du niveau.</summary>
         public static bool NomExiste(string nom, int idNiveau, int excludeId = 0)
         {

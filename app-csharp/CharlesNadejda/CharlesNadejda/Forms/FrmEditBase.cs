@@ -69,6 +69,10 @@ namespace CharlesNadejda.Forms
             Controls.Add(btnEnregistrer);
             Controls.Add(btnAnnuler);
 
+            // Enter → Enregistrer, Escape → Annuler (P0-5 fix)
+            AcceptButton = btnEnregistrer;
+            CancelButton = btnAnnuler;
+
             // Propriétés communes à tous les formulaires d'édition
             AutoScaleDimensions = new SizeF(7F, 15F);
             AutoScaleMode       = AutoScaleMode.Font;

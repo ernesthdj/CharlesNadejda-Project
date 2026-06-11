@@ -44,8 +44,8 @@ class ProduitWeb extends Model
      */
     public function getStockDisponibleAttribute(): float
     {
-        if ($this->attributes['stock_calc'] ?? null !== null) {
-            return (float) ($this->attributes['stock_calc'] ?? 0);
+        if (array_key_exists('stock_calc', $this->attributes) && $this->attributes['stock_calc'] !== null) {
+            return (float) $this->attributes['stock_calc'];
         }
 
         return (float) BomStock::where('id_fiche', $this->id_bom_fiche)

@@ -721,7 +721,11 @@ namespace CharlesNadejda.Forms
             ProdResetSimulation();
             if (!(_prodCboContexte.SelectedItem is BomContexte ctx))
             {
-                _prodFlowNiveaux?.Controls.Clear();
+                if (_prodFlowNiveaux != null)
+                {
+                    foreach (Control c in _prodFlowNiveaux.Controls) c.Dispose();
+                    _prodFlowNiveaux.Controls.Clear();
+                }
                 return;
             }
             _state.SetContexte(ctx);
