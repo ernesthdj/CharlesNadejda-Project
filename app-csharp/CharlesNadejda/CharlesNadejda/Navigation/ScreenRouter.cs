@@ -27,7 +27,6 @@ namespace CharlesNadejda.Navigation
         // Le MainForm sait alors qu'il doit instancier et afficher le panel Hub.
         public Action<NavigationParams> OnOnboarding      { get; set; }
         public Action<NavigationParams> OnHub             { get; set; }
-        public Action<NavigationParams> OnContexteNiveaux { get; set; }
         public Action<NavigationParams> OnRessources      { get; set; }
         public Action<NavigationParams> OnProduction      { get; set; }
         public Action<NavigationParams> OnPlaceholder     { get; set; }
@@ -40,7 +39,7 @@ namespace CharlesNadejda.Navigation
         private ScreenId?      _lastScreen;
 
         // _lastContexteId = l'id du contexte qui était actif au moment du dernier Navigate
-        // Utile parce que Production et ContexteNiveaux dépendent du contexte sélectionné
+        // Utile parce que Production dépend du contexte sélectionné
         private int            _lastContexteId  = -1;
 
         // _lastRessource = le type de ressource actif au dernier Navigate (pour l'écran Ressources)
@@ -64,16 +63,15 @@ namespace CharlesNadejda.Navigation
         /// et invoque le callback correspondant au <paramref name="screen"/>.
         /// </summary>
         /// <param name="screen">Ecran cible a afficher.</param>
-        /// <param name="parms">Parametres optionnels (scroll, entite, filtre alertes, etc.).</param>
+        /// <param name="parms">Parametres optionnels (type de ressource, etc.).</param>
         public void Navigate(ScreenId screen, NavigationParams parms = null)
         {
             // Guard singleton : si on demande le même écran que celui déjà affiché,
             // on vérifie si le contexte ou la ressource ont changé avant de reconstruire.
             if (_lastScreen == screen)
             {
-                // ContexteNiveaux et Production partagent le même callback (OnProduction)
-                // donc je fusionne leur guard — si le contexte n'a pas changé, on skip
-                if ((screen == ScreenId.ContexteNiveaux || screen == ScreenId.Production)
+                // Production : si le contexte n'a pas changé, on skip
+                if (screen == ScreenId.Production
                     && _lastContexteId == (_state.ActiveContexte?.Id ?? -1))
                     return;
 
@@ -105,7 +103,6 @@ namespace CharlesNadejda.Navigation
             {
                 case ScreenId.Onboarding:      OnOnboarding?.Invoke(p);      break;
                 case ScreenId.Hub:             OnHub?.Invoke(p);             break;
-                case ScreenId.ContexteNiveaux: OnProduction?.Invoke(p); break;  // Fusionné → Production (même écran)
                 case ScreenId.Ressources:      OnRessources?.Invoke(p);      break;
                 case ScreenId.Production:      OnProduction?.Invoke(p);      break;
                 case ScreenId.BoutiqueWeb:     OnBoutiqueWeb?.Invoke(p);     break;

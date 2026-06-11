@@ -34,6 +34,10 @@ namespace CharlesNadejda.Models
         /// <summary>Stock cible (100% de la jauge) en unité de base. Paramétré par l'utilisateur.</summary>
         public decimal? StockCible              { get; set; }
         public int?     IdFournisseurDefaut      { get; set; }
+        /// <summary>Duree de conservation par defaut en jours (nullable si non defini).</summary>
+        public int?     DlcJoursReference       { get; set; }
+        /// <summary>Label qualite (ex: "Bio", "AOP", "Grand Cru"). Nullable.</summary>
+        public string   QualiteLabel            { get; set; }
         public bool     Actif                   { get; set; }
 
         // ── Propriétés de jointure (chargées par le DAL) ──────────

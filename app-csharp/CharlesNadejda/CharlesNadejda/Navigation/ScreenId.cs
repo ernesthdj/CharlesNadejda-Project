@@ -14,12 +14,6 @@ namespace CharlesNadejda.Navigation
         Hub,
 
         /// <summary>
-        /// Ecran de gestion Contexte/Niveaux BOM.
-        /// Fusionne avec Production dans un seul panneau depuis v19.
-        /// </summary>
-        ContexteNiveaux,
-
-        /// <summary>
         /// Ecran generique pour les referentiels (ingredients, fournisseurs, stocks, lots, vue stock).
         /// Le contenu affiche depend de <see cref="AppState.RessourceActive"/>.
         /// </summary>
@@ -27,7 +21,6 @@ namespace CharlesNadejda.Navigation
 
         /// <summary>
         /// Ecran de production BOM : selection contexte, niveaux, fiches, lancement de production.
-        /// Partage le meme callback que ContexteNiveaux dans le ScreenRouter.
         /// </summary>
         Production,
 

@@ -1,63 +1,44 @@
-using System;
-using System.Windows.Forms;
+using System.Collections.Generic;
 using CharlesNadejda.DAL;
 using CharlesNadejda.Models;
 
 namespace CharlesNadejda.Forms
 {
-    public partial class FrmFournisseurs : Form
+    /// <summary>
+    /// Liste CRUD des fournisseurs de matières premières.
+    /// Hérite de FrmListeBase&lt;Fournisseur&gt; — le layout et le workflow CRUD
+    /// sont entièrement gérés par la classe de base.
+    ///
+    /// Migration depuis l'ancien FrmFournisseurs partial + Designer.cs :
+    /// tout le code de construction UI (DGV, boutons, styles) est désormais
+    /// dans FrmListeBase. Ici on ne fournit que la logique métier.
+    /// </summary>
+    public class FrmFournisseurs : FrmListeBase<Fournisseur>
     {
-        public FrmFournisseurs() { InitializeComponent(); }
+        // ── Membres abstraits — logique métier spécifique ───────────
 
-        private void FrmFournisseurs_Load(object sender, EventArgs e) => Charger();
+        protected override string Titre => "Fournisseurs";
 
-        private void Charger()
+        protected override List<Fournisseur> ChargerDonnees()
+            => FournisseurDAL.GetAll();
+
+        protected override void ConfigurerColonnes()
         {
-            try
-            {
-                dgv.DataSource = null;
-                dgv.DataSource = FournisseurDAL.GetAll();
-                if (dgv.Columns["Id"] != null) dgv.Columns["Id"].Visible = false;
-                dgv.Columns["Nom"].HeaderText       = "Nom";
-                dgv.Columns["Contact"].HeaderText   = "Contact";
-                dgv.Columns["Email"].HeaderText      = "Email";
-                dgv.Columns["Telephone"].HeaderText  = "Téléphone";
-                dgv.Columns["Adresse"].HeaderText    = "Adresse";
-                dgv.Columns["Notes"].Visible         = false;
-            }
-            catch (Exception ex) { Erreur(ex.Message); }
+            CacherColonnes("Id", "Notes");
+            ConfigCol("Nom",       "Nom",       180, 120);
+            ConfigCol("Contact",   "Contact",   140, 80);
+            ConfigCol("Email",     "Email",     180, 100);
+            ConfigCol("Telephone", "Téléphone", 120, 80);
+            ConfigCol("Adresse",   "Adresse",   180, 100);
         }
 
-        private Fournisseur Selectionne() => dgv.CurrentRow?.DataBoundItem as Fournisseur;
+        protected override System.Windows.Forms.Form OuvrirFormulaire(Fournisseur element)
+            => new FrmFournisseurEdit(element);
 
-        private void btnAjouter_Click(object sender, EventArgs e)
-        {
-            using (var frm = new FrmFournisseurEdit(null))
-                if (frm.ShowDialog() == DialogResult.OK) Charger();
-        }
+        protected override void Supprimer(Fournisseur element)
+            => FournisseurDAL.Delete(element.Id);
 
-        private void btnModifier_Click(object sender, EventArgs e)
-        {
-            var f = Selectionne();
-            if (f == null) { MessageBox.Show("Sélectionnez un fournisseur."); return; }
-            using (var frm = new FrmFournisseurEdit(f))
-                if (frm.ShowDialog() == DialogResult.OK) Charger();
-        }
-
-        private void btnSupprimer_Click(object sender, EventArgs e)
-        {
-            var f = Selectionne();
-            if (f == null) { MessageBox.Show("Sélectionnez un fournisseur."); return; }
-            if (MessageBox.Show($"Supprimer « {f.Nom} » ?", "Confirmation",
-                MessageBoxButtons.YesNo, MessageBoxIcon.Warning,
-                MessageBoxDefaultButton.Button2) != DialogResult.Yes) return;
-            try { FournisseurDAL.Delete(f.Id); Charger(); }
-            catch (Exception ex) { Erreur("Impossible de supprimer : " + ex.Message); }
-        }
-
-        private void btnFermer_Click(object sender, EventArgs e) => Close();
-
-        private void Erreur(string msg) =>
-            MessageBox.Show(msg, "Erreur", MessageBoxButtons.OK, MessageBoxIcon.Error);
+        protected override string NomElement(Fournisseur element)
+            => element?.Nom ?? "?";
     }
 }

@@ -139,23 +139,40 @@ namespace CharlesNadejda.DAL
         public static void Delete(int id)
         {
             using (var conn = DbHelper.GetConnection())
-            using (var cmd = conn.CreateCommand())
+            using (var tx = conn.BeginTransaction())
             {
-                // Vérifier si le lot a été partiellement consommé (traçabilité)
-                cmd.CommandText = @"
-                    SELECT quantite_initiale - quantite_disponible AS consomme
-                    FROM lots_ingredients WHERE id = @id";
-                cmd.Parameters.AddWithValue("@id", id);
-                var result = cmd.ExecuteScalar();
-                if (result != null && Convert.ToDecimal(result) > 0)
-                    throw new InvalidOperationException(
-                        "Impossible de supprimer : ce lot a été partiellement consommé en production.\n" +
-                        "Les données de traçabilité seraient perdues.");
+                try
+                {
+                    // Vérifier si le lot a été partiellement consommé (traçabilité)
+                    using (var cmd = conn.CreateCommand())
+                    {
+                        cmd.Transaction = tx;
+                        cmd.CommandText = @"
+                            SELECT quantite_initiale - quantite_disponible AS consomme
+                            FROM lots_ingredients WHERE id = @id";
+                        cmd.Parameters.AddWithValue("@id", id);
+                        var result = cmd.ExecuteScalar();
+                        if (result != null && Convert.ToDecimal(result) > 0)
+                            throw new InvalidOperationException(
+                                "Impossible de supprimer : ce lot a été partiellement consommé en production.\n" +
+                                "Les données de traçabilité seraient perdues.");
+                    }
 
-                cmd.CommandText = "DELETE FROM lots_ingredients WHERE id = @id";
-                cmd.Parameters.Clear();
-                cmd.Parameters.AddWithValue("@id", id);
-                cmd.ExecuteNonQuery();
+                    using (var cmd = conn.CreateCommand())
+                    {
+                        cmd.Transaction = tx;
+                        cmd.CommandText = "DELETE FROM lots_ingredients WHERE id = @id";
+                        cmd.Parameters.AddWithValue("@id", id);
+                        cmd.ExecuteNonQuery();
+                    }
+
+                    tx.Commit();
+                }
+                catch
+                {
+                    tx.Rollback();
+                    throw;
+                }
             }
         }
 

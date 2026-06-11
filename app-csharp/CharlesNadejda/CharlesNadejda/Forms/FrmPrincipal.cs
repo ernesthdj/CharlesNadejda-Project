@@ -122,7 +122,6 @@ namespace CharlesNadejda.Forms
         {
             _router.OnOnboarding      = p => ShowOnboarding();
             _router.OnHub             = p => ShowHubScreen();
-            _router.OnContexteNiveaux = p => ShowProductionScreen(p);  // Fusionné → Production
             _router.OnRessources      = p => ShowRessourceScreen(_state.RessourceActive, p);
             _router.OnProduction      = p => ShowProductionScreen(p);
             _router.OnPlaceholder     = p => ShowPlaceholder(null);
@@ -228,15 +227,6 @@ namespace CharlesNadejda.Forms
                     break;
                 case NavItemId.Ingredients:
                     NavigateTo(ScreenId.Ressources, () => _state.SetRessource(RessourceType.Ingredients));
-                    break;
-
-                // NiveauxContextes et FichesBom redirigent vers Production
-                // (ces items étaient séparés avant, maintenant fusionnés dans un seul écran)
-                case NavItemId.NiveauxContextes:
-                    NavigateTo(ScreenId.Production);
-                    break;
-                case NavItemId.FichesBom:
-                    NavigateTo(ScreenId.Production);
                     break;
 
                 // Modules à venir — redirigent vers un placeholder pour l'instant
@@ -372,7 +362,6 @@ namespace CharlesNadejda.Forms
             {
                 { ScreenId.Onboarding,      "Bienvenue" },
                 { ScreenId.Hub,             "Hub atelier" },
-                { ScreenId.ContexteNiveaux, "Production" },  // Rétrocompat — redirige vers Production
                 { ScreenId.Ressources,      _state.RessourceActive.ToString() },
                 { ScreenId.Production,      "Production" },
                 { ScreenId.Planning,        "Planning" },

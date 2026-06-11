@@ -8,133 +8,69 @@ using CharlesNadejda.Models;
 namespace CharlesNadejda.Forms
 {
     /// <summary>
-    /// Gestion des stocks (contenants physiques/logiques).
-    /// CRUD complet — panel de liaison M:N Stock ↔ Activité en sidebar droite.
-    /// Accessible depuis le bouton 📦 dans FrmPrincipal.
+    /// Gestion des stocks (contenants physiques/logiques) — CRUD + liaison M:N Stock ↔ Activité.
+    /// Hérite de FrmListeBase&lt;Stock&gt; pour le layout et le workflow CRUD standard.
     ///
-    /// Layout :
-    ///   pnlHeader (Top, 48px)
-    ///   SplitContainer (Fill)
-    ///     Panel1 (Fill) : _dgv (liste stocks)
-    ///     Panel2 (Fill) : _pnlLiaison — CheckedListBox activités
-    ///   pnlBas (Bottom, 52px)
+    /// Particularité : un SplitContainer remplace le DGV simple de FrmListeBase.
+    ///   - Panel1 : le DGV hérité de FrmListeBase (liste des stocks)
+    ///   - Panel2 : CheckedListBox des activités liées au stock sélectionné
+    ///
+    /// La liaison M:N est gérée en temps réel : chaque coche/décoche fait un INSERT/DELETE
+    /// immédiat via StockDAL.LierActivite / DelierActivite.
     /// </summary>
-    public class FrmStocks : Form
+    public class FrmStocks : FrmListeBase<Stock>
     {
-        private DataGridView     _dgv;
-        private Button           _btnNouveau, _btnModifier, _btnSupprimer;
-        private SplitContainer   _split;
-        private CheckedListBox   _clbActivites;
-        private ToolTip          _tip;
+        // ── Contrôles spécifiques au panel de liaison ───────────────
+        private readonly SplitContainer   _split;
+        private readonly CheckedListBox   _clbActivites;
+        private readonly ToolTip          _tip;
 
-        // Garde un verrou pour éviter les faux événements ItemCheck pendant le chargement
-        private bool _chargeantLiaisons = false;
-
-        private static readonly Color CHOCOLAT_FONCE = AppColors.ChocoBrand;
-        private static readonly Color CREME          = AppColors.Creme;
-        private static readonly Color OR             = AppColors.Or;
+        // Verrou anti-faux-événements pendant le chargement des liaisons
+        private bool _chargeantLiaisons;
 
         public FrmStocks()
         {
-            BuildUI();
-            Load  += (s, e) => Charger();
-            Shown += (s, e) => _dgv.Focus();
-        }
-
-        private void BuildUI()
-        {
-            this.Text            = "Gestion des stocks";
-            this.ClientSize      = new Size(820, 480);
-            this.MinimumSize     = new Size(600, 380);
-            this.FormBorderStyle = FormBorderStyle.Sizable;
-            this.StartPosition   = FormStartPosition.CenterParent;
-            this.BackColor       = Color.White;
-
             _tip = new ToolTip();
 
-            // ── Header ──────────────────────────────────────────────────────
-            var pnlHeader = new Panel
+            // ── SplitContainer — englobe le DGV hérité + panel liaisons ──
+            // On retire le DGV du Controls de la base pour le placer dans Panel1
+            Controls.Remove(dgv);
+
+            _split = new SplitContainer
             {
-                Dock      = DockStyle.Top,
-                Height    = 48,
-                BackColor = CHOCOLAT_FONCE,
-                Padding   = new Padding(16, 0, 16, 0)
+                Location         = dgv.Location,
+                Size             = dgv.Size,
+                Anchor           = dgv.Anchor,
+                Orientation      = Orientation.Vertical,
+                IsSplitterFixed  = false,
+                BackColor        = AppColors.GridLine
             };
-            pnlHeader.Controls.Add(new Label
-            {
-                Text      = "STOCKS",
-                Font      = new Font("Segoe UI", 11F, FontStyle.Bold),
-                ForeColor = OR,
-                Dock      = DockStyle.Left,
-                AutoSize  = false,
-                Width     = 160,
-                TextAlign = ContentAlignment.MiddleLeft
-            });
-            pnlHeader.Controls.Add(new Label
-            {
-                Text      = "Contenants physiques ou logiques — liez-les à des activités à droite",
-                Font      = new Font("Segoe UI", 8F, FontStyle.Italic),
-                ForeColor = AppColors.HintOnDark,
-                Dock      = DockStyle.Fill,
-                TextAlign = ContentAlignment.MiddleLeft
-            });
 
-            // ── Grille principale ────────────────────────────────────────────
-            _dgv = new DataGridView
-            {
-                Dock                    = DockStyle.Fill,
-                ReadOnly                = true,
-                AllowUserToAddRows      = false,
-                AllowUserToDeleteRows   = false,
-                SelectionMode           = DataGridViewSelectionMode.FullRowSelect,
-                MultiSelect             = false,
-                RowHeadersVisible       = false,
-                AutoSizeColumnsMode     = DataGridViewAutoSizeColumnsMode.AllCells,
-                BackgroundColor         = Color.White,
-                BorderStyle             = BorderStyle.None,
-                ColumnHeadersHeight     = 32,
-                Font                    = new Font("Segoe UI", 9.5F),
-                GridColor               = AppColors.GridLine
-            };
-            _dgv.ColumnHeadersDefaultCellStyle.BackColor          = CREME;
-            _dgv.ColumnHeadersDefaultCellStyle.ForeColor          = CHOCOLAT_FONCE;
-            _dgv.ColumnHeadersDefaultCellStyle.Font               = new Font("Segoe UI", 8.5F, FontStyle.Bold);
-            _dgv.ColumnHeadersDefaultCellStyle.SelectionBackColor = CREME;
-            _dgv.DefaultCellStyle.SelectionBackColor              = AppColors.ChocoMed;
-            _dgv.DefaultCellStyle.SelectionForeColor              = Color.White;
-            _dgv.CellDoubleClick += (s, e) => { if (e.RowIndex >= 0) Modifier(); };
+            // Panel1 : le DGV hérité (liste des stocks)
+            dgv.Dock = DockStyle.Fill;
+            _split.Panel1.Controls.Add(dgv);
 
-            _dgv.Columns.Add(new DataGridViewTextBoxColumn { Name = "Id",           HeaderText = "ID",          Visible = false });
-            _dgv.Columns.Add(new DataGridViewTextBoxColumn { Name = "Nom",          HeaderText = "Nom",         MinimumWidth = 180 });
-            _dgv.Columns.Add(new DataGridViewTextBoxColumn { Name = "Description",  HeaderText = "Description", MinimumWidth = 200 });
-            _dgv.Columns.Add(new DataGridViewTextBoxColumn { Name = "DateCreation", HeaderText = "Créé le",     MinimumWidth = 90 });
-
-            // Chargement des liaisons à chaque changement de sélection
-            _dgv.SelectionChanged += DGV_SelectionChanged;
-
-            // ── Panel de liaison activités (Panel2 du SplitContainer) ────────
+            // Panel2 : GroupBox avec CheckedListBox des activités
             var grpLiaison = new GroupBox
             {
                 Text      = "Activités liées",
                 Font      = new Font("Segoe UI", 9F, FontStyle.Bold),
-                ForeColor = CHOCOLAT_FONCE,
+                ForeColor = AppColors.ChocoBrand,
                 Dock      = DockStyle.Fill,
                 Padding   = new Padding(8)
             };
 
             _clbActivites = new CheckedListBox
             {
-                Dock          = DockStyle.Fill,
-                CheckOnClick  = true,
-                Font          = new Font("Segoe UI", 9F),
-                BorderStyle   = BorderStyle.None,
-                BackColor     = Color.FromArgb(252, 248, 244)
+                Dock         = DockStyle.Fill,
+                CheckOnClick = true,
+                Font         = new Font("Segoe UI", 9F),
+                BorderStyle  = BorderStyle.None,
+                BackColor    = Color.FromArgb(252, 248, 244)
             };
             _clbActivites.ItemCheck += ClbActivites_ItemCheck;
 
-            grpLiaison.Controls.Add(_clbActivites);
-
-            var pnlLiaisonHint = new Label
+            var lblHint = new Label
             {
                 Text      = "Sélectionnez un stock",
                 Font      = new Font("Segoe UI", 8F, FontStyle.Italic),
@@ -142,108 +78,75 @@ namespace CharlesNadejda.Forms
                 Dock      = DockStyle.Bottom,
                 Height    = 20,
                 TextAlign = ContentAlignment.MiddleLeft,
-                Padding   = new Padding(4, 0, 0, 0),
-                Name      = "lblHint"
-            };
-            grpLiaison.Controls.Add(pnlLiaisonHint);
-
-            // ── SplitContainer ───────────────────────────────────────────────
-            _split = new SplitContainer
-            {
-                Dock             = DockStyle.Fill,
-                Orientation      = Orientation.Vertical,
-                IsSplitterFixed  = false,   // fixé après layout
-                BackColor        = AppColors.GridLine  // couleur de la barre séparatrice
+                Padding   = new Padding(4, 0, 0, 0)
             };
 
-            // Règle MEMORY.md : Panel1 (Fill) ajouté AVANT Panel2 (Right)
-            _split.Panel1.Controls.Add(_dgv);
+            grpLiaison.Controls.Add(_clbActivites);
+            grpLiaison.Controls.Add(lblHint);
             _split.Panel2.Controls.Add(grpLiaison);
 
-            // Règle MEMORY.md : SplitterDistance UNIQUEMENT dans un LayoutEventHandler après Width > 0
+            // SplitterDistance fixé après le premier layout (quand Width > 0)
             bool firstLayout = true;
             _split.Layout += (s, e) =>
             {
                 if (!firstLayout) return;
                 if (_split.Width <= 0) return;
-                firstLayout          = false;
-                _split.SplitterDistance = Math.Max(100, _split.Width - 280);
+                firstLayout            = false;
+                _split.SplitterDistance = Math.Max(100, _split.Width - 250);
                 _split.IsSplitterFixed  = true;
             };
 
-            // ── Barre de boutons (bas) ──────────────────────────────────────
-            var pnlBas = new Panel
-            {
-                Dock      = DockStyle.Bottom,
-                Height    = 52,
-                BackColor = Color.FromArgb(245, 240, 235),
-                Padding   = new Padding(16, 10, 16, 10)
-            };
+            Controls.Add(_split);
 
-            _btnNouveau   = CreerBtn("+ Nouveau stock",  CHOCOLAT_FONCE,               Color.White,  0);
-            _btnModifier  = CreerBtn("✎  Modifier",       Color.FromArgb(90, 130, 80),  Color.White, 152);
-            _btnSupprimer = CreerBtn("🗑  Supprimer",      Color.FromArgb(180, 50,  40), Color.White, 288);
-
-            _btnNouveau.Click   += (s, e) => Nouveau();
-            _btnModifier.Click  += (s, e) => Modifier();
-            _btnSupprimer.Click += (s, e) => Supprimer();
-            pnlBas.Controls.AddRange(new Control[] { _btnNouveau, _btnModifier, _btnSupprimer });
-
-            // ── Assemblage — ordre Controls.Add critique pour DockStyle ─────
-            // Règle absolue : Top d'abord, Bottom ensuite, Fill en dernier
-            this.Controls.Add(_split);      // Fill — doit être ajouté AVANT Top/Bottom
-            this.Controls.Add(pnlBas);      // Bottom
-            this.Controls.Add(pnlHeader);   // Top
+            // Chargement des liaisons à chaque changement de sélection dans le DGV
+            dgv.SelectionChanged += DGV_SelectionChanged;
         }
 
-        private Button CreerBtn(string text, Color bg, Color fg, int x) =>
-            new Button
-            {
-                Text           = text,
-                Font           = new Font("Segoe UI", 9F, FontStyle.Bold),
-                BackColor      = bg,
-                ForeColor      = fg,
-                FlatStyle      = FlatStyle.Flat,
-                Location       = new Point(x, 0),
-                Size           = new Size(128, 32),
-                Cursor         = Cursors.Hand,
-                FlatAppearance = { BorderSize = 0 }
-            };
+        // ── Membres abstraits — logique métier spécifique ───────────
 
-        // ── Chargement de la liste des stocks ────────────────────────────
+        protected override string Titre => "Stocks";
 
-        private void Charger()
+        protected override List<Stock> ChargerDonnees()
+            => StockDAL.GetAll();
+
+        protected override void ConfigurerColonnes()
         {
-            _dgv.Rows.Clear();
-            foreach (var s in StockDAL.GetAll())
-                _dgv.Rows.Add(s.Id, s.Nom, s.Description ?? "", s.DateCreation.ToString("dd/MM/yyyy"));
-
-            // Désactiver Supprimer jusqu'à sélection — sera réévalué dans SelectionChanged
-            _btnSupprimer.Enabled = false;
+            CacherColonnes("Id", "Actif");
+            ConfigCol("Nom",          "Nom",         200, 140);
+            ConfigCol("Description",  "Description", 220, 140);
+            ConfigCol("DateCreation", "Créé le",     100,  80);
         }
 
-        // ── Sélection dans la grille → chargement des liaisons ──────────
+        protected override Form OuvrirFormulaire(Stock element)
+            => new FrmStockEdit(element);
+
+        protected override void Supprimer(Stock element)
+            => StockDAL.Delete(element.Id);
+
+        protected override string NomElement(Stock element)
+            => element?.Nom ?? "?";
+
+        // ── Sélection dans la grille → chargement des liaisons ──────
 
         private void DGV_SelectionChanged(object sender, EventArgs e)
         {
-            var stock = StockSelectionne(silencieux: true);
+            var stock = Selectionne();
 
             if (stock == null)
             {
                 _chargeantLiaisons = true;
                 _clbActivites.Items.Clear();
                 _chargeantLiaisons = false;
-                _btnSupprimer.Enabled = false;
+                ActualiserBoutonSupprimer(0, estVide: true);
                 return;
             }
 
             ChargerLiaisons(stock.Id);
-            ActualiserBoutonSupprimer(stock.Id);
+            ActualiserBoutonSupprimer(stock.Id, estVide: false);
         }
 
         private void ChargerLiaisons(int idStock)
         {
-            // Désactiver ItemCheck pendant le chargement pour éviter les faux événements
             _chargeantLiaisons = true;
             try
             {
@@ -266,43 +169,37 @@ namespace CharlesNadejda.Forms
             }
         }
 
-        private void ActualiserBoutonSupprimer(int idStock)
+        private void ActualiserBoutonSupprimer(int idStock, bool estVide)
         {
-            bool contientDonnees = StockContientDonnees(idStock);
-            _btnSupprimer.Enabled = !contientDonnees;
-            if (contientDonnees)
-                _tip.SetToolTip(_btnSupprimer,
-                    "Ce stock contient des ingrédients ou des lots actifs — suppression impossible.");
-            else
-                _tip.SetToolTip(_btnSupprimer, "");
+            if (estVide)
+            {
+                btnSupprimer.Enabled = false;
+                _tip.SetToolTip(btnSupprimer, "");
+                return;
+            }
+
+            bool contientDonnees = StockDAL.ContientDonnees(idStock);
+            btnSupprimer.Enabled = !contientDonnees;
+
+            _tip.SetToolTip(btnSupprimer,
+                contientDonnees
+                    ? "Ce stock contient des ingrédients ou des lots actifs — suppression impossible."
+                    : "");
         }
 
-        /// <summary>
-        /// Vérifie si le stock contient des fiches d'ingrédients ou des lots actifs.
-        /// Utilisé pour désactiver le bouton Supprimer et afficher un ToolTip explicatif.
-        /// La protection réelle est aussi dans StockDAL.Delete() — double filet de sécurité.
-        /// </summary>
-        private bool StockContientDonnees(int idStock)
-        {
-            return StockDAL.ContientDonnees(idStock);
-        }
-
-        // ── Liaison M:N : ItemCheck → INSERT ou DELETE immédiat ──────────
+        // ── Liaison M:N : ItemCheck → INSERT ou DELETE immédiat ─────
 
         private void ClbActivites_ItemCheck(object sender, ItemCheckEventArgs e)
         {
-            // Verrou anti-faux-événements pendant ChargerLiaisons()
             if (_chargeantLiaisons) return;
 
-            var stock = StockSelectionne(silencieux: true);
+            var stock = Selectionne();
             if (stock == null) return;
 
             if (!(_clbActivites.Items[e.Index] is Activite act)) return;
 
             try
             {
-                // e.NewValue : état FUTUR (avant mise à jour de l'UI)
-                // Ne pas utiliser GetItemChecked(e.Index) — encore à l'ancien état
                 if (e.NewValue == CheckState.Checked)
                     StockDAL.LierActivite(act.Id, stock.Id);
                 else
@@ -310,69 +207,10 @@ namespace CharlesNadejda.Forms
             }
             catch (Exception ex)
             {
-                // Annuler le changement visuellement en cas d'erreur DB
                 e.NewValue = e.CurrentValue;
                 MessageBox.Show("Erreur lors de la mise à jour de la liaison : " + ex.Message,
                     "Erreur", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
-        }
-
-        // ── CRUD ─────────────────────────────────────────────────────────
-
-        private void Nouveau()
-        {
-            using (var frm = new FrmStockEdit())
-                if (frm.ShowDialog(this) == DialogResult.OK) Charger();
-        }
-
-        private void Modifier()
-        {
-            var stock = StockSelectionne();
-            if (stock == null) return;
-            using (var frm = new FrmStockEdit(stock))
-                if (frm.ShowDialog(this) == DialogResult.OK) Charger();
-        }
-
-        private void Supprimer()
-        {
-            var stock = StockSelectionne();
-            if (stock == null) return;
-
-            if (MessageBox.Show(
-                    $"Supprimer le stock « {stock.Nom} » ?\n\n" +
-                    "Cette action est impossible si des ingrédients y sont rattachés.",
-                    "Suppression",
-                    MessageBoxButtons.YesNo, MessageBoxIcon.Warning,
-                    MessageBoxDefaultButton.Button2) != DialogResult.Yes) return;
-            try
-            {
-                StockDAL.Delete(stock.Id);
-                Charger();
-            }
-            catch (InvalidOperationException ex)
-            {
-                MessageBox.Show(ex.Message, "Impossible", MessageBoxButtons.OK, MessageBoxIcon.Warning);
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show("Erreur : " + ex.Message, "Erreur", MessageBoxButtons.OK, MessageBoxIcon.Error);
-            }
-        }
-
-        // ── Helper sélection ─────────────────────────────────────────────
-
-        /// <param name="silencieux">Si true, ne montre pas de MessageBox si rien n'est sélectionné.</param>
-        private Stock StockSelectionne(bool silencieux = false)
-        {
-            if (_dgv.SelectedRows.Count == 0)
-            {
-                if (!silencieux)
-                    MessageBox.Show("Sélectionnez un stock.", "Info", MessageBoxButtons.OK, MessageBoxIcon.Information);
-                return null;
-            }
-            var cell = _dgv.SelectedRows[0].Cells["Id"].Value;
-            if (cell == null) return null;
-            return StockDAL.GetById((int)cell);
         }
     }
 }

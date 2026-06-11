@@ -138,67 +138,12 @@ namespace CharlesNadejda.DAL
         }
 
         /// <summary>
-        /// Surcharge interne — opère sur les lignes déjà chargées de la fiche,
-        /// évitant le double chargement niveau/fiche. Utilisée par Executer()
-        /// pour travailler dans la même transaction logique.
-        /// Version SANS transaction : lit le stock avec des connexions séparées.
+        /// Surcharge interne sans transaction — lit le stock avec des connexions séparées.
         /// </summary>
         private static List<BomManque> VerifierDisponibiliteLignes(
             List<BomFicheLigne> lignes, decimal quantiteCible)
         {
-            var manques = new List<BomManque>();
-            // multiplicateur = nombre de batches demandés
-            decimal multiplicateur = quantiteCible;
-
-            // Je parcours chaque ligne de la fiche (chaque ingrédient ou produit intermédiaire)
-            foreach (var ligne in lignes)
-            {
-                // qteNecessaire = quantité par batch × nombre de batches
-                decimal qteNecessaire = ligne.Quantite * multiplicateur;
-                decimal qteDisponible;
-
-                if (ligne.TypeInput == BomFiche.TypeInputIngredient)
-                {
-                    // Conversion de l'unité de la recette vers l'unité de base du stock
-                    // Ex: la recette dit 500g mais le stock est en kg → je convertis
-                    decimal qteNecessaireBase = UnitConvertisseur.Convertir(
-                        qteNecessaire, ligne.UniteMesure, ligne.UniteMesureInput);
-                    // Lecture du stock disponible pour cet ingrédient (tous lots confondus)
-                    qteDisponible = BomStockDAL.GetDisponibleIngredient(ligne.IdInputIngredient.Value);
-
-                    // Si pas assez en stock, j'ajoute un BomManque à la liste
-                    if (qteDisponible < qteNecessaireBase)
-                        manques.Add(new BomManque
-                        {
-                            NomInput           = ligne.NomInput,
-                            Unite              = ligne.UniteMesureInput,
-                            QuantiteNecessaire = qteNecessaireBase,
-                            QuantiteDisponible = qteDisponible
-                        });
-                }
-                else
-                {
-                    // Type "fiche" — c'est un produit intermédiaire (semi-fini d'un niveau inférieur)
-                    // Je dois trouver dans quel niveau cette fiche source a été produite
-                    int idNiveauSource = GetIdNiveauDeFiche(ligne.IdInputFiche.Value);
-                    qteDisponible = idNiveauSource > 0
-                        ? BomStockDAL.GetDisponible(idNiveauSource, ligne.IdInputFiche.Value)
-                        : 0;
-
-                    decimal qteNecessaireConv = UnitConvertisseur.Convertir(
-                        qteNecessaire, ligne.UniteMesure, ligne.UniteMesureInput);
-
-                    if (qteDisponible < qteNecessaireConv)
-                        manques.Add(new BomManque
-                        {
-                            NomInput           = ligne.NomInput,
-                            Unite              = ligne.UniteMesureInput,
-                            QuantiteNecessaire = qteNecessaireConv,
-                            QuantiteDisponible = qteDisponible
-                        });
-                }
-            }
-            return manques;
+            return VerifierDisponibiliteLignesInternal(lignes, quantiteCible, null, null);
         }
 
         /// <summary>
@@ -212,11 +157,23 @@ namespace CharlesNadejda.DAL
             List<BomFicheLigne> lignes, decimal quantiteCible,
             MySqlConnection conn, MySqlTransaction tx)
         {
+            return VerifierDisponibiliteLignesInternal(lignes, quantiteCible, conn, tx);
+        }
+
+        /// <summary>
+        /// Logique unique de vérification de disponibilité.
+        /// Si conn/tx sont fournis, les lectures de stock passent par la transaction
+        /// (avec FOR UPDATE pour le verrou pessimiste). Sinon, chaque lecture
+        /// crée sa propre connexion via les surcharges autonomes de BomStockDAL.
+        /// </summary>
+        private static List<BomManque> VerifierDisponibiliteLignesInternal(
+            List<BomFicheLigne> lignes, decimal quantiteCible,
+            MySqlConnection conn, MySqlTransaction tx)
+        {
             var manques = new List<BomManque>();
+            bool enTransaction = conn != null && tx != null;
             decimal multiplicateur = quantiteCible;
 
-            // Même logique que la version sans transaction, mais avec conn/tx en plus
-            // pour que les SELECT se fassent dans la même transaction que les UPDATE
             foreach (var ligne in lignes)
             {
                 decimal qteNecessaire = ligne.Quantite * multiplicateur;
@@ -226,8 +183,11 @@ namespace CharlesNadejda.DAL
                 {
                     decimal qteNecessaireBase = UnitConvertisseur.Convertir(
                         qteNecessaire, ligne.UniteMesure, ligne.UniteMesureInput);
-                    // Lecture avec FOR UPDATE — verrouille les lignes lues jusqu'au COMMIT
-                    qteDisponible = BomStockDAL.GetDisponibleIngredient(ligne.IdInputIngredient.Value, conn, tx);
+
+                    // Lecture du stock — avec FOR UPDATE si en transaction, connexion séparée sinon
+                    qteDisponible = enTransaction
+                        ? BomStockDAL.GetDisponibleIngredient(ligne.IdInputIngredient.Value, conn, tx)
+                        : BomStockDAL.GetDisponibleIngredient(ligne.IdInputIngredient.Value);
 
                     if (qteDisponible < qteNecessaireBase)
                         manques.Add(new BomManque
@@ -240,10 +200,20 @@ namespace CharlesNadejda.DAL
                 }
                 else
                 {
-                    int idNiveauSource = GetIdNiveauDeFiche(ligne.IdInputFiche.Value, conn, tx);
-                    qteDisponible = idNiveauSource > 0
-                        ? BomStockDAL.GetDisponible(idNiveauSource, ligne.IdInputFiche.Value, conn, tx)
-                        : 0;
+                    int idNiveauSource = enTransaction
+                        ? GetIdNiveauDeFiche(ligne.IdInputFiche.Value, conn, tx)
+                        : GetIdNiveauDeFiche(ligne.IdInputFiche.Value);
+
+                    if (idNiveauSource > 0)
+                    {
+                        qteDisponible = enTransaction
+                            ? BomStockDAL.GetDisponible(idNiveauSource, ligne.IdInputFiche.Value, conn, tx)
+                            : BomStockDAL.GetDisponible(idNiveauSource, ligne.IdInputFiche.Value);
+                    }
+                    else
+                    {
+                        qteDisponible = 0;
+                    }
 
                     decimal qteNecessaireConv = UnitConvertisseur.Convertir(
                         qteNecessaire, ligne.UniteMesure, ligne.UniteMesureInput);
@@ -609,21 +579,13 @@ namespace CharlesNadejda.DAL
 
         /// <summary>
         /// GetIdNiveauDeFiche() — retourne l'id du niveau auquel appartient une fiche donnée.
-        /// J'en ai besoin pour savoir dans quel niveau chercher le stock d'un produit intermédiaire.
-        /// Un niveau N peut référencer n'importe quel niveau inférieur, pas seulement N-1.
         /// Retourne 0 si la fiche n'existe pas.
         /// Version sans transaction — crée sa propre connexion.
         /// </summary>
         private static int GetIdNiveauDeFiche(int idFiche)
         {
             using (var conn = DbHelper.GetConnection())
-            using (var cmd = conn.CreateCommand())
-            {
-                cmd.CommandText = "SELECT id_niveau FROM bom_fiches WHERE id = @id";
-                cmd.Parameters.AddWithValue("@id", idFiche);
-                var res = cmd.ExecuteScalar();
-                return res == null ? 0 : Convert.ToInt32(res);
-            }
+                return GetIdNiveauDeFicheInternal(idFiche, conn, null);
         }
 
         /// <summary>
@@ -632,9 +594,15 @@ namespace CharlesNadejda.DAL
         /// </summary>
         private static int GetIdNiveauDeFiche(int idFiche, MySqlConnection conn, MySqlTransaction tx)
         {
+            return GetIdNiveauDeFicheInternal(idFiche, conn, tx);
+        }
+
+        /// <summary>Logique unique pour GetIdNiveauDeFiche.</summary>
+        private static int GetIdNiveauDeFicheInternal(int idFiche, MySqlConnection conn, MySqlTransaction tx)
+        {
             using (var cmd = conn.CreateCommand())
             {
-                cmd.Transaction = tx;
+                if (tx != null) cmd.Transaction = tx;
                 cmd.CommandText = "SELECT id_niveau FROM bom_fiches WHERE id = @id";
                 cmd.Parameters.AddWithValue("@id", idFiche);
                 var res = cmd.ExecuteScalar();

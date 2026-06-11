@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Drawing;
 using System.Windows.Forms;
 using CharlesNadejda.DAL;
@@ -7,197 +8,145 @@ using CharlesNadejda.Models;
 namespace CharlesNadejda.Forms
 {
     /// <summary>
-    /// Gestion des activités artisanales (CRUD).
-    /// Accessible depuis le bouton ⚙ du bandeau dans FrmPrincipal.
-    /// Pattern : classe non-partial, UI construite programmatiquement.
+    /// Gestion des activités artisanales (CRUD + Désactiver/Réactiver + Stocks liés).
+    /// Hérite de FrmListeBase&lt;Activite&gt; pour le layout et le workflow CRUD standard.
+    ///
+    /// Particularités par rapport à un formulaire liste classique :
+    ///   - Bouton "Désactiver / Réactiver" (toggle selon l'état de l'activité sélectionnée)
+    ///   - Bouton "Stocks liés" (ouvre FrmActiviteStocks)
+    ///   - Les activités inactives sont affichées en gris italique (AppliquerStylesLignes)
+    ///   - ChargerDonnees() inclut les inactifs (includeInactifs: true)
     /// </summary>
-    public class FrmActivites : Form
+    public class FrmActivites : FrmListeBase<Activite>
     {
-        private DataGridView _dgv;
-        private Button _btnNouveau;
-        private Button _btnModifier;
-        private Button _btnDesactiver;
-        private Button _btnSupprimer;
-        private Button _btnStocks;
-
-        // ── Palette — voir AppColors (TICKET-12) ─────────────────────
+        // ── Boutons supplémentaires propres à ce formulaire ─────────
+        private readonly Button _btnDesactiver;
+        private readonly Button _btnStocks;
 
         public FrmActivites()
         {
-            BuildUI();
-            Load    += (s, e) => Charger();
-            Shown   += (s, e) => _dgv.Focus();
-        }
-
-        private void BuildUI()
-        {
-            this.Text            = "Gestion des activités";
-            this.ClientSize      = new Size(620, 420);
-            this.MinimumSize     = new Size(540, 360);
-            this.FormBorderStyle = FormBorderStyle.Sizable;
-            this.StartPosition   = FormStartPosition.CenterParent;
-            this.BackColor       = Color.White;
-
-            // ── En-tête ──────────────────────────────────────────────────
-            var pnlHeader = new Panel
+            // Bouton Désactiver/Réactiver — positionné sous le bouton Supprimer de la base
+            _btnDesactiver = new Button
             {
-                Dock      = DockStyle.Top,
-                Height    = 48,
-                BackColor = AppColors.ChocoBrand,
-                Padding   = new Padding(16, 0, 16, 0)
-            };
-            var lblTitre = new Label
-            {
-                Text      = "ACTIVITÉS",
-                Font      = new Font("Segoe UI", 11F, FontStyle.Bold),
-                ForeColor = AppColors.Or,
-                Dock      = DockStyle.Left,
-                AutoSize  = false,
-                Width     = 200,
-                TextAlign = ContentAlignment.MiddleLeft
-            };
-            var lblNote = new Label
-            {
-                Text      = "Chaque activité possède son propre stock d'ingrédients",
-                Font      = new Font("Segoe UI", 8F, FontStyle.Italic),
-                ForeColor = AppColors.HintOnDark,
-                Dock      = DockStyle.Fill,
-                TextAlign = ContentAlignment.MiddleLeft
-            };
-            pnlHeader.Controls.Add(lblNote);
-            pnlHeader.Controls.Add(lblTitre);   // Gestalt proximité : titre d'abord
-
-            // ── DataGridView ─────────────────────────────────────────────
-            _dgv = new DataGridView
-            {
-                Dock                  = DockStyle.Fill,
-                ReadOnly              = true,
-                AllowUserToAddRows    = false,
-                AllowUserToDeleteRows = false,
-                SelectionMode         = DataGridViewSelectionMode.FullRowSelect,
-                MultiSelect           = false,
-                RowHeadersVisible     = false,
-                AutoSizeColumnsMode   = DataGridViewAutoSizeColumnsMode.AllCells,
-                BackgroundColor       = Color.White,
-                BorderStyle           = BorderStyle.None,
-                ColumnHeadersHeight   = 32,
-                Font                  = new Font("Segoe UI", 9.5F),
-                GridColor             = AppColors.GridLine
-            };
-            _dgv.ColumnHeadersDefaultCellStyle.BackColor   = AppColors.Creme;
-            _dgv.ColumnHeadersDefaultCellStyle.ForeColor   = AppColors.ChocoBrand;
-            _dgv.ColumnHeadersDefaultCellStyle.Font        = new Font("Segoe UI", 8.5F, FontStyle.Bold);
-            _dgv.ColumnHeadersDefaultCellStyle.SelectionBackColor = AppColors.Creme;
-            _dgv.DefaultCellStyle.SelectionBackColor        = AppColors.ChocoMed;
-            _dgv.DefaultCellStyle.SelectionForeColor        = Color.White;
-            _dgv.CellDoubleClick   += (s, e) => { if (e.RowIndex >= 0) Modifier(); };
-            _dgv.SelectionChanged += (s, e) => MajBoutonDesactiver();
-
-            // Colonnes explicites
-            _dgv.Columns.Add(new DataGridViewTextBoxColumn { Name = "Id",          HeaderText = "ID",          MinimumWidth = 40,  Visible = false });
-            _dgv.Columns.Add(new DataGridViewTextBoxColumn { Name = "Actif",       HeaderText = "Actif",       MinimumWidth = 40,  Visible = false });
-            _dgv.Columns.Add(new DataGridViewTextBoxColumn { Name = "Nom",         HeaderText = "Nom",         MinimumWidth = 160 });
-            _dgv.Columns.Add(new DataGridViewTextBoxColumn { Name = "Description",  HeaderText = "Description", MinimumWidth = 200 });
-            _dgv.Columns.Add(new DataGridViewTextBoxColumn { Name = "Statut",       HeaderText = "Statut",      MinimumWidth = 80 });
-            _dgv.Columns.Add(new DataGridViewTextBoxColumn { Name = "DateCreation", HeaderText = "Créée le",    MinimumWidth = 100 });
-
-            // ── Barre d'actions (Bottom) ──────────────────────────────────
-            var pnlBas = new Panel
-            {
-                Dock      = DockStyle.Bottom,
-                Height    = 52,
-                BackColor = Color.FromArgb(245, 240, 235),
-                Padding   = new Padding(16, 10, 16, 10)
-            };
-
-            // Fitts : action principale (Nouveau) à gauche, actions secondaires à droite
-            // 5 boutons × 104px + 4 espaces × 14px = 576px = largeur utile (620 - 2×22 padding)
-            _btnNouveau    = CreerBouton("+ Nouvelle activité", AppColors.ChocoBrand,                   Color.White,   0);
-            _btnModifier   = CreerBouton("✎  Modifier",         Color.FromArgb(90, 130, 80),      Color.White, 118);
-            _btnDesactiver = CreerBouton("✕  Désactiver",        Color.FromArgb(160, 120, 60),     Color.White, 236);
-            _btnSupprimer  = CreerBouton("🗑  Supprimer",         Color.FromArgb(180, 50,  40),     Color.White, 354);
-            _btnStocks     = CreerBouton("📦 Stocks liés",        Color.FromArgb(60,  110, 160),    Color.White, 472);
-
-            _btnNouveau.Click    += (s, e) => Nouveau();
-            _btnModifier.Click   += (s, e) => Modifier();
-            _btnDesactiver.Click += (s, e) => Desactiver();
-            _btnSupprimer.Click  += (s, e) => Supprimer();
-            _btnStocks.Click     += (s, e) => GererStocks();
-
-            pnlBas.Controls.AddRange(new Control[] { _btnNouveau, _btnModifier, _btnDesactiver, _btnSupprimer, _btnStocks });
-
-            // Ordre d'ajout critique pour le docking WinForms :
-            // Fill en index 0 → traité en dernier → prend l'espace restant après Top et Bottom
-            this.Controls.Add(_dgv);       // index 0 — Fill
-            this.Controls.Add(pnlBas);     // index 1 — Bottom
-            this.Controls.Add(pnlHeader);  // index 2 — Top (traité en 1er, pousse le Fill vers le bas)
-        }
-
-        private Button CreerBouton(string text, Color bg, Color fg, int x)
-        {
-            var btn = new Button
-            {
-                Text      = text,
-                Font      = new Font("Segoe UI", 9F, FontStyle.Bold),
-                BackColor = bg,
-                ForeColor = fg,
+                Text      = "✕  Désactiver",
+                Location  = new Point(BtnX, BtnYExtra),
+                Size      = new Size(130, 36),
+                Font      = new Font("Segoe UI", 9.5F),
+                Anchor    = AnchorStyles.Top | AnchorStyles.Right,
                 FlatStyle = FlatStyle.Flat,
-                Location  = new Point(x, 0),
-                Size      = new Size(104, 32),
-                Cursor    = Cursors.Hand
+                Cursor    = Cursors.Hand,
+                BackColor = Color.FromArgb(160, 120, 60),
+                ForeColor = Color.White
             };
-            btn.FlatAppearance.BorderSize = 0;
-            return btn;
+            _btnDesactiver.FlatAppearance.BorderSize          = 1;
+            _btnDesactiver.FlatAppearance.BorderColor         = Color.FromArgb(140, 105, 50);
+            _btnDesactiver.FlatAppearance.MouseOverBackColor  = Color.FromArgb(140, 105, 50);
+            _btnDesactiver.Click += (s, e) => Desactiver();
+
+            // Bouton Stocks liés — positionné sous Désactiver
+            _btnStocks = new Button
+            {
+                Text      = "📦 Stocks liés",
+                Location  = new Point(BtnX, BtnYExtra + 44),
+                Size      = new Size(130, 36),
+                Font      = new Font("Segoe UI", 9.5F),
+                Anchor    = AnchorStyles.Top | AnchorStyles.Right,
+                FlatStyle = FlatStyle.Flat,
+                Cursor    = Cursors.Hand,
+                BackColor = Color.FromArgb(60, 110, 160),
+                ForeColor = Color.White
+            };
+            _btnStocks.FlatAppearance.BorderSize          = 1;
+            _btnStocks.FlatAppearance.BorderColor         = Color.FromArgb(45, 90, 140);
+            _btnStocks.FlatAppearance.MouseOverBackColor  = Color.FromArgb(45, 90, 140);
+            _btnStocks.Click += (s, e) => GererStocks();
+
+            Controls.Add(_btnDesactiver);
+            Controls.Add(_btnStocks);
+
+            // Mise à jour du bouton Désactiver quand la sélection change
+            dgv.SelectionChanged += (s, e) => MajBoutonDesactiver();
         }
 
-        private void Charger()
-        {
-            _dgv.Rows.Clear();
-            foreach (var a in ActiviteDAL.GetAll(includeInactifs: true))
-            {
-                int idx = _dgv.Rows.Add(a.Id, a.Actif, a.Nom, a.Description ?? "",
-                    a.Actif ? "Active" : "Inactive",
-                    a.DateCreation.ToString("dd/MM/yyyy"));
+        // ── Membres abstraits — logique métier spécifique ───────────
 
-                if (!a.Actif)
+        protected override string Titre => "Activités";
+
+        protected override List<Activite> ChargerDonnees()
+            => ActiviteDAL.GetAll(includeInactifs: true);
+
+        protected override void ConfigurerColonnes()
+        {
+            CacherColonnes("Id");
+
+            ConfigCol("Nom",          "Nom",         200, 120);
+            ConfigCol("Description",  "Description", 220, 140);
+            ConfigCol("Actif",        "Actif",        60,  50);
+            ConfigCol("DateCreation", "Créée le",    100,  80);
+        }
+
+        protected override Form OuvrirFormulaire(Activite element)
+            => new FrmActiviteEdit(element);
+
+        protected override void Supprimer(Activite element)
+            => ActiviteDAL.Delete(element.Id);
+
+        protected override string NomElement(Activite element)
+            => element?.Nom ?? "?";
+
+        // ── Styles visuels — activités inactives grisées ────────────
+
+        /// <summary>
+        /// Colore les lignes des activités inactives en gris italique.
+        /// Gestalt "similarité" : les éléments inactifs se distinguent visuellement.
+        /// </summary>
+        protected override void AppliquerStylesLignes()
+        {
+            foreach (DataGridViewRow row in dgv.Rows)
+            {
+                if (row.DataBoundItem is Activite act && !act.Actif)
                 {
-                    var row = _dgv.Rows[idx];
-                    row.DefaultCellStyle.ForeColor = Color.Gray;
-                    row.DefaultCellStyle.Font = new Font("Segoe UI", 9.5F, FontStyle.Italic);
+                    row.DefaultCellStyle.ForeColor          = Color.Gray;
+                    row.DefaultCellStyle.Font               = new Font("Segoe UI", 9.5F, FontStyle.Italic);
                     row.DefaultCellStyle.SelectionForeColor = Color.LightGray;
                 }
             }
+
             MajBoutonDesactiver();
         }
 
+        // ── Logique Désactiver / Réactiver ──────────────────────────
+
         private void MajBoutonDesactiver()
         {
-            if (_dgv.SelectedRows.Count == 0) return;
-            bool actif = (bool)_dgv.SelectedRows[0].Cells["Actif"].Value;
-            _btnDesactiver.Text = actif ? "✕  Désactiver" : "✓  Réactiver";
-            _btnDesactiver.BackColor = actif
-                ? Color.FromArgb(160, 120, 60)
-                : Color.FromArgb(60, 130, 80);
-        }
+            var item = Selectionne();
+            if (item == null) return;
 
-        private void Nouveau()
-        {
-            using (var frm = new FrmActiviteEdit())
-                if (frm.ShowDialog(this) == DialogResult.OK) Charger();
-        }
-
-        private void Modifier()
-        {
-            var activite = ActiviteSelectionnee();
-            if (activite == null) return;
-            using (var frm = new FrmActiviteEdit(activite))
-                if (frm.ShowDialog(this) == DialogResult.OK) Charger();
+            if (item.Actif)
+            {
+                _btnDesactiver.Text      = "✕  Désactiver";
+                _btnDesactiver.BackColor = Color.FromArgb(160, 120, 60);
+                _btnDesactiver.FlatAppearance.BorderColor        = Color.FromArgb(140, 105, 50);
+                _btnDesactiver.FlatAppearance.MouseOverBackColor = Color.FromArgb(140, 105, 50);
+            }
+            else
+            {
+                _btnDesactiver.Text      = "✓  Réactiver";
+                _btnDesactiver.BackColor = Color.FromArgb(60, 130, 80);
+                _btnDesactiver.FlatAppearance.BorderColor        = Color.FromArgb(46, 110, 60);
+                _btnDesactiver.FlatAppearance.MouseOverBackColor = Color.FromArgb(46, 110, 60);
+            }
         }
 
         private void Desactiver()
         {
-            var activite = ActiviteSelectionnee();
-            if (activite == null) return;
+            var activite = Selectionne();
+            if (activite == null)
+            {
+                MessageBox.Show("Sélectionnez une activité.", "Info",
+                    MessageBoxButtons.OK, MessageBoxIcon.Information);
+                return;
+            }
 
             if (activite.Actif)
             {
@@ -245,55 +194,20 @@ namespace CharlesNadejda.Forms
             }
         }
 
-        private void Supprimer()
-        {
-            var activite = ActiviteSelectionnee();
-            if (activite == null) return;
-
-            if (MessageBox.Show(
-                    $"Supprimer définitivement l'activité « {activite.Nom} » ?\n\n" +
-                    "Cette action supprimera en cascade :\n" +
-                    "  - Tous les ingrédients liés (et leurs lots d'achat)\n" +
-                    "  - Tous les contextes BOM liés (et leurs niveaux)\n\n" +
-                    "Cette action est irréversible.",
-                    "Suppression définitive",
-                    MessageBoxButtons.YesNo,
-                    MessageBoxIcon.Warning,
-                    MessageBoxDefaultButton.Button2) != DialogResult.Yes) return;
-
-            try
-            {
-                ActiviteDAL.Delete(activite.Id);
-                Charger();
-            }
-            catch (InvalidOperationException ex)
-            {
-                MessageBox.Show(ex.Message, "Suppression impossible", MessageBoxButtons.OK, MessageBoxIcon.Warning);
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show("Erreur : " + ex.Message, "Erreur", MessageBoxButtons.OK, MessageBoxIcon.Error);
-            }
-        }
+        // ── Logique Stocks liés ─────────────────────────────────────
 
         private void GererStocks()
         {
-            var activite = ActiviteSelectionnee();
-            if (activite == null) return;
-            using (var frm = new FrmActiviteStocks(activite))
-                frm.ShowDialog(this);
-        }
-
-        private Activite ActiviteSelectionnee()
-        {
-            if (_dgv.SelectedRows.Count == 0)
+            var activite = Selectionne();
+            if (activite == null)
             {
                 MessageBox.Show("Sélectionnez une activité.", "Info",
                     MessageBoxButtons.OK, MessageBoxIcon.Information);
-                return null;
+                return;
             }
-            int id = (int)_dgv.SelectedRows[0].Cells["Id"].Value;
-            return ActiviteDAL.GetById(id);
+
+            using (var frm = new FrmActiviteStocks(activite))
+                frm.ShowDialog(this);
         }
     }
 }

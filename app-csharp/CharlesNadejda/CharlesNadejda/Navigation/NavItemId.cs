@@ -40,14 +40,8 @@ namespace CharlesNadejda.Navigation
 
         // ── Referentiels ─────────────────────────────────────────
 
-        /// <summary>Catalogue des fiches BOM (recettes) — navigue vers Production/ContexteNiveaux.</summary>
-        FichesBom,
-
         /// <summary>Catalogue des fiches ingredients (matieres premieres) — RessourceType.Ingredients.</summary>
         Ingredients,
-
-        /// <summary>Gestion des niveaux et contextes BOM — navigue vers ContexteNiveaux.</summary>
-        NiveauxContextes,
 
         /// <summary>Parametres et configuration de l'application.</summary>
         Parametres,

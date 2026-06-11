@@ -27,7 +27,7 @@ namespace CharlesNadejda.DAL
                     SELECT fi.id, fi.nom, fi.marque, fi.description, fi.unite_mesure, fi.type_physique, fi.densite,
                            fi.conditionnement_label, fi.qte_par_conditionnement, fi.nb_par_lot,
                            fi.prix_achat_reference, fi.seuil_alerte_stock, fi.stock_cible,
-                           fi.id_fournisseur_defaut, fi.actif,
+                           fi.id_fournisseur_defaut, fi.dlc_jours_reference, fi.qualite_label, fi.actif,
                            f.nom  AS nom_fournisseur,
                            COALESCE(SUM(l.quantite_disponible), 0) AS stock_actuel
                     FROM fiches_ingredients fi
@@ -60,7 +60,7 @@ namespace CharlesNadejda.DAL
                     SELECT fi.id, fi.nom, fi.marque, fi.description, fi.unite_mesure, fi.type_physique, fi.densite,
                            fi.conditionnement_label, fi.qte_par_conditionnement, fi.nb_par_lot,
                            fi.prix_achat_reference, fi.seuil_alerte_stock, fi.stock_cible,
-                           fi.id_fournisseur_defaut, fi.actif,
+                           fi.id_fournisseur_defaut, fi.dlc_jours_reference, fi.qualite_label, fi.actif,
                            f.nom  AS nom_fournisseur,
                            COALESCE(SUM(l.quantite_disponible), 0) AS stock_actuel
                     FROM fiches_ingredients fi
@@ -100,10 +100,10 @@ namespace CharlesNadejda.DAL
                         (nom, marque, description, unite_mesure, type_physique, densite,
                          conditionnement_label, qte_par_conditionnement, nb_par_lot,
                          prix_achat_reference, seuil_alerte_stock, stock_cible,
-                         id_fournisseur_defaut, actif)
+                         id_fournisseur_defaut, dlc_jours_reference, qualite_label, actif)
                     VALUES (@nom, @marque, @desc, @unite, @type_physique, @densite,
                             @condLabel, @condQte, @nbLot,
-                            @prix, @seuil, @stockCible, @fournisseur, 1)";
+                            @prix, @seuil, @stockCible, @fournisseur, @dlcJours, @qualite, 1)";
                 Bind(cmd, i);
                 cmd.ExecuteNonQuery();
                 return (int)cmd.LastInsertedId;
@@ -124,7 +124,8 @@ namespace CharlesNadejda.DAL
                         nb_par_lot=@nbLot,
                         prix_achat_reference=@prix, seuil_alerte_stock=@seuil,
                         stock_cible=@stockCible,
-                        id_fournisseur_defaut=@fournisseur
+                        id_fournisseur_defaut=@fournisseur,
+                        dlc_jours_reference=@dlcJours, qualite_label=@qualite
                     WHERE id=@id";
                 Bind(cmd, i);
                 cmd.Parameters.AddWithValue("@id", i.Id);
@@ -136,33 +137,53 @@ namespace CharlesNadejda.DAL
         public static void Delete(int id)
         {
             using (var conn = DbHelper.GetConnection())
-            using (var cmd = conn.CreateCommand())
+            using (var tx = conn.BeginTransaction())
             {
-                // Vérifier les lots actifs
-                cmd.CommandText = @"
-                    SELECT COUNT(*) FROM lots_ingredients
-                    WHERE id_fiche_ingredient = @id AND quantite_disponible > 0";
-                cmd.Parameters.AddWithValue("@id", id);
-                int nbLots = Convert.ToInt32(cmd.ExecuteScalar());
-                if (nbLots > 0)
-                    throw new InvalidOperationException(
-                        $"Impossible de supprimer : {nbLots} lot(s) avec du stock disponible.");
+                try
+                {
+                    // Vérifier les lots actifs
+                    using (var cmd = conn.CreateCommand())
+                    {
+                        cmd.Transaction = tx;
+                        cmd.CommandText = @"
+                            SELECT COUNT(*) FROM lots_ingredients
+                            WHERE id_fiche_ingredient = @id AND quantite_disponible > 0";
+                        cmd.Parameters.AddWithValue("@id", id);
+                        int nbLots = Convert.ToInt32(cmd.ExecuteScalar());
+                        if (nbLots > 0)
+                            throw new InvalidOperationException(
+                                $"Impossible de supprimer : {nbLots} lot(s) avec du stock disponible.");
+                    }
 
-                // Vérifier les références dans les fiches BOM
-                cmd.CommandText = @"
-                    SELECT COUNT(*) FROM bom_fiches_lignes
-                    WHERE id_input_ingredient = @id";
-                cmd.Parameters.Clear();
-                cmd.Parameters.AddWithValue("@id", id);
-                int nbLignes = Convert.ToInt32(cmd.ExecuteScalar());
-                if (nbLignes > 0)
-                    throw new InvalidOperationException(
-                        $"Impossible de supprimer : cet ingrédient est utilisé dans {nbLignes} fiche(s) BOM.");
+                    // Vérifier les références dans les fiches BOM
+                    using (var cmd = conn.CreateCommand())
+                    {
+                        cmd.Transaction = tx;
+                        cmd.CommandText = @"
+                            SELECT COUNT(*) FROM bom_fiches_lignes
+                            WHERE id_input_ingredient = @id";
+                        cmd.Parameters.AddWithValue("@id", id);
+                        int nbLignes = Convert.ToInt32(cmd.ExecuteScalar());
+                        if (nbLignes > 0)
+                            throw new InvalidOperationException(
+                                $"Impossible de supprimer : cet ingrédient est utilisé dans {nbLignes} fiche(s) BOM.");
+                    }
 
-                cmd.CommandText = "DELETE FROM fiches_ingredients WHERE id = @id";
-                cmd.Parameters.Clear();
-                cmd.Parameters.AddWithValue("@id", id);
-                cmd.ExecuteNonQuery();
+                    using (var cmd = conn.CreateCommand())
+                    {
+                        cmd.Transaction = tx;
+                        cmd.CommandText = "DELETE FROM fiches_ingredients WHERE id = @id";
+                        cmd.Parameters.AddWithValue("@id", id);
+                        cmd.ExecuteNonQuery();
+                    }
+
+                    tx.Commit();
+                }
+                catch
+                {
+                    tx.Rollback();
+                    throw;
+                }
             }
         }
 
@@ -184,6 +205,8 @@ namespace CharlesNadejda.DAL
             cmd.Parameters.AddWithValue("@seuil",        i.SeuilAlerteStock.HasValue ? (object)i.SeuilAlerteStock.Value : DBNull.Value);
             cmd.Parameters.AddWithValue("@stockCible",   i.StockCible.HasValue ? (object)i.StockCible.Value : DBNull.Value);
             cmd.Parameters.AddWithValue("@fournisseur",  i.IdFournisseurDefaut.HasValue ? (object)i.IdFournisseurDefaut.Value : DBNull.Value);
+            cmd.Parameters.AddWithValue("@dlcJours",     i.DlcJoursReference.HasValue ? (object)i.DlcJoursReference.Value : DBNull.Value);
+            cmd.Parameters.AddWithValue("@qualite",      i.QualiteLabel ?? (object)DBNull.Value);
         }
 
         private static Ingredient Map(MySqlDataReader r) => new Ingredient
@@ -202,6 +225,8 @@ namespace CharlesNadejda.DAL
             SeuilAlerteStock      = r["seuil_alerte_stock"]   == DBNull.Value ? (decimal?)null : (decimal)r["seuil_alerte_stock"],
             StockCible            = r["stock_cible"]           == DBNull.Value ? (decimal?)null : (decimal)r["stock_cible"],
             IdFournisseurDefaut   = r["id_fournisseur_defaut"] == DBNull.Value ? (int?)null : (int)r["id_fournisseur_defaut"],
+            DlcJoursReference     = r["dlc_jours_reference"]  == DBNull.Value ? (int?)null : Convert.ToInt32(r["dlc_jours_reference"]),
+            QualiteLabel          = r["qualite_label"]         == DBNull.Value ? null : r["qualite_label"].ToString(),
             NomFournisseur        = r["nom_fournisseur"]      == DBNull.Value ? null : r["nom_fournisseur"].ToString(),
             Actif                 = Convert.ToBoolean(r["actif"]),
             StockActuel           = (decimal)r["stock_actuel"]

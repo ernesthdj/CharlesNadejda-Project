@@ -208,31 +208,51 @@ namespace CharlesNadejda.DAL
         public static void Delete(int id)
         {
             using (var conn = DbHelper.GetConnection())
-            using (var cmd = conn.CreateCommand())
+            using (var tx = conn.BeginTransaction())
             {
-                // Vérifier si cette fiche est consommée par des fiches de niveau supérieur
-                cmd.CommandText = @"
-                    SELECT COUNT(*) FROM bom_fiches_lignes
-                    WHERE id_input_fiche = @id";
-                cmd.Parameters.AddWithValue("@id", id);
-                int nbRef = Convert.ToInt32(cmd.ExecuteScalar());
-                if (nbRef > 0)
-                    throw new InvalidOperationException(
-                        $"Impossible de supprimer : cette fiche est référencée dans {nbRef} fiche(s) de niveau supérieur.");
+                try
+                {
+                    // Vérifier si cette fiche est consommée par des fiches de niveau supérieur
+                    using (var cmd = conn.CreateCommand())
+                    {
+                        cmd.Transaction = tx;
+                        cmd.CommandText = @"
+                            SELECT COUNT(*) FROM bom_fiches_lignes
+                            WHERE id_input_fiche = @id";
+                        cmd.Parameters.AddWithValue("@id", id);
+                        int nbRef = Convert.ToInt32(cmd.ExecuteScalar());
+                        if (nbRef > 0)
+                            throw new InvalidOperationException(
+                                $"Impossible de supprimer : cette fiche est référencée dans {nbRef} fiche(s) de niveau supérieur.");
+                    }
 
-                // Vérifier les productions existantes
-                cmd.CommandText = "SELECT COUNT(*) FROM bom_productions WHERE id_fiche = @id";
-                cmd.Parameters.Clear();
-                cmd.Parameters.AddWithValue("@id", id);
-                int nbProd = Convert.ToInt32(cmd.ExecuteScalar());
-                if (nbProd > 0)
-                    throw new InvalidOperationException(
-                        $"Impossible de supprimer : {nbProd} production(s) enregistrée(s) avec cette fiche.");
+                    // Vérifier les productions existantes
+                    using (var cmd = conn.CreateCommand())
+                    {
+                        cmd.Transaction = tx;
+                        cmd.CommandText = "SELECT COUNT(*) FROM bom_productions WHERE id_fiche = @id";
+                        cmd.Parameters.AddWithValue("@id", id);
+                        int nbProd = Convert.ToInt32(cmd.ExecuteScalar());
+                        if (nbProd > 0)
+                            throw new InvalidOperationException(
+                                $"Impossible de supprimer : {nbProd} production(s) enregistrée(s) avec cette fiche.");
+                    }
 
-                cmd.CommandText = "DELETE FROM bom_fiches WHERE id = @id";
-                cmd.Parameters.Clear();
-                cmd.Parameters.AddWithValue("@id", id);
-                cmd.ExecuteNonQuery();
+                    using (var cmd = conn.CreateCommand())
+                    {
+                        cmd.Transaction = tx;
+                        cmd.CommandText = "DELETE FROM bom_fiches WHERE id = @id";
+                        cmd.Parameters.AddWithValue("@id", id);
+                        cmd.ExecuteNonQuery();
+                    }
+
+                    tx.Commit();
+                }
+                catch
+                {
+                    tx.Rollback();
+                    throw;
+                }
             }
         }
 

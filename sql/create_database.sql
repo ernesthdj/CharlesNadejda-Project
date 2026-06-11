@@ -1,10 +1,10 @@
 -- ============================================================
 -- Charles & Nadejda — Script de creation BDD
 -- Auteur  : Ernest
--- Version : 4.0 — consolidation post-migration v19
--- Date    : 2026-06-10
+-- Version : 4.1 — consolidation post-migration v20
+-- Date    : 2026-06-11
 -- ============================================================
--- Etat final apres migrations v01..v19
+-- Etat final apres migrations v01..v20
 -- 20 tables, 1 VIEW, 5 CHECK constraints
 --
 -- Ordre de creation (respecter les FK) :
@@ -159,9 +159,10 @@ CREATE TABLE IF NOT EXISTS lots_ingredients (
     CONSTRAINT fk_lot_fiche
         FOREIGN KEY (id_fiche_ingredient) REFERENCES fiches_ingredients(id)
         ON DELETE CASCADE ON UPDATE CASCADE,
-    -- Emplacement physique ou le lot est range
+    -- Emplacement physique ou le lot est range ; RESTRICT empeche la suppression d'un stock utilise
     CONSTRAINT fk_lots_stock
-        FOREIGN KEY (id_stock) REFERENCES stocks(id),
+        FOREIGN KEY (id_stock) REFERENCES stocks(id)
+        ON DELETE RESTRICT ON UPDATE CASCADE,
     -- Fournisseur effectif de cet achat (peut differer du fournisseur par defaut de la fiche)
     CONSTRAINT fk_lot_fournisseur
         FOREIGN KEY (id_fournisseur) REFERENCES fournisseurs(id)
@@ -527,6 +528,12 @@ CREATE INDEX idx_prodweb_categorie ON produits_web (id_categorie);
 CREATE INDEX idx_cmdweb_client_statut ON commandes_web (id_client, statut);
 CREATE INDEX idx_cmdweb_statut ON commandes_web (statut);
 CREATE INDEX idx_cmdligne_commande ON commandes_web_lignes (id_commande);
+
+-- Index v20 — Durcissement schema (optimisation requetes frequentes)
+CREATE INDEX idx_lot_fiche_achat ON lots_ingredients (id_fiche_ingredient, date_achat);
+CREATE INDEX idx_bomres_lot_actif ON bom_reservations (id_lot, actif);
+CREATE INDEX idx_bomres_ctx_actif ON bom_reservations (id_contexte, actif);
+CREATE INDEX idx_bomstock_fiche_dispo ON bom_stocks (id_fiche, quantite_disponible, date_production);
 
 SET FOREIGN_KEY_CHECKS = 1;
 

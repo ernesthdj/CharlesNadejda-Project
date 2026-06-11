@@ -18,8 +18,16 @@ namespace CharlesNadejda.DAL
         {
             string cs = ConfigurationManager.ConnectionStrings["charlesnadejda"].ConnectionString;
             var conn = new MySqlConnection(cs);
-            conn.Open();
-            return conn;
+            try
+            {
+                conn.Open();
+                return conn;
+            }
+            catch
+            {
+                conn.Dispose();
+                throw;
+            }
         }
     }
 }

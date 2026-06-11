@@ -56,16 +56,7 @@ namespace CharlesNadejda.DAL
         public static decimal GetDisponible(int idNiveau, int idFiche)
         {
             using (var conn = DbHelper.GetConnection())
-            using (var cmd = conn.CreateCommand())
-            {
-                cmd.CommandText = @"
-                    SELECT COALESCE(SUM(quantite_disponible), 0)
-                    FROM bom_stocks
-                    WHERE id_niveau = @idNiveau AND id_fiche = @idFiche";
-                cmd.Parameters.AddWithValue("@idNiveau", idNiveau);
-                cmd.Parameters.AddWithValue("@idFiche",  idFiche);
-                return Convert.ToDecimal(cmd.ExecuteScalar());
-            }
+                return GetDisponibleInternal(idNiveau, idFiche, conn, null);
         }
 
         /// <summary>
@@ -75,9 +66,16 @@ namespace CharlesNadejda.DAL
         public static decimal GetDisponible(int idNiveau, int idFiche,
             MySqlConnection conn, MySqlTransaction tx)
         {
+            return GetDisponibleInternal(idNiveau, idFiche, conn, tx);
+        }
+
+        /// <summary>Logique unique — FOR UPDATE est sans effet hors transaction.</summary>
+        private static decimal GetDisponibleInternal(int idNiveau, int idFiche,
+            MySqlConnection conn, MySqlTransaction tx)
+        {
             using (var cmd = conn.CreateCommand())
             {
-                cmd.Transaction = tx;
+                if (tx != null) cmd.Transaction = tx;
                 cmd.CommandText = @"
                     SELECT COALESCE(SUM(quantite_disponible), 0)
                     FROM bom_stocks
@@ -97,22 +95,7 @@ namespace CharlesNadejda.DAL
         public static decimal GetDisponibleIngredient(int idFicheIngredient)
         {
             using (var conn = DbHelper.GetConnection())
-            using (var cmd = conn.CreateCommand())
-            {
-                cmd.CommandText = @"
-                    SELECT
-                        COALESCE(SUM(l.quantite_disponible), 0)
-                        - COALESCE((
-                            SELECT SUM(r.quantite_reservee)
-                            FROM bom_reservations r
-                            INNER JOIN lots_ingredients lr ON lr.id = r.id_lot
-                            WHERE lr.id_fiche_ingredient = @idFi AND r.actif = 1
-                          ), 0)
-                    FROM lots_ingredients l
-                    WHERE l.id_fiche_ingredient = @idFi";
-                cmd.Parameters.AddWithValue("@idFi", idFicheIngredient);
-                return Convert.ToDecimal(cmd.ExecuteScalar());
-            }
+                return GetDisponibleIngredientInternal(idFicheIngredient, conn, null);
         }
 
         /// <summary>
@@ -122,9 +105,16 @@ namespace CharlesNadejda.DAL
         public static decimal GetDisponibleIngredient(int idFicheIngredient,
             MySqlConnection conn, MySqlTransaction tx)
         {
+            return GetDisponibleIngredientInternal(idFicheIngredient, conn, tx);
+        }
+
+        /// <summary>Logique unique — FOR UPDATE est sans effet hors transaction.</summary>
+        private static decimal GetDisponibleIngredientInternal(int idFicheIngredient,
+            MySqlConnection conn, MySqlTransaction tx)
+        {
             using (var cmd = conn.CreateCommand())
             {
-                cmd.Transaction = tx;
+                if (tx != null) cmd.Transaction = tx;
                 cmd.CommandText = @"
                     SELECT
                         COALESCE(SUM(l.quantite_disponible), 0)
@@ -151,42 +141,31 @@ namespace CharlesNadejda.DAL
         /// </summary>
         public static List<(int IdLot, decimal DispoNette, decimal PrixUnitaire)> GetLotsDispoFIFO(int idFicheIngredient)
         {
-            var result = new List<(int, decimal, decimal)>();
             using (var conn = DbHelper.GetConnection())
-            using (var cmd = conn.CreateCommand())
-            {
-                cmd.CommandText = @"
-                    SELECT l.id,
-                           l.quantite_disponible
-                           - COALESCE((SELECT SUM(r.quantite_reservee)
-                                       FROM bom_reservations r
-                                       WHERE r.id_lot = l.id AND r.actif = 1), 0) AS dispo_nette,
-                           l.prix_unitaire / NULLIF(fi.qte_par_conditionnement, 0) AS prix_unitaire_base
-                    FROM lots_ingredients l
-                    INNER JOIN fiches_ingredients fi ON fi.id = l.id_fiche_ingredient
-                    WHERE l.id_fiche_ingredient = @idFi
-                    HAVING dispo_nette > 0
-                    ORDER BY l.date_achat ASC";
-                cmd.Parameters.AddWithValue("@idFi", idFicheIngredient);
-                using (var r = cmd.ExecuteReader())
-                    while (r.Read())
-                        result.Add(((int)r["id"], (decimal)r["dispo_nette"], (decimal)r["prix_unitaire_base"]));
-            }
-            return result;
+                return GetLotsDispoFIFOInternal(idFicheIngredient, conn, null);
         }
 
         /// <summary>
         /// Surcharge transactionnelle avec verrou pessimiste (FOR UPDATE).
         /// Verrouille les lots pour consommation FIFO exclusive dans la transaction.
-        /// Le filtrage dispo_nette &gt; 0 est fait côté C# pour compatibilité FOR UPDATE.
         /// </summary>
         public static List<(int IdLot, decimal DispoNette, decimal PrixUnitaire)> GetLotsDispoFIFO(
+            int idFicheIngredient, MySqlConnection conn, MySqlTransaction tx)
+        {
+            return GetLotsDispoFIFOInternal(idFicheIngredient, conn, tx);
+        }
+
+        /// <summary>
+        /// Logique unique — FOR UPDATE est sans effet hors transaction.
+        /// Le filtrage dispo_nette &gt; 0 est fait côté C# pour compatibilité FOR UPDATE.
+        /// </summary>
+        private static List<(int IdLot, decimal DispoNette, decimal PrixUnitaire)> GetLotsDispoFIFOInternal(
             int idFicheIngredient, MySqlConnection conn, MySqlTransaction tx)
         {
             var result = new List<(int, decimal, decimal)>();
             using (var cmd = conn.CreateCommand())
             {
-                cmd.Transaction = tx;
+                if (tx != null) cmd.Transaction = tx;
                 cmd.CommandText = @"
                     SELECT l.id,
                            l.quantite_disponible
@@ -217,23 +196,8 @@ namespace CharlesNadejda.DAL
         /// </summary>
         public static List<(int IdStock, decimal Dispo, decimal CoutUnitaire)> GetBomStocksFIFO(int idNiveau, int idFiche)
         {
-            var result = new List<(int, decimal, decimal)>();
             using (var conn = DbHelper.GetConnection())
-            using (var cmd = conn.CreateCommand())
-            {
-                cmd.CommandText = @"
-                    SELECT id, quantite_disponible, cout_unitaire
-                    FROM bom_stocks
-                    WHERE id_niveau = @idNiveau AND id_fiche = @idFiche
-                      AND quantite_disponible > 0
-                    ORDER BY date_production ASC";
-                cmd.Parameters.AddWithValue("@idNiveau", idNiveau);
-                cmd.Parameters.AddWithValue("@idFiche",  idFiche);
-                using (var r = cmd.ExecuteReader())
-                    while (r.Read())
-                        result.Add(((int)r["id"], (decimal)r["quantite_disponible"], (decimal)r["cout_unitaire"]));
-            }
-            return result;
+                return GetBomStocksFIFOInternal(idNiveau, idFiche, conn, null);
         }
 
         /// <summary>
@@ -243,10 +207,17 @@ namespace CharlesNadejda.DAL
         public static List<(int IdStock, decimal Dispo, decimal CoutUnitaire)> GetBomStocksFIFO(
             int idNiveau, int idFiche, MySqlConnection conn, MySqlTransaction tx)
         {
+            return GetBomStocksFIFOInternal(idNiveau, idFiche, conn, tx);
+        }
+
+        /// <summary>Logique unique — FOR UPDATE est sans effet hors transaction.</summary>
+        private static List<(int IdStock, decimal Dispo, decimal CoutUnitaire)> GetBomStocksFIFOInternal(
+            int idNiveau, int idFiche, MySqlConnection conn, MySqlTransaction tx)
+        {
             var result = new List<(int, decimal, decimal)>();
             using (var cmd = conn.CreateCommand())
             {
-                cmd.Transaction = tx;
+                if (tx != null) cmd.Transaction = tx;
                 cmd.CommandText = @"
                     SELECT id, quantite_disponible, cout_unitaire
                     FROM bom_stocks
