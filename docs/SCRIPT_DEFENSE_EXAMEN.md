@@ -419,19 +419,24 @@ using (var tx = conn.BeginTransaction())
 >
 > [Ouvre IngredientDAL.cs, montre GetAll]
 >
-> La requete `GetAll()` est interessante parce qu'elle utilise plusieurs jointures.
+> La requete `GetAll()` est interessante parce qu'elle utilise deux LEFT JOIN.
 > Le `LEFT JOIN fournisseurs` recupere le nom du fournisseur -- LEFT JOIN parce que le fournisseur est optionnel.
-> Le `INNER JOIN stocks` recupere le nom du stock -- INNER JOIN parce que le stock est obligatoire.
 > Et le `LEFT JOIN lots_ingredients` avec un `SUM(quantite_disponible)` calcule le stock actuel en temps reel
-> en additionnant tous les lots disponibles. Le `GROUP BY fi.id` est necessaire a cause de l'aggregation."
+> en additionnant tous les lots disponibles. Le `GROUP BY fi.id` est necessaire a cause de l'aggregation.
+>
+> Depuis la migration v18, le stock physique est lie au lot, pas a la fiche ingredient.
+> Le filtrage par stock se fait via une sous-requete sur les lots :
+> `WHERE fi.id IN (SELECT DISTINCT id_fiche_ingredient FROM lots_ingredients WHERE id_stock = @idStock)`.
+> Ca permet a un meme ingredient d'etre range dans plusieurs endroits selon les lots d'achat."
 
 ```sql
 -- IngredientDAL.GetAll() -- jointures + stock agrege
-SELECT fi.*, f.nom AS nom_fournisseur, s.nom AS nom_stock,
+SELECT fi.id, fi.nom, fi.marque, fi.unite_mesure, fi.type_physique,
+       fi.qte_par_conditionnement, fi.prix_achat_reference, fi.stock_cible,
+       f.nom AS nom_fournisseur, fi.id_fournisseur_defaut,
        COALESCE(SUM(l.quantite_disponible), 0) AS stock_actuel
 FROM fiches_ingredients fi
 LEFT  JOIN fournisseurs      f ON f.id = fi.id_fournisseur_defaut
-INNER JOIN stocks            s ON s.id = fi.id_stock
 LEFT  JOIN lots_ingredients  l ON l.id_fiche_ingredient = fi.id
 WHERE fi.actif = 1
 GROUP BY fi.id
@@ -444,8 +449,9 @@ ORDER BY fi.nom
 > "INNER JOIN ne garde que les lignes qui ont une correspondance des deux cotes.
 > Si un ingredient n'a pas de fournisseur, avec un INNER JOIN il disparaitrait de la liste.
 > LEFT JOIN garde toutes les lignes de la table de gauche, meme sans correspondance a droite --
-> dans ce cas, les colonnes du fournisseur seront NULL. J'utilise LEFT JOIN pour le fournisseur
-> et les lots parce qu'ils sont optionnels, et INNER JOIN pour le stock parce qu'il est obligatoire."
+> dans ce cas, les colonnes du fournisseur seront NULL. Ici j'utilise deux LEFT JOIN parce que
+> le fournisseur et les lots sont optionnels -- un ingredient peut ne pas avoir de fournisseur defini
+> ni de lots achetes."
 
 **Q : Pourquoi COALESCE dans le SUM ?**
 > "Si un ingredient n'a aucun lot -- aucun achat encore -- le `SUM()` retourne NULL, pas zero.
@@ -691,16 +697,16 @@ ORDER BY l.date_achat ASC    -- FIFO : le plus ancien d'abord
 
 ```csharp
 // Boucle FIFO dans ConsumeStock()
-foreach (var lot in lotsFIFO)
+foreach (var (idLot, dispo, prixUnit) in lots)
 {
     if (restant <= 0) break;
-    decimal pris = Math.Min(restant, lot.DispoNette);
+    decimal pris = Math.Min(restant, dispo);
 
     // UPDATE lots_ingredients SET quantite_disponible = quantite_disponible - @pris
     // INSERT INTO bom_productions_lignes (tracabilite)
 
     restant -= pris;
-    coutLigne += pris * lot.PrixUnitaireBase;
+    coutLigne += pris * prixUnit;
 }
 ```
 
@@ -787,15 +793,20 @@ WHERE f.actif = 1
   AND f.id NOT IN (SELECT id_bom_fiche FROM produits_web)
 ORDER BY f.nom
 
--- Calcul stock en unites vendables (aligne avec le C#)
-SELECT p.*, (
-    SELECT FLOOR(COALESCE(SUM(bs.quantite_disponible), 0) / bf.quantite_output)
-    FROM bom_stocks bs
-    INNER JOIN bom_fiches bf ON bf.id = bs.id_fiche
-    WHERE bs.id_fiche = p.id_bom_fiche AND bs.quantite_disponible > 0
-    GROUP BY bf.quantite_output
-) AS stock_calc
-FROM produits_web p WHERE p.en_vente = 1
+-- ProduitWebDAL.GetAll() -- stock brut depuis bom_stocks
+SELECT p.id, p.nom_commercial, p.prix_vente, p.en_vente, p.id_bom_fiche,
+       f.nom AS nom_fiche, f.unite_output, c.nom AS nom_categorie,
+       COALESCE(SUM(bs.quantite_disponible), 0) AS stock_disponible
+FROM produits_web p
+INNER JOIN bom_fiches f       ON f.id = p.id_bom_fiche
+LEFT  JOIN categories_web c   ON c.id = p.id_categorie
+LEFT  JOIN bom_stocks bs      ON bs.id_fiche = p.id_bom_fiche
+                              AND bs.quantite_disponible > 0
+GROUP BY p.id
+
+-- Note : cote C#, le stock est la somme brute (quantite_disponible).
+-- Cote Laravel (scopeWithStockDisponible), le stock est converti en unites vendables :
+-- FLOOR(SUM(quantite_disponible) / quantite_output). Les deux approches coexistent.
 ```
 
 #### Questions probables

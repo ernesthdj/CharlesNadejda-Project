@@ -1,472 +1,1142 @@
 {
-  "C:\\Users\\ernes\\Desktop\\Bachelier Informatique\\Projects Personnels\\CharlesNadejda_Project\\app-csharp\\CharlesNadejda\\CharlesNadejda\\Program.cs": {
-    "mtime": 1778683608.5367122,
-    "ast_hash": "d69e379e96d853b76540c4ee0fdc825a",
-    "semantic_hash": "d69e379e96d853b76540c4ee0fdc825a"
+  "C:\\Users\\ernes\\Desktop\\ProjectsMaster\\projects\\CharlesNadejda_Project\\app-csharp\\CharlesNadejda\\CharlesNadejda\\DesignSpy.cs": {
+    "mtime": 1780501913.9053156,
+    "ast_hash": "da9db13b9be72f5d728f482603cb9bb9",
+    "semantic_hash": "da9db13b9be72f5d728f482603cb9bb9"
   },
-  "C:\\Users\\ernes\\Desktop\\Bachelier Informatique\\Projects Personnels\\CharlesNadejda_Project\\app-csharp\\CharlesNadejda\\CharlesNadejda\\.vs\\CharlesNadejda.csproj.dtbcache.json": {
+  "C:\\Users\\ernes\\Desktop\\ProjectsMaster\\projects\\CharlesNadejda_Project\\app-csharp\\CharlesNadejda\\CharlesNadejda\\Program.cs": {
+    "mtime": 1779906796.8913455,
+    "ast_hash": "c16acddc159d0e39c3fc1b346ab2593e",
+    "semantic_hash": "c16acddc159d0e39c3fc1b346ab2593e"
+  },
+  "C:\\Users\\ernes\\Desktop\\ProjectsMaster\\projects\\CharlesNadejda_Project\\app-csharp\\CharlesNadejda\\CharlesNadejda\\.vs\\CharlesNadejda.csproj.dtbcache.json": {
     "mtime": 1778695340.0307245,
     "ast_hash": "8207ff0ae375cca9385830a362bdcc8a",
     "semantic_hash": "8207ff0ae375cca9385830a362bdcc8a"
   },
-  "C:\\Users\\ernes\\Desktop\\Bachelier Informatique\\Projects Personnels\\CharlesNadejda_Project\\app-csharp\\CharlesNadejda\\CharlesNadejda\\DAL\\ActiviteDAL.cs": {
-    "mtime": 1779311886.3398075,
-    "ast_hash": "891a838197ab87e0e3b4b47f6797d12e",
-    "semantic_hash": "891a838197ab87e0e3b4b47f6797d12e"
+  "C:\\Users\\ernes\\Desktop\\ProjectsMaster\\projects\\CharlesNadejda_Project\\app-csharp\\CharlesNadejda\\CharlesNadejda\\DAL\\ActiviteDAL.cs": {
+    "mtime": 1781176413.0471075,
+    "ast_hash": "d4de46427eb6ef3514aa9253da311e46",
+    "semantic_hash": "d4de46427eb6ef3514aa9253da311e46"
   },
-  "C:\\Users\\ernes\\Desktop\\Bachelier Informatique\\Projects Personnels\\CharlesNadejda_Project\\app-csharp\\CharlesNadejda\\CharlesNadejda\\DAL\\BomContexteDAL.cs": {
-    "mtime": 1776115181.689041,
-    "ast_hash": "3b71266ba45d520adb538d2ded483492",
-    "semantic_hash": "3b71266ba45d520adb538d2ded483492"
+  "C:\\Users\\ernes\\Desktop\\ProjectsMaster\\projects\\CharlesNadejda_Project\\app-csharp\\CharlesNadejda\\CharlesNadejda\\DAL\\BomContexteDAL.cs": {
+    "mtime": 1781177333.8201487,
+    "ast_hash": "56e51f6bf24baea8aca83643302452ea",
+    "semantic_hash": "56e51f6bf24baea8aca83643302452ea"
   },
-  "C:\\Users\\ernes\\Desktop\\Bachelier Informatique\\Projects Personnels\\CharlesNadejda_Project\\app-csharp\\CharlesNadejda\\CharlesNadejda\\DAL\\BomCoutDAL.cs": {
-    "mtime": 1778683608.510698,
-    "ast_hash": "649d222e5b7a2b7695f0841e49bea85c",
-    "semantic_hash": "649d222e5b7a2b7695f0841e49bea85c"
+  "C:\\Users\\ernes\\Desktop\\ProjectsMaster\\projects\\CharlesNadejda_Project\\app-csharp\\CharlesNadejda\\CharlesNadejda\\DAL\\BomCoutDAL.cs": {
+    "mtime": 1781176565.4693785,
+    "ast_hash": "cf8748eb41f2ed6de738aa0ac23431eb",
+    "semantic_hash": "cf8748eb41f2ed6de738aa0ac23431eb"
   },
-  "C:\\Users\\ernes\\Desktop\\Bachelier Informatique\\Projects Personnels\\CharlesNadejda_Project\\app-csharp\\CharlesNadejda\\CharlesNadejda\\DAL\\BomFicheDAL.cs": {
-    "mtime": 1779297255.322588,
-    "ast_hash": "414a18c18afff62578e7f43c24f5e382",
-    "semantic_hash": "414a18c18afff62578e7f43c24f5e382"
+  "C:\\Users\\ernes\\Desktop\\ProjectsMaster\\projects\\CharlesNadejda_Project\\app-csharp\\CharlesNadejda\\CharlesNadejda\\DAL\\BomFicheDAL.cs": {
+    "mtime": 1781177342.5233147,
+    "ast_hash": "6b15dd31a0a62ddb536cd262439c5b03",
+    "semantic_hash": "6b15dd31a0a62ddb536cd262439c5b03"
   },
-  "C:\\Users\\ernes\\Desktop\\Bachelier Informatique\\Projects Personnels\\CharlesNadejda_Project\\app-csharp\\CharlesNadejda\\CharlesNadejda\\DAL\\BomFicheLigneDAL.cs": {
-    "mtime": 1778760415.171741,
-    "ast_hash": "c4d438853fe4d07d0ddda72a8d68e52a",
-    "semantic_hash": "c4d438853fe4d07d0ddda72a8d68e52a"
+  "C:\\Users\\ernes\\Desktop\\ProjectsMaster\\projects\\CharlesNadejda_Project\\app-csharp\\CharlesNadejda\\CharlesNadejda\\DAL\\BomFicheLigneDAL.cs": {
+    "mtime": 1781176464.1963935,
+    "ast_hash": "feca7de656701c92d4b92f43810c4ec3",
+    "semantic_hash": "feca7de656701c92d4b92f43810c4ec3"
   },
-  "C:\\Users\\ernes\\Desktop\\Bachelier Informatique\\Projects Personnels\\CharlesNadejda_Project\\app-csharp\\CharlesNadejda\\CharlesNadejda\\DAL\\BomNiveauDAL.cs": {
-    "mtime": 1778683608.512699,
-    "ast_hash": "0c2f03cab5df6489649bd89cc21e5a12",
-    "semantic_hash": "0c2f03cab5df6489649bd89cc21e5a12"
+  "C:\\Users\\ernes\\Desktop\\ProjectsMaster\\projects\\CharlesNadejda_Project\\app-csharp\\CharlesNadejda\\CharlesNadejda\\DAL\\BomNiveauDAL.cs": {
+    "mtime": 1781176540.695723,
+    "ast_hash": "9429b3a64b6b9ae5100062eed9eb33fd",
+    "semantic_hash": "9429b3a64b6b9ae5100062eed9eb33fd"
   },
-  "C:\\Users\\ernes\\Desktop\\Bachelier Informatique\\Projects Personnels\\CharlesNadejda_Project\\app-csharp\\CharlesNadejda\\CharlesNadejda\\DAL\\BomProductionDAL.cs": {
-    "mtime": 1779309996.2374816,
-    "ast_hash": "6ef36c2128b156f40a6b65ed6468248f",
-    "semantic_hash": "6ef36c2128b156f40a6b65ed6468248f"
+  "C:\\Users\\ernes\\Desktop\\ProjectsMaster\\projects\\CharlesNadejda_Project\\app-csharp\\CharlesNadejda\\CharlesNadejda\\DAL\\BomProductionDAL.cs": {
+    "mtime": 1781177563.052458,
+    "ast_hash": "2c40b702b4bc94b51042ae2c95ac9e09",
+    "semantic_hash": "2c40b702b4bc94b51042ae2c95ac9e09"
   },
-  "C:\\Users\\ernes\\Desktop\\Bachelier Informatique\\Projects Personnels\\CharlesNadejda_Project\\app-csharp\\CharlesNadejda\\CharlesNadejda\\DAL\\BomReservationDAL.cs": {
-    "mtime": 1776115209.730397,
-    "ast_hash": "5ca9b4ada6c31be6acd8e30f2d19d610",
-    "semantic_hash": "5ca9b4ada6c31be6acd8e30f2d19d610"
+  "C:\\Users\\ernes\\Desktop\\ProjectsMaster\\projects\\CharlesNadejda_Project\\app-csharp\\CharlesNadejda\\CharlesNadejda\\DAL\\BomReservationDAL.cs": {
+    "mtime": 1781176449.9769714,
+    "ast_hash": "28f1118ec70551c82674299aa36977fa",
+    "semantic_hash": "28f1118ec70551c82674299aa36977fa"
   },
-  "C:\\Users\\ernes\\Desktop\\Bachelier Informatique\\Projects Personnels\\CharlesNadejda_Project\\app-csharp\\CharlesNadejda\\CharlesNadejda\\DAL\\BomStockDAL.cs": {
-    "mtime": 1779311871.1321452,
-    "ast_hash": "219bb07bb69816e79c895f0519da9bb2",
-    "semantic_hash": "219bb07bb69816e79c895f0519da9bb2"
+  "C:\\Users\\ernes\\Desktop\\ProjectsMaster\\projects\\CharlesNadejda_Project\\app-csharp\\CharlesNadejda\\CharlesNadejda\\DAL\\BomStockDAL.cs": {
+    "mtime": 1781177507.942891,
+    "ast_hash": "b68d7e8a09b5d6c38cf672dcb22dec32",
+    "semantic_hash": "b68d7e8a09b5d6c38cf672dcb22dec32"
   },
-  "C:\\Users\\ernes\\Desktop\\Bachelier Informatique\\Projects Personnels\\CharlesNadejda_Project\\app-csharp\\CharlesNadejda\\CharlesNadejda\\DAL\\CategorieWebDAL.cs": {
-    "mtime": 1779217079.199738,
-    "ast_hash": "6b50f779e95a0adab10547dd73b168fe",
-    "semantic_hash": "6b50f779e95a0adab10547dd73b168fe"
+  "C:\\Users\\ernes\\Desktop\\ProjectsMaster\\projects\\CharlesNadejda_Project\\app-csharp\\CharlesNadejda\\CharlesNadejda\\DAL\\CategorieWebDAL.cs": {
+    "mtime": 1781176470.8685174,
+    "ast_hash": "df086540cb403e4040b0604be491bea9",
+    "semantic_hash": "df086540cb403e4040b0604be491bea9"
   },
-  "C:\\Users\\ernes\\Desktop\\Bachelier Informatique\\Projects Personnels\\CharlesNadejda_Project\\app-csharp\\CharlesNadejda\\CharlesNadejda\\DAL\\CommandeWebDAL.cs": {
-    "mtime": 1779217125.0329323,
-    "ast_hash": "473722bc5e67f4d9da5987793e057d26",
-    "semantic_hash": "473722bc5e67f4d9da5987793e057d26"
+  "C:\\Users\\ernes\\Desktop\\ProjectsMaster\\projects\\CharlesNadejda_Project\\app-csharp\\CharlesNadejda\\CharlesNadejda\\DAL\\CommandeWebDAL.cs": {
+    "mtime": 1781176604.1496387,
+    "ast_hash": "5d0d3e30e468c5b412dfe32e90a03f35",
+    "semantic_hash": "5d0d3e30e468c5b412dfe32e90a03f35"
   },
-  "C:\\Users\\ernes\\Desktop\\Bachelier Informatique\\Projects Personnels\\CharlesNadejda_Project\\app-csharp\\CharlesNadejda\\CharlesNadejda\\DAL\\DbHelper.cs": {
-    "mtime": 1778683608.5136976,
-    "ast_hash": "e3099286843a586812446668cb31e298",
-    "semantic_hash": "e3099286843a586812446668cb31e298"
+  "C:\\Users\\ernes\\Desktop\\ProjectsMaster\\projects\\CharlesNadejda_Project\\app-csharp\\CharlesNadejda\\CharlesNadejda\\DAL\\DbHelper.cs": {
+    "mtime": 1781177359.2899978,
+    "ast_hash": "64a85e28e9e8b4b5d3499ed749a887a9",
+    "semantic_hash": "64a85e28e9e8b4b5d3499ed749a887a9"
   },
-  "C:\\Users\\ernes\\Desktop\\Bachelier Informatique\\Projects Personnels\\CharlesNadejda_Project\\app-csharp\\CharlesNadejda\\CharlesNadejda\\DAL\\FournisseurDAL.cs": {
-    "mtime": 1779310574.5828202,
-    "ast_hash": "05a6d63e08d8aefb2bfd8ddd5e0b28ca",
-    "semantic_hash": "05a6d63e08d8aefb2bfd8ddd5e0b28ca"
+  "C:\\Users\\ernes\\Desktop\\ProjectsMaster\\projects\\CharlesNadejda_Project\\app-csharp\\CharlesNadejda\\CharlesNadejda\\DAL\\FournisseurDAL.cs": {
+    "mtime": 1781176378.8233836,
+    "ast_hash": "5c8edeeba0ffef051cb32174f1addd37",
+    "semantic_hash": "5c8edeeba0ffef051cb32174f1addd37"
   },
-  "C:\\Users\\ernes\\Desktop\\Bachelier Informatique\\Projects Personnels\\CharlesNadejda_Project\\app-csharp\\CharlesNadejda\\CharlesNadejda\\DAL\\IngredientDAL.cs": {
-    "mtime": 1779310560.0690813,
-    "ast_hash": "396c5051b898cb051f15210be53ce93b",
-    "semantic_hash": "396c5051b898cb051f15210be53ce93b"
+  "C:\\Users\\ernes\\Desktop\\ProjectsMaster\\projects\\CharlesNadejda_Project\\app-csharp\\CharlesNadejda\\CharlesNadejda\\DAL\\IngredientDAL.cs": {
+    "mtime": 1781177394.1839962,
+    "ast_hash": "a46d6929a07d275b71b423de8a33d3a4",
+    "semantic_hash": "a46d6929a07d275b71b423de8a33d3a4"
   },
-  "C:\\Users\\ernes\\Desktop\\Bachelier Informatique\\Projects Personnels\\CharlesNadejda_Project\\app-csharp\\CharlesNadejda\\CharlesNadejda\\DAL\\LotDAL.cs": {
-    "mtime": 1779311857.891551,
-    "ast_hash": "e375cf051c24836dcd28cbdc43298589",
-    "semantic_hash": "e375cf051c24836dcd28cbdc43298589"
+  "C:\\Users\\ernes\\Desktop\\ProjectsMaster\\projects\\CharlesNadejda_Project\\app-csharp\\CharlesNadejda\\CharlesNadejda\\DAL\\LotDAL.cs": {
+    "mtime": 1781177356.891662,
+    "ast_hash": "a5d4cb285f0f4919bb1265968f6ca2e8",
+    "semantic_hash": "a5d4cb285f0f4919bb1265968f6ca2e8"
   },
-  "C:\\Users\\ernes\\Desktop\\Bachelier Informatique\\Projects Personnels\\CharlesNadejda_Project\\app-csharp\\CharlesNadejda\\CharlesNadejda\\DAL\\ProduitWebDAL.cs": {
-    "mtime": 1779217106.2991042,
-    "ast_hash": "a5b7269bbcf486140aee60a9b4abf29f",
-    "semantic_hash": "a5b7269bbcf486140aee60a9b4abf29f"
+  "C:\\Users\\ernes\\Desktop\\ProjectsMaster\\projects\\CharlesNadejda_Project\\app-csharp\\CharlesNadejda\\CharlesNadejda\\DAL\\ProduitWebDAL.cs": {
+    "mtime": 1781176477.9573238,
+    "ast_hash": "8dfe1e439a9eb27226427fcee071df28",
+    "semantic_hash": "8dfe1e439a9eb27226427fcee071df28"
   },
-  "C:\\Users\\ernes\\Desktop\\Bachelier Informatique\\Projects Personnels\\CharlesNadejda_Project\\app-csharp\\CharlesNadejda\\CharlesNadejda\\DAL\\StockDAL.cs": {
-    "mtime": 1778683608.514999,
-    "ast_hash": "47ec8ac014a0ff4009ffeb1673035a64",
-    "semantic_hash": "47ec8ac014a0ff4009ffeb1673035a64"
+  "C:\\Users\\ernes\\Desktop\\ProjectsMaster\\projects\\CharlesNadejda_Project\\app-csharp\\CharlesNadejda\\CharlesNadejda\\DAL\\StockDAL.cs": {
+    "mtime": 1781176330.2167902,
+    "ast_hash": "57d671b7679f8ae7a49cbc4f443d9b3a",
+    "semantic_hash": "57d671b7679f8ae7a49cbc4f443d9b3a"
   },
-  "C:\\Users\\ernes\\Desktop\\Bachelier Informatique\\Projects Personnels\\CharlesNadejda_Project\\app-csharp\\CharlesNadejda\\CharlesNadejda\\DAL\\UtilisateurDAL.cs": {
-    "mtime": 1774817920.8368874,
-    "ast_hash": "128fc324e8da7d24d946434885fd57f5",
-    "semantic_hash": "128fc324e8da7d24d946434885fd57f5"
+  "C:\\Users\\ernes\\Desktop\\ProjectsMaster\\projects\\CharlesNadejda_Project\\app-csharp\\CharlesNadejda\\CharlesNadejda\\DAL\\UtilisateurDAL.cs": {
+    "mtime": 1781176423.6703224,
+    "ast_hash": "77c5465a37f4241118646f9b4096cd4f",
+    "semantic_hash": "77c5465a37f4241118646f9b4096cd4f"
   },
-  "C:\\Users\\ernes\\Desktop\\Bachelier Informatique\\Projects Personnels\\CharlesNadejda_Project\\app-csharp\\CharlesNadejda\\CharlesNadejda\\DAL\\VueStockGlobalDAL.cs": {
-    "mtime": 1779311900.504023,
-    "ast_hash": "be7a8269c1f63a54430ef91fa7097d7f",
-    "semantic_hash": "be7a8269c1f63a54430ef91fa7097d7f"
+  "C:\\Users\\ernes\\Desktop\\ProjectsMaster\\projects\\CharlesNadejda_Project\\app-csharp\\CharlesNadejda\\CharlesNadejda\\DAL\\VueStockGlobalDAL.cs": {
+    "mtime": 1781124812.7981865,
+    "ast_hash": "d73d19fd2bdbb7d7ca2e7f76c7f171c6",
+    "semantic_hash": "d73d19fd2bdbb7d7ca2e7f76c7f171c6"
   },
-  "C:\\Users\\ernes\\Desktop\\Bachelier Informatique\\Projects Personnels\\CharlesNadejda_Project\\app-csharp\\CharlesNadejda\\CharlesNadejda\\Forms\\AppColors.cs": {
-    "mtime": 1779310445.4015367,
-    "ast_hash": "f139251a32ea58b4d1da54eb399c291f",
-    "semantic_hash": "f139251a32ea58b4d1da54eb399c291f"
+  "C:\\Users\\ernes\\Desktop\\ProjectsMaster\\projects\\CharlesNadejda_Project\\app-csharp\\CharlesNadejda\\CharlesNadejda\\Forms\\AppColors.cs": {
+    "mtime": 1781176090.8414803,
+    "ast_hash": "06d76d6c88ee6115749c625b801233b7",
+    "semantic_hash": "06d76d6c88ee6115749c625b801233b7"
   },
-  "C:\\Users\\ernes\\Desktop\\Bachelier Informatique\\Projects Personnels\\CharlesNadejda_Project\\app-csharp\\CharlesNadejda\\CharlesNadejda\\Forms\\FormHelper.cs": {
-    "mtime": 1776710423.637074,
-    "ast_hash": "77ebe5423e66f462190e0f8df67efdb0",
-    "semantic_hash": "77ebe5423e66f462190e0f8df67efdb0"
+  "C:\\Users\\ernes\\Desktop\\ProjectsMaster\\projects\\CharlesNadejda_Project\\app-csharp\\CharlesNadejda\\CharlesNadejda\\Forms\\FormHelper.cs": {
+    "mtime": 1781176099.216599,
+    "ast_hash": "72f04131dfda84c1749a10dba1a97ce6",
+    "semantic_hash": "72f04131dfda84c1749a10dba1a97ce6"
   },
-  "C:\\Users\\ernes\\Desktop\\Bachelier Informatique\\Projects Personnels\\CharlesNadejda_Project\\app-csharp\\CharlesNadejda\\CharlesNadejda\\Forms\\FrmAchatEdit.cs": {
-    "mtime": 1779295128.710811,
-    "ast_hash": "03ba88b8c7e5c7fda80127d28a861e3f",
-    "semantic_hash": "03ba88b8c7e5c7fda80127d28a861e3f"
+  "C:\\Users\\ernes\\Desktop\\ProjectsMaster\\projects\\CharlesNadejda_Project\\app-csharp\\CharlesNadejda\\CharlesNadejda\\Forms\\FrmAchatEdit.cs": {
+    "mtime": 1781112122.995181,
+    "ast_hash": "561756632fb39901c2d71b05c3a2c051",
+    "semantic_hash": "561756632fb39901c2d71b05c3a2c051"
   },
-  "C:\\Users\\ernes\\Desktop\\Bachelier Informatique\\Projects Personnels\\CharlesNadejda_Project\\app-csharp\\CharlesNadejda\\CharlesNadejda\\Forms\\FrmAchats.cs": {
-    "mtime": 1778757798.0194457,
-    "ast_hash": "4d34642e81ac940b4b249277d2cdd92d",
-    "semantic_hash": "4d34642e81ac940b4b249277d2cdd92d"
+  "C:\\Users\\ernes\\Desktop\\ProjectsMaster\\projects\\CharlesNadejda_Project\\app-csharp\\CharlesNadejda\\CharlesNadejda\\Forms\\FrmAchats.cs": {
+    "mtime": 1781112357.370477,
+    "ast_hash": "043867c80dbbb3ee58367bef7ac980e8",
+    "semantic_hash": "043867c80dbbb3ee58367bef7ac980e8"
   },
-  "C:\\Users\\ernes\\Desktop\\Bachelier Informatique\\Projects Personnels\\CharlesNadejda_Project\\app-csharp\\CharlesNadejda\\CharlesNadejda\\Forms\\FrmActiviteEdit.cs": {
+  "C:\\Users\\ernes\\Desktop\\ProjectsMaster\\projects\\CharlesNadejda_Project\\app-csharp\\CharlesNadejda\\CharlesNadejda\\Forms\\FrmActiviteEdit.cs": {
     "mtime": 1778683608.5170012,
     "ast_hash": "c1c0986b444b58e6f961944bc806a8cb",
     "semantic_hash": "c1c0986b444b58e6f961944bc806a8cb"
   },
-  "C:\\Users\\ernes\\Desktop\\Bachelier Informatique\\Projects Personnels\\CharlesNadejda_Project\\app-csharp\\CharlesNadejda\\CharlesNadejda\\Forms\\FrmActivites.cs": {
-    "mtime": 1779310561.993356,
-    "ast_hash": "85e21d78cb4012273c30323a99f017ba",
-    "semantic_hash": "85e21d78cb4012273c30323a99f017ba"
+  "C:\\Users\\ernes\\Desktop\\ProjectsMaster\\projects\\CharlesNadejda_Project\\app-csharp\\CharlesNadejda\\CharlesNadejda\\Forms\\FrmActivites.cs": {
+    "mtime": 1781177413.4138265,
+    "ast_hash": "b15261b83d40668145fe8c53727dcb0c",
+    "semantic_hash": "b15261b83d40668145fe8c53727dcb0c"
   },
-  "C:\\Users\\ernes\\Desktop\\Bachelier Informatique\\Projects Personnels\\CharlesNadejda_Project\\app-csharp\\CharlesNadejda\\CharlesNadejda\\Forms\\FrmActiviteStocks.cs": {
+  "C:\\Users\\ernes\\Desktop\\ProjectsMaster\\projects\\CharlesNadejda_Project\\app-csharp\\CharlesNadejda\\CharlesNadejda\\Forms\\FrmActiviteStocks.cs": {
     "mtime": 1779310537.1184893,
     "ast_hash": "cf4bc181c0882a1b73077c44d9523517",
     "semantic_hash": "cf4bc181c0882a1b73077c44d9523517"
   },
-  "C:\\Users\\ernes\\Desktop\\Bachelier Informatique\\Projects Personnels\\CharlesNadejda_Project\\app-csharp\\CharlesNadejda\\CharlesNadejda\\Forms\\FrmBomContexteEdit.cs": {
-    "mtime": 1779310535.2672577,
-    "ast_hash": "874cb7cc8f9faf7fe46844c4591e5317",
-    "semantic_hash": "874cb7cc8f9faf7fe46844c4591e5317"
+  "C:\\Users\\ernes\\Desktop\\ProjectsMaster\\projects\\CharlesNadejda_Project\\app-csharp\\CharlesNadejda\\CharlesNadejda\\Forms\\FrmBomContexteEdit.cs": {
+    "mtime": 1781177799.415122,
+    "ast_hash": "91e6d1e9a63082f1f09555453893a517",
+    "semantic_hash": "91e6d1e9a63082f1f09555453893a517"
   },
-  "C:\\Users\\ernes\\Desktop\\Bachelier Informatique\\Projects Personnels\\CharlesNadejda_Project\\app-csharp\\CharlesNadejda\\CharlesNadejda\\Forms\\FrmBomContextes.cs": {
+  "C:\\Users\\ernes\\Desktop\\ProjectsMaster\\projects\\CharlesNadejda_Project\\app-csharp\\CharlesNadejda\\CharlesNadejda\\Forms\\FrmBomContextes.cs": {
     "mtime": 1776770788.5504854,
     "ast_hash": "6913ad1eb66a947ef834c3f1172ca140",
     "semantic_hash": "6913ad1eb66a947ef834c3f1172ca140"
   },
-  "C:\\Users\\ernes\\Desktop\\Bachelier Informatique\\Projects Personnels\\CharlesNadejda_Project\\app-csharp\\CharlesNadejda\\CharlesNadejda\\Forms\\FrmBomFicheEdit.cs": {
-    "mtime": 1779310540.523809,
-    "ast_hash": "d4ffaec4b6e5209ea76d03dbdce6c363",
-    "semantic_hash": "d4ffaec4b6e5209ea76d03dbdce6c363"
+  "C:\\Users\\ernes\\Desktop\\ProjectsMaster\\projects\\CharlesNadejda_Project\\app-csharp\\CharlesNadejda\\CharlesNadejda\\Forms\\FrmBomFicheEdit.cs": {
+    "mtime": 1781177793.7668934,
+    "ast_hash": "fa2f46fa26d0b7652078d24189e08666",
+    "semantic_hash": "fa2f46fa26d0b7652078d24189e08666"
   },
-  "C:\\Users\\ernes\\Desktop\\Bachelier Informatique\\Projects Personnels\\CharlesNadejda_Project\\app-csharp\\CharlesNadejda\\CharlesNadejda\\Forms\\FrmBomFiches.cs": {
+  "C:\\Users\\ernes\\Desktop\\ProjectsMaster\\projects\\CharlesNadejda_Project\\app-csharp\\CharlesNadejda\\CharlesNadejda\\Forms\\FrmBomFiches.cs": {
     "mtime": 1778705351.830636,
     "ast_hash": "bbb78ee2a6d4f1a785cc68e08d0f7f77",
     "semantic_hash": "bbb78ee2a6d4f1a785cc68e08d0f7f77"
   },
-  "C:\\Users\\ernes\\Desktop\\Bachelier Informatique\\Projects Personnels\\CharlesNadejda_Project\\app-csharp\\CharlesNadejda\\CharlesNadejda\\Forms\\FrmBomNiveauEdit.cs": {
+  "C:\\Users\\ernes\\Desktop\\ProjectsMaster\\projects\\CharlesNadejda_Project\\app-csharp\\CharlesNadejda\\CharlesNadejda\\Forms\\FrmBomNiveauEdit.cs": {
     "mtime": 1778683608.5209994,
     "ast_hash": "7081b7bcabe620cb1f37eecf83f791ac",
     "semantic_hash": "7081b7bcabe620cb1f37eecf83f791ac"
   },
-  "C:\\Users\\ernes\\Desktop\\Bachelier Informatique\\Projects Personnels\\CharlesNadejda_Project\\app-csharp\\CharlesNadejda\\CharlesNadejda\\Forms\\FrmBomNiveaux.cs": {
-    "mtime": 1776770819.4314733,
-    "ast_hash": "f8135997592202f2288300c324b02841",
-    "semantic_hash": "f8135997592202f2288300c324b02841"
+  "C:\\Users\\ernes\\Desktop\\ProjectsMaster\\projects\\CharlesNadejda_Project\\app-csharp\\CharlesNadejda\\CharlesNadejda\\Forms\\FrmBomNiveaux.cs": {
+    "mtime": 1781089318.6418447,
+    "ast_hash": "bbe6f298a0cac78aef72c3dc6ec06caf",
+    "semantic_hash": "bbe6f298a0cac78aef72c3dc6ec06caf"
   },
-  "C:\\Users\\ernes\\Desktop\\Bachelier Informatique\\Projects Personnels\\CharlesNadejda_Project\\app-csharp\\CharlesNadejda\\CharlesNadejda\\Forms\\FrmBomProductionSimulation.cs": {
-    "mtime": 1778705360.921119,
-    "ast_hash": "f1e57db0c55f0b723f9da4827982be0b",
-    "semantic_hash": "f1e57db0c55f0b723f9da4827982be0b"
+  "C:\\Users\\ernes\\Desktop\\ProjectsMaster\\projects\\CharlesNadejda_Project\\app-csharp\\CharlesNadejda\\CharlesNadejda\\Forms\\FrmBomProductionSimulation.cs": {
+    "mtime": 1781089372.515646,
+    "ast_hash": "ca7b52ad7d8fd3bd5d7e96fd38bf9e8e",
+    "semantic_hash": "ca7b52ad7d8fd3bd5d7e96fd38bf9e8e"
   },
-  "C:\\Users\\ernes\\Desktop\\Bachelier Informatique\\Projects Personnels\\CharlesNadejda_Project\\app-csharp\\CharlesNadejda\\CharlesNadejda\\Forms\\FrmBomProductionSimulation.Designer.cs": {
+  "C:\\Users\\ernes\\Desktop\\ProjectsMaster\\projects\\CharlesNadejda_Project\\app-csharp\\CharlesNadejda\\CharlesNadejda\\Forms\\FrmBomProductionSimulation.Designer.cs": {
     "mtime": 1779310576.7849827,
     "ast_hash": "d78e1122cba14d8014290e57da55d0c9",
     "semantic_hash": "d78e1122cba14d8014290e57da55d0c9"
   },
-  "C:\\Users\\ernes\\Desktop\\Bachelier Informatique\\Projects Personnels\\CharlesNadejda_Project\\app-csharp\\CharlesNadejda\\CharlesNadejda\\Forms\\FrmCategorieWebEdit.cs": {
-    "mtime": 1779217547.0547924,
-    "ast_hash": "19c5e3c0e07973f5b8e993c2c5c41cce",
-    "semantic_hash": "19c5e3c0e07973f5b8e993c2c5c41cce"
+  "C:\\Users\\ernes\\Desktop\\ProjectsMaster\\projects\\CharlesNadejda_Project\\app-csharp\\CharlesNadejda\\CharlesNadejda\\Forms\\FrmCategorieWebEdit.cs": {
+    "mtime": 1781177808.8340557,
+    "ast_hash": "89fa4e29e56b1aff01e964fdbdf058c2",
+    "semantic_hash": "89fa4e29e56b1aff01e964fdbdf058c2"
   },
-  "C:\\Users\\ernes\\Desktop\\Bachelier Informatique\\Projects Personnels\\CharlesNadejda_Project\\app-csharp\\CharlesNadejda\\CharlesNadejda\\Forms\\FrmEditBase.cs": {
-    "mtime": 1778686761.4654024,
-    "ast_hash": "37c085b8c29e8b32f563dbf0635544a4",
-    "semantic_hash": "37c085b8c29e8b32f563dbf0635544a4"
+  "C:\\Users\\ernes\\Desktop\\ProjectsMaster\\projects\\CharlesNadejda_Project\\app-csharp\\CharlesNadejda\\CharlesNadejda\\Forms\\FrmEditBase.cs": {
+    "mtime": 1781169001.375869,
+    "ast_hash": "190f3f42693f03cbd2cfc5f0f94f0b8a",
+    "semantic_hash": "190f3f42693f03cbd2cfc5f0f94f0b8a"
   },
-  "C:\\Users\\ernes\\Desktop\\Bachelier Informatique\\Projects Personnels\\CharlesNadejda_Project\\app-csharp\\CharlesNadejda\\CharlesNadejda\\Forms\\FrmFournisseurEdit.cs": {
+  "C:\\Users\\ernes\\Desktop\\ProjectsMaster\\projects\\CharlesNadejda_Project\\app-csharp\\CharlesNadejda\\CharlesNadejda\\Forms\\FrmFournisseurEdit.cs": {
     "mtime": 1778683608.5240495,
     "ast_hash": "c13822c1b4fb8a5e1330a48720e6d2fd",
     "semantic_hash": "c13822c1b4fb8a5e1330a48720e6d2fd"
   },
-  "C:\\Users\\ernes\\Desktop\\Bachelier Informatique\\Projects Personnels\\CharlesNadejda_Project\\app-csharp\\CharlesNadejda\\CharlesNadejda\\Forms\\FrmFournisseurs.cs": {
-    "mtime": 1778683608.5252018,
-    "ast_hash": "f4e4769219247a02f9882abcbca159df",
-    "semantic_hash": "f4e4769219247a02f9882abcbca159df"
+  "C:\\Users\\ernes\\Desktop\\ProjectsMaster\\projects\\CharlesNadejda_Project\\app-csharp\\CharlesNadejda\\CharlesNadejda\\Forms\\FrmFournisseurs.cs": {
+    "mtime": 1781177375.0689094,
+    "ast_hash": "ceb3f04147df150fddba18ded12dfa31",
+    "semantic_hash": "ceb3f04147df150fddba18ded12dfa31"
   },
-  "C:\\Users\\ernes\\Desktop\\Bachelier Informatique\\Projects Personnels\\CharlesNadejda_Project\\app-csharp\\CharlesNadejda\\CharlesNadejda\\Forms\\FrmFournisseurs.Designer.cs": {
-    "mtime": 1779310586.1202946,
-    "ast_hash": "91a7d6fc0fa649abbb4aef9f5b7de742",
-    "semantic_hash": "91a7d6fc0fa649abbb4aef9f5b7de742"
+  "C:\\Users\\ernes\\Desktop\\ProjectsMaster\\projects\\CharlesNadejda_Project\\app-csharp\\CharlesNadejda\\CharlesNadejda\\Forms\\FrmFournisseurs.Designer.cs": {
+    "mtime": 1781177472.8240385,
+    "ast_hash": "ce614af3c13a3577f235bdfb6b6734ba",
+    "semantic_hash": "ce614af3c13a3577f235bdfb6b6734ba"
   },
-  "C:\\Users\\ernes\\Desktop\\Bachelier Informatique\\Projects Personnels\\CharlesNadejda_Project\\app-csharp\\CharlesNadejda\\CharlesNadejda\\Forms\\FrmIngredientEdit.cs": {
-    "mtime": 1778774768.8854117,
-    "ast_hash": "3d81b5c0d946e64dcf81323feb5faf88",
-    "semantic_hash": "3d81b5c0d946e64dcf81323feb5faf88"
+  "C:\\Users\\ernes\\Desktop\\ProjectsMaster\\projects\\CharlesNadejda_Project\\app-csharp\\CharlesNadejda\\CharlesNadejda\\Forms\\FrmIngredientEdit.cs": {
+    "mtime": 1781177803.8295138,
+    "ast_hash": "2d04aceebe88bdafc23f950f28339b46",
+    "semantic_hash": "2d04aceebe88bdafc23f950f28339b46"
   },
-  "C:\\Users\\ernes\\Desktop\\Bachelier Informatique\\Projects Personnels\\CharlesNadejda_Project\\app-csharp\\CharlesNadejda\\CharlesNadejda\\Forms\\FrmIngredients.cs": {
-    "mtime": 1779299829.0356426,
-    "ast_hash": "eb268b974d8cb62da14b82aed07c96b0",
-    "semantic_hash": "eb268b974d8cb62da14b82aed07c96b0"
+  "C:\\Users\\ernes\\Desktop\\ProjectsMaster\\projects\\CharlesNadejda_Project\\app-csharp\\CharlesNadejda\\CharlesNadejda\\Forms\\FrmIngredients.cs": {
+    "mtime": 1779901468.539024,
+    "ast_hash": "b76965b5376766c56b9566bafa3358ed",
+    "semantic_hash": "b76965b5376766c56b9566bafa3358ed"
   },
-  "C:\\Users\\ernes\\Desktop\\Bachelier Informatique\\Projects Personnels\\CharlesNadejda_Project\\app-csharp\\CharlesNadejda\\CharlesNadejda\\Forms\\FrmListeBase.cs": {
-    "mtime": 1778686760.4978216,
-    "ast_hash": "3e1fd24a317defbefb687bb82c70cf19",
-    "semantic_hash": "3e1fd24a317defbefb687bb82c70cf19"
+  "C:\\Users\\ernes\\Desktop\\ProjectsMaster\\projects\\CharlesNadejda_Project\\app-csharp\\CharlesNadejda\\CharlesNadejda\\Forms\\FrmListeBase.cs": {
+    "mtime": 1781177789.201716,
+    "ast_hash": "02fee64cc082b15964ec786d35058fb6",
+    "semantic_hash": "02fee64cc082b15964ec786d35058fb6"
   },
-  "C:\\Users\\ernes\\Desktop\\Bachelier Informatique\\Projects Personnels\\CharlesNadejda_Project\\app-csharp\\CharlesNadejda\\CharlesNadejda\\Forms\\FrmLogin.cs": {
-    "mtime": 1778686756.2286956,
-    "ast_hash": "bc08a61b1a37562015134dc04b5e3605",
-    "semantic_hash": "bc08a61b1a37562015134dc04b5e3605"
+  "C:\\Users\\ernes\\Desktop\\ProjectsMaster\\projects\\CharlesNadejda_Project\\app-csharp\\CharlesNadejda\\CharlesNadejda\\Forms\\FrmLogin.cs": {
+    "mtime": 1779906805.9718523,
+    "ast_hash": "00154082ceef4e7e3391c626ed07d105",
+    "semantic_hash": "00154082ceef4e7e3391c626ed07d105"
   },
-  "C:\\Users\\ernes\\Desktop\\Bachelier Informatique\\Projects Personnels\\CharlesNadejda_Project\\app-csharp\\CharlesNadejda\\CharlesNadejda\\Forms\\FrmLogin.Designer.cs": {
+  "C:\\Users\\ernes\\Desktop\\ProjectsMaster\\projects\\CharlesNadejda_Project\\app-csharp\\CharlesNadejda\\CharlesNadejda\\Forms\\FrmLogin.Designer.cs": {
     "mtime": 1779310591.4893308,
     "ast_hash": "7053e2e4b47215060038b14f86677d23",
     "semantic_hash": "7053e2e4b47215060038b14f86677d23"
   },
-  "C:\\Users\\ernes\\Desktop\\Bachelier Informatique\\Projects Personnels\\CharlesNadejda_Project\\app-csharp\\CharlesNadejda\\CharlesNadejda\\Forms\\FrmPrincipal.BoutiqueWeb.cs": {
-    "mtime": 1779293390.625553,
-    "ast_hash": "e7525dab7770ac1ad837e0812275be91",
-    "semantic_hash": "e7525dab7770ac1ad837e0812275be91"
+  "C:\\Users\\ernes\\Desktop\\ProjectsMaster\\projects\\CharlesNadejda_Project\\app-csharp\\CharlesNadejda\\CharlesNadejda\\Forms\\FrmPrincipal.BoutiqueWeb.cs": {
+    "mtime": 1781175875.2992678,
+    "ast_hash": "94467ece45a52a8248a894ec9a90fdc1",
+    "semantic_hash": "94467ece45a52a8248a894ec9a90fdc1"
   },
-  "C:\\Users\\ernes\\Desktop\\Bachelier Informatique\\Projects Personnels\\CharlesNadejda_Project\\app-csharp\\CharlesNadejda\\CharlesNadejda\\Forms\\FrmPrincipal.Contexte.cs": {
-    "mtime": 1779310970.7258651,
-    "ast_hash": "b70be4d803b2ca29db76356000d8cf99",
-    "semantic_hash": "b70be4d803b2ca29db76356000d8cf99"
+  "C:\\Users\\ernes\\Desktop\\ProjectsMaster\\projects\\CharlesNadejda_Project\\app-csharp\\CharlesNadejda\\CharlesNadejda\\Forms\\FrmPrincipal.cs": {
+    "mtime": 1781177902.7814343,
+    "ast_hash": "f7cb5040017495fd637669e57f29a4f2",
+    "semantic_hash": "f7cb5040017495fd637669e57f29a4f2"
   },
-  "C:\\Users\\ernes\\Desktop\\Bachelier Informatique\\Projects Personnels\\CharlesNadejda_Project\\app-csharp\\CharlesNadejda\\CharlesNadejda\\Forms\\FrmPrincipal.cs": {
-    "mtime": 1779311460.084428,
-    "ast_hash": "9dc367a334e3c4e031edb77c51ed218f",
-    "semantic_hash": "9dc367a334e3c4e031edb77c51ed218f"
+  "C:\\Users\\ernes\\Desktop\\ProjectsMaster\\projects\\CharlesNadejda_Project\\app-csharp\\CharlesNadejda\\CharlesNadejda\\Forms\\FrmPrincipal.Designer.cs": {
+    "mtime": 1781177856.197736,
+    "ast_hash": "1568c6034f0900b214c186bee5d68674",
+    "semantic_hash": "1568c6034f0900b214c186bee5d68674"
   },
-  "C:\\Users\\ernes\\Desktop\\Bachelier Informatique\\Projects Personnels\\CharlesNadejda_Project\\app-csharp\\CharlesNadejda\\CharlesNadejda\\Forms\\FrmPrincipal.Designer.cs": {
-    "mtime": 1779310593.0044355,
-    "ast_hash": "9e3bcf492bdd89f78e07fe170798da8f",
-    "semantic_hash": "9e3bcf492bdd89f78e07fe170798da8f"
+  "C:\\Users\\ernes\\Desktop\\ProjectsMaster\\projects\\CharlesNadejda_Project\\app-csharp\\CharlesNadejda\\CharlesNadejda\\Forms\\FrmPrincipal.Hub.cs": {
+    "mtime": 1781175929.592169,
+    "ast_hash": "ebbc840dbf6e0d1ef34f66fff9c786a3",
+    "semantic_hash": "ebbc840dbf6e0d1ef34f66fff9c786a3"
   },
-  "C:\\Users\\ernes\\Desktop\\Bachelier Informatique\\Projects Personnels\\CharlesNadejda_Project\\app-csharp\\CharlesNadejda\\CharlesNadejda\\Forms\\FrmPrincipal.Hub.cs": {
-    "mtime": 1779310941.1964192,
-    "ast_hash": "30e8224bc0f7163756d65ea0e32b3b4f",
-    "semantic_hash": "30e8224bc0f7163756d65ea0e32b3b4f"
+  "C:\\Users\\ernes\\Desktop\\ProjectsMaster\\projects\\CharlesNadejda_Project\\app-csharp\\CharlesNadejda\\CharlesNadejda\\Forms\\FrmPrincipal.Parametres.cs": {
+    "mtime": 1781175935.6142905,
+    "ast_hash": "e4e53c5f0b33418c8272f146218c5241",
+    "semantic_hash": "e4e53c5f0b33418c8272f146218c5241"
   },
-  "C:\\Users\\ernes\\Desktop\\Bachelier Informatique\\Projects Personnels\\CharlesNadejda_Project\\app-csharp\\CharlesNadejda\\CharlesNadejda\\Forms\\FrmPrincipal.KanbanDetail.cs": {
-    "mtime": 1779310882.052428,
-    "ast_hash": "9c8d39822f67a8a8bc789be418bc3dec",
-    "semantic_hash": "9c8d39822f67a8a8bc789be418bc3dec"
+  "C:\\Users\\ernes\\Desktop\\ProjectsMaster\\projects\\CharlesNadejda_Project\\app-csharp\\CharlesNadejda\\CharlesNadejda\\Forms\\FrmPrincipal.Production.cs": {
+    "mtime": 1781176075.07012,
+    "ast_hash": "cbc7938367263811d86432a75fbe13d6",
+    "semantic_hash": "cbc7938367263811d86432a75fbe13d6"
   },
-  "C:\\Users\\ernes\\Desktop\\Bachelier Informatique\\Projects Personnels\\CharlesNadejda_Project\\app-csharp\\CharlesNadejda\\CharlesNadejda\\Forms\\FrmPrincipal.Production.cs": {
-    "mtime": 1778755237.2847145,
-    "ast_hash": "7c7dcc97d25ece9b0522ef5a5435cee0",
-    "semantic_hash": "7c7dcc97d25ece9b0522ef5a5435cee0"
+  "C:\\Users\\ernes\\Desktop\\ProjectsMaster\\projects\\CharlesNadejda_Project\\app-csharp\\CharlesNadejda\\CharlesNadejda\\Forms\\FrmProduitWebEdit.cs": {
+    "mtime": 1781177813.3150697,
+    "ast_hash": "ae5898ffa499bd63f7a11f199a195a9f",
+    "semantic_hash": "ae5898ffa499bd63f7a11f199a195a9f"
   },
-  "C:\\Users\\ernes\\Desktop\\Bachelier Informatique\\Projects Personnels\\CharlesNadejda_Project\\app-csharp\\CharlesNadejda\\CharlesNadejda\\Forms\\FrmProduitWebEdit.cs": {
-    "mtime": 1779223595.0945206,
-    "ast_hash": "487262e06a0d6c51146b9802632c914e",
-    "semantic_hash": "487262e06a0d6c51146b9802632c914e"
+  "C:\\Users\\ernes\\Desktop\\ProjectsMaster\\projects\\CharlesNadejda_Project\\app-csharp\\CharlesNadejda\\CharlesNadejda\\Forms\\FrmStockEdit.cs": {
+    "mtime": 1779906815.0171683,
+    "ast_hash": "e11ad53c2e9dad758603e8026bfe4188",
+    "semantic_hash": "e11ad53c2e9dad758603e8026bfe4188"
   },
-  "C:\\Users\\ernes\\Desktop\\Bachelier Informatique\\Projects Personnels\\CharlesNadejda_Project\\app-csharp\\CharlesNadejda\\CharlesNadejda\\Forms\\FrmStockEdit.cs": {
-    "mtime": 1778683608.5320234,
-    "ast_hash": "858730f7c496f5787dcf20902964cc88",
-    "semantic_hash": "858730f7c496f5787dcf20902964cc88"
+  "C:\\Users\\ernes\\Desktop\\ProjectsMaster\\projects\\CharlesNadejda_Project\\app-csharp\\CharlesNadejda\\CharlesNadejda\\Forms\\FrmStocks.cs": {
+    "mtime": 1781177446.7036822,
+    "ast_hash": "02e7af900b14edc6dc46303571bee203",
+    "semantic_hash": "02e7af900b14edc6dc46303571bee203"
   },
-  "C:\\Users\\ernes\\Desktop\\Bachelier Informatique\\Projects Personnels\\CharlesNadejda_Project\\app-csharp\\CharlesNadejda\\CharlesNadejda\\Forms\\FrmStocks.cs": {
-    "mtime": 1779310556.5136604,
-    "ast_hash": "2f31d95ed62ea3cf51a1c9bb65f2f4b5",
-    "semantic_hash": "2f31d95ed62ea3cf51a1c9bb65f2f4b5"
+  "C:\\Users\\ernes\\Desktop\\ProjectsMaster\\projects\\CharlesNadejda_Project\\app-csharp\\CharlesNadejda\\CharlesNadejda\\Forms\\FrmVueStock.cs": {
+    "mtime": 1781177833.6833496,
+    "ast_hash": "649d300a1fc39c18320f194bbbc811ec",
+    "semantic_hash": "649d300a1fc39c18320f194bbbc811ec"
   },
-  "C:\\Users\\ernes\\Desktop\\Bachelier Informatique\\Projects Personnels\\CharlesNadejda_Project\\app-csharp\\CharlesNadejda\\CharlesNadejda\\Forms\\FrmVueStock.cs": {
-    "mtime": 1779311812.4973297,
-    "ast_hash": "c640344bb60aa23fb1ed8f1f743ac92d",
-    "semantic_hash": "c640344bb60aa23fb1ed8f1f743ac92d"
-  },
-  "C:\\Users\\ernes\\Desktop\\Bachelier Informatique\\Projects Personnels\\CharlesNadejda_Project\\app-csharp\\CharlesNadejda\\CharlesNadejda\\Forms\\StringExtensions.cs": {
+  "C:\\Users\\ernes\\Desktop\\ProjectsMaster\\projects\\CharlesNadejda_Project\\app-csharp\\CharlesNadejda\\CharlesNadejda\\Forms\\StringExtensions.cs": {
     "mtime": 1778683608.5335827,
     "ast_hash": "73bf834c37d3b2ea35528f0adfe80cae",
     "semantic_hash": "73bf834c37d3b2ea35528f0adfe80cae"
   },
-  "C:\\Users\\ernes\\Desktop\\Bachelier Informatique\\Projects Personnels\\CharlesNadejda_Project\\app-csharp\\CharlesNadejda\\CharlesNadejda\\Forms\\Shell\\SidebarPanel.cs": {
-    "mtime": 1779217597.3504112,
-    "ast_hash": "47dd5fbdc949d7319af30a56ff6ee437",
-    "semantic_hash": "47dd5fbdc949d7319af30a56ff6ee437"
+  "C:\\Users\\ernes\\Desktop\\ProjectsMaster\\projects\\CharlesNadejda_Project\\app-csharp\\CharlesNadejda\\CharlesNadejda\\Forms\\Shell\\SidebarPanel.cs": {
+    "mtime": 1781112159.5829804,
+    "ast_hash": "03bf1cf5c4184dd4510c8784f684af12",
+    "semantic_hash": "03bf1cf5c4184dd4510c8784f684af12"
   },
-  "C:\\Users\\ernes\\Desktop\\Bachelier Informatique\\Projects Personnels\\CharlesNadejda_Project\\app-csharp\\CharlesNadejda\\CharlesNadejda\\Forms\\Shell\\StatusBarPanel.cs": {
+  "C:\\Users\\ernes\\Desktop\\ProjectsMaster\\projects\\CharlesNadejda_Project\\app-csharp\\CharlesNadejda\\CharlesNadejda\\Forms\\Shell\\StatusBarPanel.cs": {
     "mtime": 1778759963.5306954,
     "ast_hash": "a396e3e2003be77949b25979ac7a7f5c",
     "semantic_hash": "a396e3e2003be77949b25979ac7a7f5c"
   },
-  "C:\\Users\\ernes\\Desktop\\Bachelier Informatique\\Projects Personnels\\CharlesNadejda_Project\\app-csharp\\CharlesNadejda\\CharlesNadejda\\Forms\\Shell\\TitleBarPanel.cs": {
+  "C:\\Users\\ernes\\Desktop\\ProjectsMaster\\projects\\CharlesNadejda_Project\\app-csharp\\CharlesNadejda\\CharlesNadejda\\Forms\\Shell\\TitleBarPanel.cs": {
     "mtime": 1778759954.18563,
     "ast_hash": "c3322eaaabb89f04af7a57a481b7be6d",
     "semantic_hash": "c3322eaaabb89f04af7a57a481b7be6d"
   },
-  "C:\\Users\\ernes\\Desktop\\Bachelier Informatique\\Projects Personnels\\CharlesNadejda_Project\\app-csharp\\CharlesNadejda\\CharlesNadejda\\Helpers\\UnitConvertisseur.cs": {
+  "C:\\Users\\ernes\\Desktop\\ProjectsMaster\\projects\\CharlesNadejda_Project\\app-csharp\\CharlesNadejda\\CharlesNadejda\\Helpers\\UnitConvertisseur.cs": {
     "mtime": 1778758002.0938566,
     "ast_hash": "915994a723d4afb76b1457c2b7a56c62",
     "semantic_hash": "915994a723d4afb76b1457c2b7a56c62"
   },
-  "C:\\Users\\ernes\\Desktop\\Bachelier Informatique\\Projects Personnels\\CharlesNadejda_Project\\app-csharp\\CharlesNadejda\\CharlesNadejda\\Models\\Activite.cs": {
+  "C:\\Users\\ernes\\Desktop\\ProjectsMaster\\projects\\CharlesNadejda_Project\\app-csharp\\CharlesNadejda\\CharlesNadejda\\Models\\Activite.cs": {
     "mtime": 1776109890.9801412,
     "ast_hash": "209e552bc66b349a44d6062ab4045512",
     "semantic_hash": "209e552bc66b349a44d6062ab4045512"
   },
-  "C:\\Users\\ernes\\Desktop\\Bachelier Informatique\\Projects Personnels\\CharlesNadejda_Project\\app-csharp\\CharlesNadejda\\CharlesNadejda\\Models\\BomContexte.cs": {
-    "mtime": 1776109897.30589,
-    "ast_hash": "661e45637aea81668ffd0413ed678c86",
-    "semantic_hash": "661e45637aea81668ffd0413ed678c86"
+  "C:\\Users\\ernes\\Desktop\\ProjectsMaster\\projects\\CharlesNadejda_Project\\app-csharp\\CharlesNadejda\\CharlesNadejda\\Models\\BomContexte.cs": {
+    "mtime": 1781176047.5078678,
+    "ast_hash": "941ebf49e5dbce103112b02b527d4f0f",
+    "semantic_hash": "941ebf49e5dbce103112b02b527d4f0f"
   },
-  "C:\\Users\\ernes\\Desktop\\Bachelier Informatique\\Projects Personnels\\CharlesNadejda_Project\\app-csharp\\CharlesNadejda\\CharlesNadejda\\Models\\BomFiche.cs": {
-    "mtime": 1779297217.3447163,
-    "ast_hash": "ff7aa7ce35b7067ee11e4f624b57b161",
-    "semantic_hash": "ff7aa7ce35b7067ee11e4f624b57b161"
+  "C:\\Users\\ernes\\Desktop\\ProjectsMaster\\projects\\CharlesNadejda_Project\\app-csharp\\CharlesNadejda\\CharlesNadejda\\Models\\BomFiche.cs": {
+    "mtime": 1781175924.3538592,
+    "ast_hash": "a18a3d24eec674a020e521744b54cab9",
+    "semantic_hash": "a18a3d24eec674a020e521744b54cab9"
   },
-  "C:\\Users\\ernes\\Desktop\\Bachelier Informatique\\Projects Personnels\\CharlesNadejda_Project\\app-csharp\\CharlesNadejda\\CharlesNadejda\\Models\\BomFicheLigne.cs": {
-    "mtime": 1774900638.5992994,
-    "ast_hash": "e7b5fbfedf8be5eb66cf774f6a0c18aa",
-    "semantic_hash": "e7b5fbfedf8be5eb66cf774f6a0c18aa"
+  "C:\\Users\\ernes\\Desktop\\ProjectsMaster\\projects\\CharlesNadejda_Project\\app-csharp\\CharlesNadejda\\CharlesNadejda\\Models\\BomFicheLigne.cs": {
+    "mtime": 1781176014.8262093,
+    "ast_hash": "9f8f9c55792d191a7eb7fc4c0fdbd7ba",
+    "semantic_hash": "9f8f9c55792d191a7eb7fc4c0fdbd7ba"
   },
-  "C:\\Users\\ernes\\Desktop\\Bachelier Informatique\\Projects Personnels\\CharlesNadejda_Project\\app-csharp\\CharlesNadejda\\CharlesNadejda\\Models\\BomManque.cs": {
-    "mtime": 1776775257.8758597,
-    "ast_hash": "5e390b88a2e7120c65e6c2bb1959811f",
-    "semantic_hash": "5e390b88a2e7120c65e6c2bb1959811f"
+  "C:\\Users\\ernes\\Desktop\\ProjectsMaster\\projects\\CharlesNadejda_Project\\app-csharp\\CharlesNadejda\\CharlesNadejda\\Models\\BomManque.cs": {
+    "mtime": 1781176641.0633655,
+    "ast_hash": "354d6db3b8a0dde8aa936ce871daa1f5",
+    "semantic_hash": "354d6db3b8a0dde8aa936ce871daa1f5"
   },
-  "C:\\Users\\ernes\\Desktop\\Bachelier Informatique\\Projects Personnels\\CharlesNadejda_Project\\app-csharp\\CharlesNadejda\\CharlesNadejda\\Models\\BomNiveau.cs": {
-    "mtime": 1776109919.889995,
-    "ast_hash": "a5dc01df57aacf7f512b88de93be267f",
-    "semantic_hash": "a5dc01df57aacf7f512b88de93be267f"
+  "C:\\Users\\ernes\\Desktop\\ProjectsMaster\\projects\\CharlesNadejda_Project\\app-csharp\\CharlesNadejda\\CharlesNadejda\\Models\\BomNiveau.cs": {
+    "mtime": 1781176058.665658,
+    "ast_hash": "5ae5f36226cd779bf34536100a38db5d",
+    "semantic_hash": "5ae5f36226cd779bf34536100a38db5d"
   },
-  "C:\\Users\\ernes\\Desktop\\Bachelier Informatique\\Projects Personnels\\CharlesNadejda_Project\\app-csharp\\CharlesNadejda\\CharlesNadejda\\Models\\BomProduction.cs": {
-    "mtime": 1774900647.0795083,
-    "ast_hash": "75c5065f8afcacd169b189f4a324277c",
-    "semantic_hash": "75c5065f8afcacd169b189f4a324277c"
+  "C:\\Users\\ernes\\Desktop\\ProjectsMaster\\projects\\CharlesNadejda_Project\\app-csharp\\CharlesNadejda\\CharlesNadejda\\Models\\BomProduction.cs": {
+    "mtime": 1781176180.2302072,
+    "ast_hash": "60649b22effdecf65ac280ca73e09b06",
+    "semantic_hash": "60649b22effdecf65ac280ca73e09b06"
   },
-  "C:\\Users\\ernes\\Desktop\\Bachelier Informatique\\Projects Personnels\\CharlesNadejda_Project\\app-csharp\\CharlesNadejda\\CharlesNadejda\\Models\\BomProductionLigne.cs": {
-    "mtime": 1774900659.7920563,
-    "ast_hash": "7c3d588f9cb9f709044f71a316990395",
-    "semantic_hash": "7c3d588f9cb9f709044f71a316990395"
+  "C:\\Users\\ernes\\Desktop\\ProjectsMaster\\projects\\CharlesNadejda_Project\\app-csharp\\CharlesNadejda\\CharlesNadejda\\Models\\BomProductionLigne.cs": {
+    "mtime": 1781176033.104522,
+    "ast_hash": "1c5e8df234e4d397b8addb951ddf2a92",
+    "semantic_hash": "1c5e8df234e4d397b8addb951ddf2a92"
   },
-  "C:\\Users\\ernes\\Desktop\\Bachelier Informatique\\Projects Personnels\\CharlesNadejda_Project\\app-csharp\\CharlesNadejda\\CharlesNadejda\\Models\\BomReservation.cs": {
-    "mtime": 1774900665.0090187,
-    "ast_hash": "211208e3296980d583fb36ce091afd39",
-    "semantic_hash": "211208e3296980d583fb36ce091afd39"
+  "C:\\Users\\ernes\\Desktop\\ProjectsMaster\\projects\\CharlesNadejda_Project\\app-csharp\\CharlesNadejda\\CharlesNadejda\\Models\\BomReservation.cs": {
+    "mtime": 1781176114.7659104,
+    "ast_hash": "e5eb7c3419135f624c01cec141188878",
+    "semantic_hash": "e5eb7c3419135f624c01cec141188878"
   },
-  "C:\\Users\\ernes\\Desktop\\Bachelier Informatique\\Projects Personnels\\CharlesNadejda_Project\\app-csharp\\CharlesNadejda\\CharlesNadejda\\Models\\BomStock.cs": {
-    "mtime": 1779297766.660237,
-    "ast_hash": "0a7b561b6c46ffd6768723003d5a1731",
-    "semantic_hash": "0a7b561b6c46ffd6768723003d5a1731"
+  "C:\\Users\\ernes\\Desktop\\ProjectsMaster\\projects\\CharlesNadejda_Project\\app-csharp\\CharlesNadejda\\CharlesNadejda\\Models\\BomStock.cs": {
+    "mtime": 1781175949.666769,
+    "ast_hash": "d60a42f33b9807393589177f0795c881",
+    "semantic_hash": "d60a42f33b9807393589177f0795c881"
   },
-  "C:\\Users\\ernes\\Desktop\\Bachelier Informatique\\Projects Personnels\\CharlesNadejda_Project\\app-csharp\\CharlesNadejda\\CharlesNadejda\\Models\\CategorieWeb.cs": {
-    "mtime": 1779217047.2175672,
-    "ast_hash": "f10078e86aaf83fcd7b5a852040c165e",
-    "semantic_hash": "f10078e86aaf83fcd7b5a852040c165e"
+  "C:\\Users\\ernes\\Desktop\\ProjectsMaster\\projects\\CharlesNadejda_Project\\app-csharp\\CharlesNadejda\\CharlesNadejda\\Models\\CategorieWeb.cs": {
+    "mtime": 1781176141.6087523,
+    "ast_hash": "add5a2d233a01e689cd0df8a7c562f38",
+    "semantic_hash": "add5a2d233a01e689cd0df8a7c562f38"
   },
-  "C:\\Users\\ernes\\Desktop\\Bachelier Informatique\\Projects Personnels\\CharlesNadejda_Project\\app-csharp\\CharlesNadejda\\CharlesNadejda\\Models\\CommandeWeb.cs": {
-    "mtime": 1779217058.153207,
-    "ast_hash": "277083a99b3d16b774a87f47124010c7",
-    "semantic_hash": "277083a99b3d16b774a87f47124010c7"
+  "C:\\Users\\ernes\\Desktop\\ProjectsMaster\\projects\\CharlesNadejda_Project\\app-csharp\\CharlesNadejda\\CharlesNadejda\\Models\\CommandeWeb.cs": {
+    "mtime": 1781175969.2339869,
+    "ast_hash": "acc1671566f8999dced48e84cf0ee914",
+    "semantic_hash": "acc1671566f8999dced48e84cf0ee914"
   },
-  "C:\\Users\\ernes\\Desktop\\Bachelier Informatique\\Projects Personnels\\CharlesNadejda_Project\\app-csharp\\CharlesNadejda\\CharlesNadejda\\Models\\CommandeWebLigne.cs": {
-    "mtime": 1779217061.9909565,
-    "ast_hash": "d6b17af5822352ca1c20cba0f1e0cf3c",
-    "semantic_hash": "d6b17af5822352ca1c20cba0f1e0cf3c"
+  "C:\\Users\\ernes\\Desktop\\ProjectsMaster\\projects\\CharlesNadejda_Project\\app-csharp\\CharlesNadejda\\CharlesNadejda\\Models\\CommandeWebLigne.cs": {
+    "mtime": 1781177844.5426471,
+    "ast_hash": "35e41535c413e87931bbe89dd9905ba3",
+    "semantic_hash": "35e41535c413e87931bbe89dd9905ba3"
   },
-  "C:\\Users\\ernes\\Desktop\\Bachelier Informatique\\Projects Personnels\\CharlesNadejda_Project\\app-csharp\\CharlesNadejda\\CharlesNadejda\\Models\\Fournisseur.cs": {
-    "mtime": 1774820727.895269,
-    "ast_hash": "3f357d40fbb04790c4b3219c698f2d07",
-    "semantic_hash": "3f357d40fbb04790c4b3219c698f2d07"
+  "C:\\Users\\ernes\\Desktop\\ProjectsMaster\\projects\\CharlesNadejda_Project\\app-csharp\\CharlesNadejda\\CharlesNadejda\\Models\\Fournisseur.cs": {
+    "mtime": 1781176121.4281332,
+    "ast_hash": "31d7a44e871e9c47ae291e5d77d48237",
+    "semantic_hash": "31d7a44e871e9c47ae291e5d77d48237"
   },
-  "C:\\Users\\ernes\\Desktop\\Bachelier Informatique\\Projects Personnels\\CharlesNadejda_Project\\app-csharp\\CharlesNadejda\\CharlesNadejda\\Models\\Ingredient.cs": {
-    "mtime": 1778773824.2175655,
-    "ast_hash": "af6d94b8e387a611cf7a294c0cd0035d",
-    "semantic_hash": "af6d94b8e387a611cf7a294c0cd0035d"
+  "C:\\Users\\ernes\\Desktop\\ProjectsMaster\\projects\\CharlesNadejda_Project\\app-csharp\\CharlesNadejda\\CharlesNadejda\\Models\\Ingredient.cs": {
+    "mtime": 1781177362.495312,
+    "ast_hash": "8b8dea0054db389708b252b411597368",
+    "semantic_hash": "8b8dea0054db389708b252b411597368"
   },
-  "C:\\Users\\ernes\\Desktop\\Bachelier Informatique\\Projects Personnels\\CharlesNadejda_Project\\app-csharp\\CharlesNadejda\\CharlesNadejda\\Models\\Lot.cs": {
-    "mtime": 1778757069.425212,
-    "ast_hash": "ab0632ca8bda856dc615cedf30d0bcd5",
-    "semantic_hash": "ab0632ca8bda856dc615cedf30d0bcd5"
+  "C:\\Users\\ernes\\Desktop\\ProjectsMaster\\projects\\CharlesNadejda_Project\\app-csharp\\CharlesNadejda\\CharlesNadejda\\Models\\Lot.cs": {
+    "mtime": 1781177841.3755357,
+    "ast_hash": "7917b5dd98fc103ef373606e49010835",
+    "semantic_hash": "7917b5dd98fc103ef373606e49010835"
   },
-  "C:\\Users\\ernes\\Desktop\\Bachelier Informatique\\Projects Personnels\\CharlesNadejda_Project\\app-csharp\\CharlesNadejda\\CharlesNadejda\\Models\\ProduitWeb.cs": {
-    "mtime": 1779217052.4346128,
-    "ast_hash": "95889276ad7c6e31607999dfed275ae0",
-    "semantic_hash": "95889276ad7c6e31607999dfed275ae0"
+  "C:\\Users\\ernes\\Desktop\\ProjectsMaster\\projects\\CharlesNadejda_Project\\app-csharp\\CharlesNadejda\\CharlesNadejda\\Models\\ProduitWeb.cs": {
+    "mtime": 1781175995.7875473,
+    "ast_hash": "cb74462c7d1272047891e43a0044b433",
+    "semantic_hash": "cb74462c7d1272047891e43a0044b433"
   },
-  "C:\\Users\\ernes\\Desktop\\Bachelier Informatique\\Projects Personnels\\CharlesNadejda_Project\\app-csharp\\CharlesNadejda\\CharlesNadejda\\Models\\RapportCout.cs": {
+  "C:\\Users\\ernes\\Desktop\\ProjectsMaster\\projects\\CharlesNadejda_Project\\app-csharp\\CharlesNadejda\\CharlesNadejda\\Models\\RapportCout.cs": {
     "mtime": 1776275257.3316371,
     "ast_hash": "2f3b1cecfd5005d6b0b4b8532f4fad8d",
     "semantic_hash": "2f3b1cecfd5005d6b0b4b8532f4fad8d"
   },
-  "C:\\Users\\ernes\\Desktop\\Bachelier Informatique\\Projects Personnels\\CharlesNadejda_Project\\app-csharp\\CharlesNadejda\\CharlesNadejda\\Models\\Stock.cs": {
-    "mtime": 1776159248.358522,
-    "ast_hash": "ded768ec2602da2520cda2c97d000d98",
-    "semantic_hash": "ded768ec2602da2520cda2c97d000d98"
+  "C:\\Users\\ernes\\Desktop\\ProjectsMaster\\projects\\CharlesNadejda_Project\\app-csharp\\CharlesNadejda\\CharlesNadejda\\Models\\Stock.cs": {
+    "mtime": 1781176065.6956604,
+    "ast_hash": "dc6fabcf58d69bc6bba170ddac3910f1",
+    "semantic_hash": "dc6fabcf58d69bc6bba170ddac3910f1"
   },
-  "C:\\Users\\ernes\\Desktop\\Bachelier Informatique\\Projects Personnels\\CharlesNadejda_Project\\app-csharp\\CharlesNadejda\\CharlesNadejda\\Models\\Utilisateur.cs": {
-    "mtime": 1774817843.5066485,
-    "ast_hash": "01e363b22695299fbbf8895673475a4e",
-    "semantic_hash": "01e363b22695299fbbf8895673475a4e"
+  "C:\\Users\\ernes\\Desktop\\ProjectsMaster\\projects\\CharlesNadejda_Project\\app-csharp\\CharlesNadejda\\CharlesNadejda\\Models\\Utilisateur.cs": {
+    "mtime": 1781176129.6049328,
+    "ast_hash": "fbec08dee2a28a6c7277491d67e4bfdc",
+    "semantic_hash": "fbec08dee2a28a6c7277491d67e4bfdc"
   },
-  "C:\\Users\\ernes\\Desktop\\Bachelier Informatique\\Projects Personnels\\CharlesNadejda_Project\\app-csharp\\CharlesNadejda\\CharlesNadejda\\Models\\VueStockGlobal.cs": {
-    "mtime": 1779301481.629277,
-    "ast_hash": "4f044584a36f78255dfb6b8c4b5c97ff",
-    "semantic_hash": "4f044584a36f78255dfb6b8c4b5c97ff"
+  "C:\\Users\\ernes\\Desktop\\ProjectsMaster\\projects\\CharlesNadejda_Project\\app-csharp\\CharlesNadejda\\CharlesNadejda\\Models\\VueStockGlobal.cs": {
+    "mtime": 1781177847.1659694,
+    "ast_hash": "f3a2752c885dd3318492fec4f4cf744c",
+    "semantic_hash": "f3a2752c885dd3318492fec4f4cf744c"
   },
-  "C:\\Users\\ernes\\Desktop\\Bachelier Informatique\\Projects Personnels\\CharlesNadejda_Project\\app-csharp\\CharlesNadejda\\CharlesNadejda\\Navigation\\AppState.cs": {
-    "mtime": 1776710423.6480994,
-    "ast_hash": "113c7466a6818f1fcf68663141546e47",
-    "semantic_hash": "113c7466a6818f1fcf68663141546e47"
+  "C:\\Users\\ernes\\Desktop\\ProjectsMaster\\projects\\CharlesNadejda_Project\\app-csharp\\CharlesNadejda\\CharlesNadejda\\Navigation\\AppState.cs": {
+    "mtime": 1781177494.1650264,
+    "ast_hash": "a5c06871c8df3995b304e5f00284802a",
+    "semantic_hash": "a5c06871c8df3995b304e5f00284802a"
   },
-  "C:\\Users\\ernes\\Desktop\\Bachelier Informatique\\Projects Personnels\\CharlesNadejda_Project\\app-csharp\\CharlesNadejda\\CharlesNadejda\\Navigation\\NavigationParams.cs": {
-    "mtime": 1776710423.6480994,
-    "ast_hash": "ab9b94b2703b1a64cc75ecb187929428",
-    "semantic_hash": "ab9b94b2703b1a64cc75ecb187929428"
+  "C:\\Users\\ernes\\Desktop\\ProjectsMaster\\projects\\CharlesNadejda_Project\\app-csharp\\CharlesNadejda\\CharlesNadejda\\Navigation\\NavigationParams.cs": {
+    "mtime": 1781177412.28622,
+    "ast_hash": "3dca0f643b5ac45533517b1b827b9d47",
+    "semantic_hash": "3dca0f643b5ac45533517b1b827b9d47"
   },
-  "C:\\Users\\ernes\\Desktop\\Bachelier Informatique\\Projects Personnels\\CharlesNadejda_Project\\app-csharp\\CharlesNadejda\\CharlesNadejda\\Navigation\\NavItemId.cs": {
-    "mtime": 1779217136.69804,
-    "ast_hash": "a1831bcd881f5b971b6b5f83ac770aa1",
-    "semantic_hash": "a1831bcd881f5b971b6b5f83ac770aa1"
+  "C:\\Users\\ernes\\Desktop\\ProjectsMaster\\projects\\CharlesNadejda_Project\\app-csharp\\CharlesNadejda\\CharlesNadejda\\Navigation\\NavItemId.cs": {
+    "mtime": 1781177458.2935336,
+    "ast_hash": "4619e7821839539effd9bc49f63c193f",
+    "semantic_hash": "4619e7821839539effd9bc49f63c193f"
   },
-  "C:\\Users\\ernes\\Desktop\\Bachelier Informatique\\Projects Personnels\\CharlesNadejda_Project\\app-csharp\\CharlesNadejda\\CharlesNadejda\\Navigation\\RessourceType.cs": {
-    "mtime": 1778683608.5356767,
-    "ast_hash": "a24b81bc324c9b07a1e9e2734b4bfaf0",
-    "semantic_hash": "a24b81bc324c9b07a1e9e2734b4bfaf0"
+  "C:\\Users\\ernes\\Desktop\\ProjectsMaster\\projects\\CharlesNadejda_Project\\app-csharp\\CharlesNadejda\\CharlesNadejda\\Navigation\\RessourceType.cs": {
+    "mtime": 1781176172.3602538,
+    "ast_hash": "15d145f14fcf2a3162adf93ba73f6dcb",
+    "semantic_hash": "15d145f14fcf2a3162adf93ba73f6dcb"
   },
-  "C:\\Users\\ernes\\Desktop\\Bachelier Informatique\\Projects Personnels\\CharlesNadejda_Project\\app-csharp\\CharlesNadejda\\CharlesNadejda\\Navigation\\ScreenId.cs": {
-    "mtime": 1779217142.826309,
-    "ast_hash": "91a754133f3f2ef0a01ad6ab784ab3e3",
-    "semantic_hash": "91a754133f3f2ef0a01ad6ab784ab3e3"
+  "C:\\Users\\ernes\\Desktop\\ProjectsMaster\\projects\\CharlesNadejda_Project\\app-csharp\\CharlesNadejda\\CharlesNadejda\\Navigation\\ScreenId.cs": {
+    "mtime": 1781177450.9755664,
+    "ast_hash": "d12e754947088c256528babed476ecb9",
+    "semantic_hash": "d12e754947088c256528babed476ecb9"
   },
-  "C:\\Users\\ernes\\Desktop\\Bachelier Informatique\\Projects Personnels\\CharlesNadejda_Project\\app-csharp\\CharlesNadejda\\CharlesNadejda\\Navigation\\ScreenRouter.cs": {
-    "mtime": 1779217608.21406,
-    "ast_hash": "0f27bc670a32830e07cf8740afd1d67a",
-    "semantic_hash": "0f27bc670a32830e07cf8740afd1d67a"
+  "C:\\Users\\ernes\\Desktop\\ProjectsMaster\\projects\\CharlesNadejda_Project\\app-csharp\\CharlesNadejda\\CharlesNadejda\\Navigation\\ScreenRouter.cs": {
+    "mtime": 1781177803.1778386,
+    "ast_hash": "6c0cfaad2751b03dcee884f377fe7108",
+    "semantic_hash": "6c0cfaad2751b03dcee884f377fe7108"
   },
-  "C:\\Users\\ernes\\Desktop\\Bachelier Informatique\\Projects Personnels\\CharlesNadejda_Project\\app-csharp\\CharlesNadejda\\CharlesNadejda\\obj\\Debug\\.NETFramework,Version=v4.8.1.AssemblyAttributes.cs": {
+  "C:\\Users\\ernes\\Desktop\\ProjectsMaster\\projects\\CharlesNadejda_Project\\app-csharp\\CharlesNadejda\\CharlesNadejda\\obj\\Debug\\.NETFramework,Version=v4.8.1.AssemblyAttributes.cs": {
     "mtime": 1776711351.2984817,
     "ast_hash": "f510eac1aa607c910a32d96969a6d576",
     "semantic_hash": "f510eac1aa607c910a32d96969a6d576"
   },
-  "C:\\Users\\ernes\\Desktop\\Bachelier Informatique\\Projects Personnels\\CharlesNadejda_Project\\app-csharp\\CharlesNadejda\\CharlesNadejda\\Properties\\AssemblyInfo.cs": {
+  "C:\\Users\\ernes\\Desktop\\ProjectsMaster\\projects\\CharlesNadejda_Project\\app-csharp\\CharlesNadejda\\CharlesNadejda\\obj\\Release\\.NETFramework,Version=v4.8.1.AssemblyAttributes.cs": {
+    "mtime": 1779901860.3120077,
+    "ast_hash": "f510eac1aa607c910a32d96969a6d576",
+    "semantic_hash": "f510eac1aa607c910a32d96969a6d576"
+  },
+  "C:\\Users\\ernes\\Desktop\\ProjectsMaster\\projects\\CharlesNadejda_Project\\app-csharp\\CharlesNadejda\\CharlesNadejda\\Properties\\AssemblyInfo.cs": {
     "mtime": 1774816587.6055684,
     "ast_hash": "7e95f770c07a3b0a21ecb74830a7557f",
     "semantic_hash": "7e95f770c07a3b0a21ecb74830a7557f"
   },
-  "C:\\Users\\ernes\\Desktop\\Bachelier Informatique\\Projects Personnels\\CharlesNadejda_Project\\app-csharp\\CharlesNadejda\\CharlesNadejda\\Properties\\Resources.Designer.cs": {
+  "C:\\Users\\ernes\\Desktop\\ProjectsMaster\\projects\\CharlesNadejda_Project\\app-csharp\\CharlesNadejda\\CharlesNadejda\\Properties\\Resources.Designer.cs": {
     "mtime": 1774816587.7448733,
     "ast_hash": "10c599b1c107eba147c1e3efce28c86a",
     "semantic_hash": "10c599b1c107eba147c1e3efce28c86a"
   },
-  "C:\\Users\\ernes\\Desktop\\Bachelier Informatique\\Projects Personnels\\CharlesNadejda_Project\\app-csharp\\CharlesNadejda\\CharlesNadejda\\Properties\\Settings.Designer.cs": {
+  "C:\\Users\\ernes\\Desktop\\ProjectsMaster\\projects\\CharlesNadejda_Project\\app-csharp\\CharlesNadejda\\CharlesNadejda\\Properties\\Settings.Designer.cs": {
     "mtime": 1774816587.7554076,
     "ast_hash": "819c6529c05a5368b6c6d7bc1973a0b9",
     "semantic_hash": "819c6529c05a5368b6c6d7bc1973a0b9"
   },
-  "C:\\Users\\ernes\\Desktop\\Bachelier Informatique\\Projects Personnels\\CharlesNadejda_Project\\app-csharp\\CharlesNadejda\\CharlesNadejda\\obj\\Debug\\CharlesNadejda.csproj.FileListAbsolute.txt": {
-    "mtime": 1779301565.558728,
-    "ast_hash": "cfcf419d7e84a1b21e9f32a8c5fbefcf",
-    "semantic_hash": "cfcf419d7e84a1b21e9f32a8c5fbefcf"
+  "C:\\Users\\ernes\\Desktop\\ProjectsMaster\\projects\\CharlesNadejda_Project\\site-laravel\\app\\Http\\Controllers\\CatalogueController.php": {
+    "mtime": 1781175921.385335,
+    "ast_hash": "3f322ed46c73d3cea9d9e3e64be78d66",
+    "semantic_hash": "3f322ed46c73d3cea9d9e3e64be78d66"
+  },
+  "C:\\Users\\ernes\\Desktop\\ProjectsMaster\\projects\\CharlesNadejda_Project\\site-laravel\\app\\Http\\Controllers\\CommandeController.php": {
+    "mtime": 1781177819.7858503,
+    "ast_hash": "d826f107977075b93d311551563228de",
+    "semantic_hash": "d826f107977075b93d311551563228de"
+  },
+  "C:\\Users\\ernes\\Desktop\\ProjectsMaster\\projects\\CharlesNadejda_Project\\site-laravel\\app\\Http\\Controllers\\Controller.php": {
+    "mtime": 1781175912.2428374,
+    "ast_hash": "b811a98f90c177860ca5537527cebe27",
+    "semantic_hash": "b811a98f90c177860ca5537527cebe27"
+  },
+  "C:\\Users\\ernes\\Desktop\\ProjectsMaster\\projects\\CharlesNadejda_Project\\site-laravel\\app\\Http\\Controllers\\PanierController.php": {
+    "mtime": 1781175940.8498583,
+    "ast_hash": "f6e3c98e62b8a37851064d0cece9e588",
+    "semantic_hash": "f6e3c98e62b8a37851064d0cece9e588"
+  },
+  "C:\\Users\\ernes\\Desktop\\ProjectsMaster\\projects\\CharlesNadejda_Project\\site-laravel\\app\\Http\\Controllers\\ProfilController.php": {
+    "mtime": 1781175946.129817,
+    "ast_hash": "0b8d635c3610eed31fca69e58ca9cb4c",
+    "semantic_hash": "0b8d635c3610eed31fca69e58ca9cb4c"
+  },
+  "C:\\Users\\ernes\\Desktop\\ProjectsMaster\\projects\\CharlesNadejda_Project\\site-laravel\\app\\Http\\Controllers\\Auth\\LoginController.php": {
+    "mtime": 1781177821.7693672,
+    "ast_hash": "b8806bf446f06787c07a121752f59eda",
+    "semantic_hash": "b8806bf446f06787c07a121752f59eda"
+  },
+  "C:\\Users\\ernes\\Desktop\\ProjectsMaster\\projects\\CharlesNadejda_Project\\site-laravel\\app\\Http\\Controllers\\Auth\\RegisterController.php": {
+    "mtime": 1781175974.8417003,
+    "ast_hash": "19c800eb822eb1332f50a8764a55c3c4",
+    "semantic_hash": "19c800eb822eb1332f50a8764a55c3c4"
+  },
+  "C:\\Users\\ernes\\Desktop\\ProjectsMaster\\projects\\CharlesNadejda_Project\\site-laravel\\app\\Http\\Middleware\\ClientAuth.php": {
+    "mtime": 1781175980.0911474,
+    "ast_hash": "aeaf7629ffe83c34f5ad8e2912daea11",
+    "semantic_hash": "aeaf7629ffe83c34f5ad8e2912daea11"
+  },
+  "C:\\Users\\ernes\\Desktop\\ProjectsMaster\\projects\\CharlesNadejda_Project\\site-laravel\\app\\Http\\Requests\\CheckoutRequest.php": {
+    "mtime": 1781177808.5052874,
+    "ast_hash": "54d6dc5db0c2418f8f93ea31aca12c31",
+    "semantic_hash": "54d6dc5db0c2418f8f93ea31aca12c31"
+  },
+  "C:\\Users\\ernes\\Desktop\\ProjectsMaster\\projects\\CharlesNadejda_Project\\site-laravel\\app\\Http\\Requests\\LoginRequest.php": {
+    "mtime": 1781177811.1334486,
+    "ast_hash": "e0019173da9ac7ffc8b6ea368786bd27",
+    "semantic_hash": "e0019173da9ac7ffc8b6ea368786bd27"
+  },
+  "C:\\Users\\ernes\\Desktop\\ProjectsMaster\\projects\\CharlesNadejda_Project\\site-laravel\\app\\Http\\Requests\\ProfilUpdateRequest.php": {
+    "mtime": 1781175992.3947532,
+    "ast_hash": "52bffbb7c62954eb30864d40e4bf1274",
+    "semantic_hash": "52bffbb7c62954eb30864d40e4bf1274"
+  },
+  "C:\\Users\\ernes\\Desktop\\ProjectsMaster\\projects\\CharlesNadejda_Project\\site-laravel\\app\\Http\\Requests\\RegisterRequest.php": {
+    "mtime": 1781175987.4740705,
+    "ast_hash": "0fec3bf1d7557dd7189ea5e114ab276d",
+    "semantic_hash": "0fec3bf1d7557dd7189ea5e114ab276d"
+  },
+  "C:\\Users\\ernes\\Desktop\\ProjectsMaster\\projects\\CharlesNadejda_Project\\site-laravel\\app\\Models\\BomFiche.php": {
+    "mtime": 1781175898.0014882,
+    "ast_hash": "0ca1e164e4c5097de20091df55c37309",
+    "semantic_hash": "0ca1e164e4c5097de20091df55c37309"
+  },
+  "C:\\Users\\ernes\\Desktop\\ProjectsMaster\\projects\\CharlesNadejda_Project\\site-laravel\\app\\Models\\BomStock.php": {
+    "mtime": 1781175903.184501,
+    "ast_hash": "a29c7730a13b3df871c08285ce008ebd",
+    "semantic_hash": "a29c7730a13b3df871c08285ce008ebd"
+  },
+  "C:\\Users\\ernes\\Desktop\\ProjectsMaster\\projects\\CharlesNadejda_Project\\site-laravel\\app\\Models\\CategorieWeb.php": {
+    "mtime": 1781175877.2471037,
+    "ast_hash": "0e964ecc2482626145c5821b9b8decf4",
+    "semantic_hash": "0e964ecc2482626145c5821b9b8decf4"
+  },
+  "C:\\Users\\ernes\\Desktop\\ProjectsMaster\\projects\\CharlesNadejda_Project\\site-laravel\\app\\Models\\Client.php": {
+    "mtime": 1781175871.3973527,
+    "ast_hash": "87c01a8abc3e97487250de1f2f841d69",
+    "semantic_hash": "87c01a8abc3e97487250de1f2f841d69"
+  },
+  "C:\\Users\\ernes\\Desktop\\ProjectsMaster\\projects\\CharlesNadejda_Project\\site-laravel\\app\\Models\\CommandeWeb.php": {
+    "mtime": 1781175884.6424103,
+    "ast_hash": "481d55f5d0704542aa41ebdc7928d012",
+    "semantic_hash": "481d55f5d0704542aa41ebdc7928d012"
+  },
+  "C:\\Users\\ernes\\Desktop\\ProjectsMaster\\projects\\CharlesNadejda_Project\\site-laravel\\app\\Models\\CommandeWebLigne.php": {
+    "mtime": 1781175890.7890463,
+    "ast_hash": "b1d986085d8de33b6a15098e74ea1d9a",
+    "semantic_hash": "b1d986085d8de33b6a15098e74ea1d9a"
+  },
+  "C:\\Users\\ernes\\Desktop\\ProjectsMaster\\projects\\CharlesNadejda_Project\\site-laravel\\app\\Models\\ProduitWeb.php": {
+    "mtime": 1781175862.3551824,
+    "ast_hash": "002a195d11fa053be8ba4aa3a2bc6969",
+    "semantic_hash": "002a195d11fa053be8ba4aa3a2bc6969"
+  },
+  "C:\\Users\\ernes\\Desktop\\ProjectsMaster\\projects\\CharlesNadejda_Project\\site-laravel\\app\\Providers\\AppServiceProvider.php": {
+    "mtime": 1781175998.0318854,
+    "ast_hash": "28a12bf54eb9d5f5c63629d4edee9d1b",
+    "semantic_hash": "28a12bf54eb9d5f5c63629d4edee9d1b"
+  },
+  "C:\\Users\\ernes\\Desktop\\ProjectsMaster\\projects\\CharlesNadejda_Project\\site-laravel\\resources\\js\\app.js": {
+    "mtime": 1774816321.9596999,
+    "ast_hash": "1ccf2b9101110f40ecaab1608a6f91cf",
+    "semantic_hash": "1ccf2b9101110f40ecaab1608a6f91cf"
+  },
+  "C:\\Users\\ernes\\Desktop\\ProjectsMaster\\projects\\CharlesNadejda_Project\\site-laravel\\resources\\js\\bootstrap.js": {
+    "mtime": 1774816321.9637914,
+    "ast_hash": "78f909acc19aea4717eddca5a87c1ba3",
+    "semantic_hash": "78f909acc19aea4717eddca5a87c1ba3"
+  },
+  "C:\\Users\\ernes\\Desktop\\ProjectsMaster\\projects\\CharlesNadejda_Project\\site-laravel\\resources\\views\\welcome.blade.php": {
+    "mtime": 1774816321.9693024,
+    "ast_hash": "bbb40394c60b6f7adf7a73e7379ed209",
+    "semantic_hash": "bbb40394c60b6f7adf7a73e7379ed209"
+  },
+  "C:\\Users\\ernes\\Desktop\\ProjectsMaster\\projects\\CharlesNadejda_Project\\site-laravel\\resources\\views\\auth\\login.blade.php": {
+    "mtime": 1779222590.3005936,
+    "ast_hash": "3454b6927ff6af472cf741b80540f03a",
+    "semantic_hash": "3454b6927ff6af472cf741b80540f03a"
+  },
+  "C:\\Users\\ernes\\Desktop\\ProjectsMaster\\projects\\CharlesNadejda_Project\\site-laravel\\resources\\views\\auth\\register.blade.php": {
+    "mtime": 1779812825.3438847,
+    "ast_hash": "c8fed8720040779a4404337fc3c3ffd9",
+    "semantic_hash": "c8fed8720040779a4404337fc3c3ffd9"
+  },
+  "C:\\Users\\ernes\\Desktop\\ProjectsMaster\\projects\\CharlesNadejda_Project\\site-laravel\\resources\\views\\catalogue\\index.blade.php": {
+    "mtime": 1779812792.437329,
+    "ast_hash": "1ae90c8374129bcf383b7986b4d91395",
+    "semantic_hash": "1ae90c8374129bcf383b7986b4d91395"
+  },
+  "C:\\Users\\ernes\\Desktop\\ProjectsMaster\\projects\\CharlesNadejda_Project\\site-laravel\\resources\\views\\catalogue\\show.blade.php": {
+    "mtime": 1779812793.8953724,
+    "ast_hash": "08631109d321a6cec7c7487bc773020b",
+    "semantic_hash": "08631109d321a6cec7c7487bc773020b"
+  },
+  "C:\\Users\\ernes\\Desktop\\ProjectsMaster\\projects\\CharlesNadejda_Project\\site-laravel\\resources\\views\\commandes\\confirmation.blade.php": {
+    "mtime": 1779821542.6405864,
+    "ast_hash": "443bee8e609012c0db45eb72a55ecdb9",
+    "semantic_hash": "443bee8e609012c0db45eb72a55ecdb9"
+  },
+  "C:\\Users\\ernes\\Desktop\\ProjectsMaster\\projects\\CharlesNadejda_Project\\site-laravel\\resources\\views\\commandes\\historique.blade.php": {
+    "mtime": 1779812813.237439,
+    "ast_hash": "a529c7f499bedd980883bfd2c2442784",
+    "semantic_hash": "a529c7f499bedd980883bfd2c2442784"
+  },
+  "C:\\Users\\ernes\\Desktop\\ProjectsMaster\\projects\\CharlesNadejda_Project\\site-laravel\\resources\\views\\commandes\\recap.blade.php": {
+    "mtime": 1779812804.684458,
+    "ast_hash": "edee85b0623a8dad9755085c80233e9c",
+    "semantic_hash": "edee85b0623a8dad9755085c80233e9c"
+  },
+  "C:\\Users\\ernes\\Desktop\\ProjectsMaster\\projects\\CharlesNadejda_Project\\site-laravel\\resources\\views\\components\\footer.blade.php": {
+    "mtime": 1779222566.1362686,
+    "ast_hash": "9a965dd4c3a643635db93955a60090ee",
+    "semantic_hash": "9a965dd4c3a643635db93955a60090ee"
+  },
+  "C:\\Users\\ernes\\Desktop\\ProjectsMaster\\projects\\CharlesNadejda_Project\\site-laravel\\resources\\views\\components\\header.blade.php": {
+    "mtime": 1779812785.7703142,
+    "ast_hash": "bfe85c49e1889842a2448c6138b5a8f9",
+    "semantic_hash": "bfe85c49e1889842a2448c6138b5a8f9"
+  },
+  "C:\\Users\\ernes\\Desktop\\ProjectsMaster\\projects\\CharlesNadejda_Project\\site-laravel\\resources\\views\\errors\\404.blade.php": {
+    "mtime": 1781169226.840353,
+    "ast_hash": "2194f3bb1917ed74e23ad9728cf4f024",
+    "semantic_hash": "2194f3bb1917ed74e23ad9728cf4f024"
+  },
+  "C:\\Users\\ernes\\Desktop\\ProjectsMaster\\projects\\CharlesNadejda_Project\\site-laravel\\resources\\views\\errors\\500.blade.php": {
+    "mtime": 1781169237.1842275,
+    "ast_hash": "c8256f0b9cd266b3d7dcb4e5c7ef2aed",
+    "semantic_hash": "c8256f0b9cd266b3d7dcb4e5c7ef2aed"
+  },
+  "C:\\Users\\ernes\\Desktop\\ProjectsMaster\\projects\\CharlesNadejda_Project\\site-laravel\\resources\\views\\layouts\\app.blade.php": {
+    "mtime": 1781170727.4428117,
+    "ast_hash": "b359309ae106d7e826012ee0759ee65e",
+    "semantic_hash": "b359309ae106d7e826012ee0759ee65e"
+  },
+  "C:\\Users\\ernes\\Desktop\\ProjectsMaster\\projects\\CharlesNadejda_Project\\site-laravel\\resources\\views\\panier\\index.blade.php": {
+    "mtime": 1779812843.2059362,
+    "ast_hash": "4db770863cce2279894bdb55b934b8fe",
+    "semantic_hash": "4db770863cce2279894bdb55b934b8fe"
+  },
+  "C:\\Users\\ernes\\Desktop\\ProjectsMaster\\projects\\CharlesNadejda_Project\\site-laravel\\resources\\views\\profil\\edit.blade.php": {
+    "mtime": 1779812816.6067522,
+    "ast_hash": "69a1b78f6fe790434d1db24013e2298e",
+    "semantic_hash": "69a1b78f6fe790434d1db24013e2298e"
+  },
+  "C:\\Users\\ernes\\Desktop\\ProjectsMaster\\projects\\CharlesNadejda_Project\\site-laravel\\routes\\console.php": {
+    "mtime": 1774816321.9743414,
+    "ast_hash": "3c6ce2e6d16444282b24a9aa63885563",
+    "semantic_hash": "3c6ce2e6d16444282b24a9aa63885563"
+  },
+  "C:\\Users\\ernes\\Desktop\\ProjectsMaster\\projects\\CharlesNadejda_Project\\site-laravel\\routes\\web.php": {
+    "mtime": 1781176012.9894152,
+    "ast_hash": "03efa42d1582999b8d8c5c0b6cf8f600",
+    "semantic_hash": "03efa42d1582999b8d8c5c0b6cf8f600"
+  },
+  "C:\\Users\\ernes\\Desktop\\ProjectsMaster\\projects\\CharlesNadejda_Project\\site-laravel\\config\\app.php": {
+    "mtime": 1774816321.8746116,
+    "ast_hash": "276578ad68424be59d0998379ae7d4cb",
+    "semantic_hash": "276578ad68424be59d0998379ae7d4cb"
+  },
+  "C:\\Users\\ernes\\Desktop\\ProjectsMaster\\projects\\CharlesNadejda_Project\\site-laravel\\config\\auth.php": {
+    "mtime": 1774816321.8771229,
+    "ast_hash": "26354511ab860b301f2a3554bc388b91",
+    "semantic_hash": "26354511ab860b301f2a3554bc388b91"
+  },
+  "C:\\Users\\ernes\\Desktop\\ProjectsMaster\\projects\\CharlesNadejda_Project\\site-laravel\\config\\cache.php": {
+    "mtime": 1774816321.879636,
+    "ast_hash": "c4c6c3d814db6eabf0e3f2a2985d7eab",
+    "semantic_hash": "c4c6c3d814db6eabf0e3f2a2985d7eab"
+  },
+  "C:\\Users\\ernes\\Desktop\\ProjectsMaster\\projects\\CharlesNadejda_Project\\site-laravel\\config\\database.php": {
+    "mtime": 1774816321.8821394,
+    "ast_hash": "3cd69c7ecc842e4552e44eade546d91f",
+    "semantic_hash": "3cd69c7ecc842e4552e44eade546d91f"
+  },
+  "C:\\Users\\ernes\\Desktop\\ProjectsMaster\\projects\\CharlesNadejda_Project\\site-laravel\\config\\filesystems.php": {
+    "mtime": 1774816321.8841462,
+    "ast_hash": "bde1aa1027f0448f17348dbd93f3d7ea",
+    "semantic_hash": "bde1aa1027f0448f17348dbd93f3d7ea"
+  },
+  "C:\\Users\\ernes\\Desktop\\ProjectsMaster\\projects\\CharlesNadejda_Project\\site-laravel\\config\\logging.php": {
+    "mtime": 1774816321.88665,
+    "ast_hash": "d8255a5c07d3da72c7c9363f0c44bddd",
+    "semantic_hash": "d8255a5c07d3da72c7c9363f0c44bddd"
+  },
+  "C:\\Users\\ernes\\Desktop\\ProjectsMaster\\projects\\CharlesNadejda_Project\\site-laravel\\config\\mail.php": {
+    "mtime": 1774816321.889657,
+    "ast_hash": "18601a927b48d38337ba2077426a7d60",
+    "semantic_hash": "18601a927b48d38337ba2077426a7d60"
+  },
+  "C:\\Users\\ernes\\Desktop\\ProjectsMaster\\projects\\CharlesNadejda_Project\\site-laravel\\config\\queue.php": {
+    "mtime": 1774816321.8911626,
+    "ast_hash": "f98ce92e7bf51db1fabaf8a30e12fc5a",
+    "semantic_hash": "f98ce92e7bf51db1fabaf8a30e12fc5a"
+  },
+  "C:\\Users\\ernes\\Desktop\\ProjectsMaster\\projects\\CharlesNadejda_Project\\site-laravel\\config\\services.php": {
+    "mtime": 1774816321.894699,
+    "ast_hash": "534a1b7af7009c373ea4ebfa18823d57",
+    "semantic_hash": "534a1b7af7009c373ea4ebfa18823d57"
+  },
+  "C:\\Users\\ernes\\Desktop\\ProjectsMaster\\projects\\CharlesNadejda_Project\\site-laravel\\config\\session.php": {
+    "mtime": 1774816321.8972113,
+    "ast_hash": "5ea7169252ec3cc7fad471f5cd0d7678",
+    "semantic_hash": "5ea7169252ec3cc7fad471f5cd0d7678"
+  },
+  "C:\\Users\\ernes\\Desktop\\ProjectsMaster\\projects\\CharlesNadejda_Project\\site-laravel\\public\\js\\panier.js": {
+    "mtime": 1779906875.137868,
+    "ast_hash": "3450fa05f772492559abb41c5a365c8d",
+    "semantic_hash": "3450fa05f772492559abb41c5a365c8d"
+  },
+  "C:\\Users\\ernes\\Desktop\\ProjectsMaster\\projects\\CharlesNadejda_Project\\sql\\create_database.sql": {
+    "mtime": 1781177855.5444279,
+    "ast_hash": "3109f45961083df34ee25fe0e58689cf",
+    "semantic_hash": "3109f45961083df34ee25fe0e58689cf"
+  },
+  "C:\\Users\\ernes\\Desktop\\ProjectsMaster\\projects\\CharlesNadejda_Project\\sql\\migration_v04_bom.sql": {
+    "mtime": 1778683608.5408063,
+    "ast_hash": "fd2db5f9f6bbb3258e077d489aa694e3",
+    "semantic_hash": "fd2db5f9f6bbb3258e077d489aa694e3"
+  },
+  "C:\\Users\\ernes\\Desktop\\ProjectsMaster\\projects\\CharlesNadejda_Project\\sql\\migration_v05_fiches_niveau.sql": {
+    "mtime": 1778683608.541809,
+    "ast_hash": "a5686e46e50929d14a0aa26a83d6686f",
+    "semantic_hash": "a5686e46e50929d14a0aa26a83d6686f"
+  },
+  "C:\\Users\\ernes\\Desktop\\ProjectsMaster\\projects\\CharlesNadejda_Project\\sql\\migration_v06_lots_tva.sql": {
+    "mtime": 1778683608.541809,
+    "ast_hash": "f1f16826e9153bbb54eec3cfbd7383ec",
+    "semantic_hash": "f1f16826e9153bbb54eec3cfbd7383ec"
+  },
+  "C:\\Users\\ernes\\Desktop\\ProjectsMaster\\projects\\CharlesNadejda_Project\\sql\\migration_v07_activites.sql": {
+    "mtime": 1778683608.5428073,
+    "ast_hash": "18f2c726046a4f4934edcd35030f1226",
+    "semantic_hash": "18f2c726046a4f4934edcd35030f1226"
+  },
+  "C:\\Users\\ernes\\Desktop\\ProjectsMaster\\projects\\CharlesNadejda_Project\\sql\\migration_v08_conditionnement.sql": {
+    "mtime": 1778683608.5428073,
+    "ast_hash": "3207bffc57f6d2666b979ed8d0bafa04",
+    "semantic_hash": "3207bffc57f6d2666b979ed8d0bafa04"
+  },
+  "C:\\Users\\ernes\\Desktop\\ProjectsMaster\\projects\\CharlesNadejda_Project\\sql\\migration_v09_cascade.sql": {
+    "mtime": 1778683608.5438068,
+    "ast_hash": "4adde01ddcb4517d55ab5088dcbfc786",
+    "semantic_hash": "4adde01ddcb4517d55ab5088dcbfc786"
+  },
+  "C:\\Users\\ernes\\Desktop\\ProjectsMaster\\projects\\CharlesNadejda_Project\\sql\\migration_v10_stocks.sql": {
+    "mtime": 1776710423.657099,
+    "ast_hash": "40bab49968340785b19ef7135c4993ec",
+    "semantic_hash": "40bab49968340785b19ef7135c4993ec"
+  },
+  "C:\\Users\\ernes\\Desktop\\ProjectsMaster\\projects\\CharlesNadejda_Project\\sql\\migration_v11_stock_discriminants.sql": {
+    "mtime": 1778757514.677453,
+    "ast_hash": "e0c3cdbe53b8db50b8581e555c57a855",
+    "semantic_hash": "e0c3cdbe53b8db50b8581e555c57a855"
+  },
+  "C:\\Users\\ernes\\Desktop\\ProjectsMaster\\projects\\CharlesNadejda_Project\\sql\\migration_v12_cleanup.sql": {
+    "mtime": 1776264062.4217873,
+    "ast_hash": "c425a4c65dac95caffc6bf04086fb0ac",
+    "semantic_hash": "c425a4c65dac95caffc6bf04086fb0ac"
+  },
+  "C:\\Users\\ernes\\Desktop\\ProjectsMaster\\projects\\CharlesNadejda_Project\\sql\\migration_v13_check_stock_positif.sql": {
+    "mtime": 1776768637.351801,
+    "ast_hash": "29c5d9623a696a229a0b0b1ae40116cd",
+    "semantic_hash": "29c5d9623a696a229a0b0b1ae40116cd"
+  },
+  "C:\\Users\\ernes\\Desktop\\ProjectsMaster\\projects\\CharlesNadejda_Project\\sql\\migration_v14_stock_cible.sql": {
+    "mtime": 1778773813.0427976,
+    "ast_hash": "a71b77ecf9216c190966c6a5fa1c26b5",
+    "semantic_hash": "a71b77ecf9216c190966c6a5fa1c26b5"
+  },
+  "C:\\Users\\ernes\\Desktop\\ProjectsMaster\\projects\\CharlesNadejda_Project\\sql\\migration_v15_boutique_web.sql": {
+    "mtime": 1779216521.1063273,
+    "ast_hash": "28a4b68f0d586806ac94fe226c5e35bb",
+    "semantic_hash": "28a4b68f0d586806ac94fe226c5e35bb"
+  },
+  "C:\\Users\\ernes\\Desktop\\ProjectsMaster\\projects\\CharlesNadejda_Project\\sql\\migration_v16_bom_stock_cible.sql": {
+    "mtime": 1779297208.7929614,
+    "ast_hash": "c6435bb5cd6cb95f0b4c0d9ebf951d3b",
+    "semantic_hash": "c6435bb5cd6cb95f0b4c0d9ebf951d3b"
+  },
+  "C:\\Users\\ernes\\Desktop\\ProjectsMaster\\projects\\CharlesNadejda_Project\\sql\\migration_v17_vue_stock_global_fiche.sql": {
+    "mtime": 1779301472.3238826,
+    "ast_hash": "c6e01445a73fc07a60df3f14a542f623",
+    "semantic_hash": "c6e01445a73fc07a60df3f14a542f623"
+  },
+  "C:\\Users\\ernes\\Desktop\\ProjectsMaster\\projects\\CharlesNadejda_Project\\sql\\migration_v18_stock_sur_lot.sql": {
+    "mtime": 1779901176.797449,
+    "ast_hash": "0ad1f688782551021a8d96b1d233dcbd",
+    "semantic_hash": "0ad1f688782551021a8d96b1d233dcbd"
+  },
+  "C:\\Users\\ernes\\Desktop\\ProjectsMaster\\projects\\CharlesNadejda_Project\\sql\\migration_v19_nb_par_lot.sql": {
+    "mtime": 1780525810.9853408,
+    "ast_hash": "fcd9f9095110089d3ebb640af86a0fbd",
+    "semantic_hash": "fcd9f9095110089d3ebb640af86a0fbd"
+  },
+  "C:\\Users\\ernes\\Desktop\\ProjectsMaster\\projects\\CharlesNadejda_Project\\sql\\migration_v20_schema_hardening.sql": {
+    "mtime": 1781177339.4596672,
+    "ast_hash": "9d7663bd556c68d15f2af50440fb8fb4",
+    "semantic_hash": "9d7663bd556c68d15f2af50440fb8fb4"
+  },
+  "C:\\Users\\ernes\\Desktop\\ProjectsMaster\\projects\\CharlesNadejda_Project\\sql\\migration_v21_constraints.sql": {
+    "mtime": 1781177800.3604662,
+    "ast_hash": "dc26eef29c63f8c29bd64296325f4e1d",
+    "semantic_hash": "dc26eef29c63f8c29bd64296325f4e1d"
+  },
+  "C:\\Users\\ernes\\Desktop\\ProjectsMaster\\projects\\CharlesNadejda_Project\\sql\\schema_complet.sql": {
+    "mtime": 1781177860.8075893,
+    "ast_hash": "c4997334fd4c29a9525cf174f8def72f",
+    "semantic_hash": "c4997334fd4c29a9525cf174f8def72f"
+  },
+  "C:\\Users\\ernes\\Desktop\\ProjectsMaster\\projects\\CharlesNadejda_Project\\sql\\seed_data.sql": {
+    "mtime": 1781169290.8078995,
+    "ast_hash": "edd34002e3b4473b4baeb879fd0f4e80",
+    "semantic_hash": "edd34002e3b4473b4baeb879fd0f4e80"
+  },
+  "C:\\Users\\ernes\\Desktop\\ProjectsMaster\\projects\\CharlesNadejda_Project\\sql\\tests\\injection_glacier_stress_test.sql": {
+    "mtime": 1781093074.8828635,
+    "ast_hash": "266fffdccaa6448250ca8a2f69ed6ec3",
+    "semantic_hash": "266fffdccaa6448250ca8a2f69ed6ec3"
+  },
+  "C:\\Users\\ernes\\Desktop\\ProjectsMaster\\projects\\CharlesNadejda_Project\\sql\\tests\\reset_db_for_tests.sql": {
+    "mtime": 1778683608.5438068,
+    "ast_hash": "2116415251cb344d62a5af8abad3451a",
+    "semantic_hash": "2116415251cb344d62a5af8abad3451a"
+  },
+  "C:\\Users\\ernes\\Desktop\\ProjectsMaster\\projects\\CharlesNadejda_Project\\docs\\.obsidian\\app.json": {
+    "mtime": 1781598235.6865902,
+    "ast_hash": "99914b932bd37a50b983c5e7c90ae93b",
+    "semantic_hash": "99914b932bd37a50b983c5e7c90ae93b"
+  },
+  "C:\\Users\\ernes\\Desktop\\ProjectsMaster\\projects\\CharlesNadejda_Project\\docs\\.obsidian\\appearance.json": {
+    "mtime": 1781598235.6875904,
+    "ast_hash": "99914b932bd37a50b983c5e7c90ae93b",
+    "semantic_hash": "99914b932bd37a50b983c5e7c90ae93b"
+  },
+  "C:\\Users\\ernes\\Desktop\\ProjectsMaster\\projects\\CharlesNadejda_Project\\docs\\.obsidian\\core-plugins.json": {
+    "mtime": 1781598235.200585,
+    "ast_hash": "7c877bea49eaeabb100563bd157b9051",
+    "semantic_hash": "7c877bea49eaeabb100563bd157b9051"
+  },
+  "C:\\Users\\ernes\\Desktop\\ProjectsMaster\\projects\\CharlesNadejda_Project\\docs\\.obsidian\\graph.json": {
+    "mtime": 1778888810.068,
+    "ast_hash": "32ee5a35827e55832ec9bdc3227d0b2d",
+    "semantic_hash": "32ee5a35827e55832ec9bdc3227d0b2d"
+  },
+  "C:\\Users\\ernes\\Desktop\\ProjectsMaster\\projects\\CharlesNadejda_Project\\docs\\.obsidian\\workspace.json": {
+    "mtime": 1781598235.7486017,
+    "ast_hash": "589f30cd64c14d3a09b68ebac4230083",
+    "semantic_hash": "589f30cd64c14d3a09b68ebac4230083"
+  },
+  "C:\\Users\\ernes\\Desktop\\ProjectsMaster\\projects\\CharlesNadejda_Project\\app-csharp\\CharlesNadejda\\CharlesNadejda\\obj\\Debug\\CharlesNadejda.csproj.FileListAbsolute.txt": {
+    "mtime": 1780501584.0019567,
+    "ast_hash": "adf32336dc8da87c376f52959e3c8ce5",
+    "semantic_hash": "adf32336dc8da87c376f52959e3c8ce5"
+  },
+  "C:\\Users\\ernes\\Desktop\\ProjectsMaster\\projects\\CharlesNadejda_Project\\docs\\00_CONTEXTE_PROJET.md": {
+    "mtime": 1774355070.3525863,
+    "ast_hash": "500431f783973ed15ed23d2c5fcc6453",
+    "semantic_hash": "500431f783973ed15ed23d2c5fcc6453"
+  },
+  "C:\\Users\\ernes\\Desktop\\ProjectsMaster\\projects\\CharlesNadejda_Project\\docs\\01_BASE_DE_DONNEES.md": {
+    "mtime": 1774725660.6117306,
+    "ast_hash": "20aa133dcc31bbffcf4b02c5e2435739",
+    "semantic_hash": "20aa133dcc31bbffcf4b02c5e2435739"
+  },
+  "C:\\Users\\ernes\\Desktop\\ProjectsMaster\\projects\\CharlesNadejda_Project\\docs\\02_PLAN_PDWEB.md": {
+    "mtime": 1774355056.919315,
+    "ast_hash": "c7f4bf309ee82a1608cdeedc8fea638f",
+    "semantic_hash": "c7f4bf309ee82a1608cdeedc8fea638f"
+  },
+  "C:\\Users\\ernes\\Desktop\\ProjectsMaster\\projects\\CharlesNadejda_Project\\docs\\03_PLAN_PDSGBD.md": {
+    "mtime": 1776710423.6550994,
+    "ast_hash": "86e1e928d0506a33a381f82cb53e317f",
+    "semantic_hash": "86e1e928d0506a33a381f82cb53e317f"
+  },
+  "C:\\Users\\ernes\\Desktop\\ProjectsMaster\\projects\\CharlesNadejda_Project\\docs\\04_GRILLES_EXAMEN.md": {
+    "mtime": 1774353640.3892279,
+    "ast_hash": "ffd814e5c3188aafc89eec7059199564",
+    "semantic_hash": "ffd814e5c3188aafc89eec7059199564"
+  },
+  "C:\\Users\\ernes\\Desktop\\ProjectsMaster\\projects\\CharlesNadejda_Project\\docs\\05_ARTISASTOCK_INTEGRATION.md": {
+    "mtime": 1774351155.795263,
+    "ast_hash": "168fa7826fd108e3b6f73838caccbb27",
+    "semantic_hash": "168fa7826fd108e3b6f73838caccbb27"
+  },
+  "C:\\Users\\ernes\\Desktop\\ProjectsMaster\\projects\\CharlesNadejda_Project\\docs\\06_EXERCICES_PROF_PDWEB.md": {
+    "mtime": 1774349920.628884,
+    "ast_hash": "1af043b28f641e35f6a9961d78b614b4",
+    "semantic_hash": "1af043b28f641e35f6a9961d78b614b4"
+  },
+  "C:\\Users\\ernes\\Desktop\\ProjectsMaster\\projects\\CharlesNadejda_Project\\docs\\07_DOCKER_SETUP.md": {
+    "mtime": 1774353982.1770525,
+    "ast_hash": "93f67bf19f55475413d194f54ee53235",
+    "semantic_hash": "93f67bf19f55475413d194f54ee53235"
+  },
+  "C:\\Users\\ernes\\Desktop\\ProjectsMaster\\projects\\CharlesNadejda_Project\\docs\\08_PLAN_IMPLEMENTATION.md": {
+    "mtime": 1774356092.8955514,
+    "ast_hash": "592feb4ee54d0b7ab1a0ba1b399021c8",
+    "semantic_hash": "592feb4ee54d0b7ab1a0ba1b399021c8"
+  },
+  "C:\\Users\\ernes\\Desktop\\ProjectsMaster\\projects\\CharlesNadejda_Project\\docs\\09_PATISSERIE_ARCHITECTURE.md": {
+    "mtime": 1774725318.6412692,
+    "ast_hash": "140550bafab376e5140bf61a9062d81f",
+    "semantic_hash": "140550bafab376e5140bf61a9062d81f"
+  },
+  "C:\\Users\\ernes\\Desktop\\ProjectsMaster\\projects\\CharlesNadejda_Project\\docs\\10_PO_USER_STORIES.md": {
+    "mtime": 1776710423.6560996,
+    "ast_hash": "10fc590d637539d437912adf04f42f30",
+    "semantic_hash": "10fc590d637539d437912adf04f42f30"
+  },
+  "C:\\Users\\ernes\\Desktop\\ProjectsMaster\\projects\\CharlesNadejda_Project\\docs\\11_USE_CASES.md": {
+    "mtime": 1778838113.8705382,
+    "ast_hash": "902b812f0552961bed8536f0ea3e5b1a",
+    "semantic_hash": "902b812f0552961bed8536f0ea3e5b1a"
+  },
+  "C:\\Users\\ernes\\Desktop\\ProjectsMaster\\projects\\CharlesNadejda_Project\\docs\\12_ACTIVITY_DIAGRAMS.md": {
+    "mtime": 1778838274.433745,
+    "ast_hash": "2e56cf439a41b4c6a80090c1debc4ee3",
+    "semantic_hash": "2e56cf439a41b4c6a80090c1debc4ee3"
+  },
+  "C:\\Users\\ernes\\Desktop\\ProjectsMaster\\projects\\CharlesNadejda_Project\\docs\\13_TRACEABILITY_MATRIX.md": {
+    "mtime": 1778838258.0142205,
+    "ast_hash": "69246d8c81d7584276fb25adbbb57090",
+    "semantic_hash": "69246d8c81d7584276fb25adbbb57090"
+  },
+  "C:\\Users\\ernes\\Desktop\\ProjectsMaster\\projects\\CharlesNadejda_Project\\docs\\ARCHITECTURE.md": {
+    "mtime": 1778793435.1928225,
+    "ast_hash": "e75c1e3191b336e8a723680f67c69e7c",
+    "semantic_hash": "e75c1e3191b336e8a723680f67c69e7c"
+  },
+  "C:\\Users\\ernes\\Desktop\\ProjectsMaster\\projects\\CharlesNadejda_Project\\docs\\ARCH_FLOWSCOPE.md": {
+    "mtime": 1778757780.4412794,
+    "ast_hash": "32fa85d2070d7a3be82b3fcd88fec7fc",
+    "semantic_hash": "32fa85d2070d7a3be82b3fcd88fec7fc"
+  },
+  "C:\\Users\\ernes\\Desktop\\ProjectsMaster\\projects\\CharlesNadejda_Project\\docs\\AUDIT_2026-04-21.md": {
+    "mtime": 1776769156.833957,
+    "ast_hash": "b33860546c22d34a6b3b3df6d83a69ab",
+    "semantic_hash": "b33860546c22d34a6b3b3df6d83a69ab"
+  },
+  "C:\\Users\\ernes\\Desktop\\ProjectsMaster\\projects\\CharlesNadejda_Project\\docs\\AUDIT_2026-04-22.md": {
+    "mtime": 1778888814.673573,
+    "ast_hash": "4ca26cca6fd2c9cbcdf1269309c41d6e",
+    "semantic_hash": "4ca26cca6fd2c9cbcdf1269309c41d6e"
+  },
+  "C:\\Users\\ernes\\Desktop\\ProjectsMaster\\projects\\CharlesNadejda_Project\\docs\\BACKEND_FLOWSCOPE.md": {
+    "mtime": 1778756627.6009471,
+    "ast_hash": "15cf460886511d310cc5eab90ac8cc95",
+    "semantic_hash": "15cf460886511d310cc5eab90ac8cc95"
+  },
+  "C:\\Users\\ernes\\Desktop\\ProjectsMaster\\projects\\CharlesNadejda_Project\\docs\\BA_FA_ArtisaStock.md": {
+    "mtime": 1779212537.8855307,
+    "ast_hash": "d4e2ba4e8a6ab415c563fd73c922d057",
+    "semantic_hash": "d4e2ba4e8a6ab415c563fd73c922d057"
+  },
+  "C:\\Users\\ernes\\Desktop\\ProjectsMaster\\projects\\CharlesNadejda_Project\\docs\\BRAINSTORM_PDWEB_Boutique.md": {
+    "mtime": 1779214507.3644252,
+    "ast_hash": "6c76e272d541035566be527976ebbb4b",
+    "semantic_hash": "6c76e272d541035566be527976ebbb4b"
+  },
+  "C:\\Users\\ernes\\Desktop\\ProjectsMaster\\projects\\CharlesNadejda_Project\\docs\\FONDATION-fusion-production.md": {
+    "mtime": 1781102354.641217,
+    "ast_hash": "3c24a82d881ac157d95bbde59dd03414",
+    "semantic_hash": "3c24a82d881ac157d95bbde59dd03414"
+  },
+  "C:\\Users\\ernes\\Desktop\\ProjectsMaster\\projects\\CharlesNadejda_Project\\docs\\FRONTEND_FLOWSCOPE.md": {
+    "mtime": 1778757790.7399688,
+    "ast_hash": "e7368a5e3c157ff509fab4819f1806af",
+    "semantic_hash": "e7368a5e3c157ff509fab4819f1806af"
+  },
+  "C:\\Users\\ernes\\Desktop\\ProjectsMaster\\projects\\CharlesNadejda_Project\\docs\\JOURNAL.md": {
+    "mtime": 1780526491.020265,
+    "ast_hash": "636650a6a9153f018d02e8b5280deb07",
+    "semantic_hash": "636650a6a9153f018d02e8b5280deb07"
+  },
+  "C:\\Users\\ernes\\Desktop\\ProjectsMaster\\projects\\CharlesNadejda_Project\\docs\\PO_FLOWSCOPE.md": {
+    "mtime": 1778757776.9728777,
+    "ast_hash": "3a2b67178abcc990c93127f6b41ae568",
+    "semantic_hash": "3a2b67178abcc990c93127f6b41ae568"
+  },
+  "C:\\Users\\ernes\\Desktop\\ProjectsMaster\\projects\\CharlesNadejda_Project\\docs\\QA_FLOWSCOPE.md": {
+    "mtime": 1778758050.224238,
+    "ast_hash": "50ee496c95ba3e69dd4fafe7ced9df1d",
+    "semantic_hash": "50ee496c95ba3e69dd4fafe7ced9df1d"
+  },
+  "C:\\Users\\ernes\\Desktop\\ProjectsMaster\\projects\\CharlesNadejda_Project\\docs\\SCRIPT_DEFENSE_EXAMEN.md": {
+    "mtime": 1781179284.6762028,
+    "ast_hash": "f1b1b9048781ddbe18d888aeb97f3de5",
+    "semantic_hash": "f1b1b9048781ddbe18d888aeb97f3de5"
+  },
+  "C:\\Users\\ernes\\Desktop\\ProjectsMaster\\projects\\CharlesNadejda_Project\\docs\\SPRINT_2026-04-21.md": {
+    "mtime": 1776768440.2074473,
+    "ast_hash": "024f0ae4ee169e000c07e961e377477b",
+    "semantic_hash": "024f0ae4ee169e000c07e961e377477b"
+  },
+  "C:\\Users\\ernes\\Desktop\\ProjectsMaster\\projects\\CharlesNadejda_Project\\docs\\TEST_MANUEL_2026-04-21.md": {
+    "mtime": 1776776199.423484,
+    "ast_hash": "91391466670031288cc0fd425f05dc02",
+    "semantic_hash": "91391466670031288cc0fd425f05dc02"
+  },
+  "C:\\Users\\ernes\\Desktop\\ProjectsMaster\\projects\\CharlesNadejda_Project\\docs\\UIUX_FLOWSCOPE.md": {
+    "mtime": 1778756166.379997,
+    "ast_hash": "c87b5a7839ed072e05c954f53e925678",
+    "semantic_hash": "c87b5a7839ed072e05c954f53e925678"
+  },
+  "C:\\Users\\ernes\\Desktop\\ProjectsMaster\\projects\\CharlesNadejda_Project\\docs\\agents-pdweb\\01_PO_UserStories.md": {
+    "mtime": 1779215576.1662312,
+    "ast_hash": "6cd605cf5a4ad336641085d4a5e5b5a5",
+    "semantic_hash": "6cd605cf5a4ad336641085d4a5e5b5a5"
+  },
+  "C:\\Users\\ernes\\Desktop\\ProjectsMaster\\projects\\CharlesNadejda_Project\\docs\\agents-pdweb\\02_Architect_Stack.md": {
+    "mtime": 1779215660.3586187,
+    "ast_hash": "cf2044f2c59af175ddf3aacd3abd4b2d",
+    "semantic_hash": "cf2044f2c59af175ddf3aacd3abd4b2d"
+  },
+  "C:\\Users\\ernes\\Desktop\\ProjectsMaster\\projects\\CharlesNadejda_Project\\docs\\agents-pdweb\\03_UIUX_Design.md": {
+    "mtime": 1779215764.5395472,
+    "ast_hash": "f411345c244ce43f36988ff6c24c7a10",
+    "semantic_hash": "f411345c244ce43f36988ff6c24c7a10"
+  },
+  "C:\\Users\\ernes\\Desktop\\ProjectsMaster\\projects\\CharlesNadejda_Project\\docs\\agents-pdweb\\04_Backend_Plan.md": {
+    "mtime": 1779215842.905823,
+    "ast_hash": "0b65eba25ca5263b1dadc034b29960d9",
+    "semantic_hash": "0b65eba25ca5263b1dadc034b29960d9"
+  },
+  "C:\\Users\\ernes\\Desktop\\ProjectsMaster\\projects\\CharlesNadejda_Project\\docs\\agents-pdweb\\05_Frontend_Plan.md": {
+    "mtime": 1779215917.3360312,
+    "ast_hash": "ecaa42180d9d50cff23b2e63a264ab96",
+    "semantic_hash": "ecaa42180d9d50cff23b2e63a264ab96"
+  },
+  "C:\\Users\\ernes\\Desktop\\ProjectsMaster\\projects\\CharlesNadejda_Project\\docs\\agents-pdweb\\06_QA_Validation.md": {
+    "mtime": 1779215993.4445698,
+    "ast_hash": "e0a3a376023223bee966d6ecf61b3b23",
+    "semantic_hash": "e0a3a376023223bee966d6ecf61b3b23"
+  },
+  "C:\\Users\\ernes\\Desktop\\ProjectsMaster\\projects\\CharlesNadejda_Project\\docs\\audit-cleanup\\audit-dal.md": {
+    "mtime": 1781168427.5043297,
+    "ast_hash": "2f8e49bbc67482a165a2cc441d10f78c",
+    "semantic_hash": "2f8e49bbc67482a165a2cc441d10f78c"
+  },
+  "C:\\Users\\ernes\\Desktop\\ProjectsMaster\\projects\\CharlesNadejda_Project\\docs\\audit-cleanup\\audit-forms.md": {
+    "mtime": 1781168450.3954318,
+    "ast_hash": "ae4c65da710e31d163acd5d6aecf594a",
+    "semantic_hash": "ae4c65da710e31d163acd5d6aecf594a"
+  },
+  "C:\\Users\\ernes\\Desktop\\ProjectsMaster\\projects\\CharlesNadejda_Project\\docs\\audit-cleanup\\audit-laravel.md": {
+    "mtime": 1781168410.750234,
+    "ast_hash": "e9d3ed5315d79f5b1c4e8cc97e507e42",
+    "semantic_hash": "e9d3ed5315d79f5b1c4e8cc97e507e42"
+  },
+  "C:\\Users\\ernes\\Desktop\\ProjectsMaster\\projects\\CharlesNadejda_Project\\docs\\audit-cleanup\\audit-models.md": {
+    "mtime": 1781168428.7529428,
+    "ast_hash": "392a2320283b947443c0b009f6c92c24",
+    "semantic_hash": "392a2320283b947443c0b009f6c92c24"
+  },
+  "C:\\Users\\ernes\\Desktop\\ProjectsMaster\\projects\\CharlesNadejda_Project\\docs\\audit-cleanup\\audit-navigation.md": {
+    "mtime": 1781168369.8308036,
+    "ast_hash": "8b0ddca685b067a214f1a8191cdf385c",
+    "semantic_hash": "8b0ddca685b067a214f1a8191cdf385c"
+  },
+  "C:\\Users\\ernes\\Desktop\\ProjectsMaster\\projects\\CharlesNadejda_Project\\docs\\audit-cleanup\\audit-sql.md": {
+    "mtime": 1781168446.1344998,
+    "ast_hash": "ab2b6a0fdea48e4aced90bb66f811d11",
+    "semantic_hash": "ab2b6a0fdea48e4aced90bb66f811d11"
+  },
+  "C:\\Users\\ernes\\Desktop\\ProjectsMaster\\projects\\CharlesNadejda_Project\\docs\\audit-cleanup\\AUDIT-SYNTHESE.md": {
+    "mtime": 1781168747.300919,
+    "ast_hash": "90e061012e474f64a5e8c08981891752",
+    "semantic_hash": "90e061012e474f64a5e8c08981891752"
+  },
+  "C:\\Users\\ernes\\Desktop\\ProjectsMaster\\projects\\CharlesNadejda_Project\\docs\\cleanup\\01_PO_MISSIONS_CLEANUP.md": {
+    "mtime": 1779308280.496081,
+    "ast_hash": "05c3046617729b0ad8f590a06f4b5a03",
+    "semantic_hash": "05c3046617729b0ad8f590a06f4b5a03"
+  },
+  "C:\\Users\\ernes\\Desktop\\ProjectsMaster\\projects\\CharlesNadejda_Project\\docs\\cleanup\\02_ARCHITECT_ANALYSE.md": {
+    "mtime": 1779308620.095179,
+    "ast_hash": "b77988c02ab7831813c9901ff9f43f81",
+    "semantic_hash": "b77988c02ab7831813c9901ff9f43f81"
+  },
+  "C:\\Users\\ernes\\Desktop\\ProjectsMaster\\projects\\CharlesNadejda_Project\\docs\\cleanup\\03_UIUX_ANALYSE.md": {
+    "mtime": 1779308647.4562125,
+    "ast_hash": "5714c01da0a443c3f8b879bb81f592d7",
+    "semantic_hash": "5714c01da0a443c3f8b879bb81f592d7"
+  },
+  "C:\\Users\\ernes\\Desktop\\ProjectsMaster\\projects\\CharlesNadejda_Project\\docs\\cleanup\\04_BACKEND_ANALYSE.md": {
+    "mtime": 1779308685.7186222,
+    "ast_hash": "889ca028cf2559085d2ffd1831462f34",
+    "semantic_hash": "889ca028cf2559085d2ffd1831462f34"
+  },
+  "C:\\Users\\ernes\\Desktop\\ProjectsMaster\\projects\\CharlesNadejda_Project\\docs\\cleanup\\06_QA_VALIDATION.md": {
+    "mtime": 1779309172.4644578,
+    "ast_hash": "2e35702aecf77e272a2d717cf3604d5f",
+    "semantic_hash": "2e35702aecf77e272a2d717cf3604d5f"
+  },
+  "C:\\Users\\ernes\\Desktop\\ProjectsMaster\\projects\\CharlesNadejda_Project\\docs\\cleanup\\DEFENSE_01_INFRASTRUCTURE.md": {
+    "mtime": 1781178786.6494315,
+    "ast_hash": "a9986db798cb013d076ce2aec04868e2",
+    "semantic_hash": "a9986db798cb013d076ce2aec04868e2"
+  },
+  "C:\\Users\\ernes\\Desktop\\ProjectsMaster\\projects\\CharlesNadejda_Project\\docs\\cleanup\\DEFENSE_02_INGREDIENTS_ACHATS.md": {
+    "mtime": 1781178964.5039828,
+    "ast_hash": "586143432b921dbf2a4debf441c071aa",
+    "semantic_hash": "586143432b921dbf2a4debf441c071aa"
+  },
+  "C:\\Users\\ernes\\Desktop\\ProjectsMaster\\projects\\CharlesNadejda_Project\\docs\\cleanup\\DEFENSE_03_BOM_PRODUCTION.md": {
+    "mtime": 1781178931.6939006,
+    "ast_hash": "070448ce4eedee0ae138ed0d78a023a9",
+    "semantic_hash": "070448ce4eedee0ae138ed0d78a023a9"
+  },
+  "C:\\Users\\ernes\\Desktop\\ProjectsMaster\\projects\\CharlesNadejda_Project\\docs\\cleanup\\DEFENSE_04_WEB_STOCK.md": {
+    "mtime": 1781179051.6045501,
+    "ast_hash": "a1b00a6acb0d5f223859d89dc4c9dbfb",
+    "semantic_hash": "a1b00a6acb0d5f223859d89dc4c9dbfb"
+  },
+  "C:\\Users\\ernes\\Desktop\\ProjectsMaster\\projects\\CharlesNadejda_Project\\docs\\cleanup\\DEFENSE_05_LARAVEL_CUSTOMER.md": {
+    "mtime": 1781178979.1651769,
+    "ast_hash": "c3c9b83db173e192635cd172a25ebabb",
+    "semantic_hash": "c3c9b83db173e192635cd172a25ebabb"
+  },
+  "C:\\Users\\ernes\\Desktop\\ProjectsMaster\\projects\\CharlesNadejda_Project\\CLAUDE.md": {
+    "mtime": 1780326226.616302,
+    "ast_hash": "5cc40731b58aef497afd570ab0d409d3",
+    "semantic_hash": "5cc40731b58aef497afd570ab0d409d3"
+  },
+  "C:\\Users\\ernes\\Desktop\\ProjectsMaster\\projects\\CharlesNadejda_Project\\docker-compose.yml": {
+    "mtime": 1774355431.3429203,
+    "ast_hash": "6f4ec291305232a582da328626829096",
+    "semantic_hash": "6f4ec291305232a582da328626829096"
   }
 }
