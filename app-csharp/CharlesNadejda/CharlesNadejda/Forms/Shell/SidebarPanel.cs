@@ -529,7 +529,8 @@ namespace CharlesNadejda.Forms.Shell
                     e.Graphics.FillPath(brush, path);
                     using (var sf = new StringFormat { Alignment = StringAlignment.Center, LineAlignment = StringAlignment.Center })
                     using (var f = lblBadge.Font)
-                        e.Graphics.DrawString(lblBadge.Text, f, new SolidBrush(lblBadge.ForeColor), r, sf);
+                    using (var fgBrush = new SolidBrush(lblBadge.ForeColor))
+                        e.Graphics.DrawString(lblBadge.Text, f, fgBrush, r, sf);
                 }
             };
             pnl.Controls.Add(lblBadge);
@@ -630,8 +631,8 @@ namespace CharlesNadejda.Forms.Shell
 
             // Nom de l'activité en gras (première ligne)
             using (var fNom = new Font("Segoe UI", 10F, FontStyle.Bold))
-                g.DrawString(nom, fNom,
-                    new SolidBrush(AppColors.SidebarTxt),
+            using (var brNom = new SolidBrush(AppColors.SidebarTxt))
+                g.DrawString(nom, fNom, brNom,
                     e.Bounds.X + 36, e.Bounds.Y + 6);
 
             // Sous-texte = description de l'activité (deuxième ligne, plus petit, semi-transparent)
@@ -641,8 +642,8 @@ namespace CharlesNadejda.Forms.Shell
             if (!string.IsNullOrWhiteSpace(subText))
             {
                 using (var fSub = new Font("Segoe UI", 8F))
-                    g.DrawString(subText, fSub,
-                        new SolidBrush(Color.FromArgb(130, 245, 230, 211)),
+                using (var brSub = new SolidBrush(Color.FromArgb(130, 245, 230, 211)))
+                    g.DrawString(subText, fSub, brSub,
                         e.Bounds.X + 36, e.Bounds.Y + 24);
             }
 

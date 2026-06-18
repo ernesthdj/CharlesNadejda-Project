@@ -188,6 +188,7 @@ namespace CharlesNadejda.Forms
 
             PositionnerBoutons(y);
             Load += (s, e) => txtNom.Focus();
+            FormClosing += (s, e) => picImage.Image?.Dispose();
 
             // ── Pré-remplir si édition ────────
             if (_isEdit)
@@ -216,9 +217,11 @@ namespace CharlesNadejda.Forms
                     if (File.Exists(fullPath))
                     {
                         // Charger via MemoryStream pour ne pas verrouiller le fichier
+                        // NB : ne PAS disposer le MemoryStream — GDI+ exige que le stream
+                        // reste ouvert pendant toute la durée de vie de l'Image.
                         var bytes = File.ReadAllBytes(fullPath);
-                        using (var ms = new System.IO.MemoryStream(bytes))
-                            picImage.Image = Image.FromStream(ms);
+                        var ms = new MemoryStream(bytes);
+                        picImage.Image = Image.FromStream(ms);
                     }
                 }
             }
@@ -235,7 +238,10 @@ namespace CharlesNadejda.Forms
                     _selectedImagePath = dlg.FileName;
                     lblImagePath.Text  = Path.GetFileName(dlg.FileName);
                     picImage.Image?.Dispose();
-                    picImage.Image = Image.FromFile(dlg.FileName);
+                    // Charger via MemoryStream au lieu de FromFile pour éviter le file lock
+                    var bytes = File.ReadAllBytes(dlg.FileName);
+                    var ms = new MemoryStream(bytes);
+                    picImage.Image = Image.FromStream(ms);
                 }
             }
         }

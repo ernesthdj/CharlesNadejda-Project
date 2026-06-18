@@ -397,8 +397,7 @@ namespace CharlesNadejda.Forms
             var detail = CommandeWebDAL.GetById(cmd.Id);
             if (detail == null) return;
 
-            foreach (Control c in _pnlDetailCommande.Controls) c.Dispose();
-            _pnlDetailCommande.Controls.Clear();
+            DisposeAndClear(_pnlDetailCommande.Controls);
             _pnlDetailCommande.Visible = true;
 
             int y = 4;

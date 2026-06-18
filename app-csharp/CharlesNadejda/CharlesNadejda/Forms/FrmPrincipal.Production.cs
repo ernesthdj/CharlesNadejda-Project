@@ -744,8 +744,7 @@ namespace CharlesNadejda.Forms
             {
                 if (_prodFlowNiveaux != null)
                 {
-                    foreach (Control c in _prodFlowNiveaux.Controls) c.Dispose();
-                    _prodFlowNiveaux.Controls.Clear();
+                    DisposeAndClear(_prodFlowNiveaux.Controls);
                 }
                 return;
             }
@@ -761,9 +760,7 @@ namespace CharlesNadejda.Forms
 
             _prodFlowNiveaux.SuspendLayout();
             // Je dispose les anciennes cards pour libérer les ressources GDI+
-            foreach (Control c in _prodFlowNiveaux.Controls)
-                c.Dispose();
-            _prodFlowNiveaux.Controls.Clear();
+            DisposeAndClear(_prodFlowNiveaux.Controls);
             _prodNiveauPanels.Clear();
 
             if (_state.ActiveContexte == null)
@@ -808,9 +805,7 @@ namespace CharlesNadejda.Forms
             if (_prodFlowFichesInner == null) return;
 
             _prodFlowFichesInner.SuspendLayout();
-            foreach (Control c in _prodFlowFichesInner.Controls)
-                c.Dispose();
-            _prodFlowFichesInner.Controls.Clear();
+            DisposeAndClear(_prodFlowFichesInner.Controls);
             _prodFichePanels.Clear();
             _prodSelectedFiche = null;
 
@@ -1213,9 +1208,7 @@ namespace CharlesNadejda.Forms
             if (_prodFlowStock == null) return;
 
             _prodFlowStock.SuspendLayout();
-            foreach (Control c in _prodFlowStock.Controls)
-                c.Dispose();
-            _prodFlowStock.Controls.Clear();
+            DisposeAndClear(_prodFlowStock.Controls);
 
             try
             {
@@ -1486,9 +1479,7 @@ namespace CharlesNadejda.Forms
             if (_prodFlowHistorique == null) return;
 
             _prodFlowHistorique.SuspendLayout();
-            foreach (Control c in _prodFlowHistorique.Controls)
-                c.Dispose();
-            _prodFlowHistorique.Controls.Clear();
+            DisposeAndClear(_prodFlowHistorique.Controls);
 
             foreach (var prod in prods)
             {

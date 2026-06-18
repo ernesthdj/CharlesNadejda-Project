@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Windows.Forms;
 using CharlesNadejda.Forms;
+using CharlesNadejda.Models;
 
 namespace CharlesNadejda
 {
@@ -19,11 +20,15 @@ namespace CharlesNadejda
 			// 📌 SCRIPT DEFENSE — Étape 0.1 : SFA Pattern (Show First Approach)
 			// FrmLogin en dialogue bloquant avant la boucle de messages.
 			// FrmPrincipal devient la Form racine — Application.Exit() dans OnFormClosed reste valide.
-			var login = new FrmLogin();
-            if (login.ShowDialog() != DialogResult.OK)
-                return;   // Annulation login → quitter proprement
+			Utilisateur user;
+			using (var login = new FrmLogin())
+			{
+				if (login.ShowDialog() != DialogResult.OK)
+					return;   // Annulation login → quitter proprement
+				user = login.Utilisateur;
+			}
 
-            Application.Run(new FrmPrincipal(login.Utilisateur));
+            Application.Run(new FrmPrincipal(user));
         }
     }
 }

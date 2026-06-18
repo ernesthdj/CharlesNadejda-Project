@@ -720,12 +720,20 @@ namespace CharlesNadejda.Forms
         // des événements câblés, des DGV avec des DataSources... tout ça doit être libéré.
         private void ClearAndDisposePanel()
         {
-            // Boucle while au lieu de foreach — parce que je modifie la collection pendant l'itération
-            // (RemoveAt + Dispose à chaque tour)
-            while (_pnlDroit.Controls.Count > 0)
+            DisposeAndClear(_pnlDroit.Controls);
+        }
+
+        /// <summary>
+        /// Retire et dispose chaque contrôle d'une ControlCollection.
+        /// Boucle while (pas foreach) car Dispose modifie la collection pendant l'itération.
+        /// </summary>
+        internal static void DisposeAndClear(Control.ControlCollection controls)
+        {
+            while (controls.Count > 0)
             {
-                var c = _pnlDroit.Controls[0];
-                _pnlDroit.Controls.RemoveAt(0);
+                var c = controls[0];
+                c.ContextMenuStrip?.Dispose();
+                controls.RemoveAt(0);
                 c.Dispose();
             }
         }

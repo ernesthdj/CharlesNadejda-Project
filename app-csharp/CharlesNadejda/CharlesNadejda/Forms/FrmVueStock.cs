@@ -28,6 +28,8 @@ namespace CharlesNadejda.Forms
     {
         // ── Couleurs — voir AppColors (TICKET-12) ────────────────────
 
+        private static readonly Font _chipMeasureFont = new Font("Segoe UI", 9F);
+
         // ── Contrôles ────────────────────────────────────────────────
         private DataGridView    _dgv;
         private FlowLayoutPanel _flowChips;
@@ -271,8 +273,7 @@ namespace CharlesNadejda.Forms
 
         private void BuildChips()
         {
-            foreach (Control c in _flowChips.Controls) c.Dispose();
-            _flowChips.Controls.Clear();
+            FrmPrincipal.DisposeAndClear(_flowChips.Controls);
             AjouterChip("Tous", 0, selected: _idActiviteFiltre == 0);
             foreach (var act in _activites)
                 AjouterChip(act.Nom, act.Id, selected: _idActiviteFiltre == act.Id);
@@ -289,7 +290,7 @@ namespace CharlesNadejda.Forms
                 FlatStyle = FlatStyle.Flat,
                 AutoSize  = false,
                 Height    = 28,
-                Width     = TextRenderer.MeasureText(texte, new Font("Segoe UI", 9F)).Width + 24,
+                Width     = TextRenderer.MeasureText(texte, _chipMeasureFont).Width + 24,
                 Margin    = new Padding(0, 0, 6, 0),
                 Cursor    = Cursors.Hand,
                 Tag       = idActivite
@@ -469,8 +470,7 @@ namespace CharlesNadejda.Forms
         private void AfficherDetail(VueStockGlobal item)
         {
             _pnlDetailContent.SuspendLayout();
-            foreach (Control c in _pnlDetailContent.Controls) c.Dispose();
-            _pnlDetailContent.Controls.Clear();
+            FrmPrincipal.DisposeAndClear(_pnlDetailContent.Controls);
 
             int y = 0;
             if (item.EstLot)
