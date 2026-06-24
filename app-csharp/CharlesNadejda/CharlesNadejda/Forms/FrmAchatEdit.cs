@@ -361,8 +361,10 @@ namespace CharlesNadejda.Forms
                 cmbFournisseur.DisplayMember = "Nom";
                 cmbFournisseur.SelectedIndex = 0;
 
-                // Charger les stocks physiques (frigo, réserve sèche, etc.)
-                var stocks = StockDAL.GetAll();
+                // Charger uniquement les stocks liés à l'activité courante
+                var stocks = _idActivite > 0
+                    ? StockDAL.GetByActivite(_idActivite)
+                    : StockDAL.GetAll();
                 foreach (var s in stocks) cmbStock.Items.Add(s);
                 cmbStock.DisplayMember = "Nom";
                 if (cmbStock.Items.Count > 0) cmbStock.SelectedIndex = 0;
@@ -386,7 +388,13 @@ namespace CharlesNadejda.Forms
         // ====================================================================
         private void ChargerIngredients()
         {
-            var ingredients = IngredientDAL.GetAll();
+            // Ingrédients éligibles à l'achat dans ce contexte d'activité :
+            //   - fiches sans aucun lot (nouveau : Vodka jamais achetée) → incluses
+            //   - fiches avec lots dans les stocks de cette activité → incluses
+            //   - fiches avec lots uniquement dans d'autres activités → exclues
+            var ingredients = _idActivite > 0
+                ? IngredientDAL.GetAllForAchat(_idActivite)
+                : IngredientDAL.GetAll();
             cmbIngredient.DataSource    = ingredients;
             cmbIngredient.DisplayMember = "Nom";
             cmbIngredient.ValueMember   = "Id";

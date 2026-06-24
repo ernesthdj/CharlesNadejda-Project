@@ -249,9 +249,9 @@ namespace CharlesNadejda.Forms
 
             try
             {
-                // Je récupère les 50 dernières productions et tous les ingrédients
+                // Je récupère les 50 dernières productions et les ingrédients de cette activité
                 var prods = BomProductionDAL.GetRecentByActivite(_state.ActiveActivite.Id, 50);
-                var ings  = IngredientDAL.GetAll();
+                var ings  = IngredientDAL.GetAllByActivite(_state.ActiveActivite.Id);
 
                 // KPI 1 : nombre de productions des 7 derniers jours
                 int prods7j    = prods.Count(pp => pp.DateProduction >= DateTime.Now.AddDays(-7));
@@ -1214,8 +1214,8 @@ namespace CharlesNadejda.Forms
             {
                 if (niv.Ordre == 1)
                 {
-                    // N1 : j'affiche les ingrédients de base qui ont du stock
-                    var ings = IngredientDAL.GetAll();
+                    // N1 : j'affiche les ingrédients dans les stocks liés à cette activité
+                    var ings = IngredientDAL.GetAllByActivite(_state.ActiveActivite.Id);
                     var enStock = ings.Where(i => i.StockActuel > 0).OrderBy(i => i.Nom).ToList();
 
                     if (enStock.Count == 0)

@@ -41,6 +41,9 @@ namespace CharlesNadejda.Forms
         /// <summary>Charge la liste filtrée — tient compte du stock-chip et du filtre alertes.</summary>
         protected override List<Ingredient> ChargerDonnees()
         {
+            // FrmIngredients = catalogue de fiches (référentiel global).
+            // Le filtre par stock-chip restreint à celles ayant des lots dans ce stock.
+            // Le contexte _activite sert uniquement au titre — pas au filtrage DAL.
             List<Ingredient> liste = _stockFiltre != null
                 ? IngredientDAL.GetAll(idStock: _stockFiltre.Id)
                 : IngredientDAL.GetAll();

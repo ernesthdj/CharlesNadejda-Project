@@ -37,8 +37,10 @@ namespace CharlesNadejda.Forms
     public partial class FrmPrincipal : Form
     {
         // L'utilisateur connecté — je le garde en readonly car il ne change jamais pendant la session.
-        // Si l'user veut changer de compte, c'est Application.Restart() → retour au login.
         private readonly Utilisateur  _utilisateur;
+
+        // Flag logout — distingue une fermeture normale (Exit) d'une déconnexion (Restart).
+        private bool _isLoggingOut = false;
 
         // AppState centralise TOUT l'état de navigation : activité active, contexte actif,
         // écran courant, type de ressource, filtres... C'est le "cerveau" de l'état global.
@@ -165,6 +167,7 @@ namespace CharlesNadejda.Forms
         private void BuildShell()
         {
             _titleBar = new TitleBarPanel(_utilisateur);
+            _titleBar.LogoutRequested += OnLogout;
             _statusBar = new AppStatusBar();
 
             // La sidebar émet des événements que je câble ici —
@@ -264,9 +267,9 @@ namespace CharlesNadejda.Forms
             _state.SetActivite(act);
             ChargerContextes();
 
-            // Si l'activité a au moins un contexte, je vais en Production. Sinon, retour au Hub.
-            var cible = _state.ActiveContexte != null ? ScreenId.Production : ScreenId.Hub;
-            NavigateTo(cible, forceRefresh: true);
+            // Toujours rester sur le Hub au changement d'activité — les données se rechargent.
+            _sidebar.SetActiveItem(NavItemId.Hub);
+            NavigateTo(ScreenId.Hub, forceRefresh: true);
             UpdateStatusBar();
         }
 
@@ -421,10 +424,10 @@ namespace CharlesNadejda.Forms
                 _sidebar.SetSelectedActivity(acts[0]);
             }
 
-            // Charger les contextes de l'activité sélectionnée, puis naviguer vers le bon écran
+            // Charger les contextes de l'activité sélectionnée, puis naviguer vers le Hub par défaut
             ChargerContextes();
-            var cible = _state.ActiveContexte != null ? ScreenId.Production : ScreenId.Hub;
-            NavigateTo(cible);
+            _sidebar.SetActiveItem(NavItemId.Hub);
+            NavigateTo(ScreenId.Hub);
             UpdateStatusBar();
         }
 
@@ -789,12 +792,23 @@ namespace CharlesNadejda.Forms
             _pnlDroit.ResumeLayout();
         }
 
-        // OnFormClosed — quand le formulaire principal se ferme, toute l'app s'arrête.
-        // Application.Exit() ferme proprement tous les threads et libère les ressources.
+        // OnLogout — l'utilisateur clique "Déconnecter" dans la TitleBar.
+        // On marque la session comme logout puis on ferme → OnFormClosed relance via Restart().
+        private void OnLogout()
+        {
+            _isLoggingOut = true;
+            Close();
+        }
+
+        // OnFormClosed — fermeture normale → Application.Exit().
+        // Fermeture suite à logout → Application.Restart() (retour au login).
         protected override void OnFormClosed(FormClosedEventArgs e)
         {
             base.OnFormClosed(e);
-            Application.Exit();
+            if (_isLoggingOut)
+                Application.Restart();
+            else
+                Application.Exit();
         }
 
         // Handler Resize vide — câblé dans le Designer mais pas utilisé pour l'instant.

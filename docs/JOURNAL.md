@@ -5,6 +5,13 @@
 
 ---
 
+### [2026-06-18 22:00] SESSION — End
+**Résumé :** Audit mémoire complet de l'app C# WinForms (4 agents parallèles). 6 corrections P0+P1 : Image.FromFile→MemoryStream éliminant file lock + fuite GDI+ (FrmProduitWebEdit), 3× SolidBrush wrappées dans using (SidebarPanel DrawItem/Paint), Font inline→static readonly (FrmVueStock), helper DisposeAndClear DRY remplaçant 8× foreach+Dispose+Clear unsafe + dispose ContextMenuStrip (FrmPrincipal, Production, BoutiqueWeb, FrmVueStock), FrmLogin wrappé dans using (Program.cs). Score DAL : 0 fuite (100% using). Score global : B+ → A-.
+**Branche :** feat/refactoring-sprints-p0-p3
+**Commits pushés :** 1
+
+---
+
 ### [2026-06-04 23:00] SESSION — End
 **Résumé :** Refonte complète du système de prix dans FrmIngredientEdit — synchronisation tripartite €/unité de base ↔ €/conditionnement ↔ €/lot. Ajout du champ `nb_par_lot` (Model, DAL, DB migration v19) pour persister le nombre de conditionnements par lot. Ajout du champ label conditionnement. Label dynamique "Prix / kg (€)" s'adapte à l'unité sélectionnée. Améliorations sidebar, DesignSpy, ScreenRouter, FrmPrincipal.
 **Branche :** feat/refactoring-sprints-p0-p3

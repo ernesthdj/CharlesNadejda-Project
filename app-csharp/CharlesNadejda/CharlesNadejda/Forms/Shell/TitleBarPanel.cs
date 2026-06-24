@@ -17,8 +17,14 @@ namespace CharlesNadejda.Forms.Shell
         private string _docTitle = "Tableau de bord";
         private readonly string _userName;
         private readonly string _initials;
+        private readonly Button _btnLogout;
 
         private const int BAR_HEIGHT = 38;
+
+        /// <summary>
+        /// Déclenché quand l'utilisateur clique sur "Déconnecter".
+        /// </summary>
+        public event Action LogoutRequested;
 
         public TitleBarPanel(Utilisateur user)
         {
@@ -33,11 +39,38 @@ namespace CharlesNadejda.Forms.Shell
             SetStyle(ControlStyles.AllPaintingInWmPaint
                    | ControlStyles.UserPaint
                    | ControlStyles.OptimizedDoubleBuffer, true);
+
+            // Bouton Déconnecter — child control positionné à droite
+            _btnLogout = new Button
+            {
+                Text      = "⏻  Déconnecter",
+                Font      = new Font("Segoe UI", 8F),
+                FlatStyle = FlatStyle.Flat,
+                BackColor = Color.FromArgb(40, 0, 0, 0),
+                ForeColor = AppColors.Creme,
+                Size      = new Size(108, 24),
+                Cursor    = Cursors.Hand,
+                TabStop   = false,
+            };
+            _btnLogout.FlatAppearance.BorderColor = Color.FromArgb(90, AppColors.Or);
+            _btnLogout.FlatAppearance.MouseOverBackColor = Color.FromArgb(80, AppColors.RedCrit);
+            _btnLogout.Click += (s, ev) => LogoutRequested?.Invoke();
+            Controls.Add(_btnLogout);
         }
 
         public void SetTitle(string title)
         {
             _docTitle = title ?? "Tableau de bord";
+            Invalidate();
+        }
+
+        protected override void OnSizeChanged(EventArgs e)
+        {
+            base.OnSizeChanged(e);
+            if (_btnLogout != null)
+                _btnLogout.Location = new Point(
+                    Width - _btnLogout.Width - 12,
+                    (BAR_HEIGHT - _btnLogout.Height) / 2);
             Invalidate();
         }
 
@@ -89,7 +122,8 @@ namespace CharlesNadejda.Forms.Shell
                 g.DrawString(_docTitle, fDoc, br, docX, 10);
 
             // ── Zone droite : MySQL · Nom user · Avatar ─────────────
-            int rightEdge = Width - 14;
+            // Réserver l'espace du bouton Déconnecter pour ne pas peindre dessous
+            int rightEdge = (_btnLogout != null) ? _btnLogout.Left - 8 : Width - 14;
 
             // Avatar cercle
             int avSize = 24;

@@ -50,6 +50,85 @@ namespace CharlesNadejda.DAL
             return list;
         }
 
+        /// <summary>
+        /// Retourne les ingrédients disponibles pour un achat dans le contexte d'une activité :
+        ///   - Sans aucun lot nulle part (nouveaux, jamais achetés → Vodka fraîchement créée)
+        ///   - OU avec au moins un lot dans un stock lié à cette activité
+        /// Exclut les ingrédients achetés uniquement pour d'autres activités (Farine → Boulangerie).
+        /// </summary>
+        public static List<Ingredient> GetAllForAchat(int idActivite)
+        {
+            var list = new List<Ingredient>();
+            using (var conn = DbHelper.GetConnection())
+            using (var cmd = conn.CreateCommand())
+            {
+                cmd.CommandText = @"
+                    SELECT fi.id, fi.nom, fi.marque, fi.description, fi.unite_mesure, fi.type_physique, fi.densite,
+                           fi.conditionnement_label, fi.qte_par_conditionnement, fi.nb_par_lot,
+                           fi.prix_achat_reference, fi.seuil_alerte_stock, fi.stock_cible,
+                           fi.id_fournisseur_defaut, fi.dlc_jours_reference, fi.qualite_label, fi.actif,
+                           f.nom  AS nom_fournisseur,
+                           COALESCE(SUM(l.quantite_disponible), 0) AS stock_actuel
+                    FROM fiches_ingredients fi
+                    LEFT  JOIN fournisseurs     f ON f.id = fi.id_fournisseur_defaut
+                    LEFT  JOIN lots_ingredients l ON l.id_fiche_ingredient = fi.id
+                    WHERE fi.actif = 1
+                      AND (
+                            -- Jamais acheté nulle part : fiche neuve, disponible à l'achat
+                            NOT EXISTS (
+                                SELECT 1 FROM lots_ingredients
+                                WHERE id_fiche_ingredient = fi.id
+                            )
+                            OR
+                            -- Déjà acheté dans un stock de cette activité
+                            EXISTS (
+                                SELECT 1 FROM lots_ingredients l2
+                                INNER JOIN activites_stocks acs ON acs.id_stock = l2.id_stock
+                                WHERE l2.id_fiche_ingredient = fi.id
+                                  AND acs.id_activite = @idActivite
+                            )
+                          )
+                    GROUP BY fi.id ORDER BY fi.nom";
+                cmd.Parameters.AddWithValue("@idActivite", idActivite);
+                using (var r = cmd.ExecuteReader())
+                    while (r.Read()) list.Add(Map(r));
+            }
+            return list;
+        }
+
+        /// <summary>
+        /// Retourne les ingrédients dont au moins un lot se trouve dans un stock lié à l'activité.
+        /// Le stock_actuel est la somme des quantités uniquement dans ces stocks (pas globale).
+        /// </summary>
+        public static List<Ingredient> GetAllByActivite(int idActivite)
+        {
+            var list = new List<Ingredient>();
+            using (var conn = DbHelper.GetConnection())
+            using (var cmd = conn.CreateCommand())
+            {
+                // INNER JOIN sur lots_ingredients + activites_stocks :
+                // - seuls les ingrédients ayant des lots dans les stocks de cette activité apparaissent
+                // - SUM ne comptabilise que les lots de ces stocks (pas les autres stocks)
+                cmd.CommandText = @"
+                    SELECT fi.id, fi.nom, fi.marque, fi.description, fi.unite_mesure, fi.type_physique, fi.densite,
+                           fi.conditionnement_label, fi.qte_par_conditionnement, fi.nb_par_lot,
+                           fi.prix_achat_reference, fi.seuil_alerte_stock, fi.stock_cible,
+                           fi.id_fournisseur_defaut, fi.dlc_jours_reference, fi.qualite_label, fi.actif,
+                           f.nom  AS nom_fournisseur,
+                           COALESCE(SUM(l.quantite_disponible), 0) AS stock_actuel
+                    FROM fiches_ingredients fi
+                    LEFT  JOIN fournisseurs      f   ON f.id  = fi.id_fournisseur_defaut
+                    INNER JOIN lots_ingredients  l   ON l.id_fiche_ingredient = fi.id
+                    INNER JOIN activites_stocks  acs ON acs.id_stock = l.id_stock
+                    WHERE fi.actif = 1 AND acs.id_activite = @idActivite
+                    GROUP BY fi.id ORDER BY fi.nom";
+                cmd.Parameters.AddWithValue("@idActivite", idActivite);
+                using (var r = cmd.ExecuteReader())
+                    while (r.Read()) list.Add(Map(r));
+            }
+            return list;
+        }
+
         /// <summary>Retourne un ingrédient par son ID, ou null si introuvable.</summary>
         public static Ingredient GetById(int id)
         {

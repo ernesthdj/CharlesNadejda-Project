@@ -44,7 +44,7 @@ namespace CharlesNadejda.Forms
             List<BomProduction> prods  = new List<BomProduction>();
             try
             {
-                ings   = IngredientDAL.GetAll();
+                ings   = IngredientDAL.GetAllByActivite(_state.ActiveActivite.Id);
                 fiches = BomFicheDAL.GetAll(idActivite: _state.ActiveActivite.Id);
                 // Les 10 dernières productions de cette activité — pour le tableau récapitulatif
                 prods  = BomProductionDAL.GetRecentByActivite(_state.ActiveActivite.Id, 10);
@@ -401,7 +401,7 @@ namespace CharlesNadejda.Forms
             try
             {
                 prodsJour = BomProductionDAL.GetDuJourByActivite(_state.ActiveActivite.Id);
-                alertes   = IngredientDAL.GetAll()
+                alertes   = IngredientDAL.GetAllByActivite(_state.ActiveActivite.Id)
                                          .Where(i => i.EstEnAlerte).ToList();
             }
             catch (Exception ex)
