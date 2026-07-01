@@ -5,6 +5,13 @@
 
 ---
 
+### [2026-06-24 00:00] SESSION — End
+**Résumé :** Shell UX + isolation stock par activité. Bouton Déconnecter (TitleBarPanel, event LogoutRequested, Application.Restart). Login et switch activité atterrissent toujours sur le Hub. IngredientDAL : GetAllByActivite() (filtre par lots dans stocks d'activité) + GetAllForAchat() (nouveaux ingrédients sans lots inclus, autres activités exclus). Propagation du filtre dans Hub.cs, Production.cs, FrmAchatEdit (combo ingrédient + combo stock), FrmBomFicheEdit, FrmIngredients. 1 commit pushé.
+**Branche :** feat/refactoring-sprints-p0-p3
+**Commits pushés :** 1
+
+---
+
 ### [2026-06-18 22:00] SESSION — End
 **Résumé :** Audit mémoire complet de l'app C# WinForms (4 agents parallèles). 6 corrections P0+P1 : Image.FromFile→MemoryStream éliminant file lock + fuite GDI+ (FrmProduitWebEdit), 3× SolidBrush wrappées dans using (SidebarPanel DrawItem/Paint), Font inline→static readonly (FrmVueStock), helper DisposeAndClear DRY remplaçant 8× foreach+Dispose+Clear unsafe + dispose ContextMenuStrip (FrmPrincipal, Production, BoutiqueWeb, FrmVueStock), FrmLogin wrappé dans using (Program.cs). Score DAL : 0 fuite (100% using). Score global : B+ → A-.
 **Branche :** feat/refactoring-sprints-p0-p3
