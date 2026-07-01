@@ -1,5 +1,6 @@
 using System;
 using System.Drawing;
+using System.Globalization;
 using System.Windows.Forms;
 using CharlesNadejda.DAL;
 using CharlesNadejda.Models;
@@ -192,8 +193,9 @@ namespace CharlesNadejda.Forms
                 Font = font, Location = new Point(lx, 328), Size = new Size(120, 26),
                 DecimalPlaces = 0, Minimum = 1, Maximum = 99999, TabIndex = tab++
             };
-            // Chaque changement de quantité déclenche le recalcul des prix
+            // Recalcul live : ValueChanged = spinner/Enter, TextChanged = frappe clavier
             nudQuantite.ValueChanged += (s, e) => MajPrix();
+            nudQuantite.TextChanged  += (s, e) => MajPrix();
             Controls.Add(nudQuantite);
 
             // Label sous la quantité : résumé en texte de ce que ça donne (ex: "3 cond. × 1 kg = 3 kg en stock")
@@ -231,6 +233,7 @@ namespace CharlesNadejda.Forms
                 DecimalPlaces = 4, Minimum = 0, Maximum = 999999, TabIndex = tab++
             };
             nudPrix.ValueChanged += (s, e) => MajPrix();
+            nudPrix.TextChanged  += (s, e) => MajPrix();
             grp.Controls.Add(nudPrix);
 
             // Champ TVA % : le taux de TVA applicable (6%, 21%, etc.)
@@ -241,6 +244,7 @@ namespace CharlesNadejda.Forms
                 DecimalPlaces = 2, Minimum = 0, Maximum = 100, TabIndex = tab++
             };
             nudTvaPct.ValueChanged += (s, e) => MajPrix();
+            nudTvaPct.TextChanged  += (s, e) => MajPrix();
             grp.Controls.Add(nudTvaPct);
 
             // Labels de résultat : affichent le prix calculé HTVA et TVAC par conditionnement
@@ -494,6 +498,17 @@ namespace CharlesNadejda.Forms
         }
 
         // ====================================================================
+        // ReadLive : lit la valeur courante d'un NumericUpDown même en cours de frappe.
+        // .Value n'est mis à jour qu'au LostFocus ; .Text reflète ce que l'utilisateur tape.
+        // ====================================================================
+        private static decimal ReadLive(NumericUpDown nud)
+        {
+            if (decimal.TryParse(nud.Text, NumberStyles.Any, CultureInfo.CurrentCulture, out decimal v))
+                return Math.Max(nud.Minimum, Math.Min(nud.Maximum, v));
+            return nud.Value;
+        }
+
+        // ====================================================================
         // GetNbConditionnements : calcule le vrai nombre de conditionnements selon le mode choisi.
         // En mode "Conditionnement" : c'est directement la valeur saisie.
         // En mode "Lot" : je multiplie par NbParLot (ex: 2 lots × 6 = 12 conditionnements).
@@ -501,7 +516,7 @@ namespace CharlesNadejda.Forms
         /// <summary>Nombre réel de conditionnements selon le mode (cond. ou lot).</summary>
         private decimal GetNbConditionnements()
         {
-            decimal nbSaisi = nudQuantite.Value;
+            decimal nbSaisi = ReadLive(nudQuantite);
             if (rbModeLot.Checked && _ingredientSelectionne != null && _ingredientSelectionne.NbParLot > 1)
                 return nbSaisi * _ingredientSelectionne.NbParLot;
             return nbSaisi;
@@ -534,8 +549,9 @@ namespace CharlesNadejda.Forms
             // Je mets aussi à jour l'info conditionnement (qui dépend de la quantité)
             MajInfoConditionnement();
 
-            decimal prixSaisi = nudPrix.Value;
-            decimal tvaPct    = nudTvaPct.Value;
+            // ReadLive : lit le texte en cours de frappe, pas la valeur commitée au LostFocus
+            decimal prixSaisi = ReadLive(nudPrix);
+            decimal tvaPct    = ReadLive(nudTvaPct);
             decimal nbCond    = GetNbConditionnements();
             // Facteur multiplicateur TVA (ex: 1.21 pour 21%)
             decimal facteur   = 1 + tvaPct / 100m;

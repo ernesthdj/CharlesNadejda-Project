@@ -13,7 +13,7 @@ namespace CharlesNadejda.Forms
     /// TICKET-14 : migration depuis partial class Form vers FrmListeBase&lt;T&gt;.
     /// TICKET-19 : label état vide préservé via AppliquerStylesLignes().
     /// </summary>
-    public class FrmBomFiches : FrmListeBase<BomFiche>
+    public class FrmBomFiches : FrmListeBaseBomFiche
     {
         private readonly BomNiveau _niveau;
         private Label              _lblEtatVide;   // TICKET-19 : message quand liste vide

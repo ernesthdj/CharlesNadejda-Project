@@ -17,7 +17,7 @@ namespace CharlesNadejda.Forms
     ///   - Les activités inactives sont affichées en gris italique (AppliquerStylesLignes)
     ///   - ChargerDonnees() inclut les inactifs (includeInactifs: true)
     /// </summary>
-    public class FrmActivites : FrmListeBase<Activite>
+    public class FrmActivites : FrmListeBaseActivite
     {
         // ── Boutons supplémentaires propres à ce formulaire ─────────
         private readonly Button _btnDesactiver;

@@ -13,7 +13,7 @@ namespace CharlesNadejda.Forms
     /// TICKET-14 : migration depuis partial class Form vers FrmListeBase&lt;T&gt;.
     /// Bouton supplémentaire « → Niveaux » ajouté en OnLoad à la position BtnYExtra.
     /// </summary>
-    public class FrmBomContextes : FrmListeBase<BomContexte>
+    public class FrmBomContextes : FrmListeBaseBomContexte
     {
         private readonly Activite _activite;
         private Button            _btnNiveaux;

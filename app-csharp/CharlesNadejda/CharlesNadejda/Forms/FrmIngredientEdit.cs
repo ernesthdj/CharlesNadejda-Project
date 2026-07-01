@@ -24,6 +24,7 @@ namespace CharlesNadejda.Forms
         private readonly ComboBox      cmbUnite;
         private readonly ComboBox      cmbTypePhysique;
         private readonly ComboBox      cmbFournisseur;
+        private readonly ComboBox      cmbStockDefaut;
         private readonly NumericUpDown nudDensite;
         private readonly NumericUpDown nudPrixBase;
         private readonly NumericUpDown nudPrixCond;
@@ -191,7 +192,11 @@ namespace CharlesNadejda.Forms
             cmbFournisseur = new ComboBox { DropDownStyle = ComboBoxStyle.DropDownList };
             AddField("Fournisseur par défaut", cmbFournisseur, lx, 422, 360);
 
-            PositionnerBoutons(470);
+            // ── Ligne 10 — Stock de rangement par défaut ─────────────────
+            cmbStockDefaut = new ComboBox { DropDownStyle = ComboBoxStyle.DropDownList };
+            AddField("Stock de rangement par défaut", cmbStockDefaut, lx, 470, 360);
+
+            PositionnerBoutons(518);
 
             Load += FrmIngredientEdit_Load;
             Load += (s, e) => txtNom.Focus();
@@ -233,6 +238,18 @@ namespace CharlesNadejda.Forms
                 System.Diagnostics.Debug.WriteLine("Chargement fournisseurs : " + ex.Message);
             }
 
+            try
+            {
+                var stocks = StockDAL.GetAll();
+                cmbStockDefaut.Items.Add("— Aucun —");
+                foreach (var st in stocks) cmbStockDefaut.Items.Add(st);
+                cmbStockDefaut.DisplayMember = "Nom";
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine("Chargement stocks : " + ex.Message);
+            }
+
             if (_isEdit)
             {
                 _syncing = true;
@@ -265,6 +282,12 @@ namespace CharlesNadejda.Forms
                             if (item is Fournisseur f && f.Id == _ing.IdFournisseurDefaut.Value)
                             { cmbFournisseur.SelectedItem = f; break; }
                     else cmbFournisseur.SelectedIndex = 0;
+
+                    if (_ing.IdStockDefaut.HasValue)
+                        foreach (var item in cmbStockDefaut.Items)
+                            if (item is Stock st && st.Id == _ing.IdStockDefaut.Value)
+                            { cmbStockDefaut.SelectedItem = st; break; }
+                    else cmbStockDefaut.SelectedIndex = 0;
                 }
                 finally
                 {
@@ -276,6 +299,7 @@ namespace CharlesNadejda.Forms
                 cmbTypePhysique.SelectedIndex = 0;
                 cmbUnite.SelectedIndex        = 0;
                 cmbFournisseur.SelectedIndex  = 0;
+                cmbStockDefaut.SelectedIndex  = 0;
                 nudQteConditionnement.Value   = 1m;
                 nudNbLot.Value                = 1m;
             }
@@ -429,7 +453,8 @@ namespace CharlesNadejda.Forms
             _ing.PrixAchatReference    = nudPrixCond.Value;
             _ing.SeuilAlerteStock      = seuil;
             _ing.StockCible            = stockCible;
-            _ing.IdFournisseurDefaut   = cmbFournisseur.SelectedItem is Fournisseur f ? (int?)f.Id : null;
+            _ing.IdFournisseurDefaut   = cmbFournisseur.SelectedItem is Fournisseur f  ? (int?)f.Id  : null;
+            _ing.IdStockDefaut        = cmbStockDefaut.SelectedItem  is Stock      st ? (int?)st.Id : null;
 
             if (_isEdit) IngredientDAL.Update(_ing);
             else         IngredientDAL.Insert(_ing);

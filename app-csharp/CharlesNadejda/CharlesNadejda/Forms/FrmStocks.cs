@@ -18,7 +18,7 @@ namespace CharlesNadejda.Forms
     /// La liaison M:N est gérée en temps réel : chaque coche/décoche fait un INSERT/DELETE
     /// immédiat via StockDAL.LierActivite / DelierActivite.
     /// </summary>
-    public class FrmStocks : FrmListeBase<Stock>
+    public class FrmStocks : FrmListeBaseStock
     {
         // ── Contrôles spécifiques au panel de liaison ───────────────
         private readonly SplitContainer   _split;

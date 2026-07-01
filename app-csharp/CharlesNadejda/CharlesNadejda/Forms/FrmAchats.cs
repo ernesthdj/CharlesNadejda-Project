@@ -14,7 +14,7 @@ namespace CharlesNadejda.Forms
     /// Avant, tout le layout était dupliqué dans chaque formulaire liste.
     /// Maintenant j'hérite de FrmListeBase et je ne surcharge que le nécessaire.
     /// </summary>
-    public class FrmAchats : FrmListeBase<Lot>
+    public class FrmAchats : FrmListeBaseLot
     {
         // L'activité courante — permet de filtrer les achats par activité
         // Si null, on affiche tous les achats (mode "vue globale")

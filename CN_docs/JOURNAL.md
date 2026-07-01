@@ -5,6 +5,12 @@
 
 ---
 
+### [2026-07-01] FEAT — FrmIngredients toggle Fiches/Stock réel + id_stock_defaut
+**Fichiers :** `sql/migration_v22_stock_defaut_ingredient.sql`, `Models/Ingredient.cs`, `DAL/IngredientDAL.cs`, `Forms/FrmIngredientEdit.cs`, `Forms/FrmIngredients.cs`
+**Résumé :** Ajout d'un toggle "Fiches / Stock réel" dans la barre chips de FrmIngredients. Mode Fiches = filtre catalogue par `id_stock_defaut` (nouveau champ nullable FK→stocks, migration v22). Mode Stock réel = filtre inventaire physique (`lots_ingredients.quantite_disponible > 0`). Le ComboBox "Stock de rangement par défaut" est ajouté dans FrmIngredientEdit pour assigner la fiche à son stock. `IngredientDAL.GetAll(idStock, stockReelSeulement)` gère les 4 combinaisons chip × mode. Corrige le bug Vodka absente de "Stock Alcool".
+
+---
+
 ### [2026-06-24 00:00] SESSION — End
 **Résumé :** Shell UX + isolation stock par activité. Bouton Déconnecter (TitleBarPanel, event LogoutRequested, Application.Restart). Login et switch activité atterrissent toujours sur le Hub. IngredientDAL : GetAllByActivite() (filtre par lots dans stocks d'activité) + GetAllForAchat() (nouveaux ingrédients sans lots inclus, autres activités exclus). Propagation du filtre dans Hub.cs, Production.cs, FrmAchatEdit (combo ingrédient + combo stock), FrmBomFicheEdit, FrmIngredients. 1 commit pushé.
 **Branche :** feat/refactoring-sprints-p0-p3

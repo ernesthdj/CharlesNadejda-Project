@@ -14,35 +14,76 @@ namespace CharlesNadejda.DAL
         // ── SELECT ──────────────────────────────────────────────────
 
         /// <summary>
-        /// idStock : 0 = tous / filtre par stock physique (via lots_ingredients)
-        /// Les fiches sont globales — le stock est assigné au lot, pas à la fiche.
+        /// Charge les fiches ingrédients selon deux modes conceptuellement distincts :
+        ///
+        /// Mode Fiches (stockReelSeulement = false) — la fiche EST la définition de l'ingrédient.
+        ///   Pas de JOIN lots_ingredients : une fiche n'a pas de quantité, comme une classe n'a pas d'état.
+        ///   stock_actuel = 0 (non pertinent). Filtre chip = id_stock_defaut.
+        ///
+        /// Mode Stock réel (stockReelSeulement = true) — les lots sont les instances physiques.
+        ///   JOIN lots_ingredients pour agréger les quantités disponibles.
+        ///   Filtre chip = lots présents avec quantite_disponible > 0 dans ce stock.
         /// </summary>
-        public static List<Ingredient> GetAll(int idStock = 0)
+        public static List<Ingredient> GetAll(int idStock = 0, bool stockReelSeulement = false)
         {
             var list = new List<Ingredient>();
             using (var conn = DbHelper.GetConnection())
             using (var cmd = conn.CreateCommand())
             {
-                cmd.CommandText = @"
-                    SELECT fi.id, fi.nom, fi.marque, fi.description, fi.unite_mesure, fi.type_physique, fi.densite,
-                           fi.conditionnement_label, fi.qte_par_conditionnement, fi.nb_par_lot,
-                           fi.prix_achat_reference, fi.seuil_alerte_stock, fi.stock_cible,
-                           fi.id_fournisseur_defaut, fi.dlc_jours_reference, fi.qualite_label, fi.actif,
-                           f.nom  AS nom_fournisseur,
-                           COALESCE(SUM(l.quantite_disponible), 0) AS stock_actuel
-                    FROM fiches_ingredients fi
-                    LEFT  JOIN fournisseurs      f ON f.id = fi.id_fournisseur_defaut
-                    LEFT  JOIN lots_ingredients  l ON l.id_fiche_ingredient = fi.id
-                    WHERE fi.actif = 1";
-
-                if (idStock > 0)
+                if (!stockReelSeulement)
                 {
-                    cmd.CommandText += @" AND fi.id IN (
-                        SELECT DISTINCT id_fiche_ingredient FROM lots_ingredients WHERE id_stock = @idStock)";
-                    cmd.Parameters.AddWithValue("@idStock", idStock);
-                }
+                    // ── Mode Fiches : référentiel pur, sans calcul de stock ──────────────
+                    cmd.CommandText = @"
+                        SELECT fi.id, fi.nom, fi.marque, fi.description, fi.unite_mesure, fi.type_physique, fi.densite,
+                               fi.conditionnement_label, fi.qte_par_conditionnement, fi.nb_par_lot,
+                               fi.prix_achat_reference, fi.seuil_alerte_stock, fi.stock_cible,
+                               fi.id_fournisseur_defaut, fi.id_stock_defaut,
+                               fi.dlc_jours_reference, fi.qualite_label, fi.actif,
+                               f.nom AS nom_fournisseur,
+                               0     AS stock_actuel
+                        FROM fiches_ingredients fi
+                        LEFT JOIN fournisseurs f ON f.id = fi.id_fournisseur_defaut
+                        WHERE fi.actif = 1";
 
-                cmd.CommandText += " GROUP BY fi.id ORDER BY fi.nom";
+                    if (idStock > 0)
+                    {
+                        cmd.CommandText += " AND fi.id_stock_defaut = @idStock";
+                        cmd.Parameters.AddWithValue("@idStock", idStock);
+                    }
+
+                    cmd.CommandText += " ORDER BY fi.nom";
+                }
+                else
+                {
+                    // ── Mode Stock réel : instances physiques avec quantités ─────────────
+                    cmd.CommandText = @"
+                        SELECT fi.id, fi.nom, fi.marque, fi.description, fi.unite_mesure, fi.type_physique, fi.densite,
+                               fi.conditionnement_label, fi.qte_par_conditionnement, fi.nb_par_lot,
+                               fi.prix_achat_reference, fi.seuil_alerte_stock, fi.stock_cible,
+                               fi.id_fournisseur_defaut, fi.id_stock_defaut,
+                               fi.dlc_jours_reference, fi.qualite_label, fi.actif,
+                               f.nom AS nom_fournisseur,
+                               COALESCE(SUM(l.quantite_disponible), 0) AS stock_actuel
+                        FROM fiches_ingredients fi
+                        LEFT JOIN fournisseurs     f ON f.id = fi.id_fournisseur_defaut
+                        LEFT JOIN lots_ingredients l ON l.id_fiche_ingredient = fi.id
+                        WHERE fi.actif = 1";
+
+                    if (idStock > 0)
+                    {
+                        cmd.CommandText += @" AND fi.id IN (
+                            SELECT DISTINCT id_fiche_ingredient FROM lots_ingredients
+                            WHERE id_stock = @idStock AND quantite_disponible > 0)";
+                        cmd.Parameters.AddWithValue("@idStock", idStock);
+                    }
+
+                    cmd.CommandText += " GROUP BY fi.id";
+
+                    if (idStock == 0)
+                        cmd.CommandText += " HAVING stock_actuel > 0";
+
+                    cmd.CommandText += " ORDER BY fi.nom";
+                }
 
                 using (var r = cmd.ExecuteReader())
                     while (r.Read()) list.Add(Map(r));
@@ -66,7 +107,8 @@ namespace CharlesNadejda.DAL
                     SELECT fi.id, fi.nom, fi.marque, fi.description, fi.unite_mesure, fi.type_physique, fi.densite,
                            fi.conditionnement_label, fi.qte_par_conditionnement, fi.nb_par_lot,
                            fi.prix_achat_reference, fi.seuil_alerte_stock, fi.stock_cible,
-                           fi.id_fournisseur_defaut, fi.dlc_jours_reference, fi.qualite_label, fi.actif,
+                           fi.id_fournisseur_defaut, fi.id_stock_defaut,
+                           fi.dlc_jours_reference, fi.qualite_label, fi.actif,
                            f.nom  AS nom_fournisseur,
                            COALESCE(SUM(l.quantite_disponible), 0) AS stock_actuel
                     FROM fiches_ingredients fi
@@ -113,7 +155,8 @@ namespace CharlesNadejda.DAL
                     SELECT fi.id, fi.nom, fi.marque, fi.description, fi.unite_mesure, fi.type_physique, fi.densite,
                            fi.conditionnement_label, fi.qte_par_conditionnement, fi.nb_par_lot,
                            fi.prix_achat_reference, fi.seuil_alerte_stock, fi.stock_cible,
-                           fi.id_fournisseur_defaut, fi.dlc_jours_reference, fi.qualite_label, fi.actif,
+                           fi.id_fournisseur_defaut, fi.id_stock_defaut,
+                           fi.dlc_jours_reference, fi.qualite_label, fi.actif,
                            f.nom  AS nom_fournisseur,
                            COALESCE(SUM(l.quantite_disponible), 0) AS stock_actuel
                     FROM fiches_ingredients fi
@@ -139,7 +182,8 @@ namespace CharlesNadejda.DAL
                     SELECT fi.id, fi.nom, fi.marque, fi.description, fi.unite_mesure, fi.type_physique, fi.densite,
                            fi.conditionnement_label, fi.qte_par_conditionnement, fi.nb_par_lot,
                            fi.prix_achat_reference, fi.seuil_alerte_stock, fi.stock_cible,
-                           fi.id_fournisseur_defaut, fi.dlc_jours_reference, fi.qualite_label, fi.actif,
+                           fi.id_fournisseur_defaut, fi.id_stock_defaut,
+                           fi.dlc_jours_reference, fi.qualite_label, fi.actif,
                            f.nom  AS nom_fournisseur,
                            COALESCE(SUM(l.quantite_disponible), 0) AS stock_actuel
                     FROM fiches_ingredients fi
@@ -179,10 +223,10 @@ namespace CharlesNadejda.DAL
                         (nom, marque, description, unite_mesure, type_physique, densite,
                          conditionnement_label, qte_par_conditionnement, nb_par_lot,
                          prix_achat_reference, seuil_alerte_stock, stock_cible,
-                         id_fournisseur_defaut, dlc_jours_reference, qualite_label, actif)
+                         id_fournisseur_defaut, id_stock_defaut, dlc_jours_reference, qualite_label, actif)
                     VALUES (@nom, @marque, @desc, @unite, @type_physique, @densite,
                             @condLabel, @condQte, @nbLot,
-                            @prix, @seuil, @stockCible, @fournisseur, @dlcJours, @qualite, 1)";
+                            @prix, @seuil, @stockCible, @fournisseur, @idStockDefaut, @dlcJours, @qualite, 1)";
                 Bind(cmd, i);
                 cmd.ExecuteNonQuery();
                 return (int)cmd.LastInsertedId;
@@ -204,6 +248,7 @@ namespace CharlesNadejda.DAL
                         prix_achat_reference=@prix, seuil_alerte_stock=@seuil,
                         stock_cible=@stockCible,
                         id_fournisseur_defaut=@fournisseur,
+                        id_stock_defaut=@idStockDefaut,
                         dlc_jours_reference=@dlcJours, qualite_label=@qualite
                     WHERE id=@id";
                 Bind(cmd, i);
@@ -283,7 +328,8 @@ namespace CharlesNadejda.DAL
             cmd.Parameters.AddWithValue("@prix",         i.PrixAchatReference);
             cmd.Parameters.AddWithValue("@seuil",        i.SeuilAlerteStock.HasValue ? (object)i.SeuilAlerteStock.Value : DBNull.Value);
             cmd.Parameters.AddWithValue("@stockCible",   i.StockCible.HasValue ? (object)i.StockCible.Value : DBNull.Value);
-            cmd.Parameters.AddWithValue("@fournisseur",  i.IdFournisseurDefaut.HasValue ? (object)i.IdFournisseurDefaut.Value : DBNull.Value);
+            cmd.Parameters.AddWithValue("@fournisseur",    i.IdFournisseurDefaut.HasValue ? (object)i.IdFournisseurDefaut.Value : DBNull.Value);
+            cmd.Parameters.AddWithValue("@idStockDefaut", i.IdStockDefaut.HasValue       ? (object)i.IdStockDefaut.Value       : DBNull.Value);
             cmd.Parameters.AddWithValue("@dlcJours",     i.DlcJoursReference.HasValue ? (object)i.DlcJoursReference.Value : DBNull.Value);
             cmd.Parameters.AddWithValue("@qualite",      i.QualiteLabel ?? (object)DBNull.Value);
         }
@@ -304,11 +350,12 @@ namespace CharlesNadejda.DAL
             SeuilAlerteStock      = r["seuil_alerte_stock"]   == DBNull.Value ? (decimal?)null : (decimal)r["seuil_alerte_stock"],
             StockCible            = r["stock_cible"]           == DBNull.Value ? (decimal?)null : (decimal)r["stock_cible"],
             IdFournisseurDefaut   = r["id_fournisseur_defaut"] == DBNull.Value ? (int?)null : (int)r["id_fournisseur_defaut"],
+            IdStockDefaut        = r["id_stock_defaut"]       == DBNull.Value ? (int?)null : (int)r["id_stock_defaut"],
             DlcJoursReference     = r["dlc_jours_reference"]  == DBNull.Value ? (int?)null : Convert.ToInt32(r["dlc_jours_reference"]),
             QualiteLabel          = r["qualite_label"]         == DBNull.Value ? null : r["qualite_label"].ToString(),
             NomFournisseur        = r["nom_fournisseur"]      == DBNull.Value ? null : r["nom_fournisseur"].ToString(),
             Actif                 = Convert.ToBoolean(r["actif"]),
-            StockActuel           = (decimal)r["stock_actuel"]
+            StockActuel           = Convert.ToDecimal(r["stock_actuel"])
         };
     }
 }

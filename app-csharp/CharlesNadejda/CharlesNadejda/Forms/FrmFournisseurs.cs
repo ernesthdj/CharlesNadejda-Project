@@ -13,7 +13,7 @@ namespace CharlesNadejda.Forms
     /// tout le code de construction UI (DGV, boutons, styles) est désormais
     /// dans FrmListeBase. Ici on ne fournit que la logique métier.
     /// </summary>
-    public class FrmFournisseurs : FrmListeBase<Fournisseur>
+    public class FrmFournisseurs : FrmListeBaseFournisseur
     {
         // ── Membres abstraits — logique métier spécifique ───────────
 

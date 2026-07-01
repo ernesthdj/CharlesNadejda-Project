@@ -34,6 +34,8 @@ namespace CharlesNadejda.Models
         /// <summary>Stock cible (100% de la jauge) en unité de base. Paramétré par l'utilisateur.</summary>
         public decimal? StockCible              { get; set; }
         public int?     IdFournisseurDefaut      { get; set; }
+        /// <summary>Stock de rangement par défaut (FK nullable vers stocks). Utilisé par le filtre chip "Fiches" de FrmIngredients.</summary>
+        public int?     IdStockDefaut            { get; set; }
         /// <summary>Duree de conservation par defaut en jours (nullable si non defini).</summary>
         public int?     DlcJoursReference       { get; set; }
         /// <summary>Label qualite (ex: "Bio", "AOP", "Grand Cru"). Nullable.</summary>
@@ -50,6 +52,10 @@ namespace CharlesNadejda.Models
 
         // ── Propriétés calculées ──────────────────────────────────
 
+        /// <summary>Quantité par conditionnement avec son unité, pour affichage — ex: "700 ml", "1 kg", "500 g".</summary>
+        public string QteCondLabel =>
+            $"{QteParConditionnement:0.##} {UniteMesure}";
+
         /// <summary>Prix par unité de base = PrixAchatReference / QteParConditionnement. Protégé contre division par zéro.</summary>
         public decimal PrixParUniteBase =>
             QteParConditionnement > 0 ? PrixAchatReference / QteParConditionnement : PrixAchatReference;
@@ -61,6 +67,13 @@ namespace CharlesNadejda.Models
         /// <summary>Nombre de conditionnements complets en stock = Floor(StockActuel / QteParConditionnement).</summary>
         public decimal StockPieces =>
             QteParConditionnement > 0 ? Math.Floor(StockActuel / QteParConditionnement) : 0;
+
+        /// <summary>Stock cible exprimé en nombre de conditionnements = StockCible / QteParConditionnement.
+        /// Null si aucun stock cible défini. Cohérent avec la saisie dans FrmIngredientEdit (nudStockCible en pièces).</summary>
+        public decimal? StockCiblePieces =>
+            StockCible.HasValue && QteParConditionnement > 0
+                ? Math.Round(StockCible.Value / QteParConditionnement)
+                : (decimal?)null;
 
         /// <summary>Ratio stock actuel / stock cible (0..N). Null si pas de cible définie.</summary>
         public double? StockRatio =>

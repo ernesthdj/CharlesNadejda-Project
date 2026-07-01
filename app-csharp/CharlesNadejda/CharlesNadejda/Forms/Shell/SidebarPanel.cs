@@ -436,12 +436,11 @@ namespace CharlesNadejda.Forms.Shell
             y = AddNavItem(y, NavItemId.StocksLiaisons,  "📦", "Stocks & liaisons");
             y = AddNavItem(y, NavItemId.VueStockGlobal,  "▦", "Vue stock global");
             y = AddNavItem(y, NavItemId.Mouvements,      "◰", "Mouvements");
-            y = AddNavItem(y, NavItemId.AchatsLots,      "◧", "Achats & lots");
+            y = AddNavItem(y, NavItemId.Ingredients,     "○", "Fiches & Stock");
             y = AddNavItem(y, NavItemId.Fournisseurs,    "◐", "Fournisseurs");
 
-            // Groupe RÉFÉRENTIELS — fiches ingrédients et paramètres
+            // Groupe RÉFÉRENTIELS
             y = AddSection(y, "RÉFÉRENTIELS");
-            y = AddNavItem(y, NavItemId.Ingredients,      "○", "Fiches Ingrédients");
             y = AddNavItem(y, NavItemId.Parametres,       "∷", "Paramètres");
 
             // Groupe BOUTIQUE EN LIGNE — lien vers le site e-commerce Laravel

@@ -222,9 +222,6 @@ namespace CharlesNadejda.Forms
                 case NavItemId.VueStockGlobal:
                     NavigateTo(ScreenId.Ressources, () => _state.SetRessource(RessourceType.VueStock));
                     break;
-                case NavItemId.AchatsLots:
-                    NavigateTo(ScreenId.Ressources, () => _state.SetRessource(RessourceType.Achats));
-                    break;
                 case NavItemId.Fournisseurs:
                     NavigateTo(ScreenId.Ressources, () => _state.SetRessource(RessourceType.Fournisseurs));
                     break;

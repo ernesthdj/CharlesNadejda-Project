@@ -13,7 +13,7 @@ namespace CharlesNadejda.Forms
     /// Logique métier Ajouter préservée : OuvrirFormulaire(null) calcule GetOrdreMax + 1
     /// pour garantir l'ordre croissant des niveaux sans trou.
     /// </summary>
-    public class FrmBomNiveaux : FrmListeBase<BomNiveau>
+    public class FrmBomNiveaux : FrmListeBaseBomNiveau
     {
         private readonly BomContexte _contexte;
 
