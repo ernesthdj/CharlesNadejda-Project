@@ -31,7 +31,7 @@
 
 **Fichiers a ouvrir dans Visual Studio :**
 - `CharlesNadejda/CharlesNadejda.csproj` — pour montrer la structure
-- `CharlesNadejda/DAL/` — montrer les 13 fichiers DAL
+- `CharlesNadejda/DAL/` — montrer les 19 fichiers DAL
 
 #### Ce que tu dis
 
@@ -63,8 +63,9 @@
 
 **Q : Comment C# et Laravel partagent-ils la meme base ?**
 > "Les deux utilisent les memes credentials MySQL definis dans `.env` pour Laravel et
-> `App.config` pour C#. La base de donnees est le contrat commun : les 16 tables sont
-> creees par les migrations SQL versionnees dans `/sql/`."
+> `App.config` pour C# (fichier local gitignore — App.config.example est le template).
+> La base de donnees est le contrat commun : les 20 tables sont
+> creees par les migrations SQL versionnees dans `/sql/` (v1 a v22)."
 
 ---
 
@@ -184,25 +185,44 @@ public static Utilisateur Authenticate(string email, string motDePasse)
 
 #### Ce que tu dis
 
-> "FrmStocks herite de FrmListeBase<T> (T = type generique — ici Stock), une classe de base generique
+> "FrmStocks herite de FrmListeBase<T.> (T = type generique — ici Stock), une classe de base generique
 > qui fournit la DGV, les boutons CRUD (Create Read Update Delete) et le rafraichissement automatique.
 > Je n'ai pas a reimplementer ces comportements pour chaque entite."
 
 ```csharp
-// Forms/Base/FrmListeBase.cs (pattern generique)
-public abstract class FrmListeBase<T> : Form
+// Forms/FrmListeBase.cs (pattern generique)
+public abstract class FrmListeBase<T> : Form where T : class
 {
-    protected DataGridView dgv;
-    protected abstract List<T> Charger();
-    protected abstract void OuvrirFormulaire(T entite = default);
+    protected readonly DataGridView dgv;
 
-    protected void BtnAjouter_Click(object sender, EventArgs e)
-        => OuvrirFormulaire();
+    // Membres abstraits — la sous-classe implemente la logique specifique
+    protected abstract string  Titre             { get; }
+    protected abstract List<T> ChargerDonnees    ();
+    protected abstract void    ConfigurerColonnes();
+    protected abstract Form    OuvrirFormulaire  (T element);  // null = creation
+    protected abstract void    Supprimer         (T element);
 
-    protected void BtnModifier_Click(object sender, EventArgs e)
+    // Charger() : methode concrete — appelle ChargerDonnees() de la sous-classe
+    protected void Charger()
     {
-        if (dgv.CurrentRow?.DataBoundItem is T item)
-            OuvrirFormulaire(item);
+        dgv.DataSource = null;             // Force le reset du binding
+        dgv.DataSource = ChargerDonnees(); // Appelle le DAL de la sous-classe
+        ConfigurerColonnes();
+        AppliquerStylesLignes();
+    }
+
+    private void OnAjouter()
+    {
+        using (var frm = OuvrirFormulaire(null))
+            if (frm != null && frm.ShowDialog() == DialogResult.OK) Charger();
+    }
+
+    private void OnModifier()
+    {
+        var item = dgv.CurrentRow?.DataBoundItem as T;
+        if (item == null) return;
+        using (var frm = OuvrirFormulaire(item))
+            if (frm != null && frm.ShowDialog() == DialogResult.OK) Charger();
     }
 }
 ```
@@ -219,9 +239,9 @@ public abstract class FrmListeBase<T> : Form
 > a implementer Valider() et Enregistrer(). Si j'oublie, le compilateur refuse de compiler.
 > C'est du principe ouvert/ferme (Open/Closed Principle) : ouvert a l'extension, ferme a la modification."
 
-**Q : Pourquoi les generiques (<T>) dans FrmListeBase ?**
+**Q : Pourquoi les generiques (<T.>) dans FrmListeBase ?**
 > "Sans generiques, j'aurais une FrmListeStock, une FrmListeActivite, etc., toutes identiques sauf
-> le type. Avec FrmListeBase<T>, j'ecris le code une seule fois. Le compilateur specialise la classe
+> le type. Avec FrmListeBase<T.>, j'ecris le code une seule fois. Le compilateur specialise la classe
 > pour chaque type concret. C'est le principe DRY (Don't Repeat Yourself)."
 
 **Q : Qu'est-ce qu'une partial class en C# ?**
@@ -248,48 +268,67 @@ public abstract class FrmListeBase<T> : Form
 7. L'activite `Bar` apparait dans la liste
 
 **Fichiers a ouvrir dans Visual Studio :**
-- `Forms/Activites/FrmActiviteEdit.cs`
-- `DAL/ActiviteDAL.cs` — montrer la transaction INSERT + liaison
+- `Forms/FrmActiviteEdit.cs`
+- `Forms/FrmActiviteStocks.cs` — gestion de la liaison Activite ↔ Stocks
+- `DAL/ActiviteDAL.cs`
 
 #### Ce que tu dis
 
-> "La liaison Activite ↔ Stock est une relation many-to-many (plusieurs stocks peuvent appartenir
-> a plusieurs activites). Elle est geree par la table de jonction `activite_stocks`.
-> L'enregistrement utilise une transaction pour garantir l'atomicite ACID (Atomicity, Consistency,
-> Isolation, Durability) : soit les deux INSERT reussissent, soit aucun."
+> "La creation d'une activite se fait en deux temps. D'abord, FrmActiviteEdit enregistre
+> le nom et la description via ActiviteDAL.Insert. Ensuite, la liaison Activite ↔ Stock
+> est geree dans FrmActiviteStocks — un formulaire dedie qui insere dans la table de jonction
+> `activites_stocks`. C'est une relation many-to-many (plusieurs stocks peuvent appartenir
+> a plusieurs activites)."
 
 ```csharp
-// DAL/ActiviteDAL.cs
-public static void Insert(Activite a, List<int> idStocks)
+// DAL/ActiviteDAL.cs — Insert simple, sans transaction (pas de liaison ici)
+public static int Insert(Activite a)
 {
-    using var conn = Connexion.Ouvrir();
-    using var trans = conn.BeginTransaction();
-    try
+    using (var conn = DbHelper.GetConnection())
+    using (var cmd = conn.CreateCommand())
     {
-        // INSERT dans activites
-        var cmd = new MySqlCommand(
-            "INSERT INTO activites (nom, description) VALUES (@nom, @desc)", conn, trans);
-        cmd.Parameters.AddWithValue("@nom", a.Nom);
-        cmd.Parameters.AddWithValue("@desc", a.Description);
+        cmd.CommandText = @"
+            INSERT INTO activites (nom, description, actif)
+            VALUES (@nom, @desc, 1)";
+        cmd.Parameters.AddWithValue("@nom",  a.Nom);
+        cmd.Parameters.AddWithValue("@desc", a.Description ?? (object)DBNull.Value);
         cmd.ExecuteNonQuery();
-        long idActivite = cmd.LastInsertId;
-
-        // INSERT dans activite_stocks pour chaque stock
-        foreach (int idStock in idStocks)
-        {
-            var cmdLien = new MySqlCommand(
-                "INSERT INTO activite_stocks (id_activite, id_stock) VALUES (@idA, @idS)",
-                conn, trans);
-            cmdLien.Parameters.AddWithValue("@idA", idActivite);
-            cmdLien.Parameters.AddWithValue("@idS", idStock);
-            cmdLien.ExecuteNonQuery();
-        }
-        trans.Commit();
+        return (int)cmd.LastInsertedId;
     }
-    catch
+}
+```
+
+> "Pour illustrer le principe ACID avec une vraie transaction du code, voici ActiviteDAL.Desactiver —
+> elle verifie les contraintes (contextes actifs, lots en stock) dans une transaction avant de desactiver :
+> si une des verifications leve une exception, le Rollback annule tout. C'est le A de ACID : Atomicite."
+
+```csharp
+// DAL/ActiviteDAL.cs — Desactiver() : transaction avec verifications metier
+public static void Desactiver(int id)
+{
+    using (var conn = DbHelper.GetConnection())
+    using (var tx = conn.BeginTransaction())
     {
-        trans.Rollback(); // ACID -- Atomicite garantie
-        throw;
+        try
+        {
+            using (var cmd = conn.CreateCommand())
+            {
+                cmd.Transaction = tx;
+                cmd.CommandText = "SELECT COUNT(*) FROM bom_contextes WHERE id_activite = @id AND actif = 1";
+                cmd.Parameters.AddWithValue("@id", id);
+                int nbContextes = Convert.ToInt32(cmd.ExecuteScalar());
+                if (nbContextes > 0)
+                    throw new InvalidOperationException(
+                        $"Impossible : {nbContextes} contexte(s) actif(s) rattache(s).");
+
+                cmd.CommandText = "UPDATE activites SET actif = 0 WHERE id = @id";
+                cmd.Parameters.Clear();
+                cmd.Parameters.AddWithValue("@id", id);
+                cmd.ExecuteNonQuery();
+            }
+            tx.Commit();
+        }
+        catch { tx.Rollback(); throw; }  // ACID — Atomicite garantie
     }
 }
 ```
@@ -421,7 +460,11 @@ public static List<Ingredient> GetAll(int idStock = 0, bool stockReelSeulement =
         if (idStock > 0)
             cmd.CommandText += @" AND fi.id IN (SELECT DISTINCT id_fiche_ingredient
                 FROM lots_ingredients WHERE id_stock = @idStock AND quantite_disponible > 0)";
-        cmd.CommandText += " GROUP BY fi.id HAVING stock_actuel > 0 ORDER BY fi.nom";
+        cmd.CommandText += " GROUP BY fi.id";
+        // HAVING uniquement sans filtre stock : evite d'exclure des lots d'autres stocks
+        if (idStock == 0)
+            cmd.CommandText += " HAVING stock_actuel > 0";
+        cmd.CommandText += " ORDER BY fi.nom";
     }
 }
 ```
@@ -621,9 +664,9 @@ nudPrix.TextChanged  += (s, e) => MajPrix();
 7. La fiche N2 apparait dans la liste BOM
 
 **Fichiers a ouvrir dans Visual Studio :**
-- `Forms/BOM/FrmBOMEdit.cs`
-- `DAL/BOMDAL.cs`
-- `Models/RecetteBOM.cs` + `Models/LigneBOM.cs`
+- `Forms/FrmBomFicheEdit.cs`
+- `DAL/BomFicheDAL.cs` + `DAL/BomFicheLigneDAL.cs`
+- `Models/BomFiche.cs` + `Models/BomFicheLigne.cs`
 
 #### Ce que tu dis
 
@@ -675,9 +718,9 @@ recettes_bom (id, nom, id_contexte, id_niveau, qte_produite, unite_sortie)
 5. Cliquer **"Enregistrer"**
 
 **Fichiers a ouvrir dans Visual Studio :**
-- `Forms/BOM/FrmBOMEdit.cs` — section sources mixtes N1/N2
-- `DAL/BOMDAL.cs` — GetSourcesDisponibles
-- `Models/LigneBOM.cs` — champ `type_source` (enum : Ingredient / BOMStock)
+- `Forms/FrmBomFicheEdit.cs` — section sources mixtes N1/N2
+- `DAL/BomFicheLigneDAL.cs`
+- `Models/BomFicheLigne.cs` — champ `TypeInput` (string : "ingredient" / "fiche")
 
 #### Ce que tu dis
 
@@ -685,22 +728,24 @@ recettes_bom (id, nom, id_contexte, id_niveau, qte_produite, unite_sortie)
 > Le Premix (135ml) vient de `bom_stocks` — c'est du stock produit par la production N2.
 > Le Cola (60ml) vient de `lots_ingredients` — c'est un ingredient achete directement."
 
-> "LigneBOM a un champ type_source qui distingue les deux cas :
-> `Ingredient` → chercher dans `lots_ingredients`
-> `BOMStock` → chercher dans `bom_stocks` (table ou va le produit de la production)"
+> "BomFicheLigne a un champ TypeInput (string) qui distingue les deux cas :
+> `'ingredient'` → chercher dans `lots_ingredients`
+> `'fiche'` → chercher dans `bom_stocks` (le produit du niveau inferieur)"
 
 ```csharp
-// Models/LigneBOM.cs
-public enum TypeSource { Ingredient, BOMStock }
-
-public class LigneBOM
+// Models/BomFicheLigne.cs
+public class BomFicheLigne
 {
-    public int Id { get; set; }
-    public int IdRecette { get; set; }
-    public TypeSource TypeSource { get; set; }
-    public int IdSource { get; set; }        // id_fiche_ingredient OU id_recette_source
-    public decimal QteRequise { get; set; }
-    public string Unite { get; set; }
+    public int     Id                { get; set; }
+    public int     IdFiche           { get; set; }   // FK vers bom_fiches
+    /// <summary>"ingredient" ou "fiche" — discriminant polymorphique.</summary>
+    public string  TypeInput         { get; set; }
+    public int?    IdInputIngredient { get; set; }   // rempli si TypeInput == "ingredient"
+    public int?    IdInputFiche      { get; set; }   // rempli si TypeInput == "fiche"
+    public decimal Quantite          { get; set; }
+    public string  UniteMesure       { get; set; }
+    // Jointure chargee par le DAL
+    public string  NomInput          { get; set; }
 }
 ```
 
@@ -750,9 +795,9 @@ public class LigneBOM
 10. Vodka : stock passe de 3500ml a 3200ml (consommation FIFO visible)
 
 **Fichiers a ouvrir dans Visual Studio :**
-- `Forms/Production/FrmProduction.cs`
-- `DAL/ProductionDAL.cs` — methode LancerProduction avec FIFO
-- `DAL/ProductionDAL.cs` — boucle FIFO
+- `Forms/FrmBomProductionSimulation.cs`
+- `DAL/BomProductionDAL.cs` — methode Executer() avec FIFO
+- `DAL/BomProductionDAL.cs` — methode ConsumeStock() : boucle FIFO
 
 #### Ce que tu dis
 
@@ -824,7 +869,7 @@ foreach (var (idLot, dispo, prixUnit) in lots)
 8. Verifier dans les BOM stocks que 10 unites de Long Island sont disponibles
 
 **Fichiers a ouvrir dans Visual Studio :**
-- `DAL/ProductionDAL.cs` — logique deux types de sources
+- `DAL/BomProductionDAL.cs` — logique deux types de sources (TypeInput "ingredient" / "fiche")
 
 #### Ce que tu dis
 
@@ -832,20 +877,22 @@ foreach (var (idLot, dispo, prixUnit) in lots)
 > detecte le type_source et va chercher dans la bonne table :"
 
 ```csharp
-// Pour type_source = BOMStock : consommer dans bom_stocks
-// Pour type_source = Ingredient : consommer dans lots_ingredients (meme boucle FIFO)
+// Pour TypeInput = "fiche"      : consommer dans bom_stocks (FIFO date_production ASC)
+// Pour TypeInput = "ingredient" : consommer dans lots_ingredients (FIFO date_achat ASC)
 
-foreach (LigneBOM ligne in recette.Lignes)
+foreach (BomFicheLigne ligne in fiche.Lignes)
 {
-    if (ligne.TypeSource == TypeSource.BOMStock)
+    if (ligne.TypeInput == "fiche")
     {
-        var stocks = BomStockDAL.GetDisponibles(ligne.IdSource, idStockDest);
-        // Boucle FIFO sur bom_stocks, ORDER BY date_production ASC
+        // Source = produit intermediaire : FIFO sur bom_stocks (date_production ASC)
+        var stocks = BomStockDAL.GetLotsDispoFIFO(ligne.IdInputFiche.Value, conn, tx);
+        // Boucle FIFO : pris = Math.Min(restant, dispo), UPDATE bom_stocks
     }
     else
     {
-        var lots = LotIngredientDAL.GetDisponibles(ligne.IdSource, idStockDest);
-        // Boucle FIFO sur lots_ingredients, ORDER BY date_achat ASC
+        // Source = ingredient achete : FIFO sur lots_ingredients (date_achat ASC)
+        var lots = BomStockDAL.GetLotsDispoFIFO(ligne.IdInputIngredient.Value, conn, tx);
+        // Boucle FIFO : pris = Math.Min(restant, dispo), UPDATE lots_ingredients
     }
 }
 ```
@@ -929,8 +976,8 @@ foreach (LigneBOM ligne in recette.Lignes)
 5. Le bouton "Ajouter au panier" est visible mais redirige vers login si non connecte
 
 **Fichiers a ouvrir dans VS Code (Laravel) :**
-- `resources/views/boutique/index.blade.php`
-- `app/Http/Controllers/BoutiqueController.php` — methode index
+- `resources/views/catalogue/index.blade.php`
+- `app/Http/Controllers/CatalogueController.php` — methode index
 - `routes/web.php` — routes publiques
 
 #### Ce que tu dis
@@ -939,15 +986,22 @@ foreach (LigneBOM ligne in recette.Lignes)
 > Le Controller charge les produits avec eager loading pour eviter le N+1 :"
 
 ```php
-// app/Http/Controllers/BoutiqueController.php
-public function index()
+// app/Http/Controllers/CatalogueController.php
+public function index(): \Illuminate\Contracts\View\View
 {
-    $produits = Produit::where('actif', 1)
-        ->where('stock_disponible', '>', 0)
-        ->with('categorie')    // eager loading -- 1 requete au lieu de N
-        ->orderBy('nom')
-        ->get();
-    return view('boutique.index', compact('produits'));
+    $query = ProduitWeb::where('en_vente', 1)
+        ->with('categorie')        // eager loading — 1 requete au lieu de N
+        ->withStockDisponible();   // scope local : sous-requete sur bom_stocks
+
+    // Filtre optionnel par categorie
+    if (request('categorie')) {
+        $query->where('id_categorie', request('categorie'));
+    }
+
+    $produits   = $query->get();
+    $categories = CategorieWeb::where('actif', 1)->orderBy('ordre_affichage')->get();
+
+    return view('catalogue.index', compact('produits', 'categories'));
 }
 ```
 
@@ -976,7 +1030,7 @@ public function index()
 4. Redirection vers le catalogue avec message de succes
 
 **Fichiers a ouvrir dans VS Code :**
-- `app/Http/Controllers/ClientAuthController.php` — methode register
+- `app/Http/Controllers/Auth/RegisterController.php` — methode register
 - `app/Http/Requests/RegisterRequest.php` — Form Request validation
 - `app/Models/Client.php`
 
@@ -991,15 +1045,16 @@ public function index()
 public function rules(): array
 {
     return [
-        'nom'                  => 'required|string|max:100',
-        'prenom'               => 'required|string|max:100',
-        'email'                => 'required|email|unique:clients,email',
-        'password'             => 'required|min:8|confirmed',  // confirmed = password_confirmation
+        'prenom'   => 'required|string|max:100',
+        'nom'      => 'required|string|max:100',
+        'email'    => 'required|email|max:255|unique:clients,email',
+        'password' => 'required|string|min:8|confirmed',  // confirmed = champ password_confirmation
     ];
 }
 ```
 
-> "Le mot de passe est hache avec BCrypt via Laravel (`Hash::make()`), compatible avec C#.
+> "Le mot de passe est hache avec `password_hash($request->password, PASSWORD_BCRYPT)` — PHP natif,
+> meme algorithme que BCrypt.Net cote C#. Les deux applications partagent le meme format de hash.
 > Le meme client pourrait theoriquement se connecter sur les deux interfaces."
 
 #### Questions probables
@@ -1028,7 +1083,7 @@ public function rules(): array
 4. Le menu affiche maintenant "Mon compte" et "Panier (0)"
 
 **Fichiers a ouvrir dans VS Code :**
-- `app/Http/Controllers/ClientAuthController.php` — methode login
+- `app/Http/Controllers/Auth/LoginController.php` — methode login
 - `app/Http/Middleware/ClientAuth.php`
 
 #### Ce que tu dis
@@ -1036,18 +1091,33 @@ public function rules(): array
 > "Laravel utilise des sessions HTTP httpOnly pour l'authentification des clients.
 > Le cookie de session est httpOnly : JavaScript ne peut pas y acceder, ce qui protege
 > contre les attaques XSS (Cross-Site Scripting — injection de code JavaScript malveillant).
-> La session stocke l'ID du client, pas ses donnees completes."
+> Notez aussi le `session()->regenerate()` apres connexion — c'est la protection contre
+> la session fixation : un attaquant ayant obtenu l'ID de session avant connexion
+> ne peut plus l'utiliser apres, car l'ID change."
 
 ```php
-// app/Http/Controllers/ClientAuthController.php
-public function login(LoginRequest $request)
+// app/Http/Controllers/Auth/LoginController.php
+public function login(LoginRequest $request): \Illuminate\Http\RedirectResponse
 {
-    $client = Client::where('email', $request->email)->first();
-    if (!$client || !Hash::check($request->password, $client->password)) {
-        return back()->withErrors(['email' => 'Identifiants incorrects']);
+    $client = Client::where('email', $request->email)
+        ->where('actif', 1)   // seuls les comptes actifs peuvent se connecter
+        ->first();
+
+    if (!$client || !password_verify($request->password, $client->mot_de_passe)) {
+        return back()
+            ->withInput($request->only('email'))
+            ->with('error', 'Email ou mot de passe incorrect.');
     }
-    session(['client_id' => $client->id]);
-    return redirect()->route('boutique.index');
+
+    session([
+        'client_id'    => $client->id,
+        'client_nom'   => $client->nom,
+        'client_prenom'=> $client->prenom,
+        'panier_count' => 0,
+    ]);
+    session()->regenerate();  // Protection session fixation (OWASP A07)
+
+    return redirect()->intended(route('catalogue'));
 }
 ```
 
@@ -1091,27 +1161,50 @@ public function login(LoginRequest $request)
 
 ```php
 // app/Http/Controllers/PanierController.php
-public function ajouter(Request $request)
+public function ajouter(Request $request): \Illuminate\Http\JsonResponse
 {
-    $idProduit = $request->integer('id_produit');
-    $quantite  = $request->integer('quantite', 1);
-    $panier    = session()->get('panier', []);
-    $panier[$idProduit] = ($panier[$idProduit] ?? 0) + $quantite;
-    session()->put('panier', $panier);
-    return response()->json([
-        'success' => true,
-        'total'   => array_sum($panier)
+    $request->validate([
+        'id_produit' => 'required|integer|exists:produits_web,id',
+        'quantite'   => 'required|integer|min:1',
     ]);
+
+    $produit = ProduitWeb::withStockDisponible()->findOrFail($request->id_produit);
+
+    if ($produit->stock_disponible < $request->quantite) {
+        return response()->json(['success' => false,
+            'message' => 'Stock insuffisant. Disponible : ' . $produit->stock_disponible]);
+    }
+
+    $panier = $this->getOrCreatePanier();   // CommandeWeb statut='panier'
+
+    // Si produit deja dans le panier, incrementer la quantite
+    $ligne = $panier->lignes()->where('id_produit_web', $produit->id)->first();
+    if ($ligne) {
+        $ligne->update(['quantite' => $ligne->quantite + $request->quantite]);
+    } else {
+        CommandeWebLigne::create([
+            'id_commande'    => $panier->id,
+            'id_produit_web' => $produit->id,
+            'quantite'       => $request->quantite,
+            'prix_unitaire'  => $produit->prix_vente,
+        ]);
+    }
+
+    $count = $this->refreshPanierCount($panier);
+    return response()->json(['success' => true,
+        'message' => $produit->nom_commercial . ' ajoute au panier.',
+        'panier_count' => $count]);
 }
 ```
 
 #### Questions probables
 
 **Q : Le panier est stocke en session ou en base de donnees ?**
-> "En session PHP pour la simplicite. La session est stockee cote serveur (fichier ou cache),
-> le client ne voit que le cookie de session. Inconvenient : si le client change d'appareil,
-> son panier est perdu. En production, on stockerait le panier en DB pour la persistance
-> multi-appareil. C'est un compromis de simplicite acceptable pour un projet academique."
+> "En base de donnees — dans la table `commandes_web` avec `statut = 'panier'`.
+> La session ne stocke que l'ID du client et un compteur cache (panier_count).
+> Avantages DB : persistance multi-appareil, historique complet, possibilite d'abandonner
+> et de retrouver son panier plus tard, stock verifie a chaque ajout.
+> La commande passe du statut 'panier' a 'payee' lors du checkout — c'est la meme entite."
 
 ---
 
@@ -1127,7 +1220,7 @@ public function ajouter(Request $request)
 6. Ouvrir phpMyAdmin → verifier `bom_stocks` : `quantite_disponible` des Long Island passe de 10 a 8
 
 **Fichiers a ouvrir dans VS Code :**
-- `app/Http/Controllers/CheckoutController.php` — methode valider
+- `app/Http/Controllers/CommandeController.php` — methode valider()
 - `app/Models/BomStock.php`
 
 #### Ce que tu dis
@@ -1148,7 +1241,8 @@ foreach ($stocks as $stock) {
     $stock->save();
     $restant -= $aConsommer;
 }
-$panier->update(['statut' => 'payee', 'date_commande' => now()]);
+$panier->update(['statut' => 'payee', 'date_commande' => now(),
+                 'total_ttc' => $panier->lignes->sum('sous_total')]);
 DB::commit();
 ```
 
@@ -1192,15 +1286,16 @@ DB::commit();
 10. Le client voit son statut mis a jour : "Expediee"
 
 **Fichiers a ouvrir dans Visual Studio :**
-- `Forms/Commandes/FrmCommandes.cs`
-- `DAL/CommandeDAL.cs`
+- `Forms/FrmPrincipal.BoutiqueWeb.cs` — onglet 3 "Commandes"
+- `DAL/CommandeWebDAL.cs`
 
 #### Ce que tu dis
 
 > "Les commandes creees par Laravel sont immediatement visibles dans l'ERP C# car elles sont
-> dans la meme table MySQL `commandes`. L'ERP permet a l'operateur de gerer le workflow :
+> dans la meme table MySQL `commandes_web`. L'ERP permet a l'operateur de gerer le workflow :
 > Payee → En preparation → Expediee → Livree.
-> Chaque changement de statut est horodate dans `commande_historique` pour la traçabilite."
+> La gestion des commandes est integree dans FrmPrincipal — onglet 3 de la section Boutique web —
+> avec un DataGridView en lecture seule et un panneau de detail pour les informations client."
 
 > "La synchronisation entre C# et Laravel est instantanee et bidirectionnelle grace a la DB partagee.
 > C'est la valeur cle de l'architecture hybride : un seul referentiel de donnees."
@@ -1227,26 +1322,28 @@ DB::commit();
 3. Aller dans "Structure" pour montrer les tables
 4. Pointer les tables cles et leurs relations
 
-**Tables principales :**
+**Tables reelles (20 tables, schema_complet.sql) :**
 ```
 utilisateurs          -- comptes ERP (admin, operateurs)
 clients               -- comptes boutique web
 stocks                -- entrepots physiques
 activites             -- domaines metier (Bar, Patisserie...)
-activite_stocks       -- liaison many-to-many activites ↔ stocks
-contextes             -- hierarchies de production
-niveaux_production    -- N1/N2/N3 par contexte
-fiches_ingredients    -- catalogue ingredients (classe/definition)
+activites_stocks      -- liaison many-to-many activites ↔ stocks
 fournisseurs          -- fournisseurs
-lots_ingredients      -- achats physiques (instances avec stock)
-recettes_bom          -- recettes de fabrication
-lignes_bom            -- composants de chaque recette
+fiches_ingredients    -- catalogue ingredients (classe/definition)
+lots_ingredients      -- achats physiques (instances avec stock FIFO)
+bom_contextes         -- domaines de production lies a une activite
+bom_niveaux           -- N1/N2/N3 par contexte
+bom_fiches            -- recettes de fabrication (ex-recettes_bom)
+bom_fiches_lignes     -- composants de chaque recette (TypeInput: ingredient/fiche)
+bom_productions       -- historique des productions
+bom_productions_lignes-- detail FIFO par ligne de production (tracabilite)
 bom_stocks            -- stock de produits finis (apres production)
-productions           -- historique des productions
-produits              -- catalogue boutique web (synchronise avec bom)
-commandes             -- commandes clients
-lignes_commande       -- detail de chaque commande
-commande_historique   -- log des changements de statut
+bom_reservations      -- reservations de stock (production planifiee)
+categories_web        -- categories de la boutique
+produits_web          -- catalogue boutique web (synchronise avec bom)
+commandes_web         -- commandes clients (panier -> payee -> expediee)
+commandes_web_lignes  -- detail de chaque commande
 ```
 
 #### Ce que tu dis
@@ -1271,11 +1368,11 @@ commande_historique   -- log des changements de statut
 
 #### Ce que tu montres
 
-1. Ouvrir la table `lignes_bom` dans phpMyAdmin → montrer les colonnes et les types
-2. Montrer les FOREIGN KEYS : `id_recette`, `id_fiche_ingredient`
-3. Montrer la contrainte ON DELETE RESTRICT (on ne peut pas supprimer une fiche utilisee dans une recette)
+1. Ouvrir la table `bom_fiches_lignes` dans phpMyAdmin → montrer les colonnes et les types
+2. Montrer les FOREIGN KEYS : `id_fiche` (vers bom_fiches), `id_input_ingredient` (vers fiches_ingredients), `id_input_fiche` (vers bom_fiches)
+3. Montrer la contrainte ON DELETE RESTRICT (on ne peut pas supprimer une fiche utilisee comme input)
 4. Ouvrir `lots_ingredients` → montrer la colonne `quantite_disponible` et sa contrainte CHECK >= 0
-5. Ouvrir la table `commandes` → enum statut : `en_attente | payee | en_preparation | expediee | livree | annulee`
+5. Ouvrir la table `commandes_web` → enum statut : `panier | payee | en_preparation | expediee | livree | annulee`
 
 #### Ce que tu dis
 
@@ -1288,7 +1385,7 @@ commande_historique   -- log des changements de statut
 > la transaction est rollbackee, le stock reste coherent."
 
 ```sql
--- Extrait de /sql/005_lots_ingredients.sql
+-- Extrait de /sql/schema_complet.sql (table lots_ingredients)
 CREATE TABLE lots_ingredients (
     id                   INT UNSIGNED NOT NULL AUTO_INCREMENT,
     id_fiche_ingredient  INT UNSIGNED NOT NULL,
@@ -1356,7 +1453,7 @@ Reponses courtes aux questions les plus frequentes en defense :
 | **Soft delete vs hard delete ?** | actif = 0 au lieu de DELETE. Preserve la traçabilite et les foreign keys. |
 | **GROUP BY + HAVING ?** | GROUP BY = agreger par groupe. HAVING = filtrer apres agregation (WHERE = avant). |
 | **AppliquerMode ?** | Methode qui change textes boutons + visibilite + recharge la DGV selon le mode toggle. |
-| **TypeSource enum ?** | Distingue si une ligne BOM pointe vers lots_ingredients ou bom_stocks. |
+| **TypeInput (string) ?** | "ingredient" ou "fiche" dans BomFicheLigne. Distingue si la source est lots_ingredients ou bom_fiches. |
 | **Condition de race ?** | 2 transactions lisent le meme stock = 1 en meme temps. lockForUpdate empeche ca. |
 | **httpOnly cookie ?** | Cookie inaccessible depuis JavaScript. Protege contre vol de session via XSS. |
 | **Form Request Laravel ?** | Classe de validation separee du Controller. Single Responsibility Principle. |

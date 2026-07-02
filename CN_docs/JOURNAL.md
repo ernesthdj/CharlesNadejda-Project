@@ -5,6 +5,31 @@
 
 ---
 
+### [2026-07-02] DOCS — Synchronisation SCRIPT_DEFENSE_EXAMEN.md avec le code réel
+**Fichiers :** `CN_docs/SCRIPT_DEFENSE_EXAMEN.md`
+**Résumé :** Audit exhaustif du script de défense (71 Ko) par lecture croisée avec le code source réel. 12 catégories d'écarts corrigées : FrmListeBase (méthodes renommées), ActiviteDAL.Insert (signature inventée + connexion + transaction faux), IngredientDAL.GetAll HAVING conditionnel manquant, LigneBOM→BomFicheLigne (classe + propriétés + TypeInput string vs enum), chemins BOM/Production (FrmBOMEdit→FrmBomFicheEdit, FrmProduction→FrmBomProductionSimulation), controllers Laravel (BoutiqueController→CatalogueController, ClientAuthController→Auth/LoginController+RegisterController), snippets CatalogueController/LoginController/PanierController (panier DB pas session, password_verify, session()->regenerate(), mot_de_passe), noms 20 tables réelles SQL, Hash::make()→password_hash().
+
+---
+
+### [2026-07-02] FIX — SEC-2 : suppression bloc #if DEBUG avec credentials dans FrmLogin.cs
+**Fichiers :** `Forms/FrmLogin.cs` · `App.config.example` · `CN_docs/AUDIT_QUALITE_2026-07-02.md`
+**Résumé :** Bloc `#if DEBUG` (lignes 21-24) supprimé de `FrmLogin.cs` — pré-remplissait `txtEmail` et `txtMotDePasse` avec des credentials réels versionnés en git. SEC-1 (`App.config`) confirmé déjà résolu depuis commit 2232ead (mai 2026) — gitignored + `.example` existant. Gap résiduel comblé : ajout de la clé `LaravelStoragePath` dans `App.config.example`. Audit mis à jour : 2 CRITICAL → FERMÉS.
+
+---
+
+### [2026-07-02] DOCS — Audit qualité global ArtisaStock (4 périmètres)
+**Fichiers :** `CN_docs/AUDIT_QUALITE_2026-07-02.md` — nouveau rapport d'audit complet
+**Résumé :** Rapport d'audit qualité produit par analyse statique exhaustive (2 agents Explore parallèles). Périmètre : C# WinForms (18 findings), Laravel (3 findings), SQL/Migrations (0 finding), Sécurité OWASP Top 10 (tableau consolidé). Score global : 7.5/10. 2 findings CRITICAL identifiés : `App.config` credentials en clair + `FrmLogin.cs:23` mot de passe hardcodé. Plan de remédiation P0→P3 inclus. Aucun fichier source modifié.
+
+---
+
+### [2026-07-01 — SESSION END] feat(ingredients): Fiches & Stock + Designer bridges
+**Branche :** feat/refactoring-sprints-p0-p3
+**Commits pushés :** 1 (ae9f15c)
+**Résumé :** Écran "Fiches & Stock" unifié (remplace "Achats & Lots") avec toggle Fiches/Stock réel. DAL deux branches, colonnes dynamiques, CellFormatting live. Prix live à la frappe dans FrmAchatEdit (TextChanged + ReadLive). DesignerBridges.cs pour 8 formulaires FrmListeBase<T>. Migration v22 id_stock_defaut. Script défense reécrit scénario Bar/Long Island Ice Tea. docs/ → CN_docs/.
+
+---
+
 ### [2026-07-01] FEAT — FrmIngredients toggle Fiches/Stock réel + id_stock_defaut
 **Fichiers :** `sql/migration_v22_stock_defaut_ingredient.sql`, `Models/Ingredient.cs`, `DAL/IngredientDAL.cs`, `Forms/FrmIngredientEdit.cs`, `Forms/FrmIngredients.cs`
 **Résumé :** Ajout d'un toggle "Fiches / Stock réel" dans la barre chips de FrmIngredients. Mode Fiches = filtre catalogue par `id_stock_defaut` (nouveau champ nullable FK→stocks, migration v22). Mode Stock réel = filtre inventaire physique (`lots_ingredients.quantite_disponible > 0`). Le ComboBox "Stock de rangement par défaut" est ajouté dans FrmIngredientEdit pour assigner la fiche à son stock. `IngredientDAL.GetAll(idStock, stockReelSeulement)` gère les 4 combinaisons chip × mode. Corrige le bug Vodka absente de "Stock Alcool".
