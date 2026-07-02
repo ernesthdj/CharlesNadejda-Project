@@ -119,9 +119,15 @@
     <Compile Include="DesignSpy.cs" />
     <Compile Include="Forms\FormHelper.cs" />
     <Compile Include="Helpers\UnitConvertisseur.cs" />
-    <Compile Include="Forms\FrmListeBase.cs" />
-    <Compile Include="Forms\FrmEditBase.cs" />
-    <Compile Include="Forms\DesignerBridges.cs" />
+    <Compile Include="Forms\FrmListeBase.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Forms\FrmEditBase.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Forms\DesignerBridges.cs">
+      <SubType>Form</SubType>
+    </Compile>
     <Compile Include="Forms\FrmLogin.cs">
       <SubType>Form</SubType>
     </Compile>
@@ -158,29 +164,53 @@
     <Compile Include="Forms\FrmPrincipal.Designer.cs">
       <DependentUpon>FrmPrincipal.cs</DependentUpon>
     </Compile>
-    <Compile Include="Forms\FrmFournisseurs.cs" />
+    <Compile Include="Forms\FrmFournisseurs.cs">
+      <SubType>Form</SubType>
+    </Compile>
     <Compile Include="Forms\FrmFournisseurs.Designer.cs">
       <DependentUpon>FrmFournisseurs.cs</DependentUpon>
     </Compile>
-    <Compile Include="Forms\FrmFournisseurEdit.cs" />
-    <Compile Include="Forms\FrmCategorieWebEdit.cs" />
+    <Compile Include="Forms\FrmFournisseurEdit.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Forms\FrmCategorieWebEdit.cs">
+      <SubType>Form</SubType>
+    </Compile>
     <Compile Include="Forms\FrmProduitWebEdit.cs">
       <SubType>Form</SubType>
     </Compile>
     <Compile Include="Forms\StringExtensions.cs" />
-    <Compile Include="Forms\FrmIngredients.cs" />
-    <Compile Include="Forms\FrmIngredientEdit.cs" />
-    <Compile Include="Forms\FrmAchats.cs" />
-    <Compile Include="Forms\FrmAchatEdit.cs" />
+    <Compile Include="Forms\FrmIngredients.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Forms\FrmIngredientEdit.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Forms\FrmAchats.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Forms\FrmAchatEdit.cs">
+      <SubType>Form</SubType>
+    </Compile>
     <Compile Include="Forms\AppColors.cs" />
-    <Compile Include="Forms\FrmBomContextes.cs" />
-    <Compile Include="Forms\FrmActivites.cs" />
-    <Compile Include="Forms\FrmActiviteEdit.cs" />
+    <Compile Include="Forms\FrmBomContextes.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Forms\FrmActivites.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Forms\FrmActiviteEdit.cs">
+      <SubType>Form</SubType>
+    </Compile>
     <Compile Include="Forms\FrmActiviteStocks.cs">
       <SubType>Form</SubType>
     </Compile>
-    <Compile Include="Forms\FrmStocks.cs" />
-    <Compile Include="Forms\FrmStockEdit.cs" />
+    <Compile Include="Forms\FrmStocks.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Forms\FrmStockEdit.cs">
+      <SubType>Form</SubType>
+    </Compile>
     <Compile Include="Forms\FrmVueStock.cs">
       <SubType>Form</SubType>
     </Compile>
@@ -191,11 +221,21 @@
     <Compile Include="DAL\StockDAL.cs" />
     <Compile Include="DAL\VueStockGlobalDAL.cs" />
     <Compile Include="DAL\BomCoutDAL.cs" />
-    <Compile Include="Forms\FrmBomContexteEdit.cs" />
-    <Compile Include="Forms\FrmBomNiveaux.cs" />
-    <Compile Include="Forms\FrmBomNiveauEdit.cs" />
-    <Compile Include="Forms\FrmBomFiches.cs" />
-    <Compile Include="Forms\FrmBomFicheEdit.cs" />
+    <Compile Include="Forms\FrmBomContexteEdit.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Forms\FrmBomNiveaux.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Forms\FrmBomNiveauEdit.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Forms\FrmBomFiches.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Forms\FrmBomFicheEdit.cs">
+      <SubType>Form</SubType>
+    </Compile>
     <Compile Include="Forms\FrmBomProductionSimulation.cs">
       <SubType>Form</SubType>
     </Compile>

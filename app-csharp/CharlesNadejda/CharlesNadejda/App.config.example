@@ -13,6 +13,7 @@
     <add key="CloudinaryCloudName" value="REMPLACER"/>
     <add key="CloudinaryApiKey"    value="REMPLACER"/>
     <add key="CloudinaryApiSecret" value="REMPLACER"/>
+    <add key="LaravelStoragePath"  value="REMPLACER (ex: C:\chemin\vers\site-laravel\storage\app\public\)"/>
   </appSettings>
   <runtime>
     <assemblyBinding xmlns="urn:schemas-microsoft-com:asm.v1">

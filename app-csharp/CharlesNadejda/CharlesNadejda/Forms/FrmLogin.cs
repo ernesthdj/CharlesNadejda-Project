@@ -18,10 +18,6 @@ namespace CharlesNadejda.Forms
         public FrmLogin()
         {
             InitializeComponent();
-#if DEBUG
-            txtEmail.Text      = "charles@charlesnadejda.be";
-            txtMotDePasse.Text = "password";
-#endif
         }
 
         private void btnConnexion_Click(object sender, EventArgs e)
