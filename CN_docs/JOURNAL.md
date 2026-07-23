@@ -5,6 +5,14 @@
 
 ---
 
+### [2026-07-23 21:07 — SESSION END] DOCS — Tunnel V1→V2 : extraction/traduction pour artisastock-v2
+**Branche :** feat/refactoring-sprints-p0-p3
+**Commits pushés :** 0 (session documentaire uniquement, aucun fichier de ce projet modifié)
+**Résumé :** Session parallèle (tunnel) avec l'instance artisastock-v2 : extraction du fonctionnement V1 vérifié contre le code source réel (pas seulement les scripts de démo), traduit en documentation pour l'instance V2 qui implémente. Périmètre couvert : Stock/Activité/Contexte+Niveau (CRUD complet, 2 inexactitudes corrigées héritées de l'ancien audit — niveau "N0 non-supprimable" inexistant, cascade FK erronée sur ActiviteDAL.Delete), Fiche ingrédient/Lot (synchronisation tripartite des prix, modes d'achat Conditionnement/Lot, préservation de consommation sur update de lot), Fiche BOM/BomStock (règle réelle de disponibilité des inputs par niveau, comportement delete-all/recreate sur update, pattern Fiche/Instance documenté séparément). Sortie déposée dans `artisastock-v2/docs/Traduction V1/` (14 fichiers : 8 étapes de circuit + 6 références transverses) et `artisastock-v2/docs/FONDATION-POS.md` (brainstorm complet : pivot du projet vers un logiciel générique multi-secteur ERP+Web+POS pour PME, priorisant le développement d'un POS configurable partageant le stock avec l'ERP et la boutique web).
+**Aucun code source de ce projet touché** — conforme au rôle strict de cette instance (extraction/traduction uniquement, jamais l'implémentation V2, jamais le module Production).
+
+---
+
 ### [2026-07-02] DOCS — Synchronisation SCRIPT_DEFENSE_EXAMEN.md avec le code réel
 **Fichiers :** `CN_docs/SCRIPT_DEFENSE_EXAMEN.md`
 **Résumé :** Audit exhaustif du script de défense (71 Ko) par lecture croisée avec le code source réel. 12 catégories d'écarts corrigées : FrmListeBase (méthodes renommées), ActiviteDAL.Insert (signature inventée + connexion + transaction faux), IngredientDAL.GetAll HAVING conditionnel manquant, LigneBOM→BomFicheLigne (classe + propriétés + TypeInput string vs enum), chemins BOM/Production (FrmBOMEdit→FrmBomFicheEdit, FrmProduction→FrmBomProductionSimulation), controllers Laravel (BoutiqueController→CatalogueController, ClientAuthController→Auth/LoginController+RegisterController), snippets CatalogueController/LoginController/PanierController (panier DB pas session, password_verify, session()->regenerate(), mot_de_passe), noms 20 tables réelles SQL, Hash::make()→password_hash().
